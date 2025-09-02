@@ -55,47 +55,44 @@ const HomeAboutIts: React.FC = () => {
           {/* Text Content Column */}
           <div className="lg:w-1/2">
             <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay:'0.2s'}}>
-              <div className="bg-bgBase p-4 md:p-6 rounded-lg shadow-md border border-borderDefault mb-6">
                 {aboutConfig.preTitle && (
-                  <span className="home-section-pretitle text-primary">
-                    {aboutConfig.sectionTitleIconUrl && <img src={aboutConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
+                  <span className="home-section-pretitle">
                     <img src={settings.siteLogoUrl || ''} onError={(e) => (e.currentTarget.style.display = 'none')} alt={`${settings.companyName} logo`} className="inline h-6 mr-2 object-contain" />
                     {aboutConfig.preTitle}
                   </span>
                 )}
-                <h2 className="home-section-title text-left text-4xl md:text-5xl font-extrabold !mb-0">
-                  {aboutConfig.title || `Welcome to ${settings.companyName}`}
+                <h2 className="home-section-title text-left text-4xl md:text-5xl font-extrabold">
+                    {aboutConfig.title || "Default About Us Title"}
                 </h2>
-              </div>
-              <p className="text-textMuted mb-8 leading-relaxed text-base">
-                {aboutConfig.description || "Default description about the company."}
-              </p>
-              {aboutConfig.features && aboutConfig.features.length > 0 && (
-                <div className="space-y-5 mb-10">
-                  {aboutConfig.features.map((item: HomepageAboutFeature, index) => (
-                    <div key={item.id || index} className={`flex items-start animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay: `${0.3 + index * 0.1}s`}}>
-                      <div className="flex-shrink-0 modern-card-icon-wrapper !w-12 !h-12 !p-3 !mr-4">
-                         <i className={`${item.icon || 'fas fa-check'} modern-card-icon !text-xl`}></i>
-                      </div>
-                      <div>
-                        <h4 className="text-lg font-semibold text-textBase hover:text-primary transition-colors">
-                            {item.link ? <Link to={item.link}>{item.title}</Link> : item.title}
-                        </h4>
-                        <p className="text-sm text-textMuted mt-1 leading-relaxed">{item.description}</p>
-                      </div>
+                <p className="text-textMuted mt-4 mb-8 leading-relaxed">
+                    {aboutConfig.description || "Default about us description."}
+                </p>
+
+                {aboutConfig.features && aboutConfig.features.length > 0 && (
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+                        {aboutConfig.features.map((item: HomepageAboutFeature, index) => (
+                        <li key={item.id || index} className={`flex items-start animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay: `${0.3 + index * 0.1}s`}}>
+                            <div className="flex-shrink-0 modern-card-icon-wrapper !w-12 !h-12 !p-3 !mr-4 bg-primary/10">
+                                <i className={`${item.icon || 'fas fa-star'} text-primary !text-xl`}></i>
+                            </div>
+                            <div>
+                                <h4 className="text-lg font-semibold text-textBase">{item.title}</h4>
+                                <p className="text-textMuted text-sm mt-1 leading-relaxed">{item.description}</p>
+                            </div>
+                        </li>
+                        ))}
+                    </ul>
+                )}
+                
+                {aboutConfig.buttonLink && aboutConfig.buttonText && (
+                    <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{ animationDelay: '0.5s' }}>
+                        <Link to={aboutConfig.buttonLink}>
+                        <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-md hover:shadow-primary/30">
+                            {aboutConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
+                        </Button>
+                        </Link>
                     </div>
-                  ))}
-                </div>
-              )}
-              {aboutConfig.buttonLink && aboutConfig.buttonText && (
-                <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay:'0.5s'}}>
-                  <Link to={aboutConfig.buttonLink}>
-                    <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-md hover:shadow-primary/30">
-                      {aboutConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
-                    </Button>
-                  </Link>
-                </div>
-              )}
+                )}
             </div>
           </div>
         </div>

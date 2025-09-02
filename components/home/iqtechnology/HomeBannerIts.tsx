@@ -82,14 +82,14 @@ const HomeBannerIts: React.FC = () => {
 
       <div className={`container mx-auto px-4 relative z-20 animate-on-scroll ${startTextAnimation ? 'fade-in-up is-visible' : 'fade-in-up'}`}>
         {bannerConfig.preTitle && (
-          <span className="block text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+          <span className="block text-sm font-semibold text-primary uppercase tracking-wider mb-4 drop-shadow-sm">
             {bannerConfig.preTitle}
           </span>
         )}
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight text-white" style={{ animationDelay: '0.1s' }}>
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-condensed font-bold mb-6 leading-tight text-white drop-shadow-md" style={{ animationDelay: '0.1s' }}>
           <span dangerouslySetInnerHTML={{ __html: bannerConfig.title.replace(siteSettings.companyName, `<span class="text-primary">${siteSettings.companyName}</span>`) || 'Your Trusted Tech Partner' }} />
         </h1>
-        <p className="text-lg text-gray-200 mb-10 max-w-3xl mx-auto" style={{ animationDelay: '0.2s' }}>
+        <p className="text-lg text-gray-200 mb-10 max-w-3xl mx-auto drop-shadow-sm" style={{ animationDelay: '0.2s' }}>
           {bannerConfig.subtitle || 'Default subtitle describing the service.'}
         </p>
         <div className="space-y-3 sm:space-y-0 sm:space-x-4" style={{ animationDelay: '0.3s' }}>

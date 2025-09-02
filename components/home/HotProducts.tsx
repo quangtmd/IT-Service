@@ -24,7 +24,7 @@ const HotProducts: React.FC = () => {
     return (
       <section className="home-section bg-bgMuted">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="home-section-title mb-4">Sản Phẩm Nổi Bật</h2>
+          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold mb-6">Sản Phẩm Nổi Bật</h2>
           <p className="home-section-subtitle mb-8">Hiện chưa có sản phẩm nổi bật nào. Vui lòng quay lại sau!</p>
           <Link to="/shop">
             <Button size="lg" variant="primary">Khám phá tất cả sản phẩm</Button>
@@ -37,14 +37,11 @@ const HotProducts: React.FC = () => {
   return (
     <section className="home-section bg-bgMuted">
       <div className="container mx-auto px-4">
-        <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''} flex justify-center items-center`}>
-            <img src="https://picsum.photos/seed/hotProductsIcon/40/40?text=🔥" alt="" className="w-8 h-8 mr-3 object-contain hidden sm:block" />
-            <div>
-                <h2 className="home-section-title text-4xl md:text-5xl font-extrabold mb-6">Sản Phẩm Nổi Bật</h2>
-                <p className="home-section-subtitle mt-3">
+        <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
+             <h2 className="home-section-title text-4xl md:text-5xl font-extrabold mb-4">Sản Phẩm Nổi Bật</h2>
+             <p className="home-section-subtitle">
                 Khám phá các linh kiện PC đang được ưa chuộng nhất và những ưu đãi đặc biệt từ chúng tôi.
-                </p>
-            </div>
+             </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">

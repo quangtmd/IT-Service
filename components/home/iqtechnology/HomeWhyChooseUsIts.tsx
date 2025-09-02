@@ -37,18 +37,15 @@ const HomeWhyChooseUsIts: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           <div className="lg:w-1/2 order-2 lg:order-1">
             <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay:'0.2s'}}>
-              <div className="bg-bgBase p-4 md:p-6 rounded-lg shadow-md border border-borderDefault mb-6">
-                {whyChooseUsConfig.preTitle && (
-                  <span className="home-section-pretitle text-primary">
-                     {whyChooseUsConfig.sectionTitleIconUrl && <img src={whyChooseUsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
-                     <img src={settings.siteLogoUrl || ''} onError={(e) => (e.currentTarget.style.display = 'none')} alt={`${settings.companyName} logo`} className="inline h-6 mr-2 object-contain" />
-                    {whyChooseUsConfig.preTitle}
-                  </span>
-                )}
-                <h2 className="home-section-title text-left text-4xl md:text-5xl font-extrabold !mb-0">
-                  {whyChooseUsConfig.title || "Why Choose Us?"}
-                </h2>
-              </div>
+              {whyChooseUsConfig.preTitle && (
+                <span className="home-section-pretitle">
+                   {whyChooseUsConfig.sectionTitleIconUrl && <img src={whyChooseUsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
+                   {whyChooseUsConfig.preTitle}
+                </span>
+              )}
+              <h2 className="home-section-title text-left text-4xl md:text-5xl font-extrabold">
+                {whyChooseUsConfig.title || "Why Choose Us?"}
+              </h2>
               <p className="text-textMuted mb-8 leading-relaxed">
                 {whyChooseUsConfig.description || "Default description explaining why to choose us."}
               </p>
@@ -57,8 +54,8 @@ const HomeWhyChooseUsIts: React.FC = () => {
                 <ul className="space-y-6 mb-10">
                   {whyChooseUsConfig.features.map((item: HomepageWhyChooseUsFeature, index) => (
                     <li key={item.id || index} className={`flex items-start animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay: `${0.3 + index * 0.1}s`}}>
-                      <div className="flex-shrink-0 modern-card-icon-wrapper !w-12 !h-12 !p-3 !mr-4">
-                        <i className={`${item.iconClass || 'fas fa-star'} modern-card-icon !text-xl`}></i>
+                      <div className="flex-shrink-0 modern-card-icon-wrapper !w-12 !h-12 !p-3 !mr-4 bg-primary/10">
+                        <i className={`${item.iconClass || 'fas fa-star'} text-primary !text-xl`}></i>
                       </div>
                       <div>
                         <h4 className="text-lg font-semibold text-textBase">{item.title}</h4>
@@ -81,7 +78,7 @@ const HomeWhyChooseUsIts: React.FC = () => {
             </div>
           </div>
           <div className="lg:w-1/2 order-1 lg:order-2">
-            <div className={`relative animate-on-scroll ${isSectionVisible ? 'slide-in-left is-visible' : 'slide-in-left'}`} style={{animationDelay:'0.1s'}}>
+            <div className={`relative animate-on-scroll ${isSectionVisible ? 'slide-in-right is-visible' : 'slide-in-right'}`} style={{animationDelay:'0.1s'}}>
               <img
                 src={whyChooseUsConfig.mainImageUrl || "https://picsum.photos/seed/itProfessionalsV2/600/720"}
                 alt="Why Choose Our IT Professionals"

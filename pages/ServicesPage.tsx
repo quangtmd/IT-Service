@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { MOCK_SERVICES } from '../data/mockData';
 import * as Constants from '../constants.tsx'; 
@@ -13,7 +14,7 @@ import { SiteSettings } from '../types';
 
 const ServicesPage: React.FC = () => {
   const breadcrumbs = [
-    { label: "Trang chủ", path: "/" },
+    { label: "Trang chủ", path: "/home" },
     { label: "Dịch vụ" }
   ];
 

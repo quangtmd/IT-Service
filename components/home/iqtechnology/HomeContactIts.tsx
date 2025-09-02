@@ -70,19 +70,16 @@ const HomeContactIts: React.FC = () => {
     <section ref={sectionRef} className={`home-section bg-bgBase animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
         <div className="container mx-auto px-4">
             <div className={`home-section-title-area animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
-                <div className="inline-block bg-bgBase p-4 md:p-6 rounded-lg shadow-md border border-borderDefault mb-4">
-                  {contactConfig.preTitle && (
-                      <span className="home-section-pretitle text-primary">
-                          {contactConfig.sectionTitleIconUrl && <img src={contactConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
-                          <img src={siteSettings.siteLogoUrl || ''} onError={(e) => (e.currentTarget.style.display = 'none')} alt={`${siteSettings.companyName} logo`} className="inline h-6 mr-2 object-contain" /> 
-                          {contactConfig.preTitle}
-                      </span>
-                  )}
-                  <h2 className="home-section-title text-4xl md:text-5xl font-extrabold !mb-0">
-                      {contactConfig.title || "Get In Touch"}
-                  </h2>
-                </div>
-                <p className="home-section-subtitle mt-3">
+                {contactConfig.preTitle && (
+                    <span className="home-section-pretitle">
+                        {contactConfig.sectionTitleIconUrl && <img src={contactConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
+                        {contactConfig.preTitle}
+                    </span>
+                )}
+                <h2 className="home-section-title text-4xl md:text-5xl font-extrabold">
+                    {contactConfig.title || "Get In Touch"}
+                </h2>
+                <p className="home-section-subtitle">
                     We're here to help. Send us a message or reach out through our contact channels.
                 </p>
             </div>
@@ -103,25 +100,25 @@ const HomeContactIts: React.FC = () => {
                             {error && <p className="text-sm text-danger-text bg-danger-bg p-3 rounded-md border border-danger-border">{error}</p>}
                             <div>
                                 <label htmlFor="home_contact_name" className="sr-only">Họ và tên</label>
-                                <input type="text" name="name" id="home_contact_name" value={formData.name} onChange={handleChange} placeholder="Họ và tên *" className="input-style bg-white text-textBase" />
+                                <input type="text" name="name" id="home_contact_name" value={formData.name} onChange={handleChange} placeholder="Họ và tên *" className="input-style" />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
                                     <label htmlFor="home_contact_email" className="sr-only">Email</label>
-                                    <input type="email" name="email" id="home_contact_email" value={formData.email} onChange={handleChange} placeholder="Email *" className="input-style bg-white text-textBase" />
+                                    <input type="email" name="email" id="home_contact_email" value={formData.email} onChange={handleChange} placeholder="Email *" className="input-style" />
                                 </div>
                                 <div>
                                     <label htmlFor="home_contact_phone" className="sr-only">Số điện thoại</label>
-                                    <input type="tel" name="phone" id="home_contact_phone" value={formData.phone} onChange={handleChange} placeholder="Số điện thoại *" className="input-style bg-white text-textBase" />
+                                    <input type="tel" name="phone" id="home_contact_phone" value={formData.phone} onChange={handleChange} placeholder="Số điện thoại *" className="input-style" />
                                 </div>
                             </div>
                             <div>
                                 <label htmlFor="home_contact_subject" className="sr-only">Chủ đề</label>
-                                <input type="text" name="subject" id="home_contact_subject" value={formData.subject} onChange={handleChange} placeholder="Chủ đề cần tư vấn *" className="input-style bg-white text-textBase" />
+                                <input type="text" name="subject" id="home_contact_subject" value={formData.subject} onChange={handleChange} placeholder="Chủ đề cần tư vấn *" className="input-style" />
                             </div>
                             <div>
                                 <label htmlFor="home_contact_message" className="sr-only">Nội dung chi tiết (tùy chọn)</label>
-                                <textarea name="message" id="home_contact_message" rows={3} value={formData.message} onChange={handleChange} placeholder="Nội dung chi tiết (tùy chọn)" className="input-style bg-white text-textBase flex-grow"></textarea>
+                                <textarea name="message" id="home_contact_message" rows={3} value={formData.message} onChange={handleChange} placeholder="Nội dung chi tiết (tùy chọn)" className="input-style flex-grow"></textarea>
                             </div>
                             <Button type="submit" variant="primary" size="lg" className="w-full py-3 text-base mt-auto shadow-lg hover:shadow-primary/40">
                                 Gửi Yêu Cầu <i className="fas fa-paper-plane ml-2"></i>
@@ -139,8 +136,8 @@ const HomeContactIts: React.FC = () => {
                             { icon: 'fas fa-map-marker-alt', title: 'Address:', content: siteSettings.companyAddress, href: '#' } 
                         ].map((info, index) => (
                             <div key={index} className="flex items-start py-3">
-                                <div className="flex-shrink-0 mr-5 modern-card-icon-wrapper !w-12 !h-12 !p-3">
-                                    <i className={`${info.icon} modern-card-icon !text-xl`}></i>
+                                <div className="flex-shrink-0 mr-5 modern-card-icon-wrapper !w-12 !h-12 !p-3 bg-primary/10">
+                                    <i className={`${info.icon} text-primary !text-xl`}></i>
                                 </div>
                                 <div>
                                     <span className="block text-sm font-semibold text-textMuted mb-0.5">{info.title}</span>

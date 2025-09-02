@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom'; // useParams and Link are compatible with v6/v7
 import { MOCK_ARTICLES as FALLBACK_ARTICLES } from '../data/mockData';
@@ -117,7 +118,7 @@ Kết luận, ${article.summary.toLowerCase()}
       <article className="bg-bgBase p-6 md:p-10 rounded-lg shadow-xl border border-borderDefault">
         <header className="mb-8">
           <nav aria-label="breadcrumb" className="text-sm text-textMuted mb-2">
-            <Link to="/" className="hover:text-primary">Trang chủ</Link>
+            <Link to="/home" className="hover:text-primary">Trang chủ</Link>
             <span className="mx-1">/</span>
             <Link to="/blog" className="hover:text-primary">Blog</Link>
             <span className="mx-1">/</span>

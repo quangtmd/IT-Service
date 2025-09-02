@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MOCK_SERVICES } from '../data/mockData';
@@ -19,7 +20,7 @@ const ServiceDetailPage: React.FC = () => {
   if (!service) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <PageTitleBannerIts title="Dịch Vụ Không Tìm Thấy" breadcrumbs={[{label: "Trang chủ", path: "/"}, {label: "Dịch vụ", path: "/services"}, {label: "Lỗi"}]} />
+        <PageTitleBannerIts title="Dịch Vụ Không Tìm Thấy" breadcrumbs={[{label: "Trang chủ", path: "/home"}, {label: "Dịch vụ", path: "/services"}, {label: "Lỗi"}]} />
         <div className="py-16">
             <i className="fas fa-exclamation-triangle text-5xl text-warning-text mb-4"></i>
             <h2 className="text-2xl font-semibold text-textBase mb-4">Không tìm thấy dịch vụ</h2>
@@ -35,7 +36,7 @@ const ServiceDetailPage: React.FC = () => {
   }
 
   const breadcrumbs = [
-    { label: "Trang chủ", path: "/" },
+    { label: "Trang chủ", path: "/home" },
     { label: "Dịch vụ", path: "/services" },
     { label: service.name }
   ];

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
 import Button from '../components/ui/Button';
@@ -112,7 +113,7 @@ const CheckoutPage: React.FC = () => {
             <Link to="/shop">
               <Button variant="primary" size="lg">Tiếp tục mua sắm</Button>
             </Link>
-            <Link to="/">
+            <Link to="/home">
               <Button variant="outline" size="lg">Về trang chủ</Button>
             </Link>
           </div>

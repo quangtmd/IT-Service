@@ -19,27 +19,28 @@ const ProjectCardIts: React.FC<ProjectItemProps> = ({ item, index }) => {
     return (
         <div
             ref={ref}
-            className={`modern-card group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col`}
+            className={`modern-card group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col relative`}
             style={{ animationDelay: `${index * 100}ms` }}
         >
-            <Link to={`/service/${item.slug || item.id}`} className="block aspect-video overflow-hidden rounded-t-xl">
+            <Link to={`/service/${item.slug || item.id}`} className="block aspect-video overflow-hidden rounded-t-lg">
                 <img src={placeholderImg} alt={item.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
             </Link>
             <div className="p-6 flex flex-col flex-grow">
-                 <div className="flex items-center mb-3 text-primary">
+                <div className="flex items-center mb-3 text-primary">
                     <i className={`${item.icon || 'fas fa-cogs'} text-xl mr-3 opacity-80`}></i>
-                    <span className="text-sm font-semibold uppercase tracking-wider">{item.name.split(' ')[0]} Service</span>
                 </div>
-                <h3 className="text-xl font-semibold text-textBase mb-3 group-hover:text-primary transition-colors">
-                    <Link to={`/service/${item.slug || item.id}`} className="line-clamp-2">{item.name}</Link>
+                <h3 className="modern-card-title mb-3">
+                     <Link to={`/service/${item.slug || item.id}`} className="line-clamp-2">{item.name}</Link>
                 </h3>
-                <p className="text-sm text-textMuted mb-5 line-clamp-3 flex-grow">{item.description}</p>
-                <Link
-                    to={`/service/${item.slug || item.id}`}
-                    className="modern-card-link mt-auto self-start"
-                >
-                    Chi tiết dịch vụ <i className="fas fa-arrow-right text-xs ml-1"></i>
-                </Link>
+                <p className="modern-card-description mb-5 line-clamp-3 flex-grow">{item.description}</p>
+                <div className="mt-auto">
+                    <Link
+                        to={`/service/${item.slug || item.id}`}
+                        className="modern-card-link self-start"
+                    >
+                        Chi tiết dịch vụ <i className="fas fa-arrow-right text-xs ml-1"></i>
+                    </Link>
+                </div>
             </div>
         </div>
     );
@@ -79,19 +80,16 @@ const HomeFeaturedProjectsIts: React.FC = () => {
     <section className="home-section bg-bgCanvas">
       <div className="container mx-auto px-4">
         <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
-            <div className="inline-block bg-bgBase p-4 md:p-6 rounded-lg shadow-md border border-borderDefault mb-4">
-              {projectsConfig.preTitle && (
-                <span className="home-section-pretitle text-primary">
-                  {projectsConfig.sectionTitleIconUrl && <img src={projectsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
-                  <img src={settings.siteLogoUrl || ''} onError={(e) => (e.currentTarget.style.display = 'none')} alt={`${settings.companyName} logo`} className="inline h-6 mr-2 object-contain" />
-                  {projectsConfig.preTitle}
-                </span>
-              )}
-              <h2 className="home-section-title text-4xl md:text-5xl font-extrabold !mb-0">
-                {projectsConfig.title || "Our Key Services"}
-              </h2>
-            </div>
-            <p className="home-section-subtitle mt-3">
+            {projectsConfig.preTitle && (
+              <span className="home-section-pretitle">
+                {projectsConfig.sectionTitleIconUrl && <img src={projectsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
+                {projectsConfig.preTitle}
+              </span>
+            )}
+            <h2 className="home-section-title text-4xl md:text-5xl font-extrabold">
+              {projectsConfig.title || "Our Key Services"}
+            </h2>
+            <p className="home-section-subtitle">
               Explore our range of expert IT services designed to elevate your business.
             </p>
         </div>

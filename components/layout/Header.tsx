@@ -70,7 +70,7 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     logout();
     setIsMobileMenuOpen(false);
-    navigate('/');
+    navigate('/home');
   };
 
   const mainNavLinks = finalNavLinks;
@@ -134,7 +134,7 @@ const Header: React.FC = () => {
         {/* MAIN HEADER */}
         <div className="bg-black text-white">
           <div className="container mx-auto px-4 flex items-center justify-between gap-4 h-20">
-            <Link to="/" className="flex-shrink-0">
+            <Link to="/home" className="flex-shrink-0">
               <svg width="125" height="45" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg">
                   <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: var(--color-primary-default); font-style: italic; } .logo-main-white { font-family: Impact, sans-serif; font-size: 36px; fill: #ffffff; font-style: italic; } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #ffffff; letter-spacing: 2px; }`}</style>
                   <text x="0" y="30" className="logo-main-red">IQ</text>
@@ -173,7 +173,7 @@ const Header: React.FC = () => {
                       : 'text-gray-300 hover:bg-white/10 hover:text-white'
                   }`
                 }
-                end={link.path === "/"}
+                end={link.path === "/home"}
               >
                 {link.label}
               </NavLink>
@@ -203,7 +203,7 @@ const Header: React.FC = () => {
 
           <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
             {mainNavLinks.map((link) => (
-              <NavLink key={link.path} to={link.path} onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `flex items-center text-lg py-3 px-4 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'text-gray-200 hover:bg-white/10'}`} end={link.path === "/"}>
+              <NavLink key={link.path} to={link.path} onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `flex items-center text-lg py-3 px-4 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'text-gray-200 hover:bg-white/10'}`} end={link.path === "/home"}>
                 {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} mr-4 w-5 text-center`}></i>}
                 {link.label}
               </NavLink>

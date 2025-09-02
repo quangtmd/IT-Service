@@ -15,18 +15,25 @@ const TestimonialCardIts: React.FC<TestimonialCardProps> = ({ testimonial, index
   return (
     <div 
         ref={ref} 
-        className={`modern-card p-6 md:p-8 animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col items-center text-center`}
+        className={`testimonial-card-its p-6 md:p-8 animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col`}
         style={{ animationDelay: `${index * 150}ms` }}
     >
-      <img src={testimonial.avatarUrl || `https://picsum.photos/seed/avatarModern${index}/100/100`} alt={testimonial.name} className="w-20 h-20 rounded-full mb-5 shadow-lg border-4 border-white object-cover" />
-      <div className="text-yellow-400 mb-4 text-lg">
+        <i className="fas fa-quote-right quote-icon"></i>
+        <div className="flex items-center mb-4">
+            <img src={testimonial.avatarUrl || `https://picsum.photos/seed/avatarModern${index}/100/100`} alt={testimonial.name} className="w-14 h-14 rounded-full shadow-lg border-2 border-white object-cover" />
+            <div className="ml-4 text-left">
+                <h5 className="text-md font-bold text-textBase">{testimonial.name}</h5>
+                <span className="text-xs text-primary font-medium">{testimonial.role || 'Valued Customer'}</span>
+            </div>
+        </div>
+      
+        <blockquote className="text-textMuted italic mb-4 leading-relaxed flex-grow text-md text-left">
+          <p>"{testimonial.quote}"</p>
+        </blockquote>
+
+        <div className="mt-auto text-left text-yellow-400">
             <i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star-half-alt"></i>
-      </div>
-      <p className="text-textMuted italic mb-6 leading-relaxed flex-grow text-md">"{testimonial.quote}"</p>
-      <div className="mt-auto">
-        <h5 className="text-lg font-semibold text-textBase">{testimonial.name}</h5>
-        <span className="text-sm text-primary font-medium">{testimonial.role || 'Valued Customer'}</span>
-      </div>
+        </div>
     </div>
   );
 };
@@ -59,22 +66,19 @@ const HomeTestimonialsIts: React.FC = () => {
   const sortedTestimonials = [...testimonialsConfig.testimonials].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="home-section bg-bgCanvas"> {/* Changed to bgCanvas for lighter feel */}
+    <section className="home-section bg-bgCanvas">
       <div className="container mx-auto px-4">
         <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
-          <div className="inline-block bg-bgBase p-4 md:p-6 rounded-lg shadow-md border border-borderDefault mb-4">
-            {testimonialsConfig.preTitle && (
-              <span className="home-section-pretitle text-primary">
-                {testimonialsConfig.sectionTitleIconUrl && <img src={testimonialsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
-                 <img src={settings.siteLogoUrl || ''} onError={(e) => (e.currentTarget.style.display = 'none')} alt={`${settings.companyName} logo`} className="inline h-6 mr-2 object-contain" /> 
-                {testimonialsConfig.preTitle}
-              </span>
-            )}
-            <h2 className="home-section-title text-4xl md:text-5xl font-extrabold !mb-0">
-              {testimonialsConfig.title || "What Our Clients Say"}
-            </h2>
-          </div>
-           <p className="home-section-subtitle mt-3">
+          {testimonialsConfig.preTitle && (
+            <span className="home-section-pretitle">
+              {testimonialsConfig.sectionTitleIconUrl && <img src={testimonialsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
+              {testimonialsConfig.preTitle}
+            </span>
+          )}
+          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold">
+            {testimonialsConfig.title || "What Our Clients Say"}
+          </h2>
+           <p className="home-section-subtitle">
             Hear directly from those who've experienced our top-notch services and support.
           </p>
         </div>

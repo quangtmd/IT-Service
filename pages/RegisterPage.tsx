@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
 import Button from '../components/ui/Button';
@@ -16,7 +17,7 @@ const RegisterPage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/'); // Changed from history.push
+      navigate('/home'); // Changed from history.push
     }
   }, [isAuthenticated, navigate]);
 
@@ -35,7 +36,7 @@ const RegisterPage: React.FC = () => {
 
     const user = await register({ username, email, password });
     if (user) {
-      navigate('/'); // Changed from history.push
+      navigate('/home'); // Changed from history.push
     } else {
       setError('Đăng ký không thành công. Email có thể đã được sử dụng hoặc dữ liệu không hợp lệ.');
     }
@@ -45,7 +46,7 @@ const RegisterPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-bgCanvas py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-bgBase p-10 rounded-xl shadow-xl border border-borderDefault">
         <div>
-          <Link to="/" className="flex justify-center">
+          <Link to="/home" className="flex justify-center">
              <span className="text-3xl font-bold text-primary">{Constants.COMPANY_NAME}</span>
           </Link>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-textBase">

@@ -25,7 +25,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, context = 'preview' 
     : 0;
 
   return (
-    <Link to={`/product/${product.id}`} className="block">
+    <Link to={`/product/${product.id}`} className="block h-full">
     <div className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col group border border-transparent hover:border-primary/50 hover:shadow-xl transition-all duration-300"> 
       <div className="relative overflow-hidden">
         <img

@@ -11,19 +11,23 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
   return (
     <div
         ref={ref}
-        className={`modern-card p-6 md:p-8 group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col text-center items-center`}
+        className={`modern-card p-6 md:p-8 group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col text-center items-center relative`}
         style={{ animationDelay: `${index * 100}ms` }}
     >
-        <i className={`${item.iconClass || 'fas fa-check-circle'} text-4xl text-primary mb-4 group-hover:scale-110 transition-transform duration-300`}></i>
+        <div className="modern-card-icon-wrapper">
+          <i className={`${item.iconClass || 'fas fa-check-circle'} modern-card-icon`}></i>
+        </div>
         <h3 className="modern-card-title mb-3">
           <Link to={item.link || '#'} className="line-clamp-2">{item.title}</Link>
         </h3>
-        <p className="modern-card-description mb-5 line-clamp-3">
+        <p className="modern-card-description mb-5 line-clamp-3 flex-grow">
           {item.description}
         </p>
-        <Link to={item.link || '#'} className="modern-card-link mt-auto">
-          Tìm hiểu thêm <i className="fas fa-arrow-right text-xs ml-1 transition-transform duration-300 group-hover:translate-x-1"></i>
-        </Link>
+        <div className="mt-auto">
+            <Link to={item.link || '#'} className="modern-card-link">
+            Tìm hiểu thêm <i className="fas fa-arrow-right text-xs ml-1"></i>
+            </Link>
+        </div>
     </div>
   );
 };
@@ -59,31 +63,21 @@ const HomeServicesBenefitsIts: React.FC = () => {
     <section className="home-section bg-bgCanvas">
       <div className="container mx-auto px-4">
         <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
-          <div className="inline-block bg-bgBase p-4 md:p-6 rounded-lg shadow-md border border-borderDefault mb-4">
-            {servicesBenefitsConfig.preTitle && (
-              <span className="home-section-pretitle text-primary">
-                {servicesBenefitsConfig.sectionTitleIconUrl &&
-                  <img
-                    src={servicesBenefitsConfig.sectionTitleIconUrl}
-                    alt=""
-                    className="h-6 w-6 mr-2 object-contain flex-shrink-0"
-                  />
-                }
-                {settings.siteLogoUrl &&
-                  <img
-                    src={settings.siteLogoUrl}
-                    onError={(e) => (e.currentTarget.style.display = 'none')}
-                    alt={`${settings.companyName} logo`}
-                    className="inline h-6 w-6 mr-2 object-contain flex-shrink-0"
-                  />
-                }
-                {servicesBenefitsConfig.preTitle}
-              </span>
-            )}
-            <h2 className="home-section-title text-4xl md:text-5xl font-extrabold leading-tight !mb-0">
-              {servicesBenefitsConfig.title || "Core Service Benefits"}
-            </h2>
-          </div>
+          {servicesBenefitsConfig.preTitle && (
+            <span className="home-section-pretitle">
+              {servicesBenefitsConfig.sectionTitleIconUrl &&
+                <img
+                  src={servicesBenefitsConfig.sectionTitleIconUrl}
+                  alt=""
+                  className="h-6 w-6 mr-2 object-contain flex-shrink-0"
+                />
+              }
+              {servicesBenefitsConfig.preTitle}
+            </span>
+          )}
+          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold leading-tight">
+            {servicesBenefitsConfig.title || "Core Service Benefits"}
+          </h2>
         </div>
         {sortedBenefits.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">

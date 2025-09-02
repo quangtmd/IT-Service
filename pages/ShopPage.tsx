@@ -172,68 +172,71 @@ const ShopPage: React.FC = () => {
 
   return (
     <div className="bg-bgCanvas min-h-screen">
-      <div className="container mx-auto px-2 sm:px-4 py-6">
+      <div className="container mx-auto px-4 py-6">
         <div className="mb-6">
           <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
         </div>
-      </div>
-
-      <div className="blog-layout-container">
-        <main className="blog-main-content">
-            <ProductCategoryNav
-                categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
-                activeSlug={currentFilters.mainCategory}
-                onSelect={(slug) => handleFilterChange('mainCategory', slug)}
+      
+        <div className="shop-layout-container">
+          <aside className="shop-sidebar">
+            <ProductFilter
+              brands={uniqueBrands}
+              statuses={uniqueStatuses}
+              onFilterChange={handleFilterChange}
+              currentFilters={{
+                  mainCategory: currentFilters.mainCategory || null,
+                  subCategory: currentFilters.subCategory || null,
+                  brand: currentFilters.brand || null,
+                  status: currentFilters.status || null,
+                  q: currentFilters.q
+              }}
             />
-            <h1 className="text-2xl font-bold text-textBase mb-6 px-1">{getCurrentCategoryName()}</h1>
-            {filteredProducts.length > 0 ? (
-            <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
-                {paginatedProducts.map(product => (
-                    <ProductCard key={product.id} product={product} context="detail-view" />
-                ))}
-                </div>
-                {totalPages > 1 && (
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                />
-                )}
-            </>
-            ) : (
-            <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
-                <i className="fas fa-search text-5xl text-textSubtle mb-4"></i>
-                <h3 className="text-xl font-semibold text-textBase mb-2">Không tìm thấy sản phẩm</h3>
-                <p className="text-textMuted">Vui lòng thử lại với bộ lọc hoặc từ khóa khác.</p>
+            <div className="shop-sidebar-section mt-6">
+              <h3 className="shop-sidebar-title">Sản phẩm xem nhiều</h3>
+              <ul className="space-y-1">
+              {MOCK_PRODUCTS.slice(0, 5).map(p => (
+                  <li key={p.id}><Link to={`/product/${p.id}`} className="text-sm text-textMuted hover:text-primary line-clamp-1">{p.name}</Link></li>
+              ))}
+              </ul>
             </div>
-            )}
-        </main>
-        <aside className="blog-sidebar">
-          <ProductFilter
-            brands={uniqueBrands}
-            statuses={uniqueStatuses}
-            onFilterChange={handleFilterChange}
-            currentFilters={{
-                mainCategory: currentFilters.mainCategory || '', 
-                subCategory: currentFilters.subCategory || '',
-                brand: currentFilters.brand || '',
-                status: currentFilters.status || '',
-                q: currentFilters.q
-            }}
-          />
-          <div className="shop-sidebar-section mt-6">
-            <h3 className="shop-sidebar-title">Sản phẩm xem nhiều</h3>
-            <ul className="space-y-1">
-            {MOCK_PRODUCTS.slice(0, 5).map(p => (
-                <li key={p.id}><Link to={`/product/${p.id}`} className="text-sm text-textMuted hover:text-primary line-clamp-1">{p.name}</Link></li>
-            ))}
-            </ul>
-          </div>
-          <div className="shop-sidebar-section mt-6">
-            <img src="https://picsum.photos/seed/shopad1/300/250?text=Quảng+Cáo" alt="Placeholder Ad" className="w-full rounded-md shadow"/>
-          </div>
-        </aside>
+            <div className="shop-sidebar-section mt-6">
+              <img src="https://picsum.photos/seed/shopad1/300/250?text=Quảng+Cáo" alt="Placeholder Ad" className="w-full rounded-md shadow"/>
+            </div>
+          </aside>
+          <main className="shop-main-content">
+              <ProductCategoryNav
+                  categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
+                  activeSlug={currentFilters.mainCategory}
+                  onSelect={(slug) => handleFilterChange('mainCategory', slug)}
+              />
+              <div className="flex justify-between items-center mb-6 px-1">
+                <h1 className="text-2xl font-bold text-textBase">{getCurrentCategoryName()}</h1>
+                <span className="text-sm text-textMuted">{filteredProducts.length} sản phẩm</span>
+              </div>
+              {filteredProducts.length > 0 ? (
+              <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+                  {paginatedProducts.map(product => (
+                      <ProductCard key={product.id} product={product} context="detail-view" />
+                  ))}
+                  </div>
+                  {totalPages > 1 && (
+                  <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                  />
+                  )}
+              </>
+              ) : (
+              <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
+                  <i className="fas fa-search text-5xl text-textSubtle mb-4"></i>
+                  <h3 className="text-xl font-semibold text-textBase mb-2">Không tìm thấy sản phẩm</h3>
+                  <p className="text-textMuted">Vui lòng thử lại với bộ lọc hoặc từ khóa khác.</p>
+              </div>
+              )}
+          </main>
+        </div>
       </div>
     </div>
   );

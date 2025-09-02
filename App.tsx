@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom'; // Updated imports for v6/v7
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'; // Updated imports for v6/v7
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
@@ -36,7 +36,8 @@ const App: React.FC = () => {
         <Header />
         <main className="flex-grow pt-[160px]">
           <Routes> {/* Replaced Switch with Routes */}
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/home" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/product/:productId" element={<ProductDetailPage />} />
             <Route path="/services" element={<ServicesPage />} />
