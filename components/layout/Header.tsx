@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import * as Constants from '../../constants.tsx';
@@ -20,9 +18,9 @@ const Header: React.FC = () => {
   const [currentNavLinks, setCurrentNavLinks] = useState<(CustomMenuLink | NavLinkItem)[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  const isSolid = isScrolled || location.pathname !== '/';
-  const textColor = isSolid ? 'text-gray-800' : 'text-white';
-
+  // Correctly detect homepage with HashRouter by checking the pathname.
+  const isHomepage = location.pathname === '/';
+  const isSolid = isScrolled || !isHomepage;
   const unreadAdminNotificationCount = adminNotifications.filter(n => !n.isRead && (currentUser?.role === 'admin' || currentUser?.role === 'staff')).length;
 
   useEffect(() => {
@@ -70,6 +68,9 @@ const Header: React.FC = () => {
 
   const displayLogo = siteSettings.siteLogoUrl || siteSettings.siteFaviconUrl;
 
+  const mainNavLinks = currentNavLinks.filter(link => link.path !== Constants.PC_BUILDER_PATH);
+  const pcBuilderLink = currentNavLinks.find(link => link.path === Constants.PC_BUILDER_PATH);
+
   const renderNavLink = (link: CustomMenuLink | NavLinkItem, isMobile: boolean = false) => {
     const showNotificationBadge = link.path === '/admin' && isAuthenticated && (currentUser?.role === 'admin' || currentUser?.role === 'staff') && unreadAdminNotificationCount > 0;
     
@@ -96,7 +97,7 @@ const Header: React.FC = () => {
         key={link.path}
         to={link.path}
         className={({ isActive }) => 
-          `relative px-3 py-2 text-sm font-semibold rounded-md transition-colors duration-200 ${textColor} ${isActive ? (isSolid ? 'bg-primary/10 text-primary' : 'bg-white/20') : (isSolid ? 'hover:bg-gray-100' : 'hover:bg-white/10')}`
+          `relative px-3 py-2 text-sm font-medium rounded-md transition-all duration-300 text-gray-200 hover:text-white ${isActive ? 'bg-primary text-white shadow-md' : 'hover:bg-primary'}`
         }
         end={link.path === "/"}
       >
@@ -112,76 +113,102 @@ const Header: React.FC = () => {
     );
   };
   
-  const headerClasses = `fixed top-0 w-full z-50 transition-all duration-300 ease-in-out ${isSolid ? 'bg-white shadow-lg py-3' : 'bg-transparent py-5'}`;
+  const headerClasses = `fixed top-0 w-full z-50 transition-all duration-300 ease-in-out ${isSolid ? 'bg-gray-900 shadow-lg py-3' : 'bg-black/20 py-5'}`;
 
   return (
     <>
       <header className={headerClasses}>
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center">
-            <Link to="/" className="flex items-center shrink-0">
-              {displayLogo ? (
-                <img src={displayLogo} alt={`${siteSettings.companyName} Logo`} className="h-10 max-w-[150px] object-contain mr-2 transition-all" />
-              ) : (
-                <span className={`text-2xl font-bold transition-colors ${textColor}`}>{siteSettings.companyName}</span>
-              )}
-            </Link>
-
-            <nav className="hidden lg:flex flex-1 justify-center items-center space-x-2">
-              {currentNavLinks.map((link) => renderNavLink(link))}
-              {isAuthenticated && (currentUser?.role === 'admin' || currentUser?.role === 'staff') && renderNavLink({label: 'Quản trị', path: '/admin'})}
-            </nav>
-
-            <div className="flex items-center space-x-4">
-              <div className="hidden lg:flex items-center space-x-2 shrink-0">
-                  {!isLoading && (
-                      <>
-                          {isAuthenticated && currentUser ? (
-                              <div className="relative group">
-                                  <button className={`flex items-center space-x-2 transition-colors duration-200 ease-in-out hover:text-primary ${textColor}`}>
-                                      <img src={currentUser.imageUrl || `https://ui-avatars.com/api/?name=${currentUser.username.charAt(0)}&background=random`} alt="avatar" className="w-8 h-8 rounded-full"/>
-                                      <span className="text-sm font-semibold">{currentUser.username}</span>
-                                      <i className="fas fa-chevron-down text-xs transition-transform duration-200 group-hover:rotate-180"></i>
-                                  </button>
-                                  <div className="absolute top-full right-0 mt-3 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
-                                    {(currentUser.role === 'admin' || currentUser.role === 'staff') && (
-                                        <Link to="/admin" className="flex items-center px-4 py-2 text-sm text-textBase hover:bg-bgMuted hover:text-primary"><i className="fas fa-user-shield w-6"></i>Trang Quản trị</Link>
-                                    )}
-                                    <button onClick={handleLogout} className="w-full flex items-center px-4 py-2 text-sm text-textBase hover:bg-bgMuted hover:text-primary">
-                                        <i className="fas fa-sign-out-alt w-6"></i>Đăng xuất
-                                    </button>
-                                  </div>
-                              </div>
-                          ) : (
-                              <>
-                                  <Link to="/login">
-                                      <Button variant='ghost' size='sm' className={`${isSolid ? 'text-primary hover:bg-primary/10' : 'text-white hover:bg-white/10'}`}>Đăng nhập</Button>
-                                  </Link>
-                                  <Link to="/register">
-                                       <Button variant='primary' size='sm' className="shadow-md hover:shadow-lg hover:shadow-primary/40 transition-shadow">Đăng ký</Button>
-                                  </Link>
-                              </>
-                          )}
-                      </>
-                  )}
-              </div>
-
-              <Link to="/cart" className={`relative transition-colors duration-200 ease-in-out hover:text-primary ${textColor}`} title="Giỏ hàng">
-                <i className="fas fa-shopping-cart text-xl"></i>
-                {totalItemsInCart > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-secondary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
-                    {totalItemsInCart}
-                  </span>
+          <div className="flex lg:grid lg:grid-cols-3 justify-between items-center">
+            {/* LEFT SIDE - LOGO */}
+            <div className="lg:justify-self-start">
+              <Link to="/" className="flex items-center shrink-0">
+                {displayLogo ? (
+                    <img src={displayLogo} alt={`${siteSettings.companyName} Logo`} className="h-10 max-w-[150px] object-contain mr-2 transition-all" />
+                ) : (
+                    <span className="text-2xl font-bold transition-colors text-white">{siteSettings.companyName}</span>
                 )}
               </Link>
-              
-              <button
-                className={`lg:hidden text-2xl ${textColor}`}
-                onClick={() => setIsMobileMenuOpen(true)}
-                aria-label="Mở menu"
-              >
-                <i className="fas fa-bars"></i>
-              </button>
+            </div>
+
+            {/* CENTER - NAVIGATION */}
+            <div className="hidden lg:block lg:justify-self-center">
+                <nav className="flex items-center gap-2">
+                    {mainNavLinks.map((link) => renderNavLink(link))}
+                    {isAuthenticated && (currentUser?.role === 'admin' || currentUser?.role === 'staff') && renderNavLink({label: 'Quản trị', path: '/admin'})}
+                </nav>
+            </div>
+
+            {/* RIGHT SIDE - ACTIONS */}
+            <div className="lg:justify-self-end">
+              <div className="flex items-center gap-4">
+                  {pcBuilderLink && (
+                    <Link to={pcBuilderLink.path} className="hidden lg:block">
+                      <Button 
+                        variant='outline' 
+                        size='sm' 
+                        className="border-primary text-primary hover:bg-primary hover:text-white"
+                      >
+                        <i className="fas fa-tools mr-2"></i>
+                        {pcBuilderLink.label}
+                      </Button>
+                    </Link>
+                  )}
+                
+                  <Link to="/cart" className="relative transition-colors duration-200 ease-in-out text-gray-200 hover:text-white" title="Giỏ hàng">
+                      <i className="fas fa-shopping-cart text-xl"></i>
+                      {totalItemsInCart > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-secondary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+                          {totalItemsInCart}
+                      </span>
+                      )}
+                  </Link>
+
+                  <div className="hidden lg:flex items-center gap-2 shrink-0">
+                      {!isLoading && (
+                          <>
+                              {isAuthenticated && currentUser ? (
+                                  <div className="relative group">
+                                      <button className="flex items-center gap-2 transition-colors duration-200 ease-in-out text-gray-200 hover:text-white">
+                                          <img src={currentUser.imageUrl || `https://ui-avatars.com/api/?name=${currentUser.username.charAt(0)}&background=random`} alt="avatar" className="w-8 h-8 rounded-full"/>
+                                          <span className="text-sm font-semibold hidden md:inline">{currentUser.username}</span>
+                                          <i className="fas fa-chevron-down text-xs transition-transform duration-200 group-hover:rotate-180"></i>
+                                      </button>
+                                      <div className="absolute top-full right-0 mt-3 w-56 bg-white rounded-md shadow-lg py-2 z-50 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto transform group-hover:scale-100 scale-95 origin-top-right">
+                                          <div className="px-4 py-2 border-b border-gray-200">
+                                            <p className="text-sm font-semibold text-textBase">{currentUser.username}</p>
+                                            <p className="text-xs text-textMuted truncate">{currentUser.email}</p>
+                                          </div>
+                                          {(currentUser.role === 'admin' || currentUser.role === 'staff') && (
+                                              <Link to="/admin" className="flex items-center px-4 py-2 text-sm text-textBase hover:bg-bgMuted hover:text-primary"><i className="fas fa-user-shield w-6"></i>Trang Quản trị</Link>
+                                          )}
+                                          <button onClick={handleLogout} className="w-full flex items-center px-4 py-2 text-sm text-textBase hover:bg-bgMuted hover:text-primary">
+                                              <i className="fas fa-sign-out-alt w-6"></i>Đăng xuất
+                                          </button>
+                                      </div>
+                                  </div>
+                              ) : (
+                                  <>
+                                      <Link to="/login">
+                                          <Button variant='ghost' size='sm' className="text-gray-200 hover:bg-white/20 hover:text-white">Đăng nhập</Button>
+                                      </Link>
+                                      <Link to="/register">
+                                          <Button variant='primary' size='sm' className="shadow-md hover:shadow-lg hover:shadow-primary/40 transition-shadow">Đăng ký</Button>
+                                      </Link>
+                                  </>
+                              )}
+                          </>
+                      )}
+                  </div>
+                
+                <button
+                  className="lg:hidden text-2xl text-gray-200 hover:text-white"
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  aria-label="Mở menu"
+                >
+                  <i className="fas fa-bars"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -213,8 +240,9 @@ const Header: React.FC = () => {
                 </button>
             </div>
 
-            <nav className="flex-grow p-4 space-y-2">
-                {currentNavLinks.map((link) => renderNavLink(link, true))}
+            <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
+                {mainNavLinks.map((link) => renderNavLink(link, true))}
+                {pcBuilderLink && renderNavLink(pcBuilderLink, true)}
                 {isAuthenticated && (currentUser?.role === 'admin' || currentUser?.role === 'staff') && renderNavLink({label: 'Quản trị', path: '/admin'}, true)}
             </nav>
 
