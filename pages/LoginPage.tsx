@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // Updated imports for v6/v7
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants.tsx';
@@ -9,16 +9,24 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate(); // Changed from useHistory
+  const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate(from, { replace: true }); // Changed from history.replace
+    // This effect is the single source of truth for navigation after authentication.
+    if (isAuthenticated && currentUser) {
+      if (currentUser.role === 'admin' || currentUser.role === 'staff') {
+        // For admin/staff, always go to the admin page.
+        navigate('/admin', { replace: true });
+      } else {
+        // For regular customers, go back to the page they were on, or to the homepage.
+        // Avoids a redirect loop if 'from' is the login page itself.
+        navigate(from === '/login' ? '/' : from, { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate, from]);
+  }, [isAuthenticated, currentUser, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +36,10 @@ const LoginPage: React.FC = () => {
       return;
     }
 
+    // The handler's only job is to attempt the login and set errors.
+    // Navigation is handled declaratively by the useEffect above.
     const user = await login({ email, password });
-    if (user) {
-      navigate(from, { replace: true }); // Changed from history.replace
-    } else {
+    if (!user) {
       setError('Email hoặc mật khẩu không đúng. Vui lòng thử lại.');
     }
   };

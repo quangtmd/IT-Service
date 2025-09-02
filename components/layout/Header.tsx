@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import * as Constants from '../../constants.tsx';
 import { useCart } from '../../hooks/useCart';
@@ -57,6 +57,32 @@ const Header: React.FC = () => {
     };
   }, [loadData]);
 
+  const finalNavLinks = useMemo(() => {
+    let links = [...currentNavLinks];
+    const isAdminLinkPresent = links.some(link => link.path === '/admin');
+
+    if (isAuthenticated && (currentUser?.role === 'admin' || currentUser?.role === 'staff')) {
+      if (!isAdminLinkPresent) {
+        const adminLink: NavLinkItem = {
+          label: 'Quản trị',
+          path: '/admin',
+          icon: 'fas fa-user-shield',
+        };
+        // Insert after 'Liên hệ' or at the end
+        const contactIndex = links.findIndex(link => link.path === '/contact');
+        if (contactIndex !== -1) {
+            links.splice(contactIndex + 1, 0, adminLink);
+        } else {
+            links.push(adminLink);
+        }
+      }
+    } else {
+      links = links.filter(link => link.path !== '/admin');
+    }
+    return links;
+  }, [currentNavLinks, isAuthenticated, currentUser]);
+
+
   useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? 'hidden' : 'unset';
     return () => { document.body.style.overflow = 'unset'; };
@@ -68,7 +94,7 @@ const Header: React.FC = () => {
     navigate('/');
   };
 
-  const mainNavLinks = currentNavLinks;
+  const mainNavLinks = finalNavLinks;
   const desktopNavLinks = mainNavLinks.filter(link => link.path !== Constants.PC_BUILDER_PATH && link.path !== '/blog');
 
   const renderUserAuth = (isMobile = false) => {
