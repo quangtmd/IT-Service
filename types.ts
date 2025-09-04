@@ -1,6 +1,7 @@
 
 
 import React from 'react';
+import { AdminPermission } from './contexts/AuthContext';
 
 export interface Product {
   id: string;
@@ -150,6 +151,8 @@ export interface GroundingChunk {
 export type UserRole = 'admin' | 'staff' | 'customer';
 export type StaffRole = 'Quản lý Bán hàng' | 'Biên tập Nội dung' | 'Trưởng nhóm Kỹ thuật' | 'Chuyên viên Hỗ trợ' | 'Nhân viên Toàn quyền';
 export const STAFF_ROLE_OPTIONS: StaffRole[] = ['Quản lý Bán hàng', 'Biên tập Nội dung', 'Trưởng nhóm Kỹ thuật', 'Chuyên viên Hỗ trợ', 'Nhân viên Toàn quyền'];
+export type UserStatus = 'Đang hoạt động' | 'Tạm nghỉ' | 'Đã nghỉ việc';
+export const USER_STATUS_OPTIONS: UserStatus[] = ['Đang hoạt động', 'Tạm nghỉ', 'Đã nghỉ việc'];
 
 
 export interface User {
@@ -161,6 +164,13 @@ export interface User {
   staffRole?: StaffRole; 
   imageUrl?: string; 
   isLocked?: boolean; // Added for user locking
+
+  // HRM Fields
+  position?: string;
+  phone?: string;
+  address?: string;
+  joinDate?: string; // ISO string date
+  status?: UserStatus;
 }
 
 export interface Project {

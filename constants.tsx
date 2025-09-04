@@ -17,7 +17,7 @@ import {
 export const ADMIN_EMAIL = "quangtmdit@gmail.com"; 
 
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường API_KEY.";
-export const BACKEND_API_BASE_URL = "http://localhost:3001"; 
+export const BACKEND_API_BASE_URL = process.env.BACKEND_API_BASE_URL || "http://localhost:3001"; 
 
 // --- STORAGE KEYS ---
 export const SITE_LOGO_STORAGE_KEY = "siteLogoUrl_v1";
@@ -27,6 +27,7 @@ export const DISCOUNTS_STORAGE_KEY = 'siteDiscountCodes_v1';
 export const THEME_SETTINGS_STORAGE_KEY = 'siteThemeSettings_v1';
 export const CUSTOM_MENU_STORAGE_KEY = 'siteCustomMenu_v1';
 export const PRODUCTS_STORAGE_KEY = 'siteProducts_v1';
+export const ORDERS_STORAGE_KEY = 'siteOrders_v1';
 export const MEDIA_LIBRARY_STORAGE_KEY = 'siteMediaLibrary_v1'; // For new media library
 export const CHAT_LOGS_STORAGE_KEY = 'siteChatLogs_v1'; // For storing chat logs
 

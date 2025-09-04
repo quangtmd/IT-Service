@@ -1,33 +1,44 @@
+
+
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User, UserRole, AdminNotification, StaffRole, STAFF_ROLE_OPTIONS } from '../types'; 
 import * as Constants from '../constants.tsx'; // Changed import
 
 export type AdminPermission = 
+  // General
   | 'viewDashboard'
+  | 'viewNotifications'
+  // Website Content Management
   | 'viewContent'
   | 'manageProducts'
   | 'viewProducts'
   | 'manageArticles'
   | 'viewArticles'
-  | 'manageSiteSettings'
   | 'manageFaqs'
+  // User Management
   | 'viewUsers'
   | 'manageStaff'
   | 'viewCustomers'
+  // Sales Management
   | 'viewSales'
   | 'manageOrders'
   | 'viewOrders'
   | 'manageDiscounts'
+  // Appearance & Settings
   | 'viewAppearance'
   | 'manageTheme'
   | 'manageMenu'
-  | 'viewNotifications'
-  | 'viewPerformance'
-  | 'viewSecurity'
-  | 'viewAnalytics'
-  | 'viewBackup'
-  | 'viewMaintenance'
-  | 'viewSupport';
+  | 'manageSiteSettings'
+  // HRM (Future)
+  | 'viewHrm'
+  | 'manageEmployees'
+  | 'managePayroll'
+  // Accounting (Future)
+  | 'viewAccounting'
+  | 'manageInvoices'
+  | 'viewReports'
+  // High-level (Future)
+  | 'viewAnalytics';
 
 
 export interface AuthContextType {
@@ -303,17 +314,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (currentUser.role === 'staff' && currentUser.staffRole) {
         const currentStaffRoleCleaned = currentUser.staffRole.trim() as StaffRole;
+        
+        const allPermissions: AdminPermission[] = [
+          'viewDashboard', 'viewNotifications', 'viewContent', 'manageProducts', 'viewProducts', 
+          'manageArticles', 'viewArticles', 'manageFaqs', 'viewUsers', 'manageStaff', 'viewCustomers', 
+          'viewSales', 'manageOrders', 'viewOrders', 'manageDiscounts', 'viewAppearance', 
+          'manageTheme', 'manageMenu', 'manageSiteSettings', 'viewHrm', 'manageEmployees', 
+          'managePayroll', 'viewAccounting', 'manageInvoices', 'viewReports', 'viewAnalytics'
+        ];
+        
         const staffPermissionsMap: Record<StaffRole, AdminPermission[]> = {
-            'Quản lý Bán hàng': ['viewSales', 'viewOrders', 'manageOrders', 'manageDiscounts', 'viewNotifications', 'viewProducts', 'viewCustomers'],
-            'Biên tập Nội dung': ['viewContent', 'viewArticles', 'manageArticles', 'manageFaqs', 'viewNotifications'],
-            'Trưởng nhóm Kỹ thuật': ['viewContent', 'viewProducts', 'manageProducts', 'viewNotifications', 'viewSupport'], 
-            'Chuyên viên Hỗ trợ': ['viewSales', 'viewOrders', 'viewNotifications', 'viewSupport', 'viewCustomers', 'manageFaqs'], 
-            'Nhân viên Toàn quyền': [
-                'viewDashboard', 'viewContent', 'manageProducts', 'viewProducts', 'manageArticles', 'viewArticles', 
-                'manageSiteSettings', 'manageFaqs', 'viewUsers', 'manageStaff', 'viewCustomers', 'viewSales', 
-                'manageOrders', 'viewOrders', 'manageDiscounts', 'viewAppearance', 'manageTheme', 'manageMenu', 
-                'viewNotifications', 'viewPerformance', 'viewSecurity', 'viewAnalytics', 'viewBackup', 'viewMaintenance', 'viewSupport'
-            ],
+            'Quản lý Bán hàng': ['viewDashboard', 'viewSales', 'viewOrders', 'manageOrders', 'manageDiscounts', 'viewNotifications', 'viewProducts', 'viewCustomers', 'viewContent'],
+            'Biên tập Nội dung': ['viewDashboard', 'viewContent', 'viewArticles', 'manageArticles', 'manageFaqs', 'viewNotifications', 'manageSiteSettings'],
+            'Trưởng nhóm Kỹ thuật': ['viewDashboard', 'viewContent', 'viewProducts', 'manageProducts', 'viewNotifications', 'viewOrders'], 
+            'Chuyên viên Hỗ trợ': ['viewDashboard', 'viewSales', 'viewOrders', 'viewNotifications', 'viewCustomers', 'manageFaqs'], 
+            'Nhân viên Toàn quyền': allPermissions
         };
         const userStaffPermissions = staffPermissionsMap[currentStaffRoleCleaned] || [];
         return requiredPermissions.every(rp => userStaffPermissions.includes(rp));
