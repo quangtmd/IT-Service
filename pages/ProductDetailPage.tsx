@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { MOCK_PRODUCTS } from '../data/mockData';
 import { Product } from '../types';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
@@ -12,6 +11,10 @@ import * as Constants from '../constants';
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'description' | 'specs'>('description');
@@ -19,35 +22,62 @@ const ProductDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const foundProduct = MOCK_PRODUCTS.find(p => p.id === productId);
-    setProduct(foundProduct || null);
-    if (foundProduct && foundProduct.imageUrls && foundProduct.imageUrls.length > 0) {
-      setMainImage(foundProduct.imageUrls[0]);
-    } else if (foundProduct) {
-      setMainImage(`https://picsum.photos/seed/${foundProduct.id}/600/400`);
-    }
+    const fetchProductData = async () => {
+      if (!productId) {
+        setError("Không có ID sản phẩm.");
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Fetch the main product
+        const productRes = await fetch(`${Constants.BACKEND_API_BASE_URL}/api/products/${productId}`);
+        if (!productRes.ok) {
+          throw new Error('Không tìm thấy sản phẩm.');
+        }
+        const foundProduct: Product = await productRes.json();
+        setProduct(foundProduct);
+        setMainImage(foundProduct.imageUrls?.[0] || `https://picsum.photos/seed/${foundProduct.id}/600/400`);
+
+        // Fetch all products to find related ones (can be optimized with a dedicated backend endpoint)
+        const allProductsRes = await fetch(`${Constants.BACKEND_API_BASE_URL}/api/products`);
+        if (allProductsRes.ok) {
+            const allProducts: Product[] = await allProductsRes.json();
+            const related = allProducts.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
+            setRelatedProducts(related);
+        }
+
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+        window.scrollTo(0, 0);
+      }
+    };
+
+    fetchProductData();
     setQuantity(1);
     setActiveTab('description');
-    window.scrollTo(0, 0);
   }, [productId]);
 
-  const handleAddToCart = () => {
-    if (product) {
-      addToCart(product, quantity);
-    }
-  };
+  const handleAddToCart = () => { if (product) addToCart(product, quantity); };
+  const handleBuyNow = () => { if (product) { addToCart(product, quantity); navigate('/checkout'); } };
 
-  const handleBuyNow = () => {
-    if (product) {
-      addToCart(product, quantity);
-      navigate('/checkout');
-    }
-  };
+  if (isLoading) {
+    return (
+        <div className="container mx-auto px-4 py-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-textMuted">Đang tải chi tiết sản phẩm...</p>
+        </div>
+    );
+  }
 
-  if (!product) {
+  if (error || !product) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-semibold text-textBase">Không tìm thấy sản phẩm</h2>
+        <h2 className="text-2xl font-semibold text-textBase">{error || 'Không tìm thấy sản phẩm'}</h2>
         <Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
           Quay lại cửa hàng
         </Link>
@@ -55,7 +85,6 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  const relatedProducts = MOCK_PRODUCTS.filter(p => p.subCategory === product.subCategory && p.id !== product.id && p.mainCategory !== "PC Xây Dựng").slice(0, 4);
   const savings = product.originalPrice && product.originalPrice > product.price ? product.originalPrice - product.price : 0;
   const mainCategoryInfo = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.name === product.mainCategory);
   const subCategoryInfo = mainCategoryInfo?.subCategories.find(sc => sc.name === product.subCategory);
@@ -63,7 +92,6 @@ const ProductDetailPage: React.FC = () => {
   return (
     <div className="bg-bgCanvas">
       <div className="container mx-auto px-4 py-8">
-        {/* --- BREADCRUMB NAVIGATION --- */}
         <nav aria-label="breadcrumb" className="text-sm text-textMuted mb-6 bg-bgBase p-3 rounded-md border border-borderDefault">
           <ol className="flex items-center space-x-1.5 flex-wrap">
             <li><Link to="/home" className="hover:text-primary">Trang chủ</Link></li>
@@ -90,7 +118,6 @@ const ProductDetailPage: React.FC = () => {
         
         <div className="bg-bgBase p-4 md:p-6 rounded-lg shadow-lg border border-borderDefault">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            {/* Image Section (Left) */}
             <div className="lg:col-span-2">
               <div className="mb-4 border border-borderDefault rounded-lg overflow-hidden shadow-md sticky top-24">
                 <img src={mainImage} alt={product.name} className="w-full h-auto object-contain max-h-[450px]" />
@@ -109,7 +136,6 @@ const ProductDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Product Info Section (Right) */}
             <div className="lg:col-span-3">
               <h1 className="text-2xl md:text-3xl font-bold text-textBase mb-3">{product.name}</h1>
               <div className="flex items-center text-sm text-textMuted mb-3 space-x-4">
@@ -167,7 +193,6 @@ const ProductDetailPage: React.FC = () => {
                       <li>Miễn phí cài đặt phần mềm cơ bản.</li>
                   </ul>
               </div>
-
             </div>
           </div>
         </div>

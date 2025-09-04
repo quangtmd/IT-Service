@@ -1,24 +1,60 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
-import { MOCK_PRODUCTS } from '../../data/mockData';
+
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Product } from '../../types';
 import ProductCard from '../shop/ProductCard';
 import Button from '../ui/Button';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
+import * as Constants from '../../constants.tsx';
 
 const HotProducts: React.FC = () => {
   const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
+  const [hotProducts, setHotProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  let hotProducts = MOCK_PRODUCTS.filter(p => p.originalPrice && p.mainCategory !== "PC Xây Dựng").slice(0, 4); 
-  if (hotProducts.length < 4 && MOCK_PRODUCTS.length > hotProducts.length) {
-    const additionalNeeded = Math.max(0, 4 - hotProducts.length);
-    const otherProducts = MOCK_PRODUCTS.filter(p => !p.originalPrice && p.mainCategory !== "PC Xây Dựng" && !hotProducts.find(hp => hp.id === p.id));
-    hotProducts.push(...otherProducts.slice(0, additionalNeeded));
-  }
-   if (hotProducts.length === 0 && MOCK_PRODUCTS.length > 0) {
-    hotProducts = MOCK_PRODUCTS.filter(p => p.mainCategory !== "PC Xây Dựng").slice(0,4);
+  useEffect(() => {
+    const fetchHotProducts = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${Constants.BACKEND_API_BASE_URL}/api/products/featured`);
+        if (!response.ok) {
+          throw new Error('Không thể tải sản phẩm nổi bật.');
+        }
+        const data: Product[] = await response.json();
+        setHotProducts(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Lỗi không xác định');
+        console.error("Lỗi khi fetch sản phẩm nổi bật:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHotProducts();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <section className="home-section bg-bgMuted">
+        <div className="container mx-auto px-4 text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-textMuted">Đang tải sản phẩm nổi bật...</p>
+        </div>
+      </section>
+    );
   }
 
+  if (error) {
+     return (
+      <section className="home-section bg-bgMuted">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-red-500">Lỗi: {error}</p>
+        </div>
+      </section>
+    );
+  }
 
   if (hotProducts.length === 0) {
     return (

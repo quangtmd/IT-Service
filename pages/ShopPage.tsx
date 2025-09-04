@@ -2,15 +2,14 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/shop/ProductCard';
-import { MOCK_PRODUCTS } from '../data/mockData';
 import { Product, MainCategoryInfo } from '../types';
 import SearchBar from '../components/shared/SearchBar';
 import Pagination from '../components/shared/Pagination';
 import * as Constants from '../constants.tsx';
 import ProductCarouselSection from '../components/shop/ProductCarouselSection';
-import CategorySidebar from '../components/shop/CategorySidebar'; // Import the new sidebar
+import CategorySidebar from '../components/shop/CategorySidebar';
 
-const PRODUCTS_PER_PAGE = 12; // Adjusted for new layout
+const PRODUCTS_PER_PAGE = 12;
 
 const ProductCategoryNav: React.FC<{
   categories: MainCategoryInfo[];
@@ -44,10 +43,11 @@ const ShopPage: React.FC = () => {
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const hasFilters = location.search && location.search.length > 1;
 
-  // --- START: STATE AND LOGIC FOR FILTERED VIEW ---
-  const [allProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
   const [currentFilters, setCurrentFilters] = useState({
     mainCategory: null as string | null,
     subCategory: null as string | null,
@@ -57,20 +57,39 @@ const ShopPage: React.FC = () => {
     tags: null as string | null,
   });
   const [currentPage, setCurrentPage] = useState(1);
+  
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${Constants.BACKEND_API_BASE_URL}/api/products`);
+        if (!response.ok) {
+          throw new Error('Không thể tải dữ liệu sản phẩm. Vui lòng thử lại sau.');
+        }
+        const data: Product[] = await response.json();
+        setAllProducts(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi không xác định.');
+        console.error("Lỗi khi fetch sản phẩm:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const handleScroll = useCallback(() => {
-    // Check if on desktop and if scrolled past the header
     if (window.innerWidth >= 1024) {
       setIsSidebarCollapsed(window.scrollY > 160);
     } else {
-      // Always keep it expanded on mobile/tablet
       setIsSidebarCollapsed(false);
     }
   }, []);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Check initial position
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
@@ -88,31 +107,26 @@ const ShopPage: React.FC = () => {
 
   const handleFilterChange = (filterType: string, value: string | null) => {
     const newParams = new URLSearchParams(location.search);
-    
     if (value) {
         newParams.set(filterType, value);
     } else {
         newParams.delete(filterType);
     }
-
     if (filterType === 'mainCategory') {
         newParams.delete('subCategory');
     }
-
     navigate(`/shop?${newParams.toString()}`);
   };
   
   const handleSearch = (term: string) => {
     const newParams = new URLSearchParams(location.search);
-    if (term) {
-      newParams.set('q', term);
-    } else {
-      newParams.delete('q');
-    }
+    if (term) newParams.set('q', term);
+    else newParams.delete('q');
     navigate(`/shop?${newParams.toString()}`);
   };
 
   const filteredProducts = useMemo(() => {
+    if (isLoading) return [];
     let products = allProducts.filter(p => p.mainCategory !== "PC Xây Dựng"); 
     
     if (currentFilters.mainCategory) {
@@ -121,21 +135,12 @@ const ShopPage: React.FC = () => {
         products = products.filter(p => p.mainCategory === mainCat.name);
         if (currentFilters.subCategory) {
           const subCat = mainCat.subCategories.find(sc => sc.slug === currentFilters.subCategory);
-          if (subCat) {
-            products = products.filter(p => p.subCategory === subCat.name);
-          }
+          if (subCat) products = products.filter(p => p.subCategory === subCat.name);
         }
       }
     }
-
-    if (currentFilters.brand) {
-      products = products.filter(p => p.brand === currentFilters.brand);
-    }
-
-    if (currentFilters.status) {
-      products = products.filter(p => p.status === currentFilters.status);
-    }
-
+    if (currentFilters.brand) products = products.filter(p => p.brand === currentFilters.brand);
+    if (currentFilters.status) products = products.filter(p => p.status === currentFilters.status);
     if (currentFilters.q) {
       const lowerSearchTerm = currentFilters.q.toLowerCase();
       products = products.filter(p =>
@@ -145,16 +150,12 @@ const ShopPage: React.FC = () => {
         (p.tags && p.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm)))
       );
     }
-
     if (currentFilters.tags) {
         const tagsToFilter = currentFilters.tags.toLowerCase().split(',');
-        products = products.filter(p => 
-            p.tags && p.tags.some(tag => tagsToFilter.includes(tag.toLowerCase()))
-        );
+        products = products.filter(p => p.tags && p.tags.some(tag => tagsToFilter.includes(tag.toLowerCase())));
     }
-
     return products;
-  }, [allProducts, currentFilters]);
+  }, [allProducts, currentFilters, isLoading]);
 
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
@@ -165,7 +166,6 @@ const ShopPage: React.FC = () => {
 
   const getCurrentCategoryName = () => {
     if (currentFilters.tags) return `Sản phẩm có tag "${currentFilters.tags}"`;
-
     let name = "Tất cả sản phẩm";
     if (currentFilters.mainCategory) {
       const mainCat = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.slug === currentFilters.mainCategory);
@@ -180,14 +180,17 @@ const ShopPage: React.FC = () => {
     if (currentFilters.brand) name += ` (Hãng: ${currentFilters.brand})`;
     if (currentFilters.status) name += ` (Tình trạng: ${currentFilters.status})`;
     if (currentFilters.q) name = `Kết quả cho "${currentFilters.q}"` + (currentFilters.mainCategory || currentFilters.brand || currentFilters.status ? ` trong ${name}` : ``);
-    
     return name;
   };
-
-  // --- END: LOGIC FOR FILTERED VIEW ---
-
-  const renderMainContent = () => {
-    if(hasFilters) {
+  
+  const renderContent = () => {
+    if (isLoading) {
+      return <div className="text-center py-20 w-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div><p className="mt-4">Đang tải sản phẩm...</p></div>;
+    }
+    if (error) {
+      return <div className="text-center py-20 w-full text-red-500 bg-red-50 p-4 rounded-lg"><strong>Lỗi:</strong> {error}</div>;
+    }
+    if (hasFilters) {
         return (
             <main className="flex-grow w-full lg:w-3/4">
                 <ProductCategoryNav
@@ -224,7 +227,6 @@ const ShopPage: React.FC = () => {
             </main>
         )
     }
-
     return (
         <main className="flex-grow w-full lg:w-3/4">
             {Constants.PRODUCT_CATEGORIES_HIERARCHY
@@ -242,8 +244,6 @@ const ShopPage: React.FC = () => {
     )
   }
 
-
-  // --- CONDITIONAL RENDERING ---
   return (
     <div className="bg-bgCanvas">
       <div className="container mx-auto px-4 py-8">
@@ -260,7 +260,7 @@ const ShopPage: React.FC = () => {
               isCollapsed={isSidebarCollapsed}
             />
           </aside>
-          {renderMainContent()}
+          {renderContent()}
         </div>
       </div>
     </div>
