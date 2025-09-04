@@ -3,7 +3,8 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 
 const app = express();
-const port = 3001; // Backend sẽ chạy ở cổng 3001
+// Railway sẽ cung cấp biến PORT. Nếu không có, dùng cổng 3001 cho local.
+const port = process.env.PORT || 3001; 
 
 // Kích hoạt CORS để React App (chạy ở cổng khác) có thể gọi API
 app.use(cors());
@@ -45,12 +46,14 @@ CREATE TABLE products (
 
 
 // --- CẤU HÌNH KẾT NỐI MYSQL ---
-// QUAN TRỌNG: Thay đổi các thông tin này cho phù hợp với database của bạn
+// Đọc thông tin kết nối từ các biến môi trường mà Railway cung cấp
+// Sẽ tự động dùng các biến này khi được deploy trên Railway.
 const dbConfig = {
-  host: 'localhost',       // Thường là 'localhost'
-  user: 'root',            // Tên người dùng MySQL của bạn
-  password: 'your_password', // Mật khẩu MySQL của bạn
-  database: 'iq_technology_db'  // Tên database của bạn
+  host: process.env.MYSQLHOST || 'localhost',
+  user: process.env.MYSQLUSER || 'root',
+  password: process.env.MYSQLPASSWORD || 'your_password', // Thay 'your_password' bằng mật khẩu local của bạn
+  database: process.env.MYSQLDATABASE || 'iq_technology_db', // Thay 'iq_technology_db' bằng tên DB local của bạn
+  port: process.env.MYSQLPORT || 3306
 };
 
 let pool;
@@ -65,15 +68,15 @@ try {
 // Hàm trợ giúp để xử lý các trường JSON
 const parseJsonFields = (product) => {
     try {
-        if (product.imageUrls) product.imageUrls = JSON.parse(product.imageUrls);
-        if (product.specifications) product.specifications = JSON.parse(product.specifications);
-        if (product.tags) product.tags = JSON.parse(product.tags);
+        if (product.imageUrls && typeof product.imageUrls === 'string') product.imageUrls = JSON.parse(product.imageUrls);
+        if (product.specifications && typeof product.specifications === 'string') product.specifications = JSON.parse(product.specifications);
+        if (product.tags && typeof product.tags === 'string') product.tags = JSON.parse(product.tags);
     } catch (e) {
         console.error(`Lỗi khi phân tích JSON cho sản phẩm ID ${product.id}:`, e);
         // Đặt giá trị mặc định để tránh lỗi ở frontend
-        if (typeof product.imageUrls !== 'object') product.imageUrls = [];
-        if (typeof product.specifications !== 'object') product.specifications = {};
-        if (typeof product.tags !== 'object') product.tags = [];
+        if (typeof product.imageUrls !== 'object' || product.imageUrls === null) product.imageUrls = [];
+        if (typeof product.specifications !== 'object' || product.specifications === null) product.specifications = {};
+        if (typeof product.tags !== 'object' || product.tags === null) product.tags = [];
     }
     return product;
 }
@@ -92,10 +95,16 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-// API để lấy các sản phẩm NỔI BẬT (ví dụ: có khuyến mãi)
+// API để lấy các sản phẩm NỔI BẬT (ví dụ: có tag 'Bán chạy' hoặc có khuyến mãi)
 app.get('/api/products/featured', async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM products WHERE isVisible = TRUE AND originalPrice IS NOT NULL LIMIT 4");
+        // Ưu tiên sản phẩm có tag 'Bán chạy', nếu không đủ thì lấy sản phẩm có khuyến mãi
+        const [rows] = await pool.query(`
+            (SELECT * FROM products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, '["Bán chạy"]'))
+            UNION
+            (SELECT * FROM products WHERE isVisible = TRUE AND originalPrice IS NOT NULL AND id NOT IN (SELECT id FROM products WHERE JSON_CONTAINS(tags, '["Bán chạy"]')))
+            LIMIT 4
+        `);
         const products = rows.map(parseJsonFields);
         res.json(products);
     } catch (err) {
