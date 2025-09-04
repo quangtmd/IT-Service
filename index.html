@@ -291,6 +291,66 @@
         margin-top: 0;
     }
 
+    /* --- MENU ANIMATIONS --- */
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mega-menu-panel, .flyout-panel {
+      animation: fade-in 0.2s ease-out forwards;
+    }
+    
+    /* --- DYNAMIC SIDEBAR STYLES --- */
+    @media (min-width: 1024px) {
+        .shop-sidebar {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 280px; /* Default width */
+        }
+        .shop-sidebar.is-collapsed-parent {
+            width: 90px; /* Collapsed width */
+        }
+        .shop-sidebar.is-collapsed-parent:hover {
+            width: 280px; /* Expanded width on hover */
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            z-index: 30; /* Ensure it appears over content */
+        }
+        
+        /* General class for all text labels inside the sidebar that should collapse */
+        .sidebar-header-text,
+        .sidebar-item-label,
+        .sidebar-footer-button-text {
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        /* When collapsed, hide the text */
+        .is-collapsed .sidebar-header-text,
+        .is-collapsed .sidebar-item-label,
+        .is-collapsed .sidebar-footer-button-text {
+            opacity: 0;
+            transform: translateX(-5px); /* Slight slide out effect */
+            pointer-events: none;
+            white-space: nowrap; /* Prevent wrapping during transition */
+        }
+
+        /* When the collapsed sidebar is hovered, show the text again */
+        .shop-sidebar.is-collapsed-parent:hover .is-collapsed .sidebar-header-text,
+        .shop-sidebar.is-collapsed-parent:hover .is-collapsed .sidebar-item-label,
+        .shop-sidebar.is-collapsed-parent:hover .is-collapsed .sidebar-footer-button-text {
+            opacity: 1;
+            transform: translateX(0);
+            transition-delay: 0.15s; /* Delay text appearance on expand */
+        }
+
+        /* Ensure flyout menu position is correct on hover */
+        .is-collapsed .flyout-panel {
+           left: 100%; 
+        }
+    }
+
+
   </style>
   <script>
     function applyThemeFromLocalStorage() {

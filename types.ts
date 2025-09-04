@@ -45,6 +45,8 @@ export interface Article {
   date: string;
   category: string; 
   content?: string; 
+  isAIGenerated?: boolean; // New field to mark AI-generated articles
+  imageSearchQuery?: string; // New field for AI-suggested image search term
 }
 
 export interface CartItem extends Product {
@@ -206,6 +208,14 @@ export interface ShippingInfo {
   trackingNumber?: string;
   shippingStatus?: 'Chưa giao' | 'Đang lấy hàng' | 'Đang giao' | 'Đã giao' | 'Gặp sự cố';
 }
+
+export interface PaymentInfo {
+  method: 'Thanh toán khi nhận hàng (COD)' | 'Chuyển khoản ngân hàng';
+  status: 'Chưa thanh toán' | 'Đã thanh toán' | 'Đã cọc';
+  transactionId?: string; // Optional: For online gateway transaction IDs
+  amountToPay?: number; // Optional: To store deposit/full amount to be paid
+}
+
 export interface Order {
   id: string;
   customerInfo: CheckoutFormData;
@@ -214,6 +224,7 @@ export interface Order {
   orderDate: string; 
   status: OrderStatus;
   shippingInfo?: ShippingInfo; // Added for shipping management
+  paymentInfo: PaymentInfo;
 }
 
 export interface AdminNotification {

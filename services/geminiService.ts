@@ -1,17 +1,12 @@
-
-
-
-
-
 // Fix: Import correct types from @google/genai
 // Fix: Removed invalid non-English import.
-import { GoogleGenAI, Chat, GenerateContentResponse, GenerateContentParameters, Part, Content } from "@google/genai"; // Added Part, Content
+import { GoogleGenAI, Chat, GenerateContentResponse, GenerateContentParameters, Part, Content, Type } from "@google/genai"; // Added Part, Content, Type
 import * as Constants from '../constants.tsx';
-import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings } from "../types"; // Added SiteSettings
+import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article } from "../types"; // Added SiteSettings, Article
 
-const CHAT_MODEL_NAME = 'gemini-2.5-flash-preview-04-17';
-const BUILDER_MODEL_NAME = 'gemini-2.5-flash-preview-04-17';
-const IMAGE_MODEL_NAME = 'imagen-3.0-generate-002';
+const CHAT_MODEL_NAME = 'gemini-2.5-flash';
+const BUILDER_MODEL_NAME = 'gemini-2.5-flash';
+const IMAGE_MODEL_NAME = 'imagen-4.0-generate-001';
 
 let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
@@ -63,7 +58,6 @@ Khi cung cấp link, hãy đảm bảo link đó đầy đủ và có thể nh�
     history: history || [],
     config: {
       systemInstruction: systemInstructionOverride || defaultSystemInstruction,
-      thinkingConfig: { thinkingBudget: 0 } 
     },
   });
   return chatSessionInstance;
@@ -168,6 +162,39 @@ export const generateTextWithGoogleSearch = async (
   }
 };
 
+export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
+    const client = getAiClient();
+    const prompt = `Làm một biên tập viên tin tức công nghệ. Sử dụng Google Search để tìm 3 tin tức công nghệ mới và thú vị nhất trong vài ngày qua. 
+    Đối với mỗi tin tức, hãy cung cấp một tiêu đề hấp dẫn, một bản tóm tắt (summary) khoảng 2-3 câu, một nội dung chi tiết (content) được định dạng bằng Markdown, một danh mục (category) từ danh sách sau: [${Constants.ARTICLE_CATEGORIES.join(', ')}], và một cụm từ khóa tìm kiếm hình ảnh bằng tiếng Anh (imageSearchQuery) ngắn gọn, phù hợp với nội dung.
+    Trả về kết quả dưới dạng một mảng JSON.`;
+
+    try {
+        const response = await client.models.generateContent({
+            model: CHAT_MODEL_NAME,
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            }
+        });
+
+        let jsonStr = response.text.trim();
+        // Clean up markdown fences if they exist
+        const fenceRegex = /^\`\`\`(\w*)?\s*\n?(.*?)\n?\s*\`\`\`$/s;
+        const match = jsonStr.match(fenceRegex);
+        if (match && match[2]) {
+            jsonStr = match[2].trim();
+        }
+
+        const articles = JSON.parse(jsonStr) as Partial<Article>[];
+        return articles;
+
+    } catch (error) {
+        console.error("Error fetching latest tech news from Gemini:", error);
+        throw new Error("Không thể lấy tin tức mới nhất từ AI. Vui lòng thử lại sau.");
+    }
+};
+
+
 export const generateImage = async (prompt: string): Promise<string> => {
   const client = getAiClient(); 
   try {
@@ -232,4 +259,5 @@ export default {
   generateTextWithGoogleSearch,
   generateImage,
   sendMessageWithImage,
+  fetchLatestTechNews,
 };

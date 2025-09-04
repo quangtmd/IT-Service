@@ -7,7 +7,7 @@ import { ADMIN_EMAIL } from '../constants';
 export const MOCK_PRODUCTS: Product[] = [
   // Máy tính để bàn (PC)
   { id: 'pc001', name: 'PC Văn Phòng Tiêu Chuẩn VP01', mainCategory: "Máy tính để bàn (PC)", subCategory: "Máy tính văn phòng", category: "Máy tính văn phòng", price: 8500000, imageUrls: [`https://picsum.photos/seed/pcvp01/600/400`, `https://picsum.photos/seed/pcvp01_2/600/400`, `https://picsum.photos/seed/pcvp01_3/600/400`], description: 'PC tối ưu cho công việc văn phòng, học tập trực tuyến.', specifications: { CPU: 'Intel Core i3-12100', RAM: '8GB DDR4', SSD: '256GB NVMe', OS: 'Windows 11 Home (Bản quyền)' }, stock: 10, status: 'Mới', brand: 'IQ Lắp Ráp', tags: ['pc văn phòng', 'học tập'] },
-  { id: 'pc002', name: 'PC Gaming Cao Cấp - RTX 4070', mainCategory: "Máy tính để bàn (PC)", subCategory: "Máy tính Gaming", category: "Máy tính Gaming", price: 38000000, originalPrice: 40000000, imageUrls: [`https://picsum.photos/seed/pcgame01/600/400`, `https://picsum.photos/seed/pcgame01_side/600/400`], description: 'Chiến mọi game AAA max setting với RTX 4070.', specifications: { CPU: 'Intel Core i7-13700K', RAM: '32GB DDR5 RGB', SSD: '1TB Gen4 NVMe', VGA: 'NVIDIA GeForce RTX 4070 12GB' }, stock: 5, status: 'Mới', brand: 'IQ Gaming Series', tags: ['pc gaming', 'rtx 4070', 'cao cấp'] },
+  { id: 'pc002', name: 'PC Gaming Cao Cấp - RTX 4070', mainCategory: "Máy tính để bàn (PC)", subCategory: "Máy tính Gaming", category: "Máy tính Gaming", price: 38000000, originalPrice: 40000000, imageUrls: [`https://picsum.photos/seed/pcgame01/600/400`, `https://picsum.photos/seed/pcgame01_side/600/400`], description: 'Chiến mọi game AAA max setting với RTX 4070.', specifications: { CPU: 'Intel Core i7-13700K', RAM: '32GB DDR5 RGB', SSD: '1TB Gen4 NVMe', VGA: 'NVIDIA GeForce RTX 4070 12GB' }, stock: 5, status: 'Mới', brand: 'IQ Gaming Series', tags: ['pc gaming', 'rtx 4070', 'cao cấp', 'Bán chạy'] },
   { id: 'pc003', name: 'Workstation Chuyên Nghiệp CAD/Render W03', mainCategory: "Máy tính để bàn (PC)", subCategory: "Workstation (Máy trạm)", category: "Workstation (Máy trạm)", price: 55000000, imageUrls: [`https://picsum.photos/seed/pcws01/600/400`], description: 'Máy trạm chuyên dụng cho đồ họa 3D, render video.', specifications: { CPU: 'AMD Ryzen Threadripper 3960X', RAM: '64GB DDR4 ECC', SSD: '2TB NVMe PCIe 4.0', VGA: 'NVIDIA Quadro RTX A4000 16GB' }, stock: 3, status: 'Mới', brand: 'IQ ProStation', tags: ['workstation', 'đồ họa', 'render'] },
   { id: 'pc004', name: 'Apple iMac 27-inch 5K (2020)', mainCategory: "Máy tính để bàn (PC)", subCategory: "Máy tính All-in-One", category: "Máy tính All-in-One", price: 42000000, imageUrls: [`https://picsum.photos/seed/pcaio01/600/400`, `https://picsum.photos/seed/pcaio01_back/600/400`], description: 'Thiết kế tinh tế, màn hình 5K tuyệt đẹp.', specifications: { CPU: 'Intel Core i7 thế hệ 10', RAM: '16GB DDR4', SSD: '512GB', 'Màn hình': '27-inch 5K Retina' }, stock: 7, status: 'Mới', brand: 'Apple', tags: ['imac', 'apple', '5k', 'all-in-one'] },
   { id: 'pc005', name: 'Intel NUC 11 Pro Kit', mainCategory: "Máy tính để bàn (PC)", subCategory: "Mini PC / NUC", category: "Mini PC / NUC", price: 12000000, imageUrls: [`https://picsum.photos/seed/pcmini01/600/400`], description: 'Mini PC mạnh mẽ, nhỏ gọn, tiết kiệm không gian.', specifications: { CPU: 'Intel Core i5-1135G7', RAM: 'Barebone (chưa gồm RAM)', SSD: 'Barebone (chưa gồm SSD)' }, stock: 15, status: 'Mới', brand: 'Intel', tags: ['mini pc', 'nuc', 'intel'] },
@@ -15,7 +15,7 @@ export const MOCK_PRODUCTS: Product[] = [
 
   // Laptop
   { id: 'lap001', name: 'Laptop Văn Phòng Mỏng Nhẹ S14', mainCategory: "Laptop", subCategory: "Laptop văn phòng", category: "Laptop văn phòng", price: 16500000, imageUrls: [`https://picsum.photos/seed/lapvp01/600/400`, `https://picsum.photos/seed/lapvp01_open/600/400`], description: 'Laptop mỏng nhẹ, pin trâu cho công việc năng động.', specifications: { CPU: 'Intel Core i5-1235U', RAM: '16GB DDR4', SSD: '512GB NVMe', 'Màn hình': '14-inch FHD IPS' }, stock: 12, status: 'Mới', brand: 'IQ Book', tags: ['laptop văn phòng', 'mỏng nhẹ'] },
-  { id: 'lap002', name: 'ASUS ROG Strix SCAR 17 (2023)', mainCategory: "Laptop", subCategory: "Laptop Gaming", category: "Laptop Gaming", price: 65000000, imageUrls: [`https://picsum.photos/seed/lapgame01/600/400`, `https://picsum.photos/seed/lapgame01_top/600/400`, `https://picsum.photos/seed/lapgame01_keyboard/600/400`], description: 'Laptop gaming đỉnh cao với RTX 4080 Mobile.', specifications: { CPU: 'Intel Core i9-13980HX', RAM: '32GB DDR5', SSD: '2TB PCIe 4.0 NVMe', VGA: 'NVIDIA GeForce RTX 4080 Laptop GPU', 'Màn hình': '17.3-inch QHD 240Hz' }, stock: 4, status: 'Mới', brand: 'ASUS', tags: ['laptop gaming', 'asus rog', 'rtx 4080'] },
+  { id: 'lap002', name: 'ASUS ROG Strix SCAR 17 (2023)', mainCategory: "Laptop", subCategory: "Laptop Gaming", category: "Laptop Gaming", price: 65000000, imageUrls: [`https://picsum.photos/seed/lapgame01/600/400`, `https://picsum.photos/seed/lapgame01_top/600/400`, `https://picsum.photos/seed/lapgame01_keyboard/600/400`], description: 'Laptop gaming đỉnh cao với RTX 4080 Mobile.', specifications: { CPU: 'Intel Core i9-13980HX', RAM: '32GB DDR5', SSD: '2TB PCIe 4.0 NVMe', VGA: 'NVIDIA GeForce RTX 4080 Laptop GPU', 'Màn hình': '17.3-inch QHD 240Hz' }, stock: 4, status: 'Mới', brand: 'ASUS', tags: ['laptop gaming', 'asus rog', 'rtx 4080', 'Bán chạy'] },
   { id: 'lap003', name: 'Dell XPS 15 (9530)', mainCategory: "Laptop", subCategory: "Laptop đồ họa – kỹ thuật", category: "Laptop đồ họa – kỹ thuật", price: 52000000, imageUrls: [`https://picsum.photos/seed/lapws01/600/400`], description: 'Laptop đồ họa cao cấp, màn hình InfinityEdge tuyệt đẹp.', specifications: { CPU: 'Intel Core i7-13700H', RAM: '32GB DDR5', SSD: '1TB NVMe', VGA: 'NVIDIA GeForce RTX 4050 Laptop', 'Màn hình': '15.6-inch FHD+ IPS' }, stock: 6, status: 'Mới', brand: 'Dell', tags: ['laptop đồ họa', 'dell xps', 'kỹ thuật'] },
   { id: 'lap004', name: 'LG Gram 16 (2023)', mainCategory: "Laptop", subCategory: "Laptop mỏng nhẹ (Ultrabook)", category: "Laptop mỏng nhẹ (Ultrabook)", price: 35000000, imageUrls: [`https://picsum.photos/seed/lapultra01/600/400`], description: 'Siêu mỏng nhẹ, chỉ 1.19kg, pin cực lâu.', specifications: { CPU: 'Intel Core i7-1360P', RAM: '16GB LPDDR5', SSD: '1TB NVMe Gen4', 'Màn hình': '16-inch WQXGA IPS' }, stock: 8, status: 'Mới', brand: 'LG', tags: ['ultrabook', 'lg gram', 'siêu nhẹ'] },
   { id: 'lap005', name: 'Microsoft Surface Pro 9', mainCategory: "Laptop", subCategory: "Laptop cảm ứng / 2-in-1", category: "Laptop cảm ứng / 2-in-1", price: 32000000, imageUrls: [`https://picsum.photos/seed/lap2in101/600/400`], description: 'Laptop lai tablet linh hoạt, hỗ trợ bút cảm ứng.', specifications: { CPU: 'Intel Core i5-1235U', RAM: '8GB LPDDR5', SSD: '256GB', 'Màn hình': '13-inch PixelSense Flow' }, stock: 10, status: 'Mới', brand: 'Microsoft', tags: ['surface pro', '2-in-1', 'cảm ứng'] },
@@ -23,7 +23,7 @@ export const MOCK_PRODUCTS: Product[] = [
   { id: 'lap007', name: 'Laptop Acer Aspire 3 (Cũ)', mainCategory: "Laptop", subCategory: "Laptop cũ", category: "Laptop cũ", price: 7500000, imageUrls: [`https://picsum.photos/seed/lapcu01/600/400`], description: 'Laptop cũ, đã qua kiểm tra, giá tốt cho học sinh.', specifications: { CPU: 'Intel Core i3 Thế hệ 10', RAM: '8GB DDR4', SSD: '256GB', 'Màn hình': '15.6-inch HD' }, stock: 5, status: 'Cũ', brand: 'Acer', tags: ['laptop cũ', 'acer aspire', 'giá rẻ'] },
 
   // Linh kiện máy tính
-  { id: 'lk001', name: 'CPU Intel Core i9-13900K', mainCategory: "Linh kiện máy tính", subCategory: "CPU (Vi xử lý Intel, AMD)", category: 'CPU', price: 15000000, originalPrice: 16500000, imageUrls: [`https://picsum.photos/seed/cpu1/600/400`, `https://picsum.photos/seed/cpu1_box/600/400`], description: 'CPU hàng đầu cho gaming và sáng tạo.', specifications: { 'Số nhân': '24', 'Số luồng': '32', 'Xung nhịp cơ bản': '3.0GHz' }, stock: 10, status: 'Mới', brand: 'Intel', tags: ['cpu', 'intel i9', 'gaming'] },
+  { id: 'lk001', name: 'CPU Intel Core i9-13900K', mainCategory: "Linh kiện máy tính", subCategory: "CPU (Vi xử lý Intel, AMD)", category: 'CPU', price: 15000000, originalPrice: 16500000, imageUrls: [`https://picsum.photos/seed/cpu1/600/400`, `https://picsum.photos/seed/cpu1_box/600/400`], description: 'CPU hàng đầu cho gaming và sáng tạo.', specifications: { 'Số nhân': '24', 'Số luồng': '32', 'Xung nhịp cơ bản': '3.0GHz' }, stock: 10, status: 'Mới', brand: 'Intel', tags: ['cpu', 'intel i9', 'gaming', 'Bán chạy'] },
   { id: 'lk002', name: 'RAM Corsair Vengeance LPX 32GB (2x16GB) DDR5 5600MHz', mainCategory: "Linh kiện máy tính", subCategory: "RAM (DDR4, DDR5…)", category: 'RAM', price: 4500000, imageUrls: [`https://picsum.photos/seed/ram1/600/400`], description: 'RAM DDR5 hiệu năng cao.', specifications: { 'Dung lượng': '32GB', 'Loại': 'DDR5', 'Tốc độ': '5600MHz' }, stock: 15, status: 'Mới', brand: 'Corsair', tags: ['ram', 'corsair', 'ddr5'] },
   { id: 'lk003', name: 'SSD Samsung 980 Pro 1TB NVMe PCIe 4.0', mainCategory: "Linh kiện máy tính", subCategory: "Ổ cứng HDD / SSD (SATA, NVMe)", category: 'SSD', price: 3800000, imageUrls: [`https://picsum.photos/seed/ssd1/600/400`], description: 'SSD NVMe tốc độ cực nhanh.', specifications: { 'Dung lượng': '1TB', 'Giao tiếp': 'NVMe PCIe 4.0', 'Tốc độ đọc': '7000MB/s' }, stock: 20, status: 'Mới', brand: 'Samsung', tags: ['ssd', 'samsung', 'nvme'] },
   { id: 'lk004', name: 'VGA NVIDIA GeForce RTX 4080 16GB', mainCategory: "Linh kiện máy tính", subCategory: "VGA (Card màn hình)", category: 'VGA', price: 32000000, imageUrls: [`https://picsum.photos/seed/vga1/600/400`, `https://picsum.photos/seed/vga1_ports/600/400`], description: 'Card đồ họa mạnh mẽ cho 4K gaming.', specifications: { 'Bộ nhớ': '16GB GDDR6X', 'Xung nhịp Boost': '2.5GHz' }, stock: 5, status: 'Mới', brand: 'NVIDIA', tags: ['vga', 'rtx 4080', 'nvidia'] },
@@ -300,7 +300,8 @@ export const MOCK_ORDERS: Order[] = [
         ],
         totalAmount: 12000000,
         orderDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), 
-        status: 'Đang giao'
+        status: 'Đang giao',
+        paymentInfo: { method: 'Thanh toán khi nhận hàng (COD)', status: 'Chưa thanh toán' }
     },
     {
         id: 'order002',
@@ -315,7 +316,8 @@ export const MOCK_ORDERS: Order[] = [
         ],
         totalAmount: 15000000,
         orderDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), 
-        status: 'Hoàn thành'
+        status: 'Hoàn thành',
+        paymentInfo: { method: 'Chuyển khoản ngân hàng', status: 'Đã thanh toán', transactionId: 'FT2407251234' }
     },
      {
         id: 'order003',
@@ -331,7 +333,8 @@ export const MOCK_ORDERS: Order[] = [
         ],
         totalAmount: 65000000,
         orderDate: new Date().toISOString(),
-        status: 'Chờ xử lý'
+        status: 'Chờ xử lý',
+        paymentInfo: { method: 'Thanh toán khi nhận hàng (COD)', status: 'Chưa thanh toán' }
     }
 ];
 

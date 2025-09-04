@@ -1,15 +1,16 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/shop/ProductCard';
 import { MOCK_PRODUCTS } from '../data/mockData';
 import { Product, MainCategoryInfo } from '../types';
 import SearchBar from '../components/shared/SearchBar';
 import Pagination from '../components/shared/Pagination';
 import * as Constants from '../constants.tsx';
-import ProductFilter from '../components/shop/ProductFilter.tsx'; 
+import ProductCarouselSection from '../components/shop/ProductCarouselSection';
+import CategorySidebar from '../components/shop/CategorySidebar'; // Import the new sidebar
 
-const PRODUCTS_PER_PAGE = 16;
+const PRODUCTS_PER_PAGE = 12; // Adjusted for new layout
 
 const ProductCategoryNav: React.FC<{
   categories: MainCategoryInfo[];
@@ -38,78 +39,82 @@ const ProductCategoryNav: React.FC<{
 };
 
 const ShopPage: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const hasFilters = location.search && location.search.length > 1;
+
+  // --- START: STATE AND LOGIC FOR FILTERED VIEW ---
   const [allProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const [currentFilters, setCurrentFilters] = useState({
     mainCategory: null as string | null,
     subCategory: null as string | null,
     brand: null as string | null,
     status: null as string | null,
-    q: ''
+    q: '',
+    tags: null as string | null,
   });
   const [currentPage, setCurrentPage] = useState(1);
 
-  const location = useLocation();
-  const navigate = useNavigate(); // Changed from useHistory
-
-  const uniqueBrands = useMemo(() => {
-    const brands = allProducts
-      .map(p => p.brand)
-      .filter((brand): brand is string => typeof brand === 'string' && brand.trim() !== '');
-    return [...new Set(brands)].sort();
-  }, [allProducts]);
-
-  const uniqueStatuses: Array<'Mới' | 'Cũ' | 'Like new'> = useMemo(() => {
-    const statuses = allProducts
-      .map(p => p.status)
-      .filter((status): status is 'Mới' | 'Cũ' | 'Like new' => !!status);
-    return [...new Set(statuses)];
-  }, [allProducts]);
-
+  const handleScroll = useCallback(() => {
+    // Check if on desktop and if scrolled past the header
+    if (window.innerWidth >= 1024) {
+      setIsSidebarCollapsed(window.scrollY > 160);
+    } else {
+      // Always keep it expanded on mobile/tablet
+      setIsSidebarCollapsed(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial position
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  useEffect(() => {
     setCurrentFilters({
       mainCategory: queryParams.get('mainCategory') || null,
       subCategory: queryParams.get('subCategory') || null,
       brand: queryParams.get('brand') || null,
       status: queryParams.get('status') || null,
-      q: queryParams.get('q') || ''
+      q: queryParams.get('q') || '',
+      tags: queryParams.get('tags') || null,
     });
     setCurrentPage(1);
-  }, [location.search]);
+  }, [queryParams]);
 
   const handleFilterChange = (filterType: string, value: string | null) => {
-    const queryParams = new URLSearchParams(); 
-
-    const newFilters = { ...currentFilters, [filterType]: value };
-
-    if (filterType === 'mainCategory') {
-      newFilters.subCategory = null;
+    const newParams = new URLSearchParams(location.search);
+    
+    if (value) {
+        newParams.set(filterType, value);
+    } else {
+        newParams.delete(filterType);
     }
 
-    if (newFilters.q) queryParams.set('q', newFilters.q);
-    if (newFilters.mainCategory) queryParams.set('mainCategory', newFilters.mainCategory);
-    if (newFilters.subCategory) queryParams.set('subCategory', newFilters.subCategory);
-    if (newFilters.brand) queryParams.set('brand', newFilters.brand);
-    if (newFilters.status) queryParams.set('status', newFilters.status);
-    
-    navigate(`/shop?${queryParams.toString()}`); // Changed from history.push
+    if (filterType === 'mainCategory') {
+        newParams.delete('subCategory');
+    }
+
+    navigate(`/shop?${newParams.toString()}`);
   };
   
   const handleSearch = (term: string) => {
-    const queryParams = new URLSearchParams();
-    if (term) queryParams.set('q', term);
-    if (currentFilters.mainCategory) queryParams.set('mainCategory', currentFilters.mainCategory);
-    if (currentFilters.subCategory) queryParams.set('subCategory', currentFilters.subCategory);
-    if (currentFilters.brand) queryParams.set('brand', currentFilters.brand);
-    if (currentFilters.status) queryParams.set('status', currentFilters.status);
-    navigate(`/shop?${queryParams.toString()}`); // Changed from history.push
+    const newParams = new URLSearchParams(location.search);
+    if (term) {
+      newParams.set('q', term);
+    } else {
+      newParams.delete('q');
+    }
+    navigate(`/shop?${newParams.toString()}`);
   };
 
   const filteredProducts = useMemo(() => {
     let products = allProducts.filter(p => p.mainCategory !== "PC Xây Dựng"); 
-
+    
     if (currentFilters.mainCategory) {
       const mainCat = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.slug === currentFilters.mainCategory);
       if (mainCat) {
@@ -140,6 +145,14 @@ const ShopPage: React.FC = () => {
         (p.tags && p.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm)))
       );
     }
+
+    if (currentFilters.tags) {
+        const tagsToFilter = currentFilters.tags.toLowerCase().split(',');
+        products = products.filter(p => 
+            p.tags && p.tags.some(tag => tagsToFilter.includes(tag.toLowerCase()))
+        );
+    }
+
     return products;
   }, [allProducts, currentFilters]);
 
@@ -151,6 +164,8 @@ const ShopPage: React.FC = () => {
   const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
 
   const getCurrentCategoryName = () => {
+    if (currentFilters.tags) return `Sản phẩm có tag "${currentFilters.tags}"`;
+
     let name = "Tất cả sản phẩm";
     if (currentFilters.mainCategory) {
       const mainCat = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.slug === currentFilters.mainCategory);
@@ -169,73 +184,83 @@ const ShopPage: React.FC = () => {
     return name;
   };
 
+  // --- END: LOGIC FOR FILTERED VIEW ---
 
+  const renderMainContent = () => {
+    if(hasFilters) {
+        return (
+            <main className="flex-grow w-full lg:w-3/4">
+                <ProductCategoryNav
+                    categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
+                    activeSlug={currentFilters.mainCategory}
+                    onSelect={(slug) => handleFilterChange('mainCategory', slug)}
+                />
+                <div className="flex justify-between items-center mb-6 px-1">
+                  <h1 className="text-2xl font-bold text-textBase">{getCurrentCategoryName()}</h1>
+                  <span className="text-sm text-textMuted">{filteredProducts.length} sản phẩm</span>
+                </div>
+                {filteredProducts.length > 0 ? (
+                <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+                    {paginatedProducts.map(product => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
+                    </div>
+                    {totalPages > 1 && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+                    )}
+                </>
+                ) : (
+                <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
+                    <i className="fas fa-search text-5xl text-textSubtle mb-4"></i>
+                    <h3 className="text-xl font-semibold text-textBase mb-2">Không tìm thấy sản phẩm</h3>
+                    <p className="text-textMuted">Vui lòng thử lại với bộ lọc hoặc từ khóa khác.</p>
+                </div>
+                )}
+            </main>
+        )
+    }
+
+    return (
+        <main className="flex-grow w-full lg:w-3/4">
+            {Constants.PRODUCT_CATEGORIES_HIERARCHY
+            .filter(cat => cat.slug !== 'pc_xay_dung' && allProducts.some(p => p.mainCategory === cat.name))
+            .map(category => (
+                <ProductCarouselSection
+                key={category.slug}
+                title={category.name}
+                products={allProducts.filter(p => p.mainCategory === category.name)}
+                viewAllLink={`/shop?mainCategory=${category.slug}`}
+                subCategories={category.subCategories}
+                />
+            ))}
+        </main>
+    )
+  }
+
+
+  // --- CONDITIONAL RENDERING ---
   return (
-    <div className="bg-bgCanvas min-h-screen">
-      <div className="container mx-auto px-4 py-6">
-        <div className="mb-6">
-          <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
-        </div>
-      
-        <div className="shop-layout-container">
-          <aside className="shop-sidebar">
-            <ProductFilter
-              brands={uniqueBrands}
-              statuses={uniqueStatuses}
-              onFilterChange={handleFilterChange}
-              currentFilters={{
-                  mainCategory: currentFilters.mainCategory || null,
-                  subCategory: currentFilters.subCategory || null,
-                  brand: currentFilters.brand || null,
-                  status: currentFilters.status || null,
-                  q: currentFilters.q
-              }}
+    <div className="bg-bgCanvas">
+      <div className="container mx-auto px-4 py-8">
+        {hasFilters && (
+            <div className="mb-6">
+                <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
+            </div>
+        )}
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <aside className={`shop-sidebar w-full lg:max-w-[280px] flex-shrink-0 lg:sticky lg:top-[170px] ${isSidebarCollapsed ? 'is-collapsed-parent' : ''}`}>
+            <CategorySidebar 
+              currentMainCategorySlug={currentFilters.mainCategory}
+              currentSubCategorySlug={currentFilters.subCategory}
+              isCollapsed={isSidebarCollapsed}
             />
-            <div className="shop-sidebar-section mt-6">
-              <h3 className="shop-sidebar-title">Sản phẩm xem nhiều</h3>
-              <ul className="space-y-1">
-              {MOCK_PRODUCTS.slice(0, 5).map(p => (
-                  <li key={p.id}><Link to={`/product/${p.id}`} className="text-sm text-textMuted hover:text-primary line-clamp-1">{p.name}</Link></li>
-              ))}
-              </ul>
-            </div>
-            <div className="shop-sidebar-section mt-6">
-              <img src="https://picsum.photos/seed/shopad1/300/250?text=Quảng+Cáo" alt="Placeholder Ad" className="w-full rounded-md shadow"/>
-            </div>
           </aside>
-          <main className="shop-main-content">
-              <ProductCategoryNav
-                  categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
-                  activeSlug={currentFilters.mainCategory}
-                  onSelect={(slug) => handleFilterChange('mainCategory', slug)}
-              />
-              <div className="flex justify-between items-center mb-6 px-1">
-                <h1 className="text-2xl font-bold text-textBase">{getCurrentCategoryName()}</h1>
-                <span className="text-sm text-textMuted">{filteredProducts.length} sản phẩm</span>
-              </div>
-              {filteredProducts.length > 0 ? (
-              <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
-                  {paginatedProducts.map(product => (
-                      <ProductCard key={product.id} product={product} context="detail-view" />
-                  ))}
-                  </div>
-                  {totalPages > 1 && (
-                  <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                  />
-                  )}
-              </>
-              ) : (
-              <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
-                  <i className="fas fa-search text-5xl text-textSubtle mb-4"></i>
-                  <h3 className="text-xl font-semibold text-textBase mb-2">Không tìm thấy sản phẩm</h3>
-                  <p className="text-textMuted">Vui lòng thử lại với bộ lọc hoặc từ khóa khác.</p>
-              </div>
-              )}
-          </main>
+          {renderMainContent()}
         </div>
       </div>
     </div>

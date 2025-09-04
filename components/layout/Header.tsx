@@ -5,7 +5,8 @@ import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../ui/Button';
 import { CustomMenuLink, SiteSettings, NavLinkItem } from '../../types';
-import HeaderSearchBar from '../shared/GlobalSearch'; // Repurposed from GlobalSearch to HeaderSearchBar
+import HeaderSearchBar from '../shared/GlobalSearch';
+import MegaMenu from './MegaMenu'; // Import the new MegaMenu component
 
 // New component for right-side action links, styled as per the image
 const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badgeCount?: number }> = ({ to, icon, label, badgeCount }) => (
@@ -162,22 +163,27 @@ const Header: React.FC = () => {
         {/* MAIN NAVIGATION BAR */}
         <nav className="bg-neutral-900 border-t border-t-gray-700/50 hidden lg:flex justify-center items-center h-12 shadow-md">
           <div className="flex items-center space-x-2">
-            {desktopNavLinks.map((link) => (
-              <NavLink
-                key={link.path}
-                to={link.path}
-                className={({ isActive }) =>
-                  `py-2 px-4 rounded-md text-sm font-semibold transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 ${
-                    isActive
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                  }`
-                }
-                end={link.path === "/home"}
-              >
-                {link.label}
-              </NavLink>
-            ))}
+            {desktopNavLinks.map((link) => {
+              if (link.path === '/shop') {
+                return <MegaMenu key={link.path} />;
+              }
+              return (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `py-2 px-4 rounded-md text-sm font-semibold transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 ${
+                      isActive
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                    }`
+                  }
+                  end={link.path === "/home"}
+                >
+                  {link.label}
+                </NavLink>
+              );
+            })}
           </div>
         </nav>
 

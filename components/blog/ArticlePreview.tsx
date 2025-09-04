@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import { Article } from '../../types';
@@ -8,20 +9,28 @@ interface ArticlePreviewProps {
 }
 
 const ArticlePreview: React.FC<ArticlePreviewProps> = ({ article }) => {
+  // Use imageUrl if present, otherwise generate from imageSearchQuery or fallback to id
+  const imageUrl = article.imageUrl || `https://picsum.photos/seed/${article.imageSearchQuery || article.id}/400/250`;
+
   return (
     <div className="modern-card flex flex-col overflow-hidden h-full group relative">
       <Link to={`/article/${article.id}`} className="block aspect-[16/10] overflow-hidden rounded-t-lg">
         <img
-          src={article.imageUrl || `https://picsum.photos/seed/${article.id}/400/250`}
+          src={imageUrl}
           alt={article.title}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </Link>
       <div className="p-5 flex flex-col flex-grow">
-         <div className="mb-2">
+         <div className="mb-2 flex items-center gap-2">
             <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
                 {article.category}
             </span>
+            {article.isAIGenerated && (
+              <span className="text-xs font-semibold text-white bg-gray-700 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                <i className="fas fa-robot text-xs"></i> AI
+              </span>
+            )}
         </div>
         <h3 className="text-lg font-semibold text-textBase mb-2 leading-snug transition-colors">
           <Link to={`/article/${article.id}`} className="line-clamp-2 modern-card-title">

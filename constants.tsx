@@ -30,6 +30,13 @@ export const PRODUCTS_STORAGE_KEY = 'siteProducts_v1';
 export const MEDIA_LIBRARY_STORAGE_KEY = 'siteMediaLibrary_v1'; // For new media library
 export const CHAT_LOGS_STORAGE_KEY = 'siteChatLogs_v1'; // For storing chat logs
 
+// --- BANKING INFO ---
+export const BANK_ACCOUNT_NAME = "TRAN MINH QUANG";
+export const BANK_ACCOUNT_NUMBER = "0501000136537";
+export const BANK_NAME = "Vietcombank (Ngân hàng TMCP Ngoại thương Việt Nam)";
+export const VIETCOMBANK_ID = "970436";
+export const DEPOSIT_PERCENTAGE = 0.3; // 30% deposit
+
 // --- INITIAL DYNAMIC DATA (Managed by Admin, stored in localStorage) ---
 
 const INITIAL_HOMEPAGE_BANNER_ITEM: HomepageBannerSettings = {

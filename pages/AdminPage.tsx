@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card'; 
@@ -344,8 +345,68 @@ const AdminPage: React.FC = () => {
   const handleArticleFormSubmit = (e: React.FormEvent) => { e.preventDefault(); if (!hasPermission(['manageArticles'])) { notify("Không có quyền.", "error"); return; } const articlePayload: Article = { id: isEditingArticle || `art-${Date.now()}`, ...articleFormData, content: articleFormData.content || "Nội dung đang được cập nhật." }; let updatedArticles; if (isEditingArticle) { updatedArticles = articles.map(a => a.id === isEditingArticle ? articlePayload : a); notify(`Bài viết "${articlePayload.title}" đã được cập nhật.`, 'success'); } else { updatedArticles = [articlePayload, ...articles]; notify(`Bài viết "${articlePayload.title}" đã được thêm.`, 'success'); } setArticles(updatedArticles); setLocalStorageItem('adminArticles_v1', updatedArticles); resetArticleForm(); };
   const handleEditArticle = (article: Article) => { if (!hasPermission(['manageArticles'])) { notify("Không có quyền.", "error"); return; } setArticleFormData({ ...article, content: article.content || '' }); setIsEditingArticle(article.id); setShowArticleForm(true); setActiveView('articles'); };
   const handleDeleteArticle = (articleId: string) => { if (!hasPermission(['manageArticles'])) { notify("Không có quyền.", "error"); return; } if (window.confirm("Xóa bài viết này?")) { const title = articles.find(a=>a.id===articleId)?.title; const updated = articles.filter(a => a.id !== articleId); setArticles(updated); setLocalStorageItem('adminArticles_v1', updated); notify(`Bài viết "${title || 'Không tên'}" đã được xóa.`, 'warning'); }};
-  const handleSiteSettingInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>, section?: keyof SiteSettings, field?: string, index?: number, subField?: string) => { const { name, value, type } = e.target; const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value; setSiteSettingsForm(prev => { const newSettings = JSON.parse(JSON.stringify(prev)); if (section && field && typeof index === 'number' && subField && Array.isArray((newSettings[section] as any)?.[subField])) { const arrayToUpdate = [...(newSettings[section] as any)[subField]]; arrayToUpdate[index] = { ...arrayToUpdate[index], [name]: val }; (newSettings[section] as any)[subField] = arrayToUpdate; } else if (section && field && typeof index === 'number' && Array.isArray((newSettings[section] as any)?.[field])) { const arrayToUpdate = [...(newSettings[section] as any)[field]]; arrayToUpdate[index] = { ...arrayToUpdate[index], [name]: val }; (newSettings[section] as any)[field] = arrayToUpdate; } else if (section && field) { (newSettings[section] as any) = { ...(newSettings[section] as object), [field]: val }; } else { (newSettings as any)[name] = val; } return newSettings; }); };
-  const handleSiteImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof SiteSettings | {section: keyof SiteSettings, field: string, index?: number, subField?: string} ) => { if (e.target.files && e.target.files[0]) { try { const dataUrl = await fileToDataUrl(e.target.files[0]); if (typeof fieldName === 'string') { setSiteSettingsForm(prev => ({...prev, [fieldName]: dataUrl})); } else if (typeof fieldName === 'object') { const { section, field, index, subField } = fieldName; setSiteSettingsForm(prev => { const newSettings = JSON.parse(JSON.stringify(prev)); if (typeof index === 'number' && subField && Array.isArray((newSettings[section] as any)?.[subField])) { const arrayToUpdate = [...(newSettings[section] as any)[subField]]; arrayToUpdate[index] = { ...arrayToUpdate[index], [field]: dataUrl }; (newSettings[section] as any)[subField] = arrayToUpdate; } else if (typeof index === 'number' && Array.isArray(newSettings[section])) { const arrayToUpdate = [...(newSettings[section] as any[])]; arrayToUpdate[index] = { ...arrayToUpdate[index], [field]: dataUrl }; (newSettings[section] as any) = arrayToUpdate; } else if (section && field) { (newSettings[section] as any) = { ...(newSettings[section] as object), [field]: dataUrl }; } return newSettings; }); } } catch (error) { notify(`Lỗi tải ảnh lên.`, "error"); } } };
+  
+  const handleSiteSettingInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>, 
+    section: keyof SiteSettings, 
+    index?: number
+  ) => {
+    const { name, value, type } = e.target;
+    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+
+    setSiteSettingsForm(prev => {
+      const newState = { ...prev };
+      
+      if (typeof index === 'number' && Array.isArray(newState[section])) {
+        const newArray = [...(newState[section] as any[])];
+        newArray[index] = { ...newArray[index], [name]: val };
+        newState[section] = newArray as any;
+        return newState;
+      }
+      
+      if (typeof newState[section] === 'object' && newState[section] !== null && !Array.isArray(newState[section])) {
+        newState[section] = { ...(newState[section] as object), [name]: val } as any;
+        return newState;
+      }
+
+      newState[section] = val as any;
+      return newState;
+    });
+  };
+
+  const handleSiteImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>, 
+    section: keyof SiteSettings, 
+    fieldName: string, 
+    index?: number
+  ) => {
+    if (e.target.files && e.target.files[0]) {
+      try {
+        const dataUrl = await fileToDataUrl(e.target.files[0]);
+        setSiteSettingsForm(prev => {
+          const newState = { ...prev };
+
+          if (typeof index === 'number' && Array.isArray(newState[section])) {
+            const newArray = [...(newState[section] as any[])];
+            newArray[index] = { ...newArray[index], [fieldName]: dataUrl };
+            newState[section] = newArray as any;
+            return newState;
+          }
+
+          if (typeof newState[section] === 'object' && newState[section] !== null && !Array.isArray(newState[section])) {
+            newState[section] = { ...(newState[section] as object), [fieldName]: dataUrl } as any;
+            return newState;
+          }
+          
+          return newState;
+        });
+      } catch (error) {
+        notify('Lỗi tải ảnh lên.', 'error');
+      }
+    }
+  };
+
+
   const handleSaveSiteSettings = () => { if (!hasPermission(['manageSiteSettings'])) { notify("Không có quyền.", "error"); return; } setLocalStorageItem(Constants.SITE_CONFIG_STORAGE_KEY, siteSettingsForm); setSiteSettings(siteSettingsForm); notify("Cài đặt trang đã được lưu.", 'success'); };
   const handleFaqInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => { const { name, value, type } = e.target; const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value; setFaqFormData(prev => ({ ...prev, [name]: val }));};
   const resetFaqForm = () => { setFaqFormData(initialFaqFormState); setIsEditingFaq(null); setShowFaqForm(false); };
@@ -387,7 +448,7 @@ const AdminPage: React.FC = () => {
     ({label, name, value, onChange, section, field, index, subField, type = 'text', placeholder, required = false, disabled = false, helpText }) => (
     <div className="admin-form-group">
         <label htmlFor={`${section}_${field}_${name}_${index}_${subField}`} className="block text-sm font-medium text-admin-text-secondary mb-1.5">{label} {required && <span className="text-red-500">*</span>}</label>
-        <input type={type} id={`${section}_${field}_${name}_${index}_${subField}`} name={name} value={value || ''} onChange={e => onChange(e, section, field, index, subField)} placeholder={placeholder} required={required} disabled={disabled} />
+        <input type={type} id={`${section}_${field}_${name}_${index}_${subField}`} name={name} value={value || ''} onChange={e => onChange(e, section, index, field)} placeholder={placeholder} required={required} disabled={disabled} />
         {helpText && <p className="form-input-description">{helpText}</p>}
     </div>
   );
@@ -395,14 +456,14 @@ const AdminPage: React.FC = () => {
     ({label, name, value, onChange, section, field, index, subField, rows = 3, required = false, placeholder}) => (
     <div className="admin-form-group">
         <label htmlFor={`${section}_${field}_${name}_${index}_${subField}`} className="block text-sm font-medium text-admin-text-secondary mb-1.5">{label} {required && <span className="text-red-500">*</span>}</label>
-        <textarea id={`${section}_${field}_${name}_${index}_${subField}`} name={name} value={value || ''} onChange={e => onChange(e, section, field, index, subField)} rows={rows} required={required} placeholder={placeholder}></textarea>
+        <textarea id={`${section}_${field}_${name}_${index}_${subField}`} name={name} value={value || ''} onChange={e => onChange(e, section, index, field)} rows={rows} required={required} placeholder={placeholder}></textarea>
     </div>
   );
   const SelectField: React.FC<{label: string, name: string, value: string | number | undefined, onChange: any, section?: keyof SiteSettings, field?: string, index?: number, subField?: string, required?: boolean, children: React.ReactNode}> = 
   ({label, name, value, onChange, section, field, index, subField, required = false, children}) => (
     <div className="admin-form-group">
         <label htmlFor={`${section}_${field}_${name}_${index}_${subField}`} className="block text-sm font-medium text-admin-text-secondary mb-1.5">{label} {required && <span className="text-red-500">*</span>}</label>
-        <select id={`${section}_${field}_${name}_${index}_${subField}`} name={name} value={value || ''} onChange={e => onChange(e, section, field, index, subField)} required={required}>
+        <select id={`${section}_${field}_${name}_${index}_${subField}`} name={name} value={value || ''} onChange={e => onChange(e, section, index, field)} required={required}>
             {children}
         </select>
     </div>
@@ -410,522 +471,254 @@ const AdminPage: React.FC = () => {
   const CheckboxField: React.FC<{label: string, name: string, checked: boolean | undefined, onChange: any, section?: keyof SiteSettings, field?: string, index?: number, subField?: string}> = 
     ({label, name, checked, onChange, section, field, index, subField}) => ( 
     <div className="admin-form-group-checkbox"> 
-        <input type="checkbox" id={`${section}_${field}_${name}_${index}_${subField}`} name={name} checked={checked || false} onChange={e => onChange(e, section, field, index, subField)} /> 
-        <label htmlFor={`${section}_${field}_${name}_${index}_${subField}`}>{label}</label> 
-    </div> 
-  );
-  const ImageUploadField: React.FC<{label: string, value: string | undefined, name: string, onUpload: (e: React.ChangeEvent<HTMLInputElement>, fieldName: any) => void, onChange: any, section?: keyof SiteSettings, field?: string, index?: number, subField?: string, required?: boolean}> = 
-    ({label, value, name, onUpload, onChange, section, field, index, subField, required = false}) => { 
-    const fieldIdentifier = section ? { section, field, index, subField } : name; 
-    return ( 
-      <div className="admin-form-group"> 
-        <label htmlFor={`${section}_${field}_${name}_${index}_${subField}_url`} className="block text-sm font-medium text-admin-text-secondary mb-1.5">{label} {required && <span className="text-red-500">*</span>}</label> 
-        <input type="text" id={`${section}_${field}_${name}_${index}_${subField}_url`} name={name} value={value || ''} onChange={e => onChange(e, section, field, index, subField)} className="mb-2" placeholder="https://example.com/image.jpg hoặc tải lên bên dưới" required={required && (!value || !value.startsWith('data:image'))}/> 
-        <input type="file" id={`${section}_${field}_${name}_${index}_${subField}_upload`} onChange={(e) => onUpload(e, fieldIdentifier)} accept="image/*" /> 
-        {value && value.startsWith('data:image') && <ImageUploadPreview src={value} onRemove={() => onChange({target: {name, value: ''}}, section, field, index, subField)} className="mt-2" />} 
-        {value && !value.startsWith('data:image') && value.trim() !== '' && <img src={value} alt="Xem trước" className="mt-2 max-h-24 rounded border border-admin-card-border"/>} 
-      </div> 
-    );
-  };
-
-  const SiteSettingsAccordion: React.FC<{title: string, sectionKey: string, isOpen: boolean, toggleSection: React.Dispatch<React.SetStateAction<Record<string, boolean>>>, children: React.ReactNode}> = ({title, sectionKey, isOpen, toggleSection, children}) => ( <div className="mb-3 border border-admin-card-border rounded-lg"> <button onClick={() => toggleSection(prev => ({...prev, [sectionKey]: !prev[sectionKey]}))} className={`w-full flex justify-between items-center p-3 text-left font-semibold text-admin-text-primary rounded-t-lg ${isOpen ? 'bg-slate-200' : 'bg-slate-50 hover:bg-slate-100'}`}> {title} <i className={`fas fa-chevron-down transition-transform ${isOpen ? 'rotate-180' : ''}`}></i> </button> {isOpen && <div className="p-4 border-t border-admin-card-border bg-admin-card-bg rounded-b-lg">{children}</div>} </div> );
-
-  const AdminSidebar: React.FC<{
-    activeView: AdminView;
-    onSelectView: (view: AdminView) => void;
-    unreadNotificationCount: number;
-    currentUser: User | null;
-    onToggleSidebar: () => void;
-    isSidebarOpenProp: boolean; 
-    menuConfig: MenuItemConfig[];
-    openMenus: Record<string, boolean>;
-    toggleMenu: (menuKey: string) => void;
-  }> = ({ activeView, onSelectView, unreadNotificationCount, currentUser, onToggleSidebar, isSidebarOpenProp, menuConfig, openMenus, toggleMenu }) => {
-    
-    return (
-      <aside className={`admin-sidebar scrollbar-hide ${isSidebarOpenProp ? 'open' : ''}`}>
-        <div className="admin-sidebar-header flex items-center justify-between p-4 border-b border-slate-700">
-            <div className="flex items-center">
-                <img src={currentUser?.imageUrl || `https://ui-avatars.com/api/?name=${currentUser?.username?.charAt(0) || 'A'}&background=0D8ABC&color=fff&size=48`} alt="User Avatar" className="w-10 h-10 rounded-full mr-3 border-2 border-slate-500" />
-                <div>
-                    <div className="font-semibold text-white text-sm">{currentUser?.username || 'Admin'}</div>
-                    <div className="text-xs text-slate-400">{currentUser?.staffRole || currentUser?.role}</div>
-                </div>
-            </div>
-             <button onClick={onToggleSidebar} className="md:hidden text-slate-300 hover:text-white text-xl">
-                <i className="fas fa-times"></i>
-            </button>
-        </div>
-        <nav className="p-2">
-          {menuConfig.map(item => (
-            hasPermission(item.permission) && (
-              <div key={item.id}>
-                <a
-                  href="#"
-                  onClick={(e) => { 
-                    e.preventDefault(); 
-                    if (item.children && item.children.length > 0) {
-                        toggleMenu(item.id.toString());
-                        const isChildActive = item.children.some(child => child.id === activeView);
-                        if (!isChildActive) {
-                             onSelectView(item.id as AdminView); 
-                        }
-                    } else if (!item.children) { 
-                        onSelectView(item.id as AdminView);
-                    }
-                    if (isSidebarOpenProp && window.innerWidth < 768 && (!item.children || item.children.some(c => c.id === activeView))) onToggleSidebar(); 
-                  }}
-                  className={`flex items-center p-2.5 my-1 rounded-md text-sm transition-colors duration-200 ${(item.children && item.children.some(c => c.id === activeView)) || (!item.children && activeView === item.id) ? 'bg-admin-sidebarActiveBg text-admin-sidebarActiveText' : 'text-admin-sidebarText hover:bg-slate-700 hover:text-admin-sidebarTextHover'}`}
-                  title={item.label}
-                  aria-expanded={item.children ? openMenus[item.id.toString()] : undefined}
-                >
-                  <i className={`fas ${item.icon} w-5 text-center mr-3 text-base`}></i>
-                  <span className="flex-grow">{item.label}</span>
-                  {item.count !== undefined && item.count > 0 && <span className="bg-primary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{item.count > 9 ? '9+' : item.count}</span>}
-                  {item.children && <i className={`fas fa-chevron-down text-xs ml-auto transition-transform ${openMenus[item.id.toString()] ? 'rotate-180' : ''}`}></i>}
-                </a>
-                {item.children && openMenus[item.id.toString()] && (
-                    <div className="pl-6 border-l-2 border-slate-700 ml-3.5 my-1">
-                        {item.children.map(child => (
-                            hasPermission(child.permission) && (
-                                <a
-                                    key={child.id}
-                                    href="#"
-                                    onClick={(e) => { 
-                                        e.preventDefault(); 
-                                        onSelectView(child.id as AdminView);
-                                        if (isSidebarOpenProp && window.innerWidth < 768) onToggleSidebar();
-                                    }}
-                                    className={`flex items-center p-2 my-0.5 rounded-md text-sm transition-colors duration-200 ${activeView === child.id ? 'bg-admin-sidebarActiveBg text-admin-sidebarActiveText' : 'text-admin-sidebarText hover:bg-slate-700 hover:text-admin-sidebarTextHover'}`}
-                                    title={child.label}
-                                >
-                                   <i className={`fas ${child.icon} w-5 text-center mr-3 text-sm opacity-80`}></i> <span>{child.label}</span>
-                                </a>
-                            )
-                        ))}
-                    </div>
-                )}
-              </div>
-            )
-          ))}
-        </nav>
-      </aside>
-    );
-  };
-
-  const StatCard: React.FC<{title: string, value: string | number, icon: string, colorClass: string, linkTo?: AdminView }> = ({ title, value, icon, colorClass, linkTo }) => {
-    const content = (
-        <div className={`admin-card p-5 flex items-center transition-shadow duration-300 ${linkTo ? 'cursor-pointer hover:shadow-lg hover:-translate-y-1' : ''}`} onClick={linkTo ? () => setActiveView(linkTo) : undefined}>
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white mr-4 ${colorClass}`}> <i className={`fas ${icon} text-xl`}></i> </div>
-            <div> <div className="text-2xl font-bold text-admin-textPrimary">{value}</div> <div className="text-sm text-admin-textSecondary">{title}</div> </div>
-        </div>
-    );
-    return content;
-  };
-  const ChartPlaceholder: React.FC<{title: string, type: 'Bar' | 'Line' | 'Pie'}> = ({ title, type }) => (
-    <div className="admin-card">
-        <div className="admin-card-header"><h3 className="admin-card-title">{title} ({type} Chart)</h3></div>
-        <div className="admin-card-body flex items-center justify-center h-64 text-slate-400 bg-slate-50"> <i className={`fas fa-chart-${type.toLowerCase() === 'pie' ? 'pie' : type.toLowerCase() === 'line' ? 'line' : 'bar'} text-3xl mr-2`}></i> Placeholder </div>
+        <input type="checkbox" id={`${section}_${field}_${name}_${index}_${subField}`} name={name} checked={checked || false} onChange={e => onChange(e, section, index, field)} />
+        <label htmlFor={`${section}_${field}_${name}_${index}_${subField}`} className="ml-2 text-sm font-medium text-admin-text-secondary">{label}</label>
     </div>
   );
 
-  const DashboardView: React.FC = () => {
-    const totalProducts = products.length;
-    const totalArticles = articles.length;
-    const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((sum, order) => order.status === 'Hoàn thành' ? sum + order.totalAmount : sum, 0);
-    const processingOrders = orders.filter(o => o.status === 'Chờ xử lý' || o.status === 'Đang chuẩn bị').length;
-
-    return (
-      <div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <StatCard title="Tổng Sản Phẩm" value={totalProducts} icon="fa-box" colorClass="bg-admin-accentBlue" linkTo="products" />
-            <StatCard title="Tổng Bài Viết" value={totalArticles} icon="fa-newspaper" colorClass="bg-admin-accentTeal" linkTo="articles"/>
-            <StatCard title="Đơn Hàng (Đang Xử Lý)" value={processingOrders} icon="fa-spinner" colorClass="bg-yellow-500" linkTo="orders"/>
-            <StatCard title="Doanh Thu (Hoàn Thành)" value={`${totalRevenue.toLocaleString()}₫`} icon="fa-dollar-sign" colorClass="bg-green-500" linkTo="orders"/>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ChartPlaceholder title="Hoạt Động Truy Cập (Placeholder)" type="Line" />
-            <ChartPlaceholder title="Phân Bổ Trạng Thái Đơn Hàng (Placeholder)" type="Pie" />
-        </div>
-        <div className="admin-card mt-6">
-            <div className="admin-card-header"><h3 className="admin-card-title">Đơn Hàng Mới Nhất</h3></div>
-            <div className="admin-card-body p-0"> <table className="admin-table"> <thead> <tr><th>ID</th><th>Khách Hàng</th><th>Tổng Tiền</th><th>Trạng Thái</th></tr> </thead> <tbody> {orders.slice(0,5).map(order => ( <tr key={order.id}> <td>#{order.id.slice(-6)}</td> <td>{order.customerInfo.fullName}</td> <td>{order.totalAmount.toLocaleString()}₫</td> <td><span className={`px-2 py-0.5 text-xs rounded-full ${order.status === 'Hoàn thành' ? 'bg-green-100 text-green-700' : order.status === 'Đã hủy' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{order.status}</span></td> </tr> ))} </tbody> </table> </div>
-        </div>
-      </div>
-    );
+  const filterAndSortOrders = () => {
+    return orders
+        .filter(order => {
+            if (orderFilters.status && order.status !== orderFilters.status) return false;
+            if (orderFilters.customerName && !order.customerInfo.fullName.toLowerCase().includes(orderFilters.customerName.toLowerCase())) return false;
+            const orderDate = new Date(order.orderDate);
+            if (orderFilters.dateFrom && orderDate < new Date(orderFilters.dateFrom)) return false;
+            if (orderFilters.dateTo && orderDate > new Date(orderFilters.dateTo)) return false;
+            return true;
+        })
+        .sort((a,b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
   };
-  
-  const renderSiteSettings = () => {
-    if (!hasPermission(['manageSiteSettings'])) return <p>Không có quyền truy cập.</p>;
-    
-    const renderArrayManager = (
-        sectionKey: keyof SiteSettings, 
-        fieldKey: string, 
-        itemTemplate: any, 
-        itemRenderer: (item: any, index: number) => React.ReactNode,
-        sectionTitle: string
-    ) => {
-        const itemsArray = (siteSettingsForm[sectionKey] as any)?.[fieldKey] || [];
+
+  const filteredOrders = filterAndSortOrders();
+
+  const renderContent = () => {
+    if (!hasPermission(['viewDashboard'])) return <div className="admin-card"><div className="admin-card-body">Bạn không có quyền truy cập trang quản trị.</div></div>;
+
+    switch(activeView) {
+      case 'dashboard':
+        return hasPermission(['viewDashboard']) ? <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <Card className="admin-card !shadow-none"><div className="admin-card-body">Doanh thu hôm nay: <strong>{(orders.filter(o => new Date(o.orderDate).toDateString() === new Date().toDateString()).reduce((sum, o) => sum + o.totalAmount, 0)).toLocaleString('vi-VN')}₫</strong></div></Card>
+            <Card className="admin-card !shadow-none"><div className="admin-card-body">Đơn hàng mới: <strong>{orders.filter(o => o.status === 'Chờ xử lý').length}</strong></div></Card>
+            <Card className="admin-card !shadow-none"><div className="admin-card-body">Sản phẩm sắp hết: <strong>{products.filter(p => p.stock > 0 && p.stock < 5).length}</strong></div></Card>
+            <Card className="admin-card !shadow-none"><div className="admin-card-body">Khách hàng mới: <strong>{customerUsers.length}</strong></div></Card>
+          </div>
+          <Card className="admin-card !shadow-none">
+            <div className="admin-card-header"><h3 className="admin-card-title">Đơn hàng gần đây</h3></div>
+            <div className="admin-card-body !p-0"><table className="admin-table"><thead><tr><th>Mã ĐH</th><th>Khách hàng</th><th>Ngày</th><th>Tổng tiền</th><th>Trạng thái</th></tr></thead><tbody>{orders.slice(0, 5).map(o => <tr key={o.id}><td>#{o.id.slice(-6)}</td><td>{o.customerInfo.fullName}</td><td>{new Date(o.orderDate).toLocaleDateString('vi-VN')}</td><td>{o.totalAmount.toLocaleString('vi-VN')}₫</td><td>{o.status}</td></tr>)}</tbody></table></div>
+          </Card>
+        </div> : null;
+
+      case 'products':
+        if (!hasPermission(['viewProducts'])) return null;
+        return <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold">Quản lý Sản phẩm ({products.length})</h3>
+            {hasPermission(['manageProducts']) && <Button onClick={() => { setIsEditingProduct(null); setProductFormData(initialProductFormState); setShowProductForm(true); }}><i className="fas fa-plus mr-2"></i>Thêm Sản phẩm</Button>}
+          </div>
+          {showProductForm ? (
+            <Card className="admin-card !shadow-lg mb-6"><div className="admin-card-header"><h3 className="admin-card-title">{isEditingProduct ? "Chỉnh sửa Sản phẩm" : "Thêm Sản phẩm mới"}</h3></div><form onSubmit={handleProductFormSubmit} className="admin-card-body grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2 space-y-4">
+                <FormSectionTitle>Thông tin cơ bản</FormSectionTitle>
+                <div><label>Tên sản phẩm</label><input type="text" name="name" value={productFormData.name} onChange={handleProductInputChange} required /></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div><label>Danh mục chính</label><select name="mainCategorySlug" value={productFormData.mainCategorySlug} onChange={handleProductInputChange}>{Constants.PRODUCT_CATEGORIES_HIERARCHY.map(mc => <option key={mc.slug} value={mc.slug}>{mc.name}</option>)}</select></div>
+                  <div><label>Danh mục con</label><select name="subCategorySlug" value={productFormData.subCategorySlug} onChange={handleProductInputChange}>{Constants.PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.slug === productFormData.mainCategorySlug)?.subCategories.map(sc => <option key={sc.slug} value={sc.slug}>{sc.name}</option>)}</select></div>
+                </div>
+                <div><label>Mô tả ngắn</label><textarea name="shortDescription" value={productFormData.shortDescription} onChange={handleProductInputChange} rows={2}></textarea></div>
+                <div><label>Mô tả chi tiết</label><textarea name="description" value={productFormData.description} onChange={handleProductInputChange} rows={5}></textarea></div>
+                <FormSectionTitle>Giá & Kho hàng</FormSectionTitle>
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div><label>Giá bán (VNĐ)</label><input type="number" name="price" value={productFormData.price} onChange={handleProductInputChange} required /></div>
+                  <div><label>Giá gốc (nếu có)</label><input type="number" name="originalPrice" value={productFormData.originalPrice} onChange={handleProductInputChange} /></div>
+                  <div><label>Số lượng kho</label><input type="number" name="stock" value={productFormData.stock} onChange={handleProductInputChange} required /></div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><label>Hãng sản xuất</label><input type="text" name="brand" value={productFormData.brand} onChange={handleProductInputChange} /></div>
+                    <div><label>Tình trạng</label><select name="status" value={productFormData.status} onChange={handleProductInputChange}><option value="Mới">Mới</option><option value="Cũ">Cũ</option><option value="Like new">Like new</option></select></div>
+                </div>
+              </div>
+              <div className="md:col-span-1 space-y-4">
+                 <FormSectionTitle>Hình ảnh</FormSectionTitle>
+                 {productFormData.imageUrlsData.map((url, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                        <input type="text" value={url} onChange={(e) => handleProductImageUrlChange(index, e.target.value)} placeholder={`URL ảnh ${index + 1}`} className="flex-grow"/>
+                        <Button type="button" variant="danger" size="sm" onClick={() => removeProductImageUrlField(index)}><i className="fas fa-trash"></i></Button>
+                    </div>
+                 ))}
+                 <Button type="button" variant="outline" size="sm" onClick={addProductImageUrlField}>Thêm URL ảnh</Button>
+                 <div><label>Hoặc tải lên (sẽ ghi đè URL)</label><input type="file" onChange={handleProductImageFileChange} multiple accept="image/*" /></div>
+                 <FormSectionTitle>Thông số kỹ thuật (JSON)</FormSectionTitle>
+                 <textarea name="specifications" value={productFormData.specifications} onChange={handleProductInputChange} rows={6} placeholder='{ "CPU": "Intel Core i9", "RAM": "32GB" }'></textarea>
+                 <FormSectionTitle>SEO & Hiển thị</FormSectionTitle>
+                 <input type="text" name="tagsString" value={productFormData.tagsString} onChange={handleProductInputChange} placeholder="Tags (cách nhau bởi dấu phẩy)" />
+                 <input type="text" name="slug" value={productFormData.slug} onChange={handleProductInputChange} placeholder="URL Slug (tùy chọn)" />
+                 <input type="text" name="seoMetaTitle" value={productFormData.seoMetaTitle} onChange={handleProductInputChange} placeholder="SEO Meta Title" />
+                 <textarea name="seoMetaDescription" value={productFormData.seoMetaDescription} onChange={handleProductInputChange} placeholder="SEO Meta Description" rows={2}></textarea>
+                 <div className="admin-form-group-checkbox"><input type="checkbox" name="isVisible" checked={productFormData.isVisible} onChange={handleProductInputChange} id="prod_visible" /><label htmlFor="prod_visible">Hiển thị sản phẩm</label></div>
+                 <div className="flex gap-2 mt-4"><Button type="submit" isLoading={false}>{isEditingProduct ? 'Cập nhật' : 'Lưu'}</Button><Button type="button" variant="outline" onClick={resetProductForm}>Hủy</Button></div>
+              </div>
+            </form></Card>
+          ) : null}
+          <Card className="admin-card !shadow-none"><div className="admin-card-body !p-0"><table className="admin-table"><thead><tr><th>Sản phẩm</th><th>Giá</th><th>Kho</th><th>Hiển thị</th><th></th></tr></thead><tbody>{products.map(p => <tr key={p.id}><td><div className="flex items-center"><img src={p.imageUrls[0] || ''} className="w-10 h-10 object-cover rounded mr-3"/><span className="font-semibold">{p.name}</span></div></td><td>{p.price.toLocaleString('vi-VN')}₫</td><td>{p.stock}</td><td>{p.isVisible ? 'Có' : 'Không'}</td><td className="text-right">{hasPermission(['manageProducts']) && <><Button size="sm" variant="ghost" onClick={() => handleEditProduct(p)}><i className="fas fa-edit"></i></Button><Button size="sm" variant="ghost" className="text-danger-text" onClick={() => handleDeleteProduct(p.id)}><i className="fas fa-trash"></i></Button></>}</td></tr>)}</tbody></table></div></Card>
+        </div>;
+
+      case 'articles':
+        if (!hasPermission(['viewArticles'])) return null;
+         return <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold">Quản lý Bài viết ({articles.length})</h3>
+            {hasPermission(['manageArticles']) && <Button onClick={() => { setIsEditingArticle(null); setArticleFormData(initialArticleFormState); setShowArticleForm(true); }}><i className="fas fa-plus mr-2"></i>Thêm Bài viết</Button>}
+          </div>
+          {showArticleForm && (
+            <Card className="admin-card !shadow-lg mb-6"><div className="admin-card-header"><h3 className="admin-card-title">{isEditingArticle ? 'Chỉnh sửa Bài viết' : 'Thêm Bài viết mới'}</h3></div><form onSubmit={handleArticleFormSubmit} className="admin-card-body space-y-4">
+              <input type="text" name="title" placeholder="Tiêu đề" value={articleFormData.title} onChange={handleArticleInputChange} required />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="text" name="author" placeholder="Tác giả" value={articleFormData.author} onChange={handleArticleInputChange} required />
+                <input type="date" name="date" value={articleFormData.date} onChange={handleArticleInputChange} required />
+                <select name="category" value={articleFormData.category} onChange={handleArticleInputChange}>{Constants.ARTICLE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
+              </div>
+              <textarea name="summary" placeholder="Tóm tắt" value={articleFormData.summary} onChange={handleArticleInputChange} rows={2} required></textarea>
+              <textarea name="content" placeholder="Nội dung (hỗ trợ Markdown)" value={articleFormData.content} onChange={handleArticleInputChange} rows={10} required></textarea>
+              <div><label>Ảnh đại diện (URL hoặc tải lên)</label><input type="text" name="imageUrl" placeholder="URL Ảnh" value={articleFormData.imageUrl} onChange={handleArticleInputChange} /><input type="file" onChange={handleArticleImageUpload} accept="image/*" /></div>
+              <div className="flex gap-2"><Button type="submit">{isEditingArticle ? 'Cập nhật' : 'Lưu'}</Button><Button type="button" variant="outline" onClick={resetArticleForm}>Hủy</Button></div>
+            </form></Card>
+          )}
+          <Card className="admin-card !shadow-none"><div className="admin-card-body !p-0"><table className="admin-table"><thead><tr><th>Tiêu đề</th><th>Tác giả</th><th>Ngày</th><th></th></tr></thead><tbody>{articles.map(a => <tr key={a.id}><td><div className="flex items-center"><img src={a.imageUrl || ''} className="w-12 h-10 object-cover rounded mr-3"/><span className="font-semibold">{a.title}</span></div></td><td>{a.author}</td><td>{new Date(a.date).toLocaleDateString('vi-VN')}</td><td className="text-right">{hasPermission(['manageArticles']) && <><Button size="sm" variant="ghost" onClick={() => handleEditArticle(a)}><i className="fas fa-edit"></i></Button><Button size="sm" variant="ghost" className="text-danger-text" onClick={() => handleDeleteArticle(a.id)}><i className="fas fa-trash"></i></Button></>}</td></tr>)}</tbody></table></div></Card>
+        </div>;
+
+      case 'site_settings':
+        if (!hasPermission(['manageSiteSettings'])) return null;
+        const toggleSection = (sectionName: string) => setOpenSiteSettingsSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
         return (
-            <div className="my-4 p-3 border border-gray-300 rounded-md bg-slate-50">
-                <h4 className="text-md font-semibold mb-2 text-gray-700">{sectionTitle} ({itemsArray.length})</h4>
-                {itemsArray.map((item: any, index: number) => (
-                    <div key={item.id || index} className="p-3 mb-2 border border-gray-200 rounded bg-white shadow-sm relative">
-                        {itemRenderer(item, index)}
-                        <Button type="button" variant="danger" size="sm" onClick={() => handleRemoveItemFromSiteSettingArray(sectionKey, fieldKey, item.id)} className="absolute top-2 right-2 !p-1.5 !text-xs">
-                            <i className="fas fa-times"></i> Xóa
-                        </Button>
+          <form onSubmit={(e) => { e.preventDefault(); handleSaveSiteSettings(); }}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">Cài đặt Trang & Hệ thống</h3>
+              <Button type="submit"><i className="fas fa-save mr-2"></i>Lưu Cài đặt</Button>
+            </div>
+            <Card className="admin-card !shadow-none">
+              <div className="admin-card-body">
+                <button type="button" className="w-full text-left font-bold text-lg mb-2" onClick={() => toggleSection('general')}>Thông Tin Chung {openSiteSettingsSections.general ? '[-]' : '[+]'}</button>
+                {openSiteSettingsSections.general && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4">
+                    <InputField label="Tên công ty" name="companyName" value={siteSettingsForm.companyName} onChange={(e:any) => setSiteSettingsForm(prev => ({...prev, companyName: e.target.value}))} />
+                    <InputField label="Slogan" name="companySlogan" value={siteSettingsForm.companySlogan} onChange={(e:any) => setSiteSettingsForm(prev => ({...prev, companySlogan: e.target.value}))} />
+                    <InputField label="Số điện thoại" name="companyPhone" value={siteSettingsForm.companyPhone} onChange={(e:any) => setSiteSettingsForm(prev => ({...prev, companyPhone: e.target.value}))} />
+                    <InputField label="Email" name="companyEmail" value={siteSettingsForm.companyEmail} onChange={(e:any) => setSiteSettingsForm(prev => ({...prev, companyEmail: e.target.value}))} />
+                    <div className="md:col-span-2"><InputField label="Địa chỉ" name="companyAddress" value={siteSettingsForm.companyAddress} onChange={(e:any) => setSiteSettingsForm(prev => ({...prev, companyAddress: e.target.value}))} /></div>
+                  </div>
+                )}
+                
+                <button type="button" className="w-full text-left font-bold text-lg mt-4 mb-2" onClick={() => toggleSection('homepageBanners')}>Banner Trang Chủ {openSiteSettingsSections.homepageBanners ? '[-]' : '[+]'}</button>
+                {openSiteSettingsSections.homepageBanners && siteSettingsForm.homepageBanners && siteSettingsForm.homepageBanners.map((banner, index) => (
+                    <div key={banner.id || index} className="p-4 border rounded-lg mb-4 bg-slate-50 relative">
+                        <FormSectionTitle>Banner #{index + 1}</FormSectionTitle>
+                        <CheckboxField label="Hoạt động" name="isActive" checked={banner.isActive} onChange={e => handleSiteSettingInputChange(e, 'homepageBanners', index)} />
+                        <InputField label="Tiêu đề phụ (Pre-title)" name="preTitle" value={banner.preTitle} onChange={e => handleSiteSettingInputChange(e, 'homepageBanners', index)} />
+                        <InputField label="Tiêu đề chính" name="title" value={banner.title} onChange={e => handleSiteSettingInputChange(e, 'homepageBanners', index)} />
+                        <TextAreaField label="Mô tả (Subtitle)" name="subtitle" value={banner.subtitle} onChange={e => handleSiteSettingInputChange(e, 'homepageBanners', index)} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-admin-text-secondary mb-1.5">Ảnh nền (Background Image)</label>
+                            <input type="text" name="backgroundImageUrl" value={banner.backgroundImageUrl} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners', index)} placeholder="URL ảnh nền" />
+                            <input type="file" className="mt-2" onChange={(e) => handleSiteImageUpload(e, 'homepageBanners', 'backgroundImageUrl', index)} />
+                            {banner.backgroundImageUrl && <img src={banner.backgroundImageUrl} alt="Preview" className="mt-2 h-24 w-auto rounded" />}
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-admin-text-secondary mb-1.5">Ảnh cột phải (Right Column Image)</label>
+                            <input type="text" name="rightColumnImageUrl" value={banner.rightColumnImageUrl || ''} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners', index)} placeholder="URL ảnh cột phải" />
+                            <input type="file" className="mt-2" onChange={(e) => handleSiteImageUpload(e, 'homepageBanners', 'rightColumnImageUrl', index)} />
+                            {banner.rightColumnImageUrl && <img src={banner.rightColumnImageUrl} alt="Preview" className="mt-2 h-24 w-auto rounded" />}
+                          </div>
+                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <InputField label="Text nút chính" name="primaryButtonText" value={banner.primaryButtonText} onChange={e => handleSiteSettingInputChange(e, 'homepageBanners', index)} />
+                            <InputField label="Link nút chính" name="primaryButtonLink" value={banner.primaryButtonLink} onChange={e => handleSiteSettingInputChange(e, 'homepageBanners', index)} />
+                        </div>
                     </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => handleAddItemToSiteSettingArray(sectionKey, fieldKey, itemTemplate)} className="mt-2">
-                    <i className="fas fa-plus mr-1"></i> Thêm mục
-                </Button>
+
+              </div>
+            </Card>
+          </form>
+        );
+      
+      case 'theme_settings':
+        if (!hasPermission(['manageTheme'])) return null;
+        return <Card className="admin-card !shadow-none"><div className="admin-card-header"><h3 className="admin-card-title">Cài đặt Theme màu</h3></div><form onSubmit={(e) => {e.preventDefault(); handleSaveThemeSettings();}} className="admin-card-body grid grid-cols-2 gap-6">
+            <div><label>Màu chính (Default)</label><input type="color" name="primaryColorDefault" value={themeSettingsForm.primaryColorDefault} onChange={handleThemeColorChange}/></div>
+            <div><label>Màu phụ (Default)</label><input type="color" name="secondaryColorDefault" value={themeSettingsForm.secondaryColorDefault} onChange={handleThemeColorChange}/></div>
+            <Button type="submit" className="col-span-2">Lưu Theme</Button>
+        </form></Card>;
+
+      default: return <div>Chọn một mục từ menu</div>;
+    }
+  };
+
+  const renderSidebarItem = (item: MenuItemConfig, isChild = false) => {
+    if (!hasPermission(item.permission)) return null;
+
+    const isActive = activeView === item.id;
+    const isParentOpen = item.children && openMenus[item.id];
+    
+    const itemClasses = `w-full flex items-center p-3 my-1 rounded-md transition-colors text-sm ${
+        isChild ? 'pl-10' : 'pl-4'
+    } ${
+        isActive 
+        ? 'bg-admin-sidebarActiveBg text-admin-sidebarActiveText font-semibold shadow-inner' 
+        : 'text-admin-sidebarText hover:bg-admin-sidebarActiveBg/50 hover:text-admin-sidebarTextHover'
+    }`;
+
+    if (item.children) {
+        return (
+            <div key={item.id}>
+                <button className={itemClasses} onClick={() => { setOpenMenus(prev => ({...prev, [item.id]: !prev[item.id]})); setActiveView(item.id as AdminView); }}>
+                    <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
+                    <span className="flex-grow text-left">{item.label}</span>
+                    <i className={`fas fa-chevron-down text-xs transition-transform duration-200 ${isParentOpen ? 'rotate-180' : ''}`}></i>
+                </button>
+                {isParentOpen && (
+                    <div className="border-l border-slate-600 ml-6">
+                        {item.children.map(child => renderSidebarItem(child, true))}
+                    </div>
+                )}
             </div>
         );
-    };
+    }
 
     return (
-        <div className="admin-card">
-            <div className="admin-card-header"><h2 className="admin-card-title">Cài đặt Trang & Hệ Thống</h2></div>
-            <div className="admin-card-body">
-                <Button onClick={handleSaveSiteSettings} className="mb-6 bg-admin-accentBlue hover:bg-blue-700 text-white sticky top-2 z-20">Lưu Tất Cả Cài Đặt</Button>
-                
-                <SiteSettingsAccordion title="Thông tin chung" sectionKey="general" isOpen={openSiteSettingsSections['general']} toggleSection={setOpenSiteSettingsSections}> 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2"> 
-                        <InputField label="Tên công ty" name="companyName" value={siteSettingsForm.companyName} onChange={handleSiteSettingInputChange} /> 
-                        <InputField label="Khẩu hiệu" name="companySlogan" value={siteSettingsForm.companySlogan} onChange={handleSiteSettingInputChange} /> 
-                        <InputField label="Điện thoại" name="companyPhone" value={siteSettingsForm.companyPhone} onChange={handleSiteSettingInputChange} /> 
-                        <InputField label="Email" name="companyEmail" value={siteSettingsForm.companyEmail} onChange={handleSiteSettingInputChange} /> 
-                    </div> 
-                    <TextAreaField label="Địa chỉ" name="companyAddress" value={siteSettingsForm.companyAddress} onChange={handleSiteSettingInputChange} /> 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2"> 
-                        <ImageUploadField label="Logo trang web (URL hoặc tải lên)" value={siteSettingsForm.siteLogoUrl} name="siteLogoUrl" onUpload={(e) => handleSiteImageUpload(e, 'siteLogoUrl')} onChange={handleSiteSettingInputChange} /> 
-                        <InputField label="Meta Title mặc định" name="defaultMetaTitle" value={siteSettingsForm.defaultMetaTitle} onChange={handleSiteSettingInputChange} /> 
-                    </div>
-                    <TextAreaField label="Meta Description mặc định" name="defaultMetaDescription" value={siteSettingsForm.defaultMetaDescription} onChange={handleSiteSettingInputChange} /> 
-                    <InputField label="Meta Keywords mặc định" name="defaultMetaKeywords" value={siteSettingsForm.defaultMetaKeywords} onChange={handleSiteSettingInputChange} /> 
-                </SiteSettingsAccordion>
-                
-                <SiteSettingsAccordion title="Homepage: Banner" sectionKey="homepageBanners" isOpen={openSiteSettingsSections.homepageBanners} toggleSection={setOpenSiteSettingsSections}>
-                    {renderArrayManager('homepageBanners' as any, 'homepageBanners', Constants.INITIAL_SITE_SETTINGS.homepageBanners[0] || {id:'', title:'', order:0, isActive:true}, (item: HomepageBannerSettings, index:number) => (
-                      <div className="space-y-3">
-                        <InputField label="ID Banner" name="id" value={item.id} onChange={(e: any) => handleSiteSettingInputChange(e, 'homepageBanners' as any, 'homepageBanners', index)} disabled />
-                        <InputField label="Tiêu đề chính" name="title" value={item.title} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners' as any, 'homepageBanners', index)} />
-                        <InputField label="Tiêu đề phụ (Pre-title)" name="preTitle" value={item.preTitle} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners' as any, 'homepageBanners', index)} />
-                        <TextAreaField label="Mô tả ngắn (Subtitle)" name="subtitle" value={item.subtitle} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners' as any, 'homepageBanners', index)} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                            <ImageUploadField label="Ảnh nền" name="backgroundImageUrl" value={item.backgroundImageUrl} onUpload={(e) => handleSiteImageUpload(e, {section: 'homepageBanners' as any, field: 'backgroundImageUrl', index})} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners' as any, 'homepageBanners', index)} />
-                            <ImageUploadField label="Ảnh cột phải" name="rightColumnImageUrl" value={item.rightColumnImageUrl} onUpload={(e) => handleSiteImageUpload(e, {section: 'homepageBanners' as any, field: 'rightColumnImageUrl', index})} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners' as any, 'homepageBanners', index)} />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                            <InputField label="Text nút chính" name="primaryButtonText" value={item.primaryButtonText} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners' as any, 'homepageBanners', index)} />
-                            <InputField label="Link nút chính" name="primaryButtonLink" value={item.primaryButtonLink} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners' as any, 'homepageBanners', index)} />
-                        </div>
-                        <CheckboxField label="Hoạt động" name="isActive" checked={item.isActive} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners' as any, 'homepageBanners', index)}/>
-                        <InputField label="Thứ tự" name="order" type="number" value={item.order} onChange={(e) => handleSiteSettingInputChange(e, 'homepageBanners' as any, 'homepageBanners', index)} />
-                      </div>
-                    ), "Quản lý các Banner")}
-                </SiteSettingsAccordion>
-
-                <SiteSettingsAccordion title="Homepage: Giới thiệu (About)" sectionKey="homepageAbout" isOpen={openSiteSettingsSections.homepageAbout} toggleSection={setOpenSiteSettingsSections}>
-                    <CheckboxField label="Hiển thị mục này" name="enabled" checked={siteSettingsForm.homepageAbout.enabled} onChange={handleSiteSettingInputChange} section="homepageAbout" field="enabled" />
-                    <InputField label="Tiêu đề chính" name="title" value={siteSettingsForm.homepageAbout.title} onChange={handleSiteSettingInputChange} section="homepageAbout" field="title" />
-                    <InputField label="Tiêu đề phụ (Pre-title)" name="preTitle" value={siteSettingsForm.homepageAbout.preTitle} onChange={handleSiteSettingInputChange} section="homepageAbout" field="preTitle" />
-                    <TextAreaField label="Mô tả" name="description" value={siteSettingsForm.homepageAbout.description} onChange={handleSiteSettingInputChange} section="homepageAbout" field="description" rows={5}/>
-                    <ImageUploadField label="Ảnh chính" name="imageUrl" value={siteSettingsForm.homepageAbout.imageUrl} onUpload={(e) => handleSiteImageUpload(e, {section: 'homepageAbout', field: 'imageUrl'})} onChange={handleSiteSettingInputChange} section="homepageAbout" field="imageUrl" />
-                    {renderArrayManager('homepageAbout', 'features', Constants.INITIAL_SITE_SETTINGS.homepageAbout.features[0] || {id:'', icon:'fas fa-check', title:'', description:'', link:''}, (item, index) => (
-                        <div className="space-y-3">
-                            <InputField label="Icon (FontAwesome)" name="icon" value={item.icon} onChange={handleSiteSettingInputChange} section="homepageAbout" field="features" index={index} />
-                            <InputField label="Tiêu đề Feature" name="title" value={item.title} onChange={handleSiteSettingInputChange} section="homepageAbout" field="features" index={index} />
-                            <TextAreaField label="Mô tả Feature" name="description" value={item.description} onChange={handleSiteSettingInputChange} section="homepageAbout" field="features" index={index} rows={2}/>
-                            <InputField label="Link Feature (tùy chọn)" name="link" value={item.link} onChange={handleSiteSettingInputChange} section="homepageAbout" field="features" index={index} />
-                        </div>
-                    ), "Các Điểm Nổi Bật (Features)")}
-                    <InputField label="Text nút" name="buttonText" value={siteSettingsForm.homepageAbout.buttonText} onChange={handleSiteSettingInputChange} section="homepageAbout" field="buttonText" />
-                    <InputField label="Link nút" name="buttonLink" value={siteSettingsForm.homepageAbout.buttonLink} onChange={handleSiteSettingInputChange} section="homepageAbout" field="buttonLink" />
-                </SiteSettingsAccordion>
-
-                <SiteSettingsAccordion title="Homepage: Lợi ích Dịch vụ" sectionKey="homepageServicesBenefits" isOpen={openSiteSettingsSections.homepageServicesBenefits} toggleSection={setOpenSiteSettingsSections}>
-                     <CheckboxField label="Hiển thị mục này" name="enabled" checked={siteSettingsForm.homepageServicesBenefits.enabled} onChange={handleSiteSettingInputChange} section="homepageServicesBenefits" field="enabled" />
-                     <InputField label="Tiêu đề chính" name="title" value={siteSettingsForm.homepageServicesBenefits.title} onChange={handleSiteSettingInputChange} section="homepageServicesBenefits" field="title" />
-                     <InputField label="Tiêu đề phụ (Pre-title)" name="preTitle" value={siteSettingsForm.homepageServicesBenefits.preTitle} onChange={handleSiteSettingInputChange} section="homepageServicesBenefits" field="preTitle" />
-                     {renderArrayManager('homepageServicesBenefits', 'benefits', Constants.INITIAL_SITE_SETTINGS.homepageServicesBenefits.benefits[0] || {id:'', iconClass:'fas fa-star', title:'', description:'', link:'', bgImageUrlSeed:'', order:0}, (item, index) => (
-                        <div className="space-y-3">
-                            <InputField label="Icon (FontAwesome)" name="iconClass" value={item.iconClass} onChange={handleSiteSettingInputChange} section="homepageServicesBenefits" field="benefits" index={index} />
-                            <InputField label="Tiêu đề Lợi ích" name="title" value={item.title} onChange={handleSiteSettingInputChange} section="homepageServicesBenefits" field="benefits" index={index} />
-                            <TextAreaField label="Mô tả Lợi ích" name="description" value={item.description} onChange={handleSiteSettingInputChange} section="homepageServicesBenefits" field="benefits" index={index} rows={2}/>
-                            <InputField label="Link (tùy chọn)" name="link" value={item.link} onChange={handleSiteSettingInputChange} section="homepageServicesBenefits" field="benefits" index={index} />
-                            <InputField label="Seed ảnh nền (Picsum)" name="bgImageUrlSeed" value={item.bgImageUrlSeed} onChange={handleSiteSettingInputChange} section="homepageServicesBenefits" field="benefits" index={index} />
-                            <InputField label="Thứ tự" name="order" type="number" value={item.order} onChange={handleSiteSettingInputChange} section="homepageServicesBenefits" field="benefits" index={index} />
-                        </div>
-                    ), "Danh Sách Lợi Ích")}
-                </SiteSettingsAccordion>
-                
-                <SiteSettingsAccordion title="Cài đặt SMTP" sectionKey="smtpSettings" isOpen={openSiteSettingsSections.smtpSettings} toggleSection={setOpenSiteSettingsSections}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                        <InputField label="Host" name="host" value={siteSettingsForm.smtpSettings.host} onChange={handleSiteSettingInputChange} section="smtpSettings" field="host"/>
-                        <InputField label="Port" name="port" type="number" value={siteSettingsForm.smtpSettings.port} onChange={handleSiteSettingInputChange} section="smtpSettings" field="port"/>
-                        <InputField label="User" name="user" value={siteSettingsForm.smtpSettings.user} onChange={handleSiteSettingInputChange} section="smtpSettings" field="user"/>
-                        <InputField label="Password" name="pass" type="password" value={siteSettingsForm.smtpSettings.pass} onChange={handleSiteSettingInputChange} section="smtpSettings" field="pass"/>
-                    </div>
-                    <CheckboxField label="Secure (SSL/TLS)" name="secure" checked={siteSettingsForm.smtpSettings.secure} onChange={handleSiteSettingInputChange} section="smtpSettings" field="secure"/>
-                </SiteSettingsAccordion>
-
-                <SiteSettingsAccordion title="Cổng Thanh Toán" sectionKey="paymentGateways" isOpen={openSiteSettingsSections.paymentGateways} toggleSection={setOpenSiteSettingsSections}>
-                    <CheckboxField label="Kích hoạt Momo" name="momoEnabled" checked={siteSettingsForm.paymentGateways.momoEnabled} onChange={handleSiteSettingInputChange} section="paymentGateways" field="momoEnabled"/>
-                    <CheckboxField label="Kích hoạt VNPay" name="vnPayEnabled" checked={siteSettingsForm.paymentGateways.vnPayEnabled} onChange={handleSiteSettingInputChange} section="paymentGateways" field="vnPayEnabled"/>
-                    <CheckboxField label="Kích hoạt PayPal" name="paypalEnabled" checked={siteSettingsForm.paymentGateways.paypalEnabled} onChange={handleSiteSettingInputChange} section="paymentGateways" field="paypalEnabled"/>
-                </SiteSettingsAccordion>
-
-                <div className="mt-6">
-                    <Button type="button" variant="outline" className="border-gray-400 text-gray-600">Sao Lưu & Phục Hồi Dữ Liệu (Conceptual)</Button>
-                </div>
-            </div>
-        </div>
+      <button key={item.id} className={itemClasses} onClick={() => setActiveView(item.id as AdminView)}>
+        <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
+        {item.label}
+        {item.count !== undefined && item.count > 0 && <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">{item.count}</span>}
+      </button>
     );
   };
-  
-  const renderActiveAdminView = () => {
-    const menuItemIsParent = MENU_CONFIG.find(item => item.id === activeView && item.children && item.children.length > 0);
-    if (menuItemIsParent) {
-        return <div className="admin-card"><div className="admin-card-body"><p className="text-center text-gray-500 py-8">Đang tải mục con...</p></div></div>;
-    }
 
-    switch (activeView) {
-      case 'dashboard': return hasPermission(['viewDashboard']) ? <DashboardView /> : <p>Không có quyền xem Tổng Quan.</p>;
-      case 'products': return ( <div className="admin-card"> <div className="admin-card-header flex justify-between items-center"> <h2 className="admin-card-title">🛒 Quản lý Sản phẩm</h2> {hasPermission(['manageProducts']) && <Button onClick={() => {setShowProductForm(true); setIsEditingProduct(null); setProductFormData(initialProductFormState);}} className="bg-admin-accentBlue hover:bg-blue-700 text-white">Thêm Sản phẩm</Button>} </div> <div className="admin-card-body"> {showProductForm && hasPermission(['manageProducts']) && ( <Card className="mb-6 p-6 bg-slate-50 border border-slate-200"> <h3 className="text-xl font-medium mb-4 text-admin-textPrimary">{isEditingProduct ? '📝 Sửa Sản phẩm' : '✨ Thêm Sản phẩm Mới'}</h3> <form onSubmit={handleProductFormSubmit} className="space-y-5"> 
-      
-      <FormSectionTitle>Thông tin cơ bản</FormSectionTitle>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
-        <InputField label="Tên sản phẩm" name="name" value={productFormData.name} onChange={handleProductInputChange} required />
-        <InputField label="ID Sản phẩm (SKU)" name="id" value={productFormData.id || 'Sẽ được tạo tự động'} onChange={() => {}} disabled />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
-        <SelectField label="Danh mục chính" name="mainCategorySlug" value={productFormData.mainCategorySlug} onChange={handleProductInputChange} required > {Constants.PRODUCT_CATEGORIES_HIERARCHY.map(mc => <option key={mc.slug} value={mc.slug}>{mc.name}</option>)} </SelectField>
-        <SelectField label="Danh mục phụ" name="subCategorySlug" value={productFormData.subCategorySlug} onChange={handleProductInputChange} required > {(Constants.PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.slug === productFormData.mainCategorySlug)?.subCategories || []).map(sc => <option key={sc.slug} value={sc.slug}>{sc.name}</option>)} </SelectField>
-      </div>
-      <TextAreaField label="Mô tả ngắn sản phẩm" name="shortDescription" value={productFormData.shortDescription} onChange={handleProductInputChange} rows={3}/>
-      <TextAreaField label="Mô tả chi tiết sản phẩm" name="description" value={productFormData.description} onChange={handleProductInputChange} rows={6}/>
-
-      <FormSectionTitle>Giá & Kho hàng</FormSectionTitle>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
-        <InputField label="Giá bán / Giá khuyến mãi (VNĐ)" name="price" type="number" value={productFormData.price} onChange={handleProductInputChange} required />
-        <InputField label="Giá gốc (VNĐ)" name="originalPrice" type="number" value={productFormData.originalPrice || ''} onChange={handleProductInputChange} placeholder="Bỏ trống nếu không giảm giá" />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
-        <InputField label="Số lượng trong kho" name="stock" type="number" value={productFormData.stock} onChange={handleProductInputChange} required />
-        <SelectField label="Tình trạng sản phẩm" name="status" value={productFormData.status} onChange={handleProductInputChange} > <option value="Mới">Mới</option><option value="Cũ">Cũ</option><option value="Like new">Like new</option> </SelectField>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
-        <InputField label="Hãng sản xuất" name="brand" value={productFormData.brand} onChange={handleProductInputChange} />
-        <InputField label="Tags (VD: Mới, Hot, Gaming)" name="tagsString" value={productFormData.tagsString} onChange={handleProductInputChange} placeholder="Phân cách bằng dấu phẩy" />
-      </div>
-      <CheckboxField label="Hiển thị sản phẩm" name="isVisible" checked={productFormData.isVisible} onChange={handleProductInputChange} />
-      
-      <FormSectionTitle>Hình ảnh</FormSectionTitle>
-      <div className="admin-form-group"> <label className="block text-sm font-medium text-admin-textSecondary mb-1.5">Ảnh đại diện & Bộ sưu tập ảnh (Ảnh đầu tiên là ảnh đại diện)</label> {productFormData.imageUrlsData.map((url, index) => ( <div key={index} className="flex items-center mb-2"> <input type="text" value={url} onChange={(e) => handleProductImageUrlChange(index, e.target.value)} placeholder="https://example.com/image.jpg" className="flex-grow mr-2 !p-2.5 !text-sm" /> <Button type="button" variant="danger" size="sm" onClick={() => removeProductImageUrlField(index)}><i className="fas fa-times"></i></Button> </div> ))} 
-      <div className="flex items-center mt-2">
-        <Button type="button" variant="outline" size="sm" onClick={addProductImageUrlField} className="mr-3">Thêm URL Ảnh</Button> 
-        <label htmlFor="productImageFiles" className="text-sm font-medium text-admin-textSecondary mr-2">Hoặc tải lên:</label> 
-        <input type="file" id="productImageFiles" multiple onChange={handleProductImageFileChange} accept="image/*" className="!p-0"/> 
-      </div>
-      <div className="flex flex-wrap gap-2 mt-2"> {productFormData.imageUrlsData.filter(url => url.startsWith('data:image')).map((dataUrl, index) => ( <ImageUploadPreview key={`preview-${index}`} src={dataUrl} onRemove={() => removeProductImageUrlField(productFormData.imageUrlsData.findIndex(u => u === dataUrl))} /> ))} </div> </div>
-      
-      <FormSectionTitle>Thông số & SEO</FormSectionTitle>
-      <TextAreaField label="Thông số kỹ thuật (JSON)" name="specifications" value={productFormData.specifications} onChange={handleProductInputChange} rows={5} placeholder='{ "CPU": "Intel Core i5", "RAM": "16GB" }'/>
-      <InputField label="Đường dẫn tùy chỉnh (slug)" name="slug" value={productFormData.slug} onChange={handleProductInputChange} placeholder="vi-du-san-pham-moi" helpText="Nếu bỏ trống, sẽ tự tạo từ tên sản phẩm." />
-      <InputField label="SEO Meta Title" name="seoMetaTitle" value={productFormData.seoMetaTitle} onChange={handleProductInputChange} />
-      <TextAreaField label="SEO Meta Description" name="seoMetaDescription" value={productFormData.seoMetaDescription} onChange={handleProductInputChange} rows={3}/>
-      
-      <div className="flex justify-end space-x-3 pt-4 border-t border-admin-card-border"> <Button type="button" variant="outline" onClick={resetProductForm}>Hủy Bỏ</Button> <Button type="submit" variant="primary" className="font-semibold">{isEditingProduct ? 'Lưu Sản Phẩm' : 'Lưu & Thêm Mới'}</Button> </div> </form> </Card> )} <div className="overflow-x-auto"> <table className="admin-table"> <thead> <tr><th>Ảnh</th><th>Tên</th><th>Giá bán</th><th>Kho</th><th>Hiển thị</th>{hasPermission(['manageProducts']) && <th>Hành động</th>}</tr> </thead> <tbody> {products.map(product => ( <tr key={product.id}> <td className="py-2 px-3"><img src={(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : 'https://via.placeholder.com/50')} alt={product.name} className="w-10 h-10 object-cover rounded"/></td> <td>{product.name}</td><td>{product.price.toLocaleString()}₫</td><td>{product.stock}</td><td>{product.isVisible !== false ? '✔️' : '❌'}</td> {hasPermission(['manageProducts']) && (<td><Button size="sm" variant="ghost" onClick={() => handleEditProduct(product)} className="mr-2 !text-admin-accentBlue hover:!text-blue-700">Sửa</Button><Button size="sm" variant="ghost" onClick={() => handleDeleteProduct(product.id)} className="!text-red-600 hover:!text-red-800">Xóa</Button></td>)} </tr> ))} </tbody> </table> </div> </div> </div> );
-      case 'articles': return ( <div className="admin-card"> <div className="admin-card-header flex justify-between items-center"><h2 className="admin-card-title">Quản lý Bài viết</h2>{hasPermission(['manageArticles']) && <Button onClick={() => {setShowArticleForm(true); setIsEditingArticle(null); setArticleFormData(initialArticleFormState);}} className="bg-admin-accentBlue hover:bg-blue-700 text-white">Thêm Bài viết</Button>}</div> <div className="admin-card-body"> {showArticleForm && hasPermission(['manageArticles']) && ( <Card className="mb-6 p-6 bg-slate-50 border border-slate-200"> <h3 className="text-xl font-medium mb-4 text-admin-textPrimary">{isEditingArticle ? 'Sửa Bài viết' : 'Thêm Bài viết Mới'}</h3> <form onSubmit={handleArticleFormSubmit} className="space-y-5"> <InputField label="Tiêu đề" name="title" value={articleFormData.title} onChange={handleArticleInputChange} required/> <TextAreaField label="Tóm tắt" name="summary" value={articleFormData.summary} onChange={handleArticleInputChange} required/> <ImageUploadField label="Ảnh bìa" name="imageUrl" value={articleFormData.imageUrl} onUpload={handleArticleImageUpload} onChange={handleArticleInputChange} /> <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-1"><InputField label="Tác giả" name="author" value={articleFormData.author} onChange={handleArticleInputChange} required/><InputField label="Ngày đăng" name="date" type="date" value={articleFormData.date} onChange={handleArticleInputChange} required/><SelectField label="Chuyên mục" name="category" value={articleFormData.category} onChange={handleArticleInputChange} required>{Constants.ARTICLE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}</SelectField></div> <TextAreaField label="Nội dung (Markdown)" name="content" value={articleFormData.content} onChange={handleArticleInputChange} rows={10} required/> <div className="flex justify-end space-x-3 pt-3 border-t border-admin-card-border"> <Button type="button" variant="outline" onClick={resetArticleForm}>Hủy</Button> <Button type="submit" className="bg-admin-accentBlue hover:bg-blue-700">{isEditingArticle ? 'Lưu' : 'Thêm'}</Button> </div> </form> </Card> )} <div className="overflow-x-auto"><table className="admin-table"><thead><tr><th>Tiêu đề</th><th>Chuyên mục</th><th>Ngày</th>{hasPermission(['manageArticles']) && <th>Hành động</th>}</tr></thead><tbody>{articles.map(article => (<tr key={article.id}><td>{article.title}</td><td>{article.category}</td><td>{new Date(article.date).toLocaleDateString()}</td>{hasPermission(['manageArticles']) && <td><Button size="sm" variant="ghost" onClick={() => handleEditArticle(article)} className="mr-2 !text-admin-accentBlue hover:!text-blue-700">Sửa</Button><Button size="sm" variant="ghost" onClick={() => handleDeleteArticle(article.id)} className="!text-red-600 hover:!text-red-800">Xóa</Button></td>}</tr>))}</tbody></table></div> </div> </div> );
-      case 'media_library':
-            if (!hasPermission(['manageSiteSettings'])) return <p>Không có quyền.</p>;
-            return (
-                <div className="admin-card">
-                    <div className="admin-card-header flex justify-between items-center">
-                        <h2 className="admin-card-title">Thư Viện Media</h2>
-                        <div className="admin-form-group !mb-0"><label htmlFor="mediaUpload" className="bg-admin-accentBlue hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md cursor-pointer text-sm">Tải Lên Ảnh Mới</label><input type="file" id="mediaUpload" onChange={handleMediaFileUpload} accept="image/*" className="hidden" /></div>
-                    </div>
-                    <div className="admin-card-body">
-                        {siteMedia.length === 0 ? <p>Chưa có ảnh nào trong thư viện.</p> : (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                {siteMedia.map(item => (
-                                    <div key={item.id} className="group relative border border-admin-card-border rounded-md overflow-hidden aspect-square">
-                                        <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-opacity flex flex-col items-center justify-center p-2">
-                                            <p className="text-xs text-white opacity-0 group-hover:opacity-100 truncate w-full text-center mb-1">{item.name}</p>
-                                            <Button size="sm" variant="ghost" onClick={() => copyMediaUrl(item.url)} className="!text-white !text-xs opacity-0 group-hover:opacity-100 !mb-1"><i className="fas fa-copy mr-1"></i> Sao chép URL</Button>
-                                            <Button size="sm" variant="danger" onClick={() => handleDeleteMediaItem(item.id)} className="!text-xs opacity-0 group-hover:opacity-100"><i className="fas fa-trash mr-1"></i> Xóa</Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-
-      case 'site_settings': return renderSiteSettings();
-      case 'faqs': return ( <div className="admin-card"> <div className="admin-card-header flex justify-between items-center"> <h2 className="admin-card-title">Quản lý FAQs</h2> {hasPermission(['manageFaqs']) && <Button onClick={() => {setShowFaqForm(true); setIsEditingFaq(null); setFaqFormData(initialFaqFormState);}} className="bg-admin-accentBlue hover:bg-blue-700 text-white">Thêm FAQ</Button>} </div> <div className="admin-card-body"> {showFaqForm && hasPermission(['manageFaqs']) && ( <Card className="mb-6 p-6 bg-slate-50 border border-slate-200"> <h3 className="text-xl font-medium mb-4 text-admin-textPrimary">{isEditingFaq ? 'Sửa FAQ' : 'Thêm FAQ Mới'}</h3> <form onSubmit={handleFaqFormSubmit} className="space-y-5"> <InputField label="Câu hỏi" name="question" value={faqFormData.question} onChange={handleFaqInputChange} required /> <TextAreaField label="Câu trả lời (Markdown)" name="answer" value={faqFormData.answer} onChange={handleFaqInputChange} rows={5} required /> <InputField label="Chuyên mục (tùy chọn)" name="category" value={faqFormData.category} onChange={handleFaqInputChange} /> <CheckboxField label="Hiển thị công khai" name="isVisible" checked={faqFormData.isVisible} onChange={handleFaqInputChange} /> <div className="flex justify-end space-x-3 pt-3 border-t border-admin-card-border"> <Button type="button" variant="outline" onClick={resetFaqForm}>Hủy</Button> <Button type="submit" className="bg-admin-accentBlue hover:bg-blue-700">{isEditingFaq ? 'Lưu' : 'Thêm'}</Button> </div> </form> </Card> )} <div className="overflow-x-auto"><table className="admin-table"><thead><tr><th>Câu hỏi</th><th>Chuyên mục</th><th>Hiển thị</th>{hasPermission(['manageFaqs']) && <th>Hành động</th>}</tr></thead><tbody>{faqs.map(faq => (<tr key={faq.id}><td>{faq.question}</td><td>{faq.category}</td><td>{faq.isVisible ? 'Có' : 'Không'}</td>{hasPermission(['manageFaqs']) && <td><Button size="sm" variant="ghost" onClick={() => handleEditFaq(faq)} className="mr-2 !text-admin-accentBlue hover:!text-blue-700">Sửa</Button><Button size="sm" variant="ghost" onClick={() => handleDeleteFaq(faq.id)} className="!text-red-600 hover:!text-red-800">Xóa</Button></td>}</tr>))}</tbody></table></div> </div> </div> );
-      case 'staff': return ( <div className="admin-card"> <div className="admin-card-header flex justify-between items-center"> <h2 className="admin-card-title">Quản lý Nhân Viên</h2> {hasPermission(['manageStaff']) && <Button onClick={() => { setShowStaffForm(true); setIsEditingStaff(null); setStaffFormData(initialStaffFormState); }} className="bg-admin-accentBlue hover:bg-blue-700 text-white">Thêm Nhân Viên</Button>} </div> <div className="admin-card-body"> <p className="text-sm text-gray-600 mb-4">Tổng số nhân viên: {staffUsers.length}</p> {showStaffForm && hasPermission(['manageStaff']) && ( <Card className="mb-6 p-6 bg-slate-50 border border-slate-200"> <h3 className="text-xl font-medium mb-4 text-admin-textPrimary">{isEditingStaff ? 'Sửa Thông Tin Nhân Viên' : 'Thêm Nhân Viên Mới'}</h3> <form onSubmit={handleStaffFormSubmit} className="space-y-5"> <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1"> <InputField label="Tên đăng nhập" name="username" value={staffFormData.username} onChange={handleStaffInputChange} required /> <InputField label="Email" name="email" type="email" value={staffFormData.email} onChange={handleStaffInputChange} required /> </div> <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1"> <InputField label="Mật khẩu" name="password" type="password" value={staffFormData.password || ''} onChange={handleStaffInputChange} placeholder={isEditingStaff ? "Để trống nếu không đổi" : "Bắt buộc"} required={!isEditingStaff} /> <SelectField label="Vai trò nhân viên" name="staffRole" value={staffFormData.staffRole} onChange={handleStaffInputChange} > {Constants.STAFF_ROLE_OPTIONS_CONST.map(role => <option key={role} value={role}>{role}</option>)} </SelectField> </div> <CheckboxField label="Khóa tài khoản" name="isLocked" checked={staffFormData.isLocked} onChange={handleStaffInputChange}/> <div className="flex justify-end space-x-3 pt-3 border-t border-admin-card-border"> <Button type="button" variant="outline" onClick={resetStaffForm}>Hủy</Button> <Button type="submit" className="bg-admin-accentBlue hover:bg-blue-700">{isEditingStaff ? 'Lưu Thay Đổi' : 'Thêm Nhân Viên'}</Button> </div> </form> </Card> )} <div className="overflow-x-auto"><table className="admin-table"><thead><tr><th>Tên</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th>{hasPermission(['manageStaff']) && <th>Hành động</th>}</tr></thead><tbody>{staffUsers.map(user => (<tr key={user.id}><td>{user.username}</td><td>{user.email}</td><td>{user.staffRole || user.role}</td><td>{user.isLocked ? <span className="text-red-500 font-semibold">Đã khóa</span> : <span className="text-green-500">Hoạt động</span>}</td>{hasPermission(['manageStaff']) && (<td><Button size="sm" variant="ghost" onClick={() => handleEditStaff(user)} className="mr-1 !text-admin-accentBlue hover:!text-blue-700">Sửa</Button><Button size="sm" variant="ghost" onClick={() => handleToggleUserLock(user.id, user.isLocked)} className={`mr-1 !text-xs ${user.isLocked ? '!text-green-600' : '!text-yellow-600'}`}>{user.isLocked ? 'Mở khóa' : 'Khóa'}</Button>{user.email !== currentUser?.email && <Button size="sm" variant="ghost" onClick={() => handleDeleteUser(user.id, 'staff')} className="!text-red-600 hover:!text-red-800">Xóa</Button>}</td>)}</tr>))}</tbody></table></div> </div> </div> );
-       case 'customers': return ( <div className="admin-card"> <div className="admin-card-header"><h2 className="admin-card-title">Quản lý Khách Hàng</h2></div> <div className="admin-card-body"> <p className="text-sm text-gray-600 mb-4">Tổng số khách hàng: {customerUsers.length}</p> {hasPermission(['viewCustomers']) ? ( <div className="overflow-x-auto"><table className="admin-table"><thead><tr><th>Tên</th><th>Email</th><th>Trạng thái</th>{hasPermission(['manageStaff']) && <th>Hành động</th>}</tr></thead><tbody>{customerUsers.map(user => (<tr key={user.id}><td>{user.username}</td><td>{user.email}</td><td>{user.isLocked ? <span className="text-red-500 font-semibold">Đã khóa</span> : <span className="text-green-500">Hoạt động</span>}</td>{hasPermission(['manageStaff']) && (<td><Button size="sm" variant="ghost" onClick={() => handleToggleUserLock(user.id, user.isLocked)} className={`mr-1 !text-xs ${user.isLocked ? '!text-green-600' : '!text-yellow-600'}`}>{user.isLocked ? 'Mở khóa' : 'Khóa'}</Button><Button size="sm" variant="ghost" onClick={() => handleDeleteUser(user.id, 'customer')} className="!text-red-600 hover:!text-red-800">Xóa</Button></td>)}</tr>))}</tbody></table></div> ) : <p>Không có quyền xem danh sách khách hàng.</p>} </div> </div> );
-        case 'orders':
-            if (!hasPermission(['viewOrders'])) return <p>Không có quyền xem Đơn hàng.</p>;
-            const filteredOrders = orders.filter(order => 
-                (orderFilters.status ? order.status === orderFilters.status : true) &&
-                (orderFilters.customerName ? order.customerInfo.fullName.toLowerCase().includes(orderFilters.customerName.toLowerCase()) : true) &&
-                (orderFilters.dateFrom ? new Date(order.orderDate) >= new Date(orderFilters.dateFrom) : true) &&
-                (orderFilters.dateTo ? new Date(order.orderDate) <= new Date(orderFilters.dateTo) : true)
-            );
-            return (
-                <div className="admin-card">
-                    <div className="admin-card-header"><h2 className="admin-card-title">Quản lý Đơn hàng ({filteredOrders.length})</h2></div>
-                    <div className="admin-card-body">
-                        <div className="mb-6 p-4 border rounded-md bg-slate-50 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3 items-end">
-                            <InputField label="Tên khách hàng" name="customerName" value={orderFilters.customerName} onChange={handleOrderFilterChange}/>
-                            <SelectField label="Trạng thái" name="status" value={orderFilters.status} onChange={handleOrderFilterChange}><option value="">Tất cả</option>{Constants.ORDER_STATUSES.map(s=><option key={s} value={s}>{s}</option>)}</SelectField>
-                            <InputField label="Từ ngày" name="dateFrom" type="date" value={orderFilters.dateFrom} onChange={handleOrderFilterChange}/>
-                            <InputField label="Đến ngày" name="dateTo" type="date" value={orderFilters.dateTo} onChange={handleOrderFilterChange}/>
-                        </div>
-                        <div className="flex space-x-2 mb-4">
-                             <Button variant="outline" size="sm" onClick={() => alert("Chức năng xuất Excel/PDF đang được phát triển.")}>Xuất Excel/PDF</Button>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="admin-table">
-                                <thead><tr><th>ID</th><th>Khách Hàng</th><th>Ngày Đặt</th><th>Tổng Tiền</th><th>Trạng Thái</th><th>Vận Chuyển</th><th>Hành Động</th></tr></thead>
-                                <tbody>
-                                    {filteredOrders.map(order => (
-                                        <tr key={order.id}>
-                                            <td>#{order.id.slice(-6)}</td>
-                                            <td>{order.customerInfo.fullName}</td>
-                                            <td>{new Date(order.orderDate).toLocaleDateString()}</td>
-                                            <td>{order.totalAmount.toLocaleString()}₫</td>
-                                            <td>
-                                                {hasPermission(['manageOrders']) ? (
-                                                    <select value={order.status} onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value as OrderStatus)} className="!p-1.5 !text-xs !rounded-md">
-                                                        {Constants.ORDER_STATUSES.map(status => <option key={status} value={status}>{status}</option>)}
-                                                    </select>
-                                                ) : (
-                                                    <span className={`px-2 py-0.5 text-xs rounded-full ${order.status === 'Hoàn thành' ? 'bg-green-100 text-green-700' : order.status === 'Đã hủy' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{order.status}</span>
-                                                )}
-                                            </td>
-                                            <td>{order.shippingInfo?.carrier || 'N/A'} - {order.shippingInfo?.trackingNumber || 'N/A'}</td>
-                                            <td>
-                                                <Button size="sm" variant="ghost" onClick={() => setViewingOrder(order)} className="!text-admin-accentBlue hover:!text-blue-700 mr-1">Xem</Button>
-                                                {hasPermission(['manageOrders']) && <Button size="sm" variant="ghost" onClick={() => {setEditingOrderShipping(order); setViewingOrder(order);}} className="!text-purple-600 hover:!text-purple-800 text-xs">Vận chuyển</Button>}
-                                                {hasPermission(['manageOrders']) && <Button size="sm" variant="ghost" onClick={() => alert("Chức năng tạo hóa đơn đang được phát triển.")} className="!text-green-600 hover:!text-green-800 text-xs">Hóa đơn</Button>}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        {viewingOrder && (
-                             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[110] p-4">
-                                <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                                    <div className="admin-card-header flex justify-between items-center"> <h3 className="admin-card-title">Chi tiết Đơn hàng #{viewingOrder.id.slice(-6)}</h3> <Button variant="ghost" size="sm" onClick={() => {setViewingOrder(null); setEditingOrderShipping(null);}} className="!text-gray-500 hover:!text-gray-700">&times;</Button> </div>
-                                    <div className="admin-card-body">
-                                        {editingOrderShipping && editingOrderShipping.id === viewingOrder.id ? (
-                                            <form onSubmit={(e) => {e.preventDefault(); handleSaveOrderShippingInfo();}} className="space-y-4">
-                                                <InputField label="Đơn vị vận chuyển" name="carrier" value={editingOrderShipping.shippingInfo?.carrier} onChange={(e:any) => setEditingOrderShipping(prev => prev ? {...prev, shippingInfo: {...prev.shippingInfo, carrier: e.target.value}} : null)}/>
-                                                <InputField label="Mã vận đơn" name="trackingNumber" value={editingOrderShipping.shippingInfo?.trackingNumber} onChange={(e:any) => setEditingOrderShipping(prev => prev ? {...prev, shippingInfo: {...prev.shippingInfo, trackingNumber: e.target.value}} : null)}/>
-                                                <SelectField label="Trạng thái vận chuyển" name="shippingStatus" value={editingOrderShipping.shippingInfo?.shippingStatus} onChange={(e:any) => setEditingOrderShipping(prev => prev ? {...prev, shippingInfo: {...prev.shippingInfo, shippingStatus: e.target.value}} : null)}><option value="Chưa giao">Chưa giao</option><option value="Đang lấy hàng">Đang lấy hàng</option><option value="Đang giao">Đang giao</option><option value="Đã giao">Đã giao</option><option value="Gặp sự cố">Gặp sự cố</option></SelectField>
-                                                <Button type="submit">Lưu thông tin vận chuyển</Button>
-                                            </form>
-                                        ) : (
-                                            <> <p><strong>Khách hàng:</strong> {viewingOrder.customerInfo.fullName}</p> <p><strong>Vận chuyển:</strong> {viewingOrder.shippingInfo?.carrier || 'N/A'} - {viewingOrder.shippingInfo?.trackingNumber || 'N/A'} ({viewingOrder.shippingInfo?.shippingStatus || 'Chưa cập nhật'})</p> <h4 className="font-semibold mt-3 mb-1">Các sản phẩm:</h4> <ul className="list-disc list-inside text-sm"> {viewingOrder.items.map(item => ( <li key={item.productId}>{item.productName} (x{item.quantity}) - {item.price.toLocaleString()}₫</li> ))} </ul> <p className="font-bold mt-2">Tổng cộng: {viewingOrder.totalAmount.toLocaleString()}₫</p> </>
-                                        )}
-                                    </div>
-                                </Card>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        case 'chat_logs':
-            if (!hasPermission(['viewOrders'])) return <p>Không có quyền xem Lịch sử Chat.</p>; 
-            return (
-                <div className="admin-card">
-                    <div className="admin-card-header"><h2 className="admin-card-title">Lịch sử Chat ({chatLogs.length})</h2></div>
-                    <div className="admin-card-body">
-                        {chatLogs.length === 0 ? <p>Chưa có lịch sử chat nào.</p> : (
-                            <div className="overflow-x-auto">
-                                <table className="admin-table">
-                                    <thead><tr><th>Người dùng</th><th>SĐT</th><th>Thời gian</th><th>Hành động</th></tr></thead>
-                                    <tbody>
-                                        {chatLogs.map(log => (
-                                            <tr key={log.id}>
-                                                <td>{log.userName}</td>
-                                                <td>{log.userPhone}</td>
-                                                <td>{new Date(log.startTime).toLocaleString()}</td>
-                                                <td>
-                                                    <Button size="sm" variant="ghost" onClick={() => setViewingChatLog(log)} className="!text-admin-accentBlue hover:!text-blue-700 mr-1">Xem</Button>
-                                                    <Button size="sm" variant="danger" onClick={() => handleDeleteChatLog(log.id)} className="text-xs">Xóa</Button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                        {viewingChatLog && (
-                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[110] p-4">
-                                <Card className="w-full max-w-md max-h-[80vh] flex flex-col">
-                                    <div className="admin-card-header flex justify-between items-center">
-                                        <h3 className="admin-card-title">Chat với {viewingChatLog.userName} ({viewingChatLog.userPhone})</h3>
-                                        <Button variant="ghost" size="sm" onClick={() => setViewingChatLog(null)} className="!text-gray-500 hover:!text-gray-700">&times;</Button>
-                                    </div>
-                                    <div className="admin-card-body flex-grow overflow-y-auto p-4 bg-bgCanvas">
-                                        {viewingChatLog.messages.map(msg => (
-                                            <ChatMessageComponent key={msg.id} message={msg} />
-                                        ))}
-                                    </div>
-                                </Card>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        case 'discounts': if (!hasPermission(['manageDiscounts'])) return <p>Không có quyền.</p>; return ( <div className="admin-card"> <div className="admin-card-header flex justify-between items-center"> <h2 className="admin-card-title">Quản lý Mã Giảm Giá</h2> <Button onClick={() => {setShowDiscountForm(true); setIsEditingDiscount(null); setDiscountFormData(initialDiscountFormState);}} className="bg-admin-accentBlue hover:bg-blue-700 text-white">Thêm Mã</Button> </div> <div className="admin-card-body"> {showDiscountForm && ( <Card className="mb-6 p-6 bg-slate-50 border border-slate-200"> <h3 className="text-xl font-medium mb-4">{isEditingDiscount ? 'Sửa Mã Giảm Giá' : 'Thêm Mã Mới'}</h3> <form onSubmit={handleDiscountFormSubmit} className="space-y-4"> <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1"> <InputField label="Mã code" name="code" value={discountFormData.code} onChange={handleDiscountInputChange} required /> <SelectField label="Loại" name="type" value={discountFormData.type} onChange={handleDiscountInputChange}><option value="percentage">Phần trăm</option><option value="fixed_amount">Số tiền cố định</option></SelectField> </div> <InputField label="Giá trị" name="value" type="number" value={discountFormData.value} onChange={handleDiscountInputChange} required /> <TextAreaField label="Mô tả (tùy chọn)" name="description" value={discountFormData.description} onChange={handleDiscountInputChange} rows={2}/> <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1"> <InputField label="Ngày hết hạn (tùy chọn)" name="expiryDate" type="date" value={discountFormData.expiryDate} onChange={handleDiscountInputChange} /> <InputField label="Chi tiêu tối thiểu (tùy chọn)" name="minSpend" type="number" value={discountFormData.minSpend} onChange={handleDiscountInputChange} /> </div> <InputField label="Giới hạn sử dụng (0=không giới hạn)" name="usageLimit" type="number" value={discountFormData.usageLimit} onChange={handleDiscountInputChange} /> <CheckboxField label="Kích hoạt" name="isActive" checked={discountFormData.isActive} onChange={handleDiscountInputChange}/> <div className="flex justify-end space-x-3 pt-3 border-t border-admin-card-border"> <Button type="button" variant="outline" onClick={resetDiscountForm}>Hủy</Button> <Button type="submit" className="bg-admin-accentBlue hover:bg-blue-700">{isEditingDiscount ? 'Lưu' : 'Thêm'}</Button> </div> </form> </Card> )} <div className="overflow-x-auto"> <table className="admin-table"> <thead><tr><th>Code</th><th>Loại</th><th>Giá trị</th><th>Hết hạn</th><th>Kích hoạt</th><th>Đã dùng</th><th>Hành động</th></tr></thead> <tbody> {discounts.map(d => ( <tr key={d.id}> <td>{d.code}</td><td>{d.type === 'percentage' ? 'Phần trăm' : 'Cố định'}</td><td>{d.type === 'percentage' ? `${d.value}%` : `${d.value.toLocaleString()}₫`}</td><td>{d.expiryDate ? new Date(d.expiryDate).toLocaleDateString() : 'N/A'}</td><td>{d.isActive ? 'Có' : 'Không'}</td><td>{d.timesUsed || 0}/{d.usageLimit || '∞'}</td> <td><Button size="sm" variant="ghost" onClick={() => handleEditDiscount(d)} className="mr-2 !text-admin-accentBlue hover:!text-blue-700">Sửa</Button><Button size="sm" variant="ghost" onClick={() => handleDeleteDiscount(d.id)} className="!text-red-600 hover:!text-red-800">Xóa</Button></td> </tr> ))} </tbody> </table> </div> </div> </div> );
-        case 'theme_settings': if (!hasPermission(['manageTheme'])) return <p>Không có quyền.</p>; return ( <div className="admin-card"> <div className="admin-card-header"><h2 className="admin-card-title">Cài đặt Theme Màu</h2></div> <div className="admin-card-body"> <form onSubmit={(e) => { e.preventDefault(); handleSaveThemeSettings(); }} className="space-y-5 max-w-lg"> <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3"> <div> <InputField label="Màu Chính (Mặc định)" name="primaryColorDefault" type="color" value={themeSettingsForm.primaryColorDefault} onChange={handleThemeColorChange} /> <div style={{backgroundColor: themeSettingsForm.primaryColorDefault}} className="w-full h-10 mt-1 rounded border border-gray-300"></div> </div> <div> <InputField label="Màu Chính (Sáng)" name="primaryColorLight" type="color" value={themeSettingsForm.primaryColorLight} onChange={handleThemeColorChange} /> <div style={{backgroundColor: themeSettingsForm.primaryColorLight}} className="w-full h-10 mt-1 rounded border border-gray-300"></div> </div> <div> <InputField label="Màu Chính (Tối)" name="primaryColorDark" type="color" value={themeSettingsForm.primaryColorDark} onChange={handleThemeColorChange} /> <div style={{backgroundColor: themeSettingsForm.primaryColorDark}} className="w-full h-10 mt-1 rounded border border-gray-300"></div> </div> <div> <InputField label="Màu Phụ (Mặc định)" name="secondaryColorDefault" type="color" value={themeSettingsForm.secondaryColorDefault} onChange={handleThemeColorChange} /> <div style={{backgroundColor: themeSettingsForm.secondaryColorDefault}} className="w-full h-10 mt-1 rounded border border-gray-300"></div> </div> <div> <InputField label="Màu Phụ (Sáng)" name="secondaryColorLight" type="color" value={themeSettingsForm.secondaryColorLight} onChange={handleThemeColorChange} /> <div style={{backgroundColor: themeSettingsForm.secondaryColorLight}} className="w-full h-10 mt-1 rounded border border-gray-300"></div> </div> <div> <InputField label="Màu Phụ (Tối)" name="secondaryColorDark" type="color" value={themeSettingsForm.secondaryColorDark} onChange={handleThemeColorChange} /> <div style={{backgroundColor: themeSettingsForm.secondaryColorDark}} className="w-full h-10 mt-1 rounded border border-gray-300"></div> </div> </div> <Button type="submit" className="bg-admin-accentBlue hover:bg-blue-700">Lưu Theme</Button> </form> </div> </div> );
-        case 'menu_settings': if (!hasPermission(['manageMenu'])) return <p>Không có quyền.</p>; return ( <div className="admin-card"> <div className="admin-card-header flex justify-between items-center"> <h2 className="admin-card-title">Quản lý Menu Điều Hướng</h2> <Button onClick={() => {setShowMenuForm(true); setEditingMenuLink(null); setMenuLinkFormData(initialMenuLinkFormState);}} className="bg-admin-accentBlue hover:bg-blue-700 text-white">Thêm Link Menu</Button> </div> <div className="admin-card-body"> {showMenuForm && ( <Card className="mb-6 p-6 bg-slate-50 border border-slate-200"> <h3 className="text-xl font-medium mb-4">{editingMenuLink ? 'Sửa Link Menu' : 'Thêm Link Menu Mới'}</h3> <form onSubmit={handleMenuLinkFormSubmit} className="space-y-4"> <InputField label="Nhãn hiển thị" name="label" value={menuLinkFormData.label} onChange={handleMenuLinkInputChange} required /> <InputField label="Đường dẫn (VD: /shop)" name="path" value={menuLinkFormData.path} onChange={handleMenuLinkInputChange} required /> <InputField label="Thứ tự hiển thị" name="order" type="number" value={menuLinkFormData.order} onChange={handleMenuLinkInputChange} required /> <InputField label="Icon (Font Awesome class, VD: fas fa-home)" name="icon" value={menuLinkFormData.icon} onChange={handleMenuLinkInputChange} /> <CheckboxField label="Hiển thị" name="isVisible" checked={menuLinkFormData.isVisible} onChange={handleMenuLinkInputChange}/> <div className="flex justify-end space-x-3 pt-3 border-t border-admin-card-border"> <Button type="button" variant="outline" onClick={resetMenuLinkForm}>Hủy</Button> <Button type="submit" className="bg-admin-accentBlue hover:bg-blue-700">{editingMenuLink ? 'Lưu' : 'Thêm'}</Button> </div> </form> </Card> )} <div className="overflow-x-auto"> <table className="admin-table"> <thead><tr><th>Nhãn</th><th>Đường dẫn</th><th>Icon</th><th>Thứ tự</th><th>Hiển thị</th><th>Hành động</th></tr></thead> <tbody> {customMenu.map(link => ( <tr key={link.id}> <td>{link.label}</td><td>{link.path}</td><td><i className={link.icon || ''}></i> {link.icon}</td><td>{link.order}</td><td>{link.isVisible ? 'Có' : 'Không'}</td> <td> <Button size="sm" variant="ghost" onClick={() => handleEditMenuLink(link)} className="mr-2 !text-admin-accentBlue hover:!text-blue-700">Sửa</Button> {!link.originalPath && <Button size="sm" variant="ghost" onClick={() => handleDeleteMenuLink(link.id)} className="!text-red-600 hover:!text-red-800">Xóa</Button>} </td> </tr> ))} </tbody> </table> </div> </div> </div> );
-        case 'notifications_panel': if (!hasPermission(['viewNotifications'])) return <p>Không có quyền xem thông báo.</p>; return ( <div className="admin-card"> <div className="admin-card-header flex justify-between items-center"> <h2 className="admin-card-title">Bảng Thông Báo ({unreadNotificationCount} chưa đọc)</h2> {adminNotifications.length > 0 && <Button variant="outline" size="sm" onClick={clearAdminNotifications}>Xóa tất cả</Button>} </div> <div className="admin-card-body"> {adminNotifications.length === 0 ? <p>Không có thông báo nào.</p> : ( <ul className="space-y-3"> {adminNotifications.map(n => ( <li key={n.id} className={`p-3 rounded-md border ${n.isRead ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-admin-accentBlue shadow-sm'}`}> <div className="flex justify-between items-start"> <p className={`text-sm ${n.isRead ? 'text-gray-600' : 'text-gray-800 font-medium'}`}>{n.message}</p> {!n.isRead && <Button size="sm" variant="ghost" onClick={() => markAdminNotificationRead(n.id)} className="text-xs !text-blue-600 hover:!text-blue-800 !p-1">Đánh dấu đã đọc</Button>} </div> <p className={`text-xs ${n.isRead ? 'text-gray-400' : 'text-blue-500'} mt-1`}>{new Date(n.timestamp).toLocaleString()}</p> </li> ))} </ul> )} </div> </div> );
-        case 'analytics_revenue': case 'analytics_inventory': case 'analytics_promo':
-            if (!hasPermission(['viewAnalytics'])) return <p>Không có quyền.</p>;
-            const titleMap = { analytics_revenue: "Dự Đoán Doanh Thu", analytics_inventory: "Gợi Ý Nhập Hàng", analytics_promo: "Gợi Ý Khuyến Mãi Thông Minh" };
-            return ( <div className="admin-card"><div className="admin-card-header"><h2 className="admin-card-title">{titleMap[activeView]} (Placeholder)</h2></div><div className="admin-card-body"><p className="text-gray-500">Tính năng phân tích và AI cho mục này đang được phát triển. Hãy quay lại sau để khám phá các thông tin chi tiết và gợi ý thông minh!</p><div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md text-blue-700"><i className="fas fa-lightbulb mr-2"></i>Sử dụng Gemini API để cung cấp các insight giá trị.</div></div></div> );
-      default: return <p>Chọn một mục từ menu.</p>;
-    }
-  };
 
   return (
-    <div className="flex admin-panel-body min-h-screen">
-      <AdminSidebar 
-        activeView={activeView} 
-        onSelectView={setActiveView} 
-        unreadNotificationCount={unreadNotificationCount}
-        currentUser={currentUser}
-        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        isSidebarOpenProp={isSidebarOpen}
-        menuConfig={MENU_CONFIG}
-        openMenus={openMenus}
-        toggleMenu={(menuKey) => setOpenMenus(prev => ({...prev, [menuKey]: !prev[menuKey]}))}
-      />
-      <main className="admin-main-content flex-1">
+    <div className="min-h-screen bg-admin-contentBg">
+      <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`}>
+         <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white">Trang Quản Trị</h2>
+             <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-2xl text-slate-400 hover:text-white"><i className="fas fa-times"></i></button>
+        </div>
+        <nav className="p-2">
+            {MENU_CONFIG.map(item => renderSidebarItem(item))}
+        </nav>
+      </aside>
+      <main className="admin-main-content">
         <header className="admin-page-header flex justify-between items-center">
-            <div>
-                <h1 className="admin-page-title">
-                    {MENU_CONFIG.flatMap(m => m.children ? m.children : m).find(item => item.id === activeView)?.label || 'Bảng Điều Khiển'}
-                </h1>
-                {/* Breadcrumb can go here */}
+            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden text-2xl text-slate-600"><i className="fas fa-bars"></i></button>
+            <h1 className="admin-page-title hidden md:block">{MENU_CONFIG.flatMap(m => m.children ? m.children : m).find(m => m.id === activeView)?.label || "Tổng Quan"}</h1>
+             <div className="flex items-center gap-4">
+                <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
+                <i className="fas fa-user-circle text-2xl text-admin-textSecondary"></i>
             </div>
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-gray-600 hover:text-primary text-xl p-2">
-                <i className="fas fa-bars"></i>
-            </button>
         </header>
-        {renderActiveAdminView()}
+        <div className="admin-content-area">
+            {renderContent()}
+        </div>
       </main>
     </div>
   );
