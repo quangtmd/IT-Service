@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../types';
@@ -32,7 +31,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <div className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col group border border-gray-200 hover:border-primary/50 hover:shadow-xl transition-all duration-300 p-2.5">
         <div className="relative overflow-hidden rounded-md">
           <img
-            src={(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : `https://picsum.photos/seed/${product.id}/300/225`)}
+            src={(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : `https://source.unsplash.com/300x225/?${encodeURIComponent(product.category + ',' + product.brand)}`)}
             alt={product.name}
             className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
           />

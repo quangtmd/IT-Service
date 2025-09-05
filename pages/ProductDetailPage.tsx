@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
@@ -38,7 +37,7 @@ const ProductDetailPage: React.FC = () => {
           const foundProduct = MOCK_PRODUCTS.find(p => p.id === productId);
           if (foundProduct) {
               setProduct(foundProduct);
-              setMainImage(foundProduct.imageUrls?.[0] || `https://picsum.photos/seed/${foundProduct.id}/600/400`);
+              setMainImage(foundProduct.imageUrls?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
               const related = MOCK_PRODUCTS.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
               setRelatedProducts(related);
               setError(null);
@@ -61,7 +60,7 @@ const ProductDetailPage: React.FC = () => {
         }
         const foundProduct: Product = await productRes.json();
         setProduct(foundProduct);
-        setMainImage(foundProduct.imageUrls?.[0] || `https://picsum.photos/seed/${foundProduct.id}/600/400`);
+        setMainImage(foundProduct.imageUrls?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
         
         try {
             const allProductsRes = await fetch(`${baseUrl}/api/products`);

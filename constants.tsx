@@ -1,5 +1,3 @@
-
-
 import { 
     NavLinkItem, ProductCategoryHierarchy, StaffRole, SiteSettings, FaqItem, DiscountCode, 
     SiteThemeSettings, CustomMenuLink, PricingPlan, UserRole,
@@ -98,30 +96,28 @@ const INITIAL_HOMEPAGE_ABOUT: HomepageAboutSettings = {
   preTitle: "VỀ CHÚNG TÔI",
   title: "IQ Technology Hiểu Nỗi Lo Của Bạn Về CNTT Và Cam Kết Mang Đến Chất Lượng Tốt Nhất!",
   description: "Tại IQ Technology, chúng tôi chuyên cung cấp các giải pháp và dịch vụ IT toàn diện phù hợp với nhu cầu và mục tiêu độc đáo của các doanh nghiệp ở mọi quy mô. Với một đội ngũ các chuyên gia tận tâm và cam kết về chất lượng và uy tín, chúng tôi tin rằng sẽ đem lại hiệu quả để thúc đẩy sự đổi mới, nâng cao năng suất và tối ưu chi phí về CNTT của công ty bạn.",
-  imageUrl: "https://picsum.photos/seed/techTeamCollaborationV1/600/520",
-  imageDetailUrl: "https://picsum.photos/seed/serverRoomDetailV1/280/220",
+  imageUrl: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1770&auto=format&fit=crop",
+  imageDetailUrl: "https://images.unsplash.com/photo-1558655146-364adaf1fcc9?q=80&w=1770&auto=format&fit=crop",
   imageAltText: "Về Chúng Tôi - Nhóm Kỹ Thuật Hợp Tác",
   imageDetailAltText: "Về Chúng Tôi - Chi Tiết Phòng Máy Chủ",
   features: INITIAL_HOMEPAGE_ABOUT_FEATURES,
   buttonText: "Tham Khảo Thêm",
   buttonLink: "/about",
-  sectionTitleIconUrl: "https://picsum.photos/seed/aboutIcon/40/40?text=👥", 
 };
 
 const INITIAL_HOMEPAGE_SERVICE_BENEFITS: HomepageServiceBenefit[] = [
-  { id: 'sb1', iconClass: 'fas fa-dollar-sign', title: 'Tiết Kiệm Chi Phí', description: 'Dịch vụ CNTT giúp doanh nghiệp của bạn có thể giảm đáng kể chi phí liên quan đến việc tuyển dụng, đào tạo và duy trì nhân viên CNTT...', link: '/services', bgImageUrlSeed: 'abstractNetworkBlue', order: 1 },
-  { id: 'sb2', iconClass: 'fas fa-users-cog', title: 'Chuyên Môn Cao', description: 'Chúng tôi mang đến một đội ngũ các chuyên gia CNTT nhiệt huyết và có kinh nghiệm chuyên môn về các lĩnh vực khác nhau như hỗ trợ helpdesk, cấu hình mạng,...', link: '/services', bgImageUrlSeed: 'gearsBackground', order: 2 },
-  { id: 'sb3', iconClass: 'fas fa-cogs', title: 'Chủ Động Và Linh Hoạt', description: 'Công ty chúng tôi cung cấp các giải pháp CNTT có thể mở rộng và linh hoạt có thể thích ứng với nhu cầu thay đổi của các doanh nghiệp khi phát triển hoặc cắt giảm...', link: '/services', bgImageUrlSeed: 'flexibleSystem', order: 3 },
-  { id: 'sb4', iconClass: 'fas fa-headset', title: 'Hỗ Trợ 24/7', description: 'Công ty chúng tôi hiểu tầm quan trọng của hoạt động CNTT không bị gián đoạn đối với doanh nghiệp. Đó là lý do tại sao chúng tôi luôn hỗ trợ ngay lập tức khi có sự cố...', link: '/services', bgImageUrlSeed: 'support247Concept', order: 4 },
-  { id: 'sb5', iconClass: 'fas fa-bullseye', title: 'Tập Trung Vào Cốt Lõi', description: 'Việc thuê ngoài các dịch vụ CNTT cho phép doanh nghiệp tập trung vào năng lực cốt lõi. Bằng cách giao các nhiệm vụ CNTT cho đội ngũ chuyên gia của chúng tôi..', link: '/services', bgImageUrlSeed: 'focusedWork', order: 5 },
-  { id: 'sb6', iconClass: 'fas fa-shield-alt', title: 'Tuân Thủ Bảo Mật', description: 'Công ty chúng tôi hiểu tầm quan trọng của bảo mật dữ liệu. Vì vậy chúng tôi luôn cam kết bảo mật và bảo vệ tài số của các Doanh nghiệp...', link: '/services', bgImageUrlSeed: 'dataSecurityLock', order: 6 },
+  { id: 'sb1', iconClass: 'fas fa-dollar-sign', title: 'Tiết Kiệm Chi Phí', description: 'Dịch vụ CNTT giúp doanh nghiệp của bạn có thể giảm đáng kể chi phí liên quan đến việc tuyển dụng, đào tạo và duy trì nhân viên CNTT...', link: '/services', order: 1 },
+  { id: 'sb2', iconClass: 'fas fa-users-cog', title: 'Chuyên Môn Cao', description: 'Chúng tôi mang đến một đội ngũ các chuyên gia CNTT nhiệt huyết và có kinh nghiệm chuyên môn về các lĩnh vực khác nhau như hỗ trợ helpdesk, cấu hình mạng,...', link: '/services', order: 2 },
+  { id: 'sb3', iconClass: 'fas fa-cogs', title: 'Chủ Động Và Linh Hoạt', description: 'Công ty chúng tôi cung cấp các giải pháp CNTT có thể mở rộng và linh hoạt có thể thích ứng với nhu cầu thay đổi của các doanh nghiệp khi phát triển hoặc cắt giảm...', link: '/services', order: 3 },
+  { id: 'sb4', iconClass: 'fas fa-headset', title: 'Hỗ Trợ 24/7', description: 'Công ty chúng tôi hiểu tầm quan trọng của hoạt động CNTT không bị gián đoạn đối với doanh nghiệp. Đó là lý do tại sao chúng tôi luôn hỗ trợ ngay lập tức khi có sự cố...', link: '/services', order: 4 },
+  { id: 'sb5', iconClass: 'fas fa-bullseye', title: 'Tập Trung Vào Cốt Lõi', description: 'Việc thuê ngoài các dịch vụ CNTT cho phép doanh nghiệp tập trung vào năng lực cốt lõi. Bằng cách giao các nhiệm vụ CNTT cho đội ngũ chuyên gia của chúng tôi..', link: '/services', order: 5 },
+  { id: 'sb6', iconClass: 'fas fa-shield-alt', title: 'Tuân Thủ Bảo Mật', description: 'Công ty chúng tôi hiểu tầm quan trọng của bảo mật dữ liệu. Vì vậy chúng tôi luôn cam kết bảo mật và bảo vệ tài số của các Doanh nghiệp...', link: '/services', order: 6 },
 ];
 const INITIAL_HOMEPAGE_SERVICES_BENEFITS: HomepageServicesBenefitsSettings = {
   enabled: true,
   preTitle: "DỊCH VỤ IT THUÊ NGOÀI TẠI IQ",
   title: "Các Lợi Ích Tiêu Biểu Từ Dịch Vụ & Giải Pháp Của IQ",
   benefits: INITIAL_HOMEPAGE_SERVICE_BENEFITS,
-  sectionTitleIconUrl: "https://picsum.photos/seed/servicesIcon/40/40?text=💡", 
 };
 
 const INITIAL_HOMEPAGE_WHYCHOOSEUS_FEATURES: HomepageWhyChooseUsFeature[] = [
@@ -134,14 +130,13 @@ const INITIAL_HOMEPAGE_WHYCHOOSEUS: HomepageWhyChooseUsSettings = {
   preTitle: "TẠI SAO LẠI LỰA CHỌN IQ?",
   title: "Dịch Vụ IT Tốt Nhất Tại Đà Nẵng",
   description: "Tại IQ Technology, chúng tôi hiểu rằng việc chọn đúng đối tác CNTT là rất quan trọng đối với sự thành công của doanh nghiệp của bạn. Với kinh nghiệm nhiều năm trong lĩnh vực thuê ngoài CNTT, chúng tôi luôn cam kết không ngừng phát triển và mang đến các giải pháp tốt nhất cho Doanh nghiệp, chúng tôi là sự lựa chọn hàng đầu cho tất cả các nhu cầu CNTT của bạn. Đây là lý do tại sao bạn nên cân nhắc hợp tác với chúng tôi!",
-  mainImageUrl: "https://picsum.photos/seed/itSupportTeamV1/600/720",
+  mainImageUrl: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=1770&auto=format&fit=crop",
   experienceStatNumber: "10+",
   experienceStatLabel: "Năm kinh nghiệm",
   features: INITIAL_HOMEPAGE_WHYCHOOSEUS_FEATURES,
   contactButtonText: "Liên Hệ Ngay",
   contactButtonLink: "/contact",
   contactSectionText: "Bạn Cần Tư Vấn Chuyên Sâu Hơn?",
-  sectionTitleIconUrl: "https://picsum.photos/seed/whyChooseUsIcon/40/40?text=✔️", 
 };
 
 const INITIAL_HOMEPAGE_STATS: HomepageStatItem[] = [
@@ -153,7 +148,6 @@ const INITIAL_HOMEPAGE_STATS: HomepageStatItem[] = [
 const INITIAL_HOMEPAGE_STATS_COUNTER: HomepageStatsCounterSettings = {
   enabled: true,
   stats: INITIAL_HOMEPAGE_STATS,
-  sectionTitleIconUrl: "https://picsum.photos/seed/statsIcon/40/40?text=📊",
 };
 
 const INITIAL_HOMEPAGE_FEATURED_PROJECTS: HomepageFeaturedProjectsSettings = {
@@ -162,48 +156,44 @@ const INITIAL_HOMEPAGE_FEATURED_PROJECTS: HomepageFeaturedProjectsSettings = {
   title: "Các Dịch Vụ & Giải Pháp Được Cung Cấp Bởi IQ",
   buttonText: "Xem Chi Tiết",
   buttonLink: "/services",
-  featuredServiceIds: ['1','2','3','4'], 
-  sectionTitleIconUrl: "https://picsum.photos/seed/projectsIcon/40/40?text=🛠️", 
+  featuredServiceIds: ['svc001','svc002','svc003','svc004'], 
 };
 
 const INITIAL_HOMEPAGE_TESTIMONIALS_ITEMS: HomepageTestimonialItem[] = [
-    { id: 'tm_home1', name: 'Nguyễn Văn An', quote: 'Dịch vụ IT của IQ Technology rất chuyên nghiệp và hiệu quả. Đội ngũ hỗ trợ nhanh chóng, giải quyết vấn đề triệt để. Tôi rất hài lòng!', avatarUrl: 'https://picsum.photos/seed/home_testi_an/100/100', role: 'Giám đốc Công ty ABC', order: 1},
-    { id: 'tm_home2', name: 'Trần Thị Bích Hợp', quote: 'Nhờ IQ Technology, hệ thống mạng và máy chủ của chúng tôi hoạt động ổn định hơn hẳn. Chi phí dịch vụ cũng rất hợp lý.', avatarUrl: 'https://picsum.photos/seed/home_testi_hop/100/100', role: 'Trưởng phòng IT XYZ Corp', order: 2},
-    { id: 'tm_home3', name: 'Lê Hoàng Long', quote: 'Tôi đánh giá cao sự tận tâm và kiến thức chuyên môn của các bạn kỹ thuật viên IQ. Họ luôn đưa ra giải pháp tối ưu nhất.', avatarUrl: 'https://picsum.photos/seed/home_testi_long/100/100', role: 'Chủ Doanh Nghiệp Startup', order: 3},
+    { id: 'tm_home1', name: 'Nguyễn Văn An', quote: 'Dịch vụ IT của IQ Technology rất chuyên nghiệp và hiệu quả. Đội ngũ hỗ trợ nhanh chóng, giải quyết vấn đề triệt để. Tôi rất hài lòng!', avatarUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200&auto=format&fit=crop', role: 'Giám đốc Công ty ABC', order: 1},
+    { id: 'tm_home2', name: 'Trần Thị Bích Hợp', quote: 'Nhờ IQ Technology, hệ thống mạng và máy chủ của chúng tôi hoạt động ổn định hơn hẳn. Chi phí dịch vụ cũng rất hợp lý.', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop', role: 'Trưởng phòng IT XYZ Corp', order: 2},
+    { id: 'tm_home3', name: 'Lê Hoàng Long', quote: 'Tôi đánh giá cao sự tận tâm và kiến thức chuyên môn của các bạn kỹ thuật viên IQ. Họ luôn đưa ra giải pháp tối ưu nhất.', avatarUrl: 'https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=200&auto=format&fit=crop', role: 'Chủ Doanh Nghiệp Startup', order: 3},
 ];
 const INITIAL_HOMEPAGE_TESTIMONIALS: HomepageTestimonialsSettings = {
   enabled: true,
   preTitle: "ĐÁNH GIÁ",
   title: "Khách Hàng Nói Gì Về Chúng Tôi",
   testimonials: INITIAL_HOMEPAGE_TESTIMONIALS_ITEMS,
-  sectionTitleIconUrl: "https://picsum.photos/seed/testimonialsIcon/40/40?text=💬", 
 };
 
 const INITIAL_HOMEPAGE_BRAND_LOGOS_ITEMS: HomepageBrandLogo[] = [
-  { id: 'brand1', name: 'TechCorp', logoUrl: 'https://picsum.photos/seed/techBrand1/180/80?grayscale&text=TechCorp', order: 1 },
-  { id: 'brand2', name: 'Innovate Inc', logoUrl: 'https://picsum.photos/seed/techBrand2/180/80?grayscale&text=InnovateInc', order: 2 },
-  { id: 'brand3', name: 'Cyber Solutions', logoUrl: 'https://picsum.photos/seed/techBrand3/180/80?grayscale&text=CyberSol', order: 3 },
-  { id: 'brand4', name: 'NetSys', logoUrl: 'https://picsum.photos/seed/techBrand4/180/80?grayscale&text=NetSys', order: 4 },
-  { id: 'brand5', name: 'DataFlow Ltd', logoUrl: 'https://picsum.photos/seed/techBrand5/180/80?grayscale&text=DataFlow', order: 5 },
+  { id: 'brand1', name: 'TechCorp', logoUrl: 'https://cdn.worldvectorlogo.com/logos/microsoft-5.svg', order: 1 },
+  { id: 'brand2', name: 'Innovate Inc', logoUrl: 'https://cdn.worldvectorlogo.com/logos/intel-7.svg', order: 2 },
+  { id: 'brand3', name: 'Cyber Solutions', logoUrl: 'https://cdn.worldvectorlogo.com/logos/cisco-2.svg', order: 3 },
+  { id: 'brand4', name: 'NetSys', logoUrl: 'https://cdn.worldvectorlogo.com/logos/dell-1.svg', order: 4 },
+  { id: 'brand5', name: 'DataFlow Ltd', logoUrl: 'https://cdn.worldvectorlogo.com/logos/hp-3.svg', order: 5 },
 ];
 const INITIAL_HOMEPAGE_BRAND_LOGOS: HomepageBrandLogosSettings = {
   enabled: true,
   logos: INITIAL_HOMEPAGE_BRAND_LOGOS_ITEMS,
-  sectionTitleIconUrl: "https://picsum.photos/seed/brandsIcon/40/40?text=🏢", 
 };
 
 const INITIAL_HOMEPAGE_PROCESS_STEPS: HomepageProcessStep[] = [
-  { id: 'p1', stepNumber: '01', title: 'Liên Hệ & Tư Vấn', description: 'Tiếp nhận yêu cầu, tư vấn sơ bộ và hẹn lịch khảo sát thực tế tại doanh nghiệp của khách hàng.', imageUrlSeed: 'techConsultationV1', shapeUrlSeed: 'abstractArrowRight', order: 1 },
-  { id: 'p2', stepNumber: '02', title: 'Khảo Sát & Đánh Giá', description: 'Kiểm tra toàn diện cơ sở hạ tầng CNTT, xác định vấn đề, nhu cầu và các lĩnh vực cần cải tiến.', imageUrlSeed: 'itAssessmentV1', shapeUrlSeed: 'abstractCircleFilled', alignRight: true, order: 2 },
-  { id: 'p3', stepNumber: '03', title: 'Đề Xuất & Báo Giá', description: 'Lập đề xuất giải pháp chi tiết, minh bạch kèm báo giá cạnh tranh, phù hợp với yêu cầu đã thu thập.', imageUrlSeed: 'techProposalV1', shapeUrlSeed: 'abstractArrowRight', order: 3 },
-  { id: 'p4', stepNumber: '04', title: 'Triển Khai & Hỗ Trợ', description: 'Thực hiện giải pháp, cài đặt, đào tạo (nếu có) và bắt đầu dịch vụ hỗ trợ, giám sát hệ thống.', imageUrlSeed: 'itImplementationSupportV1', shapeUrlSeed: 'abstractCircleFilled', alignRight: true, order: 4 },
+  { id: 'p1', stepNumber: '01', title: 'Liên Hệ & Tư Vấn', description: 'Tiếp nhận yêu cầu, tư vấn sơ bộ và hẹn lịch khảo sát thực tế tại doanh nghiệp của khách hàng.', imageUrlSeed: 'techConsultationV1', order: 1 },
+  { id: 'p2', stepNumber: '02', title: 'Khảo Sát & Đánh Giá', description: 'Kiểm tra toàn diện cơ sở hạ tầng CNTT, xác định vấn đề, nhu cầu và các lĩnh vực cần cải tiến.', imageUrlSeed: 'itAssessmentV1', alignRight: true, order: 2 },
+  { id: 'p3', stepNumber: '03', title: 'Đề Xuất & Báo Giá', description: 'Lập đề xuất giải pháp chi tiết, minh bạch kèm báo giá cạnh tranh, phù hợp với yêu cầu đã thu thập.', imageUrlSeed: 'techProposalV1', order: 3 },
+  { id: 'p4', stepNumber: '04', title: 'Triển Khai & Hỗ Trợ', description: 'Thực hiện giải pháp, cài đặt, đào tạo (nếu có) và bắt đầu dịch vụ hỗ trợ, giám sát hệ thống.', imageUrlSeed: 'itImplementationSupportV1', alignRight: true, order: 4 },
 ];
 const INITIAL_HOMEPAGE_PROCESS: HomepageProcessSettings = {
   enabled: true,
   preTitle: "QUY TRÌNH CÔNG VIỆC",
   title: "Quy Trình Kết Nối Với Khách Hàng",
   steps: INITIAL_HOMEPAGE_PROCESS_STEPS,
-  sectionTitleIconUrl: "https://picsum.photos/seed/processIcon/40/40?text=⚙️", 
 };
 
 const INITIAL_HOMEPAGE_CALLTOACTION: HomepageCallToActionSettings = {
@@ -212,7 +202,6 @@ const INITIAL_HOMEPAGE_CALLTOACTION: HomepageCallToActionSettings = {
   description: "Chúng tôi cung cấp các dịch vụ CNTT đáng tin cậy với chi phí tối ưu. Cung cấp các giải pháp toàn diện như hỗ trợ helpdesk, cấu hình mạng, an ninh mạng và dịch vụ CNTT doanh nghiệp. Các kỹ thuật viên của chúng tôi đảm bảo chất lượng và dịch vụ, cho phép bạn tập trung vào việc phát triển doanh nghiệp của mình và giảm đi nỗi lo về vận hành CNTT.",
   buttonText: "Báo Giá Chi Tiết",
   buttonLink: "/contact",
-  sectionTitleIconUrl: "https://picsum.photos/seed/ctaIcon/40/40?text=📢", 
 };
 
 const INITIAL_HOMEPAGE_BLOG_PREVIEW: HomepageBlogPreviewSettings = {
@@ -221,14 +210,12 @@ const INITIAL_HOMEPAGE_BLOG_PREVIEW: HomepageBlogPreviewSettings = {
   title: "Cập Nhật Tin Tức Từ IQ",
   featuredArticleId: 'it005', 
   otherArticleIds: ['it001', 'it002'], 
-  sectionTitleIconUrl: "https://picsum.photos/seed/blogIcon/40/40?text=📰", 
 };
 
 const INITIAL_HOMEPAGE_CONTACT_SECTION: HomepageContactSectionSettings = {
   enabled: true,
   preTitle: "LIÊN HỆ VỚI IQ",
   title: "Kết Nối Với Chúng Tôi!",
-  sectionTitleIconUrl: "https://picsum.photos/seed/contactIcon/40/40?text=📧", 
 };
 
 const INITIAL_SMTP_SETTINGS: SMTPSettings = {
@@ -260,13 +247,13 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
   missionStatementMarkdown: "Mang đến cho khách hàng những sản phẩm công nghệ **chất lượng cao nhất** với giá cả cạnh tranh và dịch vụ hậu mãi **tận tâm, chuyên nghiệp**.",
   visionStatementMarkdown: "Trở thành **đơn vị hàng đầu** trong lĩnh vực cung cấp linh kiện PC và giải pháp IT toàn diện tại Việt Nam, được khách hàng **tin tưởng và lựa chọn**.",
   teamMembers: [
-    { id: 'tm1', name: 'Trần Minh Quang', role: 'Founder & CEO', quote: 'Công nghệ là đam mê, phục vụ khách hàng là sứ mệnh.', imageUrl: 'https://picsum.photos/seed/ceoQuangIQ/200/200' },
-    { id: 'tm2', name: 'Lê Thị Bích H.', role: 'Trưởng phòng Kỹ thuật', quote: 'Không có vấn đề nào không thể giải quyết.', imageUrl: 'https://picsum.photos/seed/techLeadBichIQ/200/200' },
-    { id: 'tm3', name: 'Phạm Văn Hùng K.', role: 'Chuyên viên Tư vấn', quote: 'Luôn lắng nghe để mang đến giải pháp phù hợp.', imageUrl: 'https://picsum.photos/seed/consultantHungIQ/200/200' },
+    { id: 'tm1', name: 'Trần Minh Quang', role: 'Founder & CEO', quote: 'Công nghệ là đam mê, phục vụ khách hàng là sứ mệnh.', imageUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200&auto=format&fit=crop' },
+    { id: 'tm2', name: 'Lê Thị Bích H.', role: 'Trưởng phòng Kỹ thuật', quote: 'Không có vấn đề nào không thể giải quyết.', imageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop' },
+    { id: 'tm3', name: 'Phạm Văn Hùng K.', role: 'Chuyên viên Tư vấn', quote: 'Luôn lắng nghe để mang đến giải pháp phù hợp.', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop' },
   ],
   storeImages: [
-    {id: 'si1', url: 'https://picsum.photos/seed/storeFrontIQTech/600/400', caption: 'Mặt tiền cửa hàng IQ Technology'},
-    {id: 'si2', url: 'https://picsum.photos/seed/storeInsideIQTech/600/400', caption: 'Không gian trưng bày sản phẩm'},
+    {id: 'si1', url: 'https://images.unsplash.com/photo-1556742111-a3297a0af568?q=80&w=1770&auto=format&fit=crop', caption: 'Mặt tiền cửa hàng IQ Technology'},
+    {id: 'si2', url: 'https://images.unsplash.com/photo-1601597500908-1c4c8d5c95f1?q=80&w=1848&auto=format&fit=crop', caption: 'Không gian trưng bày sản phẩm'},
   ],
 
   contactPageTitle: "Liên Hệ Với IQ Technology",
@@ -357,7 +344,7 @@ export const FALLBACK_NAV_LOGGED_IN: NavLinkItem[] = [
 ];
 
 
-export const GENERIC_PC_BUILD_IMAGE_URL = "https://picsum.photos/seed/custompcbuild/400/300"; 
+export const GENERIC_PC_BUILD_IMAGE_URL = "https://images.unsplash.com/photo-1627045236365-b153d09a9f28?q=80&w=800&auto=format&fit=crop"; 
 export const PC_COMPONENT_TYPES: Array<string> = [ 'CPU (Vi xử lý)', 'Bo mạch chủ', 'RAM', 'Ổ cứng', 'Card màn hình (VGA)', 'Nguồn máy tính (PSU)', 'Vỏ máy (Case)', 'Tản nhiệt', 'Màn hình', 'Bàn phím', 'Chuột', 'Tai nghe', 'Webcam', 'Microphone', 'Loa máy tính' ];
 export const USE_CASES = ['Chơi Game', 'Học tập', 'Văn phòng', 'Đồ họa - Video', 'Lập trình', 'Giải trí đa phương tiện'];
 export const PRODUCT_CATEGORIES_HIERARCHY: ProductCategoryHierarchy = [

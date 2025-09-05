@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import { Article } from '../../types';
@@ -10,7 +8,7 @@ interface ArticlePreviewProps {
 
 const ArticlePreview: React.FC<ArticlePreviewProps> = ({ article }) => {
   // Use imageUrl if present, otherwise generate from imageSearchQuery or fallback to id
-  const imageUrl = article.imageUrl || `https://picsum.photos/seed/${article.imageSearchQuery || article.id}/400/250`;
+  const imageUrl = article.imageUrl || `https://source.unsplash.com/400x250/?${encodeURIComponent(article.imageSearchQuery || article.category)}`;
 
   return (
     <div className="modern-card flex flex-col overflow-hidden h-full group relative">

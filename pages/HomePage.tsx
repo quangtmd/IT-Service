@@ -1,4 +1,3 @@
-
 import React from 'react';
 import HomeBannerIts from '../components/home/iqtechnology/HomeBannerIts';
 import HomeServicesBenefitsIts from '../components/home/iqtechnology/HomeServicesBenefitsIts';
@@ -13,6 +12,7 @@ import HotProducts from '../components/home/HotProducts';
 import HomeBlogPreviewIts from '../components/home/iqtechnology/HomeBlogPreviewIts';
 import HomeCallToActionIts from '../components/home/iqtechnology/HomeCallToActionIts';
 import HomeContactIts from '../components/home/iqtechnology/HomeContactIts';
+import HomePricingPlansIts from '../components/home/iqtechnology/HomePricingPlansIts';
 
 const HomePage: React.FC = () => {
   return (
@@ -28,6 +28,9 @@ const HomePage: React.FC = () => {
       
       {/* Additional: Why Choose Us - Logically follows services */}
       <HomeWhyChooseUsIts />
+
+      {/* New: Pricing Plans Section */}
+      <HomePricingPlansIts />
 
       {/* 3. Danh mục sản phẩm nổi bật */}
       <HotProducts />
