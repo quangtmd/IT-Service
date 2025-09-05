@@ -1,4 +1,4 @@
-/// <reference types="vite/client" />
+// Fix: Removed reference to "vite/client" as the type definition file could not be found.
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import * as Constants from './constants'; 
 
@@ -82,7 +82,8 @@ class ErrorBoundary extends Component<Props, State> {
           </button>
           {/* Fix: Use Vite's `import.meta.env.DEV` which is a build-time constant
               and avoids runtime ReferenceError for 'process'. */}
-          {(import.meta.env.DEV || window.location.hostname === 'localhost') && this.state.error && (
+          {/* Fix: Added type assertion to bypass TypeScript error when vite/client types are not available. */}
+          {((import.meta as any).env?.DEV || window.location.hostname === 'localhost') && this.state.error && (
             <div style={{ marginTop: '20px', textAlign: 'left', background: '#f0f0f0', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', maxWidth: '80%', maxHeight: '30vh', overflow: 'auto' }}>
               <p style={{ fontWeight: 'bold', color: '#333', margin: '0 0 5px 0' }}>Error Details (Dev):</p>
               <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: '#333', fontSize: '12px', margin: 0 }}>
