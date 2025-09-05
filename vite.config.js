@@ -15,8 +15,9 @@ export default defineConfig(({ mode }) => {
       // Expose VITE_API_KEY from .env file (or build environment)
       // as process.env.API_KEY in client-side code.
       // JSON.stringify is important to ensure the value is correctly stringified.
-      'process.env.API_KEY': JSON.stringify(env.VITE_API_KEY),
-      'process.env.BACKEND_API_BASE_URL': JSON.stringify(env.VITE_BACKEND_API_BASE_URL)
+      // The `|| ''` fallback prevents the value from becoming the string 'undefined' if the env var is not set.
+      'process.env.API_KEY': JSON.stringify(env.VITE_API_KEY || ''),
+      'process.env.BACKEND_API_BASE_URL': JSON.stringify(env.VITE_BACKEND_API_BASE_URL || '')
     }
   };
 });
