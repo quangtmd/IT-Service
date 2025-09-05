@@ -1,4 +1,5 @@
-
+// Fix: Add a triple-slash directive to include Vite client types. This resolves the error 'Property 'env' does not exist on type 'ImportMeta'' by making TypeScript aware of Vite's environment variables.
+/// <reference types="vite/client" />
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import * as Constants from './constants'; 
 
@@ -80,9 +81,9 @@ class ErrorBoundary extends Component<Props, State> {
           >
             Reload Page
           </button>
-          {/* Fix: Use process.env.NODE_ENV which is compatible with Vite's build process
-              and avoids TypeScript errors with `import.meta.env` in some setups. */}
-          {(process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost') && this.state.error && (
+          {/* Fix: Use Vite's `import.meta.env.DEV` which is a build-time constant
+              and avoids runtime ReferenceError for 'process'. */}
+          {(import.meta.env.DEV || window.location.hostname === 'localhost') && this.state.error && (
             <div style={{ marginTop: '20px', textAlign: 'left', background: '#f0f0f0', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', maxWidth: '80%', maxHeight: '30vh', overflow: 'auto' }}>
               <p style={{ fontWeight: 'bold', color: '#333', margin: '0 0 5px 0' }}>Error Details (Dev):</p>
               <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: '#333', fontSize: '12px', margin: 0 }}>
