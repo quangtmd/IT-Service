@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Project, Product } from '../../types';
 import ChatMessage from './ChatMessage';
@@ -12,22 +11,43 @@ import { MOCK_SERVICES, MOCK_PROJECTS, MOCK_PRODUCTS } from '../../data/mockData
 const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1';
 
 const fetchServicesFromBackend = async (query: string): Promise<Service[]> => {
-  const endpoint = `${Constants.BACKEND_API_BASE_URL}/api/services/search?query=${encodeURIComponent(query)}`;
+  const baseUrl = Constants.BACKEND_API_BASE_URL;
+  const lowerQuery = query.toLowerCase();
+
+  const getMockServices = () => {
+    return MOCK_SERVICES.filter(s =>
+      s.name.toLowerCase().includes(lowerQuery) ||
+      s.description.toLowerCase().includes(lowerQuery)
+    ).slice(0, 3);
+  };
+
+  if (!baseUrl) {
+    console.warn("[AIChatbot] BACKEND_API_BASE_URL is not set. Falling back to mock services.");
+    return getMockServices();
+  }
+
+  const endpoint = `${baseUrl}/api/services/search?query=${encodeURIComponent(query)}`;
   try {
     const response = await fetch(endpoint);
     if (!response.ok) {
-      console.warn(`[AIChatbot] Backend service API request failed: ${response.status} ${response.statusText}. URL: ${response.url}`);
-      return MOCK_SERVICES.filter(s => s.name.toLowerCase().includes(query.toLowerCase()) || s.description.toLowerCase().includes(query.toLowerCase())).slice(0,3); // Fallback to mock
+      console.warn(`[AIChatbot] Backend service API request failed: ${response.status} ${response.statusText}. URL: ${response.url}. Falling back to mock services.`);
+      return getMockServices();
     }
     const services: Service[] = await response.json();
     return services.slice(0, 3);
   } catch (error) {
-    console.error(`[AIChatbot] Error fetching services from backend (URL: ${endpoint}):`, error);
-    return MOCK_SERVICES.filter(s => s.name.toLowerCase().includes(query.toLowerCase()) || s.description.toLowerCase().includes(query.toLowerCase())).slice(0,3); // Fallback to mock
+    console.error(`[AIChatbot] Error fetching services from backend (URL: ${endpoint}):`, error, ". Falling back to mock services.");
+    return getMockServices();
   }
 };
 
 const AIChatbot: React.FC = () => {
+  // If the API key is not available, don't render the component at all.
+  // This is a safer pattern than conditional rendering in the parent component (App.tsx).
+  if (!process.env.API_KEY) {
+    return null;
+  }
+  
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState('');
@@ -64,12 +84,10 @@ const AIChatbot: React.FC = () => {
   }, [loadSiteSettings]);
 
   useEffect(() => {
-    if (process.env.API_KEY) {
-      const alreadyOpened = localStorage.getItem(CHATBOT_AUTO_OPENED_KEY);
-      if (!alreadyOpened) {
-        setIsOpen(true);
-        localStorage.setItem(CHATBOT_AUTO_OPENED_KEY, 'true');
-      }
+    const alreadyOpened = localStorage.getItem(CHATBOT_AUTO_OPENED_KEY);
+    if (!alreadyOpened) {
+      setIsOpen(true);
+      localStorage.setItem(CHATBOT_AUTO_OPENED_KEY, 'true');
     }
   }, []);
 
@@ -127,7 +145,7 @@ const AIChatbot: React.FC = () => {
 
 
   useEffect(() => {
-    if (isOpen && isUserInfoSubmitted && !chatSession && process.env.API_KEY) { 
+    if (isOpen && isUserInfoSubmitted && !chatSession) { 
       initializeChat();
     }
   }, [isOpen, isUserInfoSubmitted, chatSession, initializeChat]);
@@ -325,10 +343,10 @@ const AIChatbot: React.FC = () => {
         </a>
       )}
       <button
-        onClick={() => process.env.API_KEY ? setIsOpen(!isOpen) : alert(Constants.API_KEY_ERROR_MESSAGE)}
+        onClick={() => setIsOpen(!isOpen)}
         className={`${quickContactCommonClasses} bg-primary hover:bg-primary-dark`}
-        aria-label={process.env.API_KEY ? "Toggle Chatbot" : "Chatbot Disabled"}
-        title={process.env.API_KEY ? "Mở Chatbot" : "Chatbot không khả dụng (API Key)"}
+        aria-label="Toggle Chatbot"
+        title="Mở Chatbot"
       >
         <i className="fas fa-comments"></i>
       </button>
@@ -339,87 +357,85 @@ const AIChatbot: React.FC = () => {
     <>
       {renderFABs()}
 
-      {process.env.API_KEY && (
-        <div
-          className={`fixed bottom-0 right-0 sm:bottom-6 sm:right-6 bg-bgBase rounded-t-lg sm:rounded-lg shadow-xl w-full sm:w-96 h-[70vh] sm:h-[calc(100vh-10rem)] max-h-[600px] flex flex-col z-50 transition-all duration-300 ease-in-out transform border border-borderDefault ${
-            isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full sm:translate-y-16 opacity-0 pointer-events-none'
-          }`}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="chatbot-title"
-        >
-          <header className="bg-primary text-white p-4 flex justify-between items-center rounded-t-lg sm:rounded-t-lg">
-            <h3 id="chatbot-title" className="font-semibold text-lg">AI Chatbot {siteSettings.companyName}</h3>
-            <button onClick={() => setIsOpen(false)} className="text-xl hover:text-red-100" aria-label="Đóng chatbot">
-              <i className="fas fa-times"></i>
-            </button>
-          </header>
+      <div
+        className={`fixed bottom-0 right-0 sm:bottom-6 sm:right-6 bg-bgBase rounded-t-lg sm:rounded-lg shadow-xl w-full sm:w-96 h-[70vh] sm:h-[calc(100vh-10rem)] max-h-[600px] flex flex-col z-50 transition-all duration-300 ease-in-out transform border border-borderDefault ${
+          isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full sm:translate-y-16 opacity-0 pointer-events-none'
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="chatbot-title"
+      >
+        <header className="bg-primary text-white p-4 flex justify-between items-center rounded-t-lg sm:rounded-t-lg">
+          <h3 id="chatbot-title" className="font-semibold text-lg">AI Chatbot {siteSettings.companyName}</h3>
+          <button onClick={() => setIsOpen(false)} className="text-xl hover:text-red-100" aria-label="Đóng chatbot">
+            <i className="fas fa-times"></i>
+          </button>
+        </header>
 
-          {!isUserInfoSubmitted ? (
-            <div className="p-6 flex-grow flex flex-col justify-center bg-bgCanvas">
-              <h4 className="text-lg font-semibold text-textBase mb-3 text-center">Thông tin của bạn</h4>
-              <p className="text-sm text-textMuted mb-4 text-center">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
-              {userInfoError && <p className="text-sm text-danger-text mb-3 bg-danger-bg p-2 rounded-md">{userInfoError}</p>}
-              <form onSubmit={handleUserInfoSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="userName" className="sr-only">Tên của bạn</label>
-                  <input
-                    type="text"
-                    id="userName"
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    placeholder="Tên của bạn *"
-                    className="input-style bg-white text-textBase w-full" 
-                    aria-required="true"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="userPhone" className="sr-only">Số điện thoại</label>
-                  <input
-                    type="tel"
-                    id="userPhone"
-                    value={userPhone}
-                    onChange={(e) => setUserPhone(e.target.value)}
-                    placeholder="Số điện thoại *"
-                    className="input-style bg-white text-textBase w-full" 
-                    aria-required="true"
-                  />
-                </div>
-                <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
-                  Bắt đầu trò chuyện
-                </Button>
-              </form>
-            </div>
-          ) : (
-            <>
-              <div className="flex-grow p-4 overflow-y-auto bg-bgCanvas" aria-live="polite">
-                {messages.map((msg) => (
-                  <ChatMessage key={msg.id} message={msg} groundingChunks={msg.id === currentBotMessageId ? currentGroundingChunks : undefined} />
-                ))}
-                <div ref={messagesEndRef} />
-                {error && <div className="text-danger-text text-sm p-2 bg-danger-bg rounded border border-danger-border">{error}</div>}
+        {!isUserInfoSubmitted ? (
+          <div className="p-6 flex-grow flex flex-col justify-center bg-bgCanvas">
+            <h4 className="text-lg font-semibold text-textBase mb-3 text-center">Thông tin của bạn</h4>
+            <p className="text-sm text-textMuted mb-4 text-center">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
+            {userInfoError && <p className="text-sm text-danger-text mb-3 bg-danger-bg p-2 rounded-md">{userInfoError}</p>}
+            <form onSubmit={handleUserInfoSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="userName" className="sr-only">Tên của bạn</label>
+                <input
+                  type="text"
+                  id="userName"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  placeholder="Tên của bạn *"
+                  className="input-style bg-white text-textBase w-full" 
+                  aria-required="true"
+                />
               </div>
+              <div>
+                <label htmlFor="userPhone" className="sr-only">Số điện thoại</label>
+                <input
+                  type="tel"
+                  id="userPhone"
+                  value={userPhone}
+                  onChange={(e) => setUserPhone(e.target.value)}
+                  placeholder="Số điện thoại *"
+                  className="input-style bg-white text-textBase w-full" 
+                  aria-required="true"
+                />
+              </div>
+              <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
+                Bắt đầu trò chuyện
+              </Button>
+            </form>
+          </div>
+        ) : (
+          <>
+            <div className="flex-grow p-4 overflow-y-auto bg-bgCanvas" aria-live="polite">
+              {messages.map((msg) => (
+                <ChatMessage key={msg.id} message={msg} groundingChunks={msg.id === currentBotMessageId ? currentGroundingChunks : undefined} />
+              ))}
+              <div ref={messagesEndRef} />
+              {error && <div className="text-danger-text text-sm p-2 bg-danger-bg rounded border border-danger-border">{error}</div>}
+            </div>
 
-              <form onSubmit={handleSendMessage} className="p-4 border-t border-borderDefault bg-bgBase">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Nhập tin nhắn..."
-                    className="flex-grow bg-white border border-borderStrong text-textBase rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none placeholder:text-textSubtle"
-                    disabled={isLoading || !chatSession}
-                    aria-label="Tin nhắn của bạn"
-                  />
-                  <Button type="submit" isLoading={isLoading} disabled={isLoading || !input.trim() || !chatSession} aria-label="Gửi tin nhắn">
-                    <i className="fas fa-paper-plane"></i>
-                  </Button>
-                </div>
-              </form>
-            </>
-          )}
-        </div>
-      )}
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-borderDefault bg-bgBase">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Nhập tin nhắn..."
+                  className="flex-grow bg-white border border-borderStrong text-textBase rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none placeholder:text-textSubtle"
+                  disabled={isLoading || !chatSession}
+                  aria-label="Tin nhắn của bạn"
+                />
+                <Button type="submit" isLoading={isLoading} disabled={isLoading || !input.trim() || !chatSession} aria-label="Gửi tin nhắn">
+                  <i className="fas fa-paper-plane"></i>
+                </Button>
+              </div>
+            </form>
+          </>
+        )}
+      </div>
     </>
   );
 };

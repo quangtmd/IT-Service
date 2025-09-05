@@ -69,7 +69,7 @@ const App: React.FC = () => {
           </Routes>
         </main>
         <Footer />
-        {process.env.API_KEY && <AIChatbot /> }
+        <AIChatbot />
       </div>
     </HashRouter>
   );

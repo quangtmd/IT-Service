@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
@@ -7,6 +6,7 @@ import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
+import { MOCK_PRODUCTS } from '../data/mockData';
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -30,27 +30,55 @@ const ProductDetailPage: React.FC = () => {
       }
       setIsLoading(true);
       setError(null);
+
+      const baseUrl = Constants.BACKEND_API_BASE_URL;
+
+      const loadFromMock = () => {
+          console.warn(`Falling back to mock data for product ID: ${productId}`);
+          const foundProduct = MOCK_PRODUCTS.find(p => p.id === productId);
+          if (foundProduct) {
+              setProduct(foundProduct);
+              setMainImage(foundProduct.imageUrls?.[0] || `https://picsum.photos/seed/${foundProduct.id}/600/400`);
+              const related = MOCK_PRODUCTS.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
+              setRelatedProducts(related);
+              setError(null);
+          } else {
+              setError('Không tìm thấy sản phẩm.');
+          }
+      };
+
+      if (!baseUrl) {
+          loadFromMock();
+          setIsLoading(false);
+          window.scrollTo(0, 0);
+          return;
+      }
+
       try {
-        // Fetch the main product
-        const productRes = await fetch(`${Constants.BACKEND_API_BASE_URL}/api/products/${productId}`);
+        const productRes = await fetch(`${baseUrl}/api/products/${productId}`);
         if (!productRes.ok) {
-          throw new Error('Không tìm thấy sản phẩm.');
+          throw new Error('Không tìm thấy sản phẩm từ API.');
         }
         const foundProduct: Product = await productRes.json();
         setProduct(foundProduct);
         setMainImage(foundProduct.imageUrls?.[0] || `https://picsum.photos/seed/${foundProduct.id}/600/400`);
-
-        // Fetch all products to find related ones (can be optimized with a dedicated backend endpoint)
-        const allProductsRes = await fetch(`${Constants.BACKEND_API_BASE_URL}/api/products`);
-        if (allProductsRes.ok) {
-            const allProducts: Product[] = await allProductsRes.json();
-            const related = allProducts.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
+        
+        try {
+            const allProductsRes = await fetch(`${baseUrl}/api/products`);
+            if (allProductsRes.ok) {
+                const allProducts: Product[] = await allProductsRes.json();
+                const related = allProducts.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
+                setRelatedProducts(related);
+            }
+        } catch (relatedErr) {
+            console.error("Could not fetch all products for related items, using mock.", relatedErr);
+            const related = MOCK_PRODUCTS.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
             setRelatedProducts(related);
         }
 
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
-        console.error(err);
+        console.error("Lỗi khi tải dữ liệu sản phẩm:", err);
+        loadFromMock();
       } finally {
         setIsLoading(false);
         window.scrollTo(0, 0);
