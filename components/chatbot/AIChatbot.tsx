@@ -1,14 +1,13 @@
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Project, Product } from '../../types';
+import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product } from '../../types';
 import ChatMessage from './ChatMessage';
 import Button from '../ui/Button';
 import geminiService from '../../services/geminiService';
 import { Chat, GenerateContentResponse } from '@google/genai';
 import * as Constants from '../../constants.tsx'; 
-import { MOCK_SERVICES, MOCK_PROJECTS, MOCK_PRODUCTS } from '../../data/mockData'; 
-
-const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1';
+import { MOCK_SERVICES, MOCK_PRODUCTS } from '../../data/mockData'; 
 
 const fetchServicesFromBackend = async (query: string): Promise<Service[]> => {
   const baseUrl = Constants.BACKEND_API_BASE_URL;
@@ -41,15 +40,12 @@ const fetchServicesFromBackend = async (query: string): Promise<Service[]> => {
   }
 };
 
-const AIChatbot: React.FC = () => {
-  // Perform a robust check. If the API key is missing or is the literal string 'undefined' (a common build issue),
-  // don't render the component at all. This is the primary safeguard.
-  const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === 'undefined') {
-    return null;
-  }
-  
-  const [isOpen, setIsOpen] = useState(false);
+interface AIChatbotProps {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+}
+
+const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -83,15 +79,6 @@ const AIChatbot: React.FC = () => {
       window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
     };
   }, [loadSiteSettings]);
-
-  useEffect(() => {
-    const alreadyOpened = localStorage.getItem(CHATBOT_AUTO_OPENED_KEY);
-    if (!alreadyOpened) {
-      setIsOpen(true);
-      localStorage.setItem(CHATBOT_AUTO_OPENED_KEY, 'true');
-    }
-  }, []);
-
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -307,142 +294,87 @@ const AIChatbot: React.FC = () => {
       saveChatLog(); 
     }
   };
-  
-  const quickContactCommonClasses = "text-white rounded-full p-3.5 shadow-lg transition-all duration-300 flex items-center justify-center text-xl";
-  const fabVisibilityClass = isOpen ? 'opacity-0 scale-0 pointer-events-none' : 'opacity-100 scale-100';
-
-
-  const renderFABs = () => (
-    <div className={`fixed bottom-6 right-6 z-[60] flex flex-col items-center space-y-3 ${fabVisibilityClass}`}>
-      {siteSettings.companyPhone && (
-        <a 
-          href={`tel:${siteSettings.companyPhone.replace(/\./g, '')}`}
-          className={`${quickContactCommonClasses} bg-green-500 hover:bg-green-600 animate-subtle-beat`}
-          aria-label="Call Now"
-          title={siteSettings.companyPhone}
-        >
-          <i className="fas fa-phone-alt"></i>
-        </a>
-      )}
-      {siteSettings.socialZaloUrl && (
-        <a 
-          href={siteSettings.socialZaloUrl}
-          target="_blank" 
-          rel="noopener noreferrer"
-          className={`${quickContactCommonClasses} bg-blue-500 hover:bg-blue-600`}
-          aria-label="Chat on Zalo"
-          title="Chat on Zalo"
-        >
-          <i className="fas fa-comment-dots"></i> {/* Standard Zalo-like icon */}
-        </a>
-      )}
-       {siteSettings.socialFacebookUrl && (
-        <a 
-          href={siteSettings.socialFacebookUrl.includes('m.me') || siteSettings.socialFacebookUrl.includes('messenger.com') ? siteSettings.socialFacebookUrl : `https://m.me/${siteSettings.socialFacebookUrl.split('/').pop()}`}
-          target="_blank" 
-          rel="noopener noreferrer"
-          className={`${quickContactCommonClasses} bg-blue-600 hover:bg-blue-700`}
-          aria-label="Chat on Messenger"
-          title="Chat on Messenger"
-        >
-          <i className="fab fa-facebook-messenger"></i>
-        </a>
-      )}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`${quickContactCommonClasses} bg-primary hover:bg-primary-dark`}
-        aria-label="Toggle Chatbot"
-        title="Mở Chatbot"
-      >
-        <i className="fas fa-comments"></i>
-      </button>
-    </div>
-  );
 
   return (
-    <>
-      {renderFABs()}
+    <div
+      className={`fixed bottom-0 right-0 sm:bottom-6 sm:right-6 bg-bgBase rounded-t-lg sm:rounded-lg shadow-xl w-full sm:w-96 h-[70vh] sm:h-[calc(100vh-10rem)] max-h-[600px] flex flex-col z-50 transition-all duration-300 ease-in-out transform border border-borderDefault ${
+        isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full sm:translate-y-16 opacity-0 pointer-events-none'
+      }`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="chatbot-title"
+    >
+      <header className="bg-primary text-white p-4 flex justify-between items-center rounded-t-lg sm:rounded-t-lg">
+        <h3 id="chatbot-title" className="font-semibold text-lg">AI Chatbot {siteSettings.companyName}</h3>
+        <button onClick={() => setIsOpen(false)} className="text-xl hover:text-red-100" aria-label="Đóng chatbot">
+          <i className="fas fa-times"></i>
+        </button>
+      </header>
 
-      <div
-        className={`fixed bottom-0 right-0 sm:bottom-6 sm:right-6 bg-bgBase rounded-t-lg sm:rounded-lg shadow-xl w-full sm:w-96 h-[70vh] sm:h-[calc(100vh-10rem)] max-h-[600px] flex flex-col z-50 transition-all duration-300 ease-in-out transform border border-borderDefault ${
-          isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full sm:translate-y-16 opacity-0 pointer-events-none'
-        }`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="chatbot-title"
-      >
-        <header className="bg-primary text-white p-4 flex justify-between items-center rounded-t-lg sm:rounded-t-lg">
-          <h3 id="chatbot-title" className="font-semibold text-lg">AI Chatbot {siteSettings.companyName}</h3>
-          <button onClick={() => setIsOpen(false)} className="text-xl hover:text-red-100" aria-label="Đóng chatbot">
-            <i className="fas fa-times"></i>
-          </button>
-        </header>
-
-        {!isUserInfoSubmitted ? (
-          <div className="p-6 flex-grow flex flex-col justify-center bg-bgCanvas">
-            <h4 className="text-lg font-semibold text-textBase mb-3 text-center">Thông tin của bạn</h4>
-            <p className="text-sm text-textMuted mb-4 text-center">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
-            {userInfoError && <p className="text-sm text-danger-text mb-3 bg-danger-bg p-2 rounded-md">{userInfoError}</p>}
-            <form onSubmit={handleUserInfoSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="userName" className="sr-only">Tên của bạn</label>
-                <input
-                  type="text"
-                  id="userName"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Tên của bạn *"
-                  className="input-style bg-white text-textBase w-full" 
-                  aria-required="true"
-                />
-              </div>
-              <div>
-                <label htmlFor="userPhone" className="sr-only">Số điện thoại</label>
-                <input
-                  type="tel"
-                  id="userPhone"
-                  value={userPhone}
-                  onChange={(e) => setUserPhone(e.target.value)}
-                  placeholder="Số điện thoại *"
-                  className="input-style bg-white text-textBase w-full" 
-                  aria-required="true"
-                />
-              </div>
-              <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
-                Bắt đầu trò chuyện
-              </Button>
-            </form>
-          </div>
-        ) : (
-          <>
-            <div className="flex-grow p-4 overflow-y-auto bg-bgCanvas" aria-live="polite">
-              {messages.map((msg) => (
-                <ChatMessage key={msg.id} message={msg} groundingChunks={msg.id === currentBotMessageId ? currentGroundingChunks : undefined} />
-              ))}
-              <div ref={messagesEndRef} />
-              {error && <div className="text-danger-text text-sm p-2 bg-danger-bg rounded border border-danger-border">{error}</div>}
+      {!isUserInfoSubmitted ? (
+        <div className="p-6 flex-grow flex flex-col justify-center bg-bgCanvas">
+          <h4 className="text-lg font-semibold text-textBase mb-3 text-center">Thông tin của bạn</h4>
+          <p className="text-sm text-textMuted mb-4 text-center">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
+          {userInfoError && <p className="text-sm text-danger-text mb-3 bg-danger-bg p-2 rounded-md">{userInfoError}</p>}
+          <form onSubmit={handleUserInfoSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="userName" className="sr-only">Tên của bạn</label>
+              <input
+                type="text"
+                id="userName"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                placeholder="Tên của bạn *"
+                className="input-style bg-white text-textBase w-full" 
+                aria-required="true"
+              />
             </div>
+            <div>
+              <label htmlFor="userPhone" className="sr-only">Số điện thoại</label>
+              <input
+                type="tel"
+                id="userPhone"
+                value={userPhone}
+                onChange={(e) => setUserPhone(e.target.value)}
+                placeholder="Số điện thoại *"
+                className="input-style bg-white text-textBase w-full" 
+                aria-required="true"
+              />
+            </div>
+            <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
+              Bắt đầu trò chuyện
+            </Button>
+          </form>
+        </div>
+      ) : (
+        <>
+          <div className="flex-grow p-4 overflow-y-auto bg-bgCanvas" aria-live="polite">
+            {messages.map((msg) => (
+              <ChatMessage key={msg.id} message={msg} groundingChunks={msg.id === currentBotMessageId ? currentGroundingChunks : undefined} />
+            ))}
+            <div ref={messagesEndRef} />
+            {error && <div className="text-danger-text text-sm p-2 bg-danger-bg rounded border border-danger-border">{error}</div>}
+          </div>
 
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-borderDefault bg-bgBase">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Nhập tin nhắn..."
-                  className="flex-grow bg-white border border-borderStrong text-textBase rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none placeholder:text-textSubtle"
-                  disabled={isLoading || !chatSession}
-                  aria-label="Tin nhắn của bạn"
-                />
-                <Button type="submit" isLoading={isLoading} disabled={isLoading || !input.trim() || !chatSession} aria-label="Gửi tin nhắn">
-                  <i className="fas fa-paper-plane"></i>
-                </Button>
-              </div>
-            </form>
-          </>
-        )}
-      </div>
-    </>
+          <form onSubmit={handleSendMessage} className="p-4 border-t border-borderDefault bg-bgBase">
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Nhập tin nhắn..."
+                className="flex-grow bg-white border border-borderStrong text-textBase rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none placeholder:text-textSubtle"
+                disabled={isLoading || !chatSession}
+                aria-label="Tin nhắn của bạn"
+              />
+              <Button type="submit" isLoading={isLoading} disabled={isLoading || !input.trim() || !chatSession} aria-label="Gửi tin nhắn">
+                <i className="fas fa-paper-plane"></i>
+              </Button>
+            </div>
+          </form>
+        </>
+      )}
+    </div>
   );
 };
 

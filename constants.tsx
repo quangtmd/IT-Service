@@ -30,6 +30,7 @@ export const PRODUCTS_STORAGE_KEY = 'siteProducts_v1';
 export const ORDERS_STORAGE_KEY = 'siteOrders_v1';
 export const MEDIA_LIBRARY_STORAGE_KEY = 'siteMediaLibrary_v1'; // For new media library
 export const CHAT_LOGS_STORAGE_KEY = 'siteChatLogs_v1'; // For storing chat logs
+export const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1';
 
 // --- BANKING INFO ---
 export const BANK_ACCOUNT_NAME = "TRAN MINH QUANG";

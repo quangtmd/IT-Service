@@ -17,8 +17,8 @@ import CartPage from './pages/CartPage';
 import PCBuilderPage from './pages/PCBuilderPage';
 import ProjectsPage from './pages/ProjectsPage';
 import NotFoundPage from './pages/NotFoundPage';
-import AIChatbot from './components/chatbot/AIChatbot';
 import ScrollToTop from './components/shared/ScrollToTop';
+import FloatingActionButtons from './components/shared/FloatingActionButtons';
 
 // Auth and Admin
 import AdminPage from './pages/AdminPage';
@@ -69,7 +69,7 @@ const App: React.FC = () => {
           </Routes>
         </main>
         <Footer />
-        <AIChatbot />
+        <FloatingActionButtons />
       </div>
     </HashRouter>
   );

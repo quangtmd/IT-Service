@@ -80,6 +80,8 @@ class ErrorBoundary extends Component<Props, State> {
           >
             Reload Page
           </button>
+          {/* Fix: Use process.env.NODE_ENV which is compatible with Vite's build process
+              and avoids TypeScript errors with `import.meta.env` in some setups. */}
           {(process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost') && this.state.error && (
             <div style={{ marginTop: '20px', textAlign: 'left', background: '#f0f0f0', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', maxWidth: '80%', maxHeight: '30vh', overflow: 'auto' }}>
               <p style={{ fontWeight: 'bold', color: '#333', margin: '0 0 5px 0' }}>Error Details (Dev):</p>
