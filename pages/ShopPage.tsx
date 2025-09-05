@@ -1,13 +1,15 @@
 
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/shop/ProductCard';
 import { Product, MainCategoryInfo } from '../types';
 import SearchBar from '../components/shared/SearchBar';
 import Pagination from '../components/shared/Pagination';
 import * as Constants from '../constants.tsx';
-import ProductCarouselSection from '../components/shop/ProductCarouselSection';
 import CategorySidebar from '../components/shop/CategorySidebar';
+// Fix: Import MOCK_PRODUCTS from the correct data file.
+import { MOCK_PRODUCTS } from '../data/mockData';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -41,8 +43,7 @@ const ShopPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const hasFilters = location.search && location.search.length > 1;
-
+  
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +64,16 @@ const ShopPage: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${Constants.BACKEND_API_BASE_URL}/api/products`);
+        // Fallback to mock data if backend URL is not set
+        const baseUrl = process.env.BACKEND_API_BASE_URL;
+        if (!baseUrl) {
+          console.warn("BACKEND_API_BASE_URL is not defined. Falling back to mock product data.");
+          // Fix: Use the correctly imported MOCK_PRODUCTS.
+          setAllProducts(MOCK_PRODUCTS);
+          return;
+        }
+
+        const response = await fetch(`${baseUrl}/api/products`);
         if (!response.ok) {
           throw new Error('Không thể tải dữ liệu sản phẩm. Vui lòng thử lại sau.');
         }
@@ -72,6 +82,9 @@ const ShopPage: React.FC = () => {
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi không xác định.');
         console.error("Lỗi khi fetch sản phẩm:", err);
+        // Fallback to mock data on error
+        // Fix: Use the correctly imported MOCK_PRODUCTS.
+        setAllProducts(MOCK_PRODUCTS);
       } finally {
         setIsLoading(false);
       }
@@ -185,61 +198,54 @@ const ShopPage: React.FC = () => {
   
   const renderContent = () => {
     if (isLoading) {
-      return <div className="text-center py-20 w-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div><p className="mt-4">Đang tải sản phẩm...</p></div>;
+      return (
+        <div className="text-center py-20 w-full flex-grow">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4">Đang tải sản phẩm...</p>
+        </div>
+      );
     }
     if (error) {
-      return <div className="text-center py-20 w-full text-red-500 bg-red-50 p-4 rounded-lg"><strong>Lỗi:</strong> {error}</div>;
+      return (
+        <div className="text-center py-20 w-full flex-grow text-red-500 bg-red-50 p-4 rounded-lg">
+          <strong>Lỗi:</strong> {error}
+        </div>
+      );
     }
-    if (hasFilters) {
-        return (
-            <main className="flex-grow w-full lg:w-3/4">
-                <ProductCategoryNav
-                    categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
-                    activeSlug={currentFilters.mainCategory}
-                    onSelect={(slug) => handleFilterChange('mainCategory', slug)}
-                />
-                <div className="flex justify-between items-center mb-6 px-1">
-                  <h1 className="text-2xl font-bold text-textBase">{getCurrentCategoryName()}</h1>
-                  <span className="text-sm text-textMuted">{filteredProducts.length} sản phẩm</span>
-                </div>
-                {filteredProducts.length > 0 ? (
-                <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-                    {paginatedProducts.map(product => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                    </div>
-                    {totalPages > 1 && (
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                    />
-                    )}
-                </>
-                ) : (
-                <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
-                    <i className="fas fa-search text-5xl text-textSubtle mb-4"></i>
-                    <h3 className="text-xl font-semibold text-textBase mb-2">Không tìm thấy sản phẩm</h3>
-                    <p className="text-textMuted">Vui lòng thử lại với bộ lọc hoặc từ khóa khác.</p>
-                </div>
-                )}
-            </main>
-        )
-    }
+    
     return (
-        <main className="flex-grow w-full lg:w-3/4">
-            {Constants.PRODUCT_CATEGORIES_HIERARCHY
-            .filter(cat => cat.slug !== 'pc_xay_dung' && allProducts.some(p => p.mainCategory === cat.name))
-            .map(category => (
-                <ProductCarouselSection
-                key={category.slug}
-                title={category.name}
-                products={allProducts.filter(p => p.mainCategory === category.name)}
-                viewAllLink={`/shop?mainCategory=${category.slug}`}
-                subCategories={category.subCategories}
+        <main className="flex-grow w-full min-w-0">
+            <ProductCategoryNav
+                categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
+                activeSlug={currentFilters.mainCategory}
+                onSelect={(slug) => handleFilterChange('mainCategory', slug)}
+            />
+            <div className="flex justify-between items-center mb-6 px-1">
+              <h1 className="text-2xl font-bold text-textBase">{getCurrentCategoryName()}</h1>
+              <span className="text-sm text-textMuted">{filteredProducts.length} sản phẩm</span>
+            </div>
+            {filteredProducts.length > 0 ? (
+            <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+                {paginatedProducts.map(product => (
+                    <ProductCard key={product.id} product={product} />
+                ))}
+                </div>
+                {totalPages > 1 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
                 />
-            ))}
+                )}
+            </>
+            ) : (
+            <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
+                <i className="fas fa-search text-5xl text-textSubtle mb-4"></i>
+                <h3 className="text-xl font-semibold text-textBase mb-2">Không tìm thấy sản phẩm</h3>
+                <p className="text-textMuted">Vui lòng thử lại với bộ lọc hoặc từ khóa khác.</p>
+            </div>
+            )}
         </main>
     )
   }
@@ -247,20 +253,20 @@ const ShopPage: React.FC = () => {
   return (
     <div className="bg-bgCanvas">
       <div className="container mx-auto px-4 py-8">
-        {hasFilters && (
-            <div className="mb-6">
-                <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
-            </div>
-        )}
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          <aside className={`shop-sidebar w-full lg:max-w-[280px] flex-shrink-0 lg:sticky lg:top-[170px] ${isSidebarCollapsed ? 'is-collapsed-parent' : ''}`}>
+        <div className="mb-8">
+            <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
+        </div>
+        <div className="shop-layout-container">
+          <aside className="shop-sidebar">
             <CategorySidebar 
               currentMainCategorySlug={currentFilters.mainCategory}
               currentSubCategorySlug={currentFilters.subCategory}
               isCollapsed={isSidebarCollapsed}
             />
           </aside>
-          {renderContent()}
+          <div className="shop-main-content">
+            {renderContent()}
+          </div>
         </div>
       </div>
     </div>

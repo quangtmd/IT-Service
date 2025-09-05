@@ -90,7 +90,7 @@
     .shop-layout-container {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 2rem;
     }
     @media (min-width: 1024px) {
         .shop-layout-container {
@@ -100,12 +100,29 @@
         .shop-sidebar {
             width: 280px;
             flex-shrink: 0;
+            position: -webkit-sticky; /* For Safari */
             position: sticky;
             top: 170px; /* Adjust based on actual header height */
+            transition: all 0.3s ease-in-out;
         }
         .shop-main-content {
             flex-grow: 1;
             min-width: 0; /* Prevents content overflow issues in flexbox */
+        }
+        .shop-sidebar.is-collapsed {
+            width: 80px;
+        }
+        .shop-sidebar.is-collapsed .sidebar-header-text,
+        .shop-sidebar.is-collapsed .sidebar-item-label,
+        .shop-sidebar.is-collapsed .sidebar-footer-button-text {
+            opacity: 0;
+            width: 0;
+            pointer-events: none;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .shop-sidebar.is-collapsed .flyout-panel {
+            display: none !important;
         }
     }
     .shop-sidebar-section {
