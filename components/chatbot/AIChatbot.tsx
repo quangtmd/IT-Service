@@ -42,9 +42,10 @@ const fetchServicesFromBackend = async (query: string): Promise<Service[]> => {
 };
 
 const AIChatbot: React.FC = () => {
-  // If the API key is not available, don't render the component at all.
-  // This is a safer pattern than conditional rendering in the parent component (App.tsx).
-  if (!process.env.API_KEY) {
+  // Perform a robust check. If the API key is missing or is the literal string 'undefined' (a common build issue),
+  // don't render the component at all. This is the primary safeguard.
+  const apiKey = process.env.API_KEY;
+  if (!apiKey || apiKey === 'undefined') {
     return null;
   }
   
@@ -104,7 +105,8 @@ const AIChatbot: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const newChatSession = geminiService.startChat(siteSettings); // Pass siteSettings
+      // This call will now throw a specific, catchable error if the API key is missing.
+      const newChatSession = geminiService.startChat(siteSettings); 
       setChatSession(newChatSession);
       const initialBotGreeting = `Xin chào ${userName}! Tôi là trợ lý AI của ${siteSettings.companyName}. Tôi có thể giúp gì cho bạn?`;
       setMessages([{ 
@@ -129,12 +131,16 @@ const AIChatbot: React.FC = () => {
       setCurrentChatLogSession(newLogSession);
 
     } catch (err) {
+      // Gracefully handle the error inside the component instead of crashing.
       console.error("Failed to initialize chat:", err);
-      const specificError = (err instanceof Error && err.message.includes(Constants.API_KEY_ERROR_MESSAGE)) ? Constants.API_KEY_ERROR_MESSAGE : "Không thể khởi tạo chatbot. Vui lòng thử lại sau.";
-      setError(specificError);
+      const errorMessage = err instanceof Error ? err.message : "Lỗi không xác định.";
+      const displayError = errorMessage.includes("API Key") 
+        ? Constants.API_KEY_ERROR_MESSAGE 
+        : "Không thể khởi tạo chatbot. Vui lòng thử lại sau.";
+      setError(displayError);
       setMessages([{
         id: Date.now().toString(),
-        text: `Lỗi: ${specificError}`,
+        text: `Lỗi: ${displayError}`,
         sender: 'system',
         timestamp: new Date()
       }]);

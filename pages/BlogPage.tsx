@@ -1,11 +1,11 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import ArticlePreview from '../components/blog/ArticlePreview';
 import SearchBar from '../components/shared/SearchBar';
 import { Article } from '../types';
 import geminiService from '../services/geminiService';
 import { MOCK_ARTICLES } from '../data/mockData';
+import * as Constants from '../constants';
 
 const MANUAL_ARTICLES_KEY = 'adminArticles_v1';
 const AI_ARTICLES_KEY = 'aiGeneratedArticles_v1';
@@ -41,8 +41,9 @@ const BlogPage: React.FC = () => {
       setIsLoading(false);
 
       const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
+      const apiKey = process.env.API_KEY;
 
-      if (process.env.API_KEY && isCacheStale) {
+      if (apiKey && apiKey !== 'undefined' && isCacheStale) {
         setIsLoadingAI(true);
         setAiError(null);
         try {
@@ -68,7 +69,12 @@ const BlogPage: React.FC = () => {
 
         } catch (error) {
           console.error("Failed to fetch AI articles:", error);
-          setAiError(error instanceof Error ? error.message : "Lỗi không xác định");
+          const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
+          if (errorMessage.includes("API Key chưa được cấu hình")) {
+            setAiError(Constants.API_KEY_ERROR_MESSAGE);
+          } else {
+            setAiError(errorMessage);
+          }
         } finally {
           setIsLoadingAI(false);
         }

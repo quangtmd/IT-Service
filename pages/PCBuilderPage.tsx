@@ -56,7 +56,9 @@ const PCBuilderPage: React.FC = () => {
   }, []);
 
   const getAIRecommendation = async () => {
-    if (!process.env.API_KEY) {
+    // This check is now secondary; the primary error handling is in the service.
+    // However, it provides a fast failure path without a service call.
+    if (!process.env.API_KEY || process.env.API_KEY === 'undefined') {
       setError(Constants.API_KEY_ERROR_MESSAGE);
       return;
     }
@@ -80,7 +82,13 @@ const PCBuilderPage: React.FC = () => {
       }
     } catch (err) {
       console.error("Lỗi khi nhận đề xuất từ AI:", err);
-      setError(err instanceof Error ? err.message : "Lỗi không xác định từ AI.");
+      const errorMessage = err instanceof Error ? err.message : "Lỗi không xác định từ AI.";
+      // Display the specific, user-friendly API key error if it occurs.
+      if (errorMessage.includes("API Key chưa được cấu hình")) {
+          setError(Constants.API_KEY_ERROR_MESSAGE);
+      } else {
+          setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -212,7 +220,7 @@ const PCBuilderPage: React.FC = () => {
             </Button>
             {error && <p className="text-sm text-danger-text mt-2">{error}</p>}
             {aiRecommendation?.error && !error && <p className="text-sm text-warning-text mt-2">{aiRecommendation.error}</p>}
-            {!process.env.API_KEY && <p className="text-xs text-warning-text mt-1">API_KEY chưa được cấu hình. Tính năng AI sẽ không hoạt động.</p>}
+            {(!process.env.API_KEY || process.env.API_KEY === 'undefined') && <p className="text-xs text-warning-text mt-1">API_KEY chưa được cấu hình. Tính năng AI sẽ không hoạt động.</p>}
           </Card>
 
           <div className="lg:col-span-2 space-y-6">

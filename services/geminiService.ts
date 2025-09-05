@@ -1,3 +1,5 @@
+
+
 // Fix: Import correct types from @google/genai
 // Fix: Removed invalid non-English import.
 import { GoogleGenAI, Chat, GenerateContentResponse, GenerateContentParameters, Part, Content, Type } from "@google/genai"; // Added Part, Content, Type
@@ -11,15 +13,17 @@ const IMAGE_MODEL_NAME = 'imagen-4.0-generate-001';
 let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
 
-const getAiClient = (): GoogleGenAI => {
-  const apiKey = process.env.API_KEY; 
-  if (!apiKey) {
-    // This error will be caught by the calling function or bubble up.
-    // UI components should check for API_KEY before calling service functions.
-    throw new Error(Constants.API_KEY_ERROR_MESSAGE + " (Gemini Service Initialization Failed - API_KEY is missing from process.env)");
+const getAiClient = (): GoogleGenAI | null => {
+  const apiKey = process.env.API_KEY;
+  // This robust check handles both missing keys and the 'undefined' string issue from some build tools.
+  if (!apiKey || apiKey === 'undefined') {
+    if (!aiInstance) { // Log this warning only once to avoid spamming the console
+        console.warn("Gemini Service: VITE_API_KEY is not configured. AI features will be disabled.");
+    }
+    return null;
   }
+
   if (!aiInstance) {
-    // Pass the apiKey string directly
     aiInstance = new GoogleGenAI({ apiKey: apiKey as string });
   }
   return aiInstance;
@@ -32,7 +36,10 @@ export const startChat = (
   history?: Content[], 
   systemInstructionOverride?: string
 ): Chat => {
-  const client = getAiClient(); // Ensures client is initialized
+  const client = getAiClient();
+  if (!client) {
+      throw new Error(Constants.API_KEY_ERROR_MESSAGE);
+  }
 
   let socialLinksInfo = "";
   if (siteSettings.socialFacebookUrl) socialLinksInfo += `\n- Facebook: ${siteSettings.socialFacebookUrl}`;
@@ -70,17 +77,14 @@ export const sendMessageToChatStream = async (
 ): Promise<AsyncIterable<GenerateContentResponse>> => {
   const chatToUse = currentChatInstance || chatSessionInstance;
   if (!chatToUse) {
-    if (process.env.API_KEY) { 
-        console.warn("Chat not explicitly initialized, attempting to start a new one for sendMessageToChatStream.");
-        // Attempting to auto-initialize requires siteSettings. This is a fallback.
-        // For proper functionality, ensure startChat is called with siteSettings first.
-        const tempSiteSettings = Constants.INITIAL_SITE_SETTINGS; // Fallback, might not be up-to-date
-        startChat(tempSiteSettings); 
-        if (!chatSessionInstance) throw new Error("Failed to auto-initialize chat session."); 
-        return await chatSessionInstance.sendMessageStream({ message });
-    }
-    throw new Error("Chat not initialized. Call startChat first or ensure API key is set for auto-initialization.");
+    throw new Error("Chat not initialized. Call startChat first.");
   }
+  
+  const client = getAiClient();
+  if (!client) {
+      throw new Error(Constants.API_KEY_ERROR_MESSAGE);
+  }
+
   try {
     return await chatToUse.sendMessageStream({ message });
   } catch (error) {
@@ -95,6 +99,9 @@ export const generatePCBuildRecommendation = async (
   currentComponents?: Record<string, string>
 ): Promise<AIBuildResponse> => {
   const client = getAiClient(); 
+  if (!client) {
+      throw new Error(Constants.API_KEY_ERROR_MESSAGE);
+  }
 
   let prompt = `Tôi cần xây dựng một cấu hình PC.
 Nhu cầu sử dụng: ${useCase}.
@@ -143,6 +150,9 @@ export const generateTextWithGoogleSearch = async (
   prompt: string
 ): Promise<{ text: string; groundingChunks?: GroundingChunk[] }> => {
   const client = getAiClient(); 
+  if (!client) {
+      throw new Error(Constants.API_KEY_ERROR_MESSAGE);
+  }
   try {
     const response: GenerateContentResponse = await client.models.generateContent({
       model: CHAT_MODEL_NAME, 
@@ -164,6 +174,9 @@ export const generateTextWithGoogleSearch = async (
 
 export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
     const client = getAiClient();
+    if (!client) {
+        throw new Error(Constants.API_KEY_ERROR_MESSAGE);
+    }
     const prompt = `Làm một biên tập viên tin tức công nghệ. Sử dụng Google Search để tìm 3 tin tức công nghệ mới và thú vị nhất trong vài ngày qua. 
     Đối với mỗi tin tức, hãy cung cấp một tiêu đề hấp dẫn, một bản tóm tắt (summary) khoảng 2-3 câu, một nội dung chi tiết (content) được định dạng bằng Markdown, một danh mục (category) từ danh sách sau: [${Constants.ARTICLE_CATEGORIES.join(', ')}], và một cụm từ khóa tìm kiếm hình ảnh bằng tiếng Anh (imageSearchQuery) ngắn gọn, phù hợp với nội dung.
     Trả về kết quả dưới dạng một mảng JSON.`;
@@ -197,6 +210,9 @@ export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
 
 export const generateImage = async (prompt: string): Promise<string> => {
   const client = getAiClient(); 
+  if (!client) {
+      throw new Error(Constants.API_KEY_ERROR_MESSAGE);
+  }
   try {
     const response = await client.models.generateImages({
         model: IMAGE_MODEL_NAME,
@@ -223,18 +239,13 @@ export const sendMessageWithImage = async (
 ): Promise<AsyncIterable<GenerateContentResponse>> => {
   const chatToUse = currentChatInstance || chatSessionInstance;
   if (!chatToUse) {
-     if (process.env.API_KEY) { 
-        console.warn("Chat not explicitly initialized, attempting to start a new one for sendMessageWithImage.");
-        const tempSiteSettings = Constants.INITIAL_SITE_SETTINGS; // Fallback
-        startChat(tempSiteSettings); 
-        if (!chatSessionInstance) throw new Error("Failed to auto-initialize chat session for image message.");
-     } else {
-        throw new Error("Chat not initialized for image message. Call startChat first or ensure API key is set.");
-     }
+     throw new Error("Chat not initialized for image message. Call startChat first.");
   }
-  const finalChatToUse = currentChatInstance || chatSessionInstance;
-  if (!finalChatToUse) throw new Error("Chat session is unexpectedly null after attempting initialization.");
-
+  
+  const client = getAiClient();
+  if (!client) {
+    throw new Error(Constants.API_KEY_ERROR_MESSAGE);
+  }
 
   const imagePart: Part = {
     inlineData: {
@@ -245,7 +256,8 @@ export const sendMessageWithImage = async (
   const textPart: Part = { text: textPrompt };
 
   try {
-    return await finalChatToUse.sendMessageStream({ message: [textPart, imagePart] });
+    // Fix: Corrected typo from `finalChatToUse` to `chatToUse`.
+    return await chatToUse.sendMessageStream({ message: [textPart, imagePart] });
   } catch (error) {
     console.error("Error sending message with image to Gemini (stream):", error);
     throw error;
