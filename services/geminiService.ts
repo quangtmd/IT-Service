@@ -18,7 +18,7 @@ const getAiClient = (): GoogleGenAI | null => {
   // This robust check handles both missing keys and the 'undefined' string issue from some build tools.
   if (!apiKey || apiKey === 'undefined') {
     if (!aiInstance) { // Log this warning only once to avoid spamming the console
-        console.warn("Gemini Service: VITE_API_KEY is not configured. AI features will be disabled.");
+        console.warn("Gemini Service: API_KEY is not configured. AI features will be disabled.");
     }
     return null;
   }
