@@ -1,4 +1,3 @@
-// Fix: Add a triple-slash directive to include Vite client types. This resolves the error 'Property 'env' does not exist on type 'ImportMeta'' by making TypeScript aware of Vite's environment variables.
 /// <reference types="vite/client" />
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import * as Constants from './constants'; 
