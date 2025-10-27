@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product } from '../../types';
 import ChatMessage from './ChatMessage';
@@ -7,38 +5,6 @@ import Button from '../ui/Button';
 import geminiService from '../../services/geminiService';
 import { Chat, GenerateContentResponse } from '@google/genai';
 import * as Constants from '../../constants.tsx'; 
-import { MOCK_SERVICES, MOCK_PRODUCTS } from '../../data/mockData'; 
-
-const fetchServicesFromBackend = async (query: string): Promise<Service[]> => {
-  const baseUrl = Constants.BACKEND_API_BASE_URL;
-  const lowerQuery = query.toLowerCase();
-
-  const getMockServices = () => {
-    return MOCK_SERVICES.filter(s =>
-      s.name.toLowerCase().includes(lowerQuery) ||
-      s.description.toLowerCase().includes(lowerQuery)
-    ).slice(0, 3);
-  };
-
-  if (!baseUrl) {
-    console.warn("[AIChatbot] BACKEND_API_BASE_URL is not set. Falling back to mock services.");
-    return getMockServices();
-  }
-
-  const endpoint = `${baseUrl}/api/services/search?query=${encodeURIComponent(query)}`;
-  try {
-    const response = await fetch(endpoint);
-    if (!response.ok) {
-      console.warn(`[AIChatbot] Backend service API request failed: ${response.status} ${response.statusText}. URL: ${response.url}. Falling back to mock services.`);
-      return getMockServices();
-    }
-    const services: Service[] = await response.json();
-    return services.slice(0, 3);
-  } catch (error) {
-    console.error(`[AIChatbot] Error fetching services from backend (URL: ${endpoint}):`, error, ". Falling back to mock services.");
-    return getMockServices();
-  }
-};
 
 interface AIChatbotProps {
   isOpen: boolean;
@@ -197,65 +163,8 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     setMessages((prev) => [...prev, initialBotMessage]);
     setCurrentChatLogSession(prevLog => prevLog ? {...prevLog, messages: [...prevLog.messages, initialBotMessage]} : null);
     
-    let dynamicContext = ""; 
-    const lowerQuery = userMessageText.toLowerCase();
-    
-    const productKeywords = ["laptop", "pc", "máy tính", "linh kiện", "cpu", "vga", "ram", "mainboard", "giá", "mua", "sản phẩm", "gaming", "văn phòng", "đồ họa", "workstation"];
-    const mentionsProduct = productKeywords.some(kw => lowerQuery.includes(kw)) || MOCK_PRODUCTS.some(p => lowerQuery.includes(p.name.toLowerCase()));
-
-    if (mentionsProduct) {
-        const relevantProducts = MOCK_PRODUCTS.filter(p => {
-            const nameMatch = p.name.toLowerCase().includes(lowerQuery);
-            const categoryMatch = p.mainCategory.toLowerCase().includes(lowerQuery) || p.subCategory.toLowerCase().includes(lowerQuery);
-            // Check if user query includes specific product keywords that are also in product name/category
-            const keywordInProductMatch = productKeywords.some(kw => 
-                (p.name.toLowerCase().includes(kw) || p.mainCategory.toLowerCase().includes(kw) || p.subCategory.toLowerCase().includes(kw)) &&
-                lowerQuery.includes(kw)
-            );
-            return nameMatch || categoryMatch || keywordInProductMatch;
-        }).slice(0, 3);
-
-        if (relevantProducts.length > 0) {
-            dynamicContext += "\n\n[Sản phẩm liên quan từ cửa hàng]:\n";
-            relevantProducts.forEach(p => {
-                const productUrl = `${window.location.origin}${window.location.pathname}#/product/${p.id}`;
-                dynamicContext += `- Tên: ${p.name}, Giá: ${p.price.toLocaleString('vi-VN')}₫. Xem chi tiết: [Link sản phẩm](${productUrl})\n`;
-            });
-             dynamicContext += "Nếu người dùng hỏi về các sản phẩm này, hãy cung cấp thông tin và link đã cho.\n";
-        }
-    }
-    
-    const serviceKeywords = ["dịch vụ", "sửa chữa", "bảo trì", "lắp đặt", "cài đặt", "tư vấn web", "giải pháp", "it", "thuê ngoài", "hỗ trợ"];
-    const mentionsService = serviceKeywords.some(kw => lowerQuery.includes(kw)) || MOCK_SERVICES.some(s => lowerQuery.includes(s.name.toLowerCase()));
-
-    if (mentionsService) {
-        let fetchedServices: Service[] = [];
-        try {
-            fetchedServices = await fetchServicesFromBackend(userMessageText);
-        } catch (fetchErr) { 
-            console.error("[AIChatbot] Error fetching services for context:", fetchErr); 
-            // Fallback to mock if API fails
-            fetchedServices = MOCK_SERVICES.filter(s =>
-                s.name.toLowerCase().includes(lowerQuery) ||
-                s.description.toLowerCase().includes(lowerQuery) ||
-                serviceKeywords.some(kw => (s.name.toLowerCase().includes(kw) || s.description.toLowerCase().includes(kw)) && lowerQuery.includes(kw))
-            ).slice(0, 2);
-        }
-        
-        if (fetchedServices.length > 0) {
-            dynamicContext += "\n\n[Dịch vụ liên quan từ cửa hàng]:\n";
-            fetchedServices.forEach(s => {
-                const serviceUrl = `${window.location.origin}${window.location.pathname}#/service/${s.slug || s.id}`;
-                dynamicContext += `- Dịch vụ: ${s.name}. Mô tả: ${s.description.substring(0, 100)}... Xem chi tiết: [Link dịch vụ](${serviceUrl})\n`;
-            });
-            dynamicContext += "Nếu người dùng hỏi về các dịch vụ này, hãy cung cấp thông tin và link đã cho.\n";
-        }
-    }
-    
-    const messageToSendToGemini = userMessageText + (dynamicContext ? `\n\n${dynamicContext}` : "");
-    
     try {
-      const stream: AsyncIterable<GenerateContentResponse> = await geminiService.sendMessageToChatStream(messageToSendToGemini, chatSession);
+      const stream: AsyncIterable<GenerateContentResponse> = await geminiService.sendMessageToChatStream(userMessageText, chatSession);
       let currentText = '';
       for await (const chunk of stream) {
         currentText += chunk.text; 

@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
 import Button from '../components/ui/Button';
@@ -25,20 +23,29 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (!username.trim()) {
-      setError('Vui lòng nhập tên người dùng.');
+    if (!username.trim() || !email.trim() || !password.trim()) {
+      setError('Vui lòng điền đầy đủ các trường bắt buộc.');
       return;
     }
-    if (!email.trim()) {
-      setError('Vui lòng nhập email.');
+    if (password !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự.');
       return;
     }
 
-    const user = await register({ username, email, password });
-    if (user) {
-      navigate('/home'); // Changed from history.push
-    } else {
-      setError('Đăng ký không thành công. Email có thể đã được sử dụng hoặc dữ liệu không hợp lệ.');
+    try {
+        const user = await register({ username, email, password });
+        if (user) {
+          navigate('/home');
+        } else {
+          setError('Đăng ký không thành công. Vui lòng thử lại.');
+        }
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Đã xảy ra lỗi không xác định.';
+        setError(errorMessage);
     }
   };
 
@@ -77,7 +84,7 @@ const RegisterPage: React.FC = () => {
                 autoComplete="username"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
-                placeholder="Tên người dùng"
+                placeholder="Tên người dùng *"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -93,7 +100,7 @@ const RegisterPage: React.FC = () => {
                 autoComplete="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
-                placeholder="Địa chỉ email"
+                placeholder="Địa chỉ email *"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -107,8 +114,9 @@ const RegisterPage: React.FC = () => {
                 name="password"
                 type="password"
                 autoComplete="new-password"
+                required
                 className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
-                placeholder="Mật khẩu (bỏ trống để demo)"
+                placeholder="Mật khẩu *"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -122,8 +130,9 @@ const RegisterPage: React.FC = () => {
                 name="confirm-password"
                 type="password"
                 autoComplete="new-password"
+                required
                 className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
-                placeholder="Xác nhận mật khẩu (bỏ trống để demo)"
+                placeholder="Xác nhận mật khẩu *"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
@@ -136,9 +145,6 @@ const RegisterPage: React.FC = () => {
             </Button>
           </div>
         </form>
-        <p className="mt-4 text-center text-xs text-textSubtle">
-            Lưu ý: Đây là hệ thống demo. Mật khẩu không bắt buộc để đăng ký.
-        </p>
       </div>
     </div>
   );

@@ -26,9 +26,12 @@ export const THEME_SETTINGS_STORAGE_KEY = 'siteThemeSettings_v1';
 export const CUSTOM_MENU_STORAGE_KEY = 'siteCustomMenu_v1';
 export const PRODUCTS_STORAGE_KEY = 'siteProducts_v1';
 export const ORDERS_STORAGE_KEY = 'siteOrders_v1';
-export const MEDIA_LIBRARY_STORAGE_KEY = 'siteMediaLibrary_v1'; // For new media library
 export const CHAT_LOGS_STORAGE_KEY = 'siteChatLogs_v1'; // For storing chat logs
 export const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1';
+export const FINANCIAL_TRANSACTIONS_STORAGE_KEY = 'siteFinancialTransactions_v1';
+export const PAYROLL_RECORDS_STORAGE_KEY = 'sitePayrollRecords_v1';
+export const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
+
 
 // --- BANKING INFO ---
 export const BANK_ACCOUNT_NAME = "TRAN MINH QUANG";
@@ -108,7 +111,7 @@ const INITIAL_HOMEPAGE_ABOUT: HomepageAboutSettings = {
 const INITIAL_HOMEPAGE_SERVICE_BENEFITS: HomepageServiceBenefit[] = [
   { id: 'sb1', iconClass: 'fas fa-dollar-sign', title: 'Tiết Kiệm Chi Phí', description: 'Dịch vụ CNTT giúp doanh nghiệp của bạn có thể giảm đáng kể chi phí liên quan đến việc tuyển dụng, đào tạo và duy trì nhân viên CNTT...', link: '/services', order: 1 },
   { id: 'sb2', iconClass: 'fas fa-users-cog', title: 'Chuyên Môn Cao', description: 'Chúng tôi mang đến một đội ngũ các chuyên gia CNTT nhiệt huyết và có kinh nghiệm chuyên môn về các lĩnh vực khác nhau như hỗ trợ helpdesk, cấu hình mạng,...', link: '/services', order: 2 },
-  { id: 'sb3', iconClass: 'fas fa-cogs', title: 'Chủ Động Và Linh Hoạt', description: 'Công ty chúng tôi cung cấp các giải pháp CNTT có thể mở rộng và linh hoạt có thể thích ứng với nhu cầu thay đổi của các doanh nghiệp khi phát triển hoặc cắt giảm...', link: '/services', order: 3 },
+  { id: 'sb3', iconClass: 'fas fa-cogs', title: 'Chủ Động Và Linh Hoạt', description: 'Công ty chúng tôi cung cấp các giải pháp CNTT có thể mở rộng và linh hoạt có thể thích ứng với các nhu cầu thay đổi của các doanh nghiệp khi phát triển hoặc cắt giảm...', link: '/services', order: 3 },
   { id: 'sb4', iconClass: 'fas fa-headset', title: 'Hỗ Trợ 24/7', description: 'Công ty chúng tôi hiểu tầm quan trọng của hoạt động CNTT không bị gián đoạn đối với doanh nghiệp. Đó là lý do tại sao chúng tôi luôn hỗ trợ ngay lập tức khi có sự cố...', link: '/services', order: 4 },
   { id: 'sb5', iconClass: 'fas fa-bullseye', title: 'Tập Trung Vào Cốt Lõi', description: 'Việc thuê ngoài các dịch vụ CNTT cho phép doanh nghiệp tập trung vào năng lực cốt lõi. Bằng cách giao các nhiệm vụ CNTT cho đội ngũ chuyên gia của chúng tôi..', link: '/services', order: 5 },
   { id: 'sb6', iconClass: 'fas fa-shield-alt', title: 'Tuân Thủ Bảo Mật', description: 'Công ty chúng tôi hiểu tầm quan trọng của bảo mật dữ liệu. Vì vậy chúng tôi luôn cam kết bảo mật và bảo vệ tài số của các Doanh nghiệp...', link: '/services', order: 6 },
@@ -317,6 +320,7 @@ export const NAVIGATION_LINKS_BASE: Omit<CustomMenuLink, 'order' | 'isVisible' |
   { label: 'Trang chủ', path: '/home', icon: 'fas fa-home' },
   { label: 'Sản phẩm', path: '/shop', icon: 'fas fa-store' },
   { label: 'Xây dựng PC', path: PC_BUILDER_PATH, icon: 'fas fa-tools'}, 
+  { label: 'Gợi ý Cấu hình', path: '/pc-build-suggestions', icon: 'fas fa-magic' },
   { label: 'Dịch vụ IT', path: '/services', icon: 'fas fa-concierge-bell' },
   { label: 'Dự án', path: '/projects', icon: 'fas fa-project-diagram' },
   { label: 'Blog', path: '/blog', icon: 'fas fa-newspaper' },

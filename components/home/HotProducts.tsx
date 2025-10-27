@@ -1,12 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../types';
 import ProductCard from '../shop/ProductCard';
 import Button from '../ui/Button';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
-import * as Constants from '../../constants.tsx';
-import { MOCK_PRODUCTS } from '../../data/mockData';
+import { getFeaturedProducts } from '../../services/localDataService';
 
 const HotProducts: React.FC = () => {
   const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
@@ -15,44 +13,21 @@ const HotProducts: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchHotProducts = async () => {
+    const loadHotProducts = async () => {
       setIsLoading(true);
       setError(null);
       
-      const baseUrl = process.env.BACKEND_API_BASE_URL;
-
-      const loadMockData = () => {
-        console.warn("Falling back to mock data for featured products.");
-        const featured = MOCK_PRODUCTS.filter(p => 
-            (p.tags && p.tags.includes('Bán chạy')) || 
-            (p.originalPrice && p.price < p.originalPrice)
-        ).slice(0, 4);
-        // Ensure we always show 4 products if possible
-        setHotProducts(featured.length > 0 ? featured : MOCK_PRODUCTS.slice(0, 4));
-      };
-
-      if (!baseUrl) {
-          loadMockData();
-          setIsLoading(false);
-          return;
-      }
-      
       try {
-        const response = await fetch(`${baseUrl}/api/products/featured`);
-        if (!response.ok) {
-          throw new Error(`API responded with ${response.status}`);
-        }
-        const data: Product[] = await response.json();
-        setHotProducts(data);
+        const featured = await getFeaturedProducts();
+        setHotProducts(featured);
       } catch (err) {
-        // Don't set a user-facing error, just log it and fallback.
-        console.error("Lỗi khi fetch sản phẩm nổi bật:", err);
-        loadMockData();
+        setError("Không thể tải sản phẩm nổi bật.");
+        console.error("Lỗi khi tải sản phẩm nổi bật từ Local Storage:", err);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchHotProducts();
+    loadHotProducts();
   }, []);
 
   if (isLoading) {
@@ -65,8 +40,17 @@ const HotProducts: React.FC = () => {
       </section>
     );
   }
+  
+  if (error) {
+     return (
+      <section className="home-section bg-bgMuted">
+        <div className="container mx-auto px-4 text-center text-red-600">
+           <p>{error}</p>
+        </div>
+      </section>
+    );
+  }
 
-  // Error state is now handled by fallback, so we don't need a separate error display.
 
   if (hotProducts.length === 0) {
     return (

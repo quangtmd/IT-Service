@@ -1,10 +1,11 @@
-
-
 // Fix: Import correct types from @google/genai
 // Fix: Removed invalid non-English import.
 import { GoogleGenAI, Chat, GenerateContentResponse, GenerateContentParameters, Part, Content, Type } from "@google/genai"; // Added Part, Content, Type
 import * as Constants from '../constants.tsx';
-import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article } from "../types"; // Added SiteSettings, Article
+import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; // Added SiteSettings, Article, Product
+import { MOCK_SERVICES } from '../data/mockData';
+import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
+
 
 const CHAT_MODEL_NAME = 'gemini-2.5-flash';
 const BUILDER_MODEL_NAME = 'gemini-2.5-flash';
@@ -29,7 +30,6 @@ const getAiClient = (): GoogleGenAI | null => {
   return aiInstance;
 };
 
-
 // Fix: Change history type from GenerateContentParameters[] to Content[]
 export const startChat = (
   siteSettings: SiteSettings, // Added siteSettings
@@ -46,18 +46,37 @@ export const startChat = (
   if (siteSettings.socialZaloUrl) socialLinksInfo += `\n- Zalo: ${siteSettings.socialZaloUrl}`;
   if (siteSettings.socialYoutubeUrl) socialLinksInfo += `\n- YouTube: ${siteSettings.socialYoutubeUrl}`;
 
+  const serviceInfo = MOCK_SERVICES.map(service => 
+    `- Dịch vụ: ${service.name}\n  Mô tả: ${service.description}\n  Link chi tiết: ${window.location.origin}${window.location.pathname}#/service/${service.slug || service.id}`
+  ).join('\n\n');
 
-  const defaultSystemInstruction = `Bạn là một trợ lý AI bán hàng và hỗ trợ khách hàng toàn diện cho cửa hàng ${siteSettings.companyName}.
-Khi người dùng hỏi về sản phẩm hoặc dịch vụ, hãy ưu tiên sử dụng thông tin và các đường link được cung cấp trong "[Sản phẩm liên quan từ cửa hàng]" hoặc "[Dịch vụ liên quan từ cửa hàng]" (nếu có) để trả lời trực tiếp và cung cấp link cho người dùng.
-Ví dụ, nếu được cung cấp: "[Sản phẩm liên quan từ cửa hàng]: - Tên: Laptop ABC, Giá: 15.000.000₫. Xem chi tiết: [Link sản phẩm](http://localhost:3000/#/product/lap001)", và người dùng hỏi "có laptop ABC không?", bạn nên trả lời "Có bạn nhé, Laptop ABC giá 15.000.000₫, bạn xem chi tiết tại đây: [Link sản phẩm](http://localhost:3000/#/product/lap001)".
-Nếu không có thông tin sản phẩm/dịch vụ cụ thể được cung cấp trong ngữ cảnh, hãy trả lời chung và hướng dẫn người dùng cách tìm kiếm trên trang web hoặc liên hệ bộ phận bán hàng.
-Thông tin liên hệ chung của cửa hàng:
+  const productCategoriesInfo = PRODUCT_CATEGORIES_HIERARCHY
+    .map(cat => `- ${cat.name}`)
+    .join('\n');
+
+
+  const defaultSystemInstruction = `Bạn là một trợ lý AI bán hàng và hỗ trợ khách hàng toàn diện cho cửa hàng ${siteSettings.companyName}. Cửa hàng của chúng ta kinh doanh hai mảng chính: bán sản phẩm công nghệ và cung cấp dịch vụ IT.
+
+**Kiến thức về Sản phẩm của Cửa hàng:**
+Chúng tôi bán đa dạng các sản phẩm. Khi được hỏi, hãy xác nhận rằng chúng ta có bán các mặt hàng này và khuyến khích khách hàng khám phá thêm. Các danh mục chính bao gồm:
+${productCategoriesInfo}
+
+**Kiến thức về Dịch vụ của Cửa hàng:**
+Dưới đây là danh sách các dịch vụ IT mà cửa hàng cung cấp. Hãy sử dụng thông tin này để tư vấn chi tiết cho khách hàng.
+${serviceInfo}
+
+**Quy tắc trả lời:**
+1.  **Khi người dùng hỏi về sản phẩm (ví dụ: "có bán laptop không?"):** Hãy xác nhận rằng cửa hàng có bán danh mục sản phẩm đó (dựa vào "Kiến thức về Sản phẩm") và khuyến khích họ truy cập trang sản phẩm chung ([${siteSettings.companyName} Shop](${window.location.origin}${window.location.pathname}#/shop)) hoặc hỏi chi tiết hơn để bạn có thể tư vấn.
+2.  **Khi người dùng hỏi về dịch vụ IT:** Hãy dựa vào phần "Kiến thức về Dịch vụ" để trả lời. Cung cấp mô tả chi tiết và luôn kèm theo link chi tiết của dịch vụ đó.
+3.  **Tránh mặc định từ chối:** TUYỆT ĐỐI KHÔNG trả lời rằng bạn "không thể" cung cấp thông tin sản phẩm. Vai trò của bạn là một nhân viên bán hàng, hãy thể hiện rằng cửa hàng có đa dạng sản phẩm.
+4.  **Thông tin liên hệ:** Chỉ cung cấp thông tin liên hệ chung khi người dùng trực tiếp yêu cầu hoặc khi bạn không thể trả lời câu hỏi sau khi đã sử dụng hết kiến thức được cung cấp.
+
+**Thông tin liên hệ chung (chỉ dùng khi thật sự cần thiết):**
 - Tên công ty: ${siteSettings.companyName}
 - Số điện thoại: ${siteSettings.companyPhone}, Email: ${siteSettings.companyEmail}, Địa chỉ: ${siteSettings.companyAddress}.
 ${socialLinksInfo ? `- Mạng xã hội:${socialLinksInfo}` : ''}
+
 Hãy luôn thân thiện, chuyên nghiệp và trả lời bằng tiếng Việt.
-Cố gắng hiểu rõ ý định của người dùng. Nếu câu hỏi không rõ ràng, hãy hỏi thêm để làm rõ trước khi trả lời.
-Lưu ý: Bạn không thể tự 'nhớ' các cuộc trò chuyện trước đó trừ khi lịch sử được cung cấp lại trong mỗi lượt.
 Khi cung cấp link, hãy đảm bảo link đó đầy đủ và có thể nhấp được (sử dụng định dạng Markdown cho link, ví dụ: [Tên Link](URL)).`;
 
   chatSessionInstance = client.chats.create({
@@ -145,6 +164,79 @@ Nếu ngân sách quá thấp cho nhu cầu sử dụng, hãy trả về JSON c�
     return { error: "Đã xảy ra lỗi khi nhận đề xuất từ AI. Vui lòng thử lại." };
   }
 };
+
+export const generatePCBuildSuggestions = async (
+  useCase: 'PC Gaming' | 'PC Văn phòng',
+  budget: string,
+  additionalRequirements: string
+): Promise<AIBuildSuggestionsResponse> => {
+  const client = getAiClient();
+  if (!client) {
+      throw new Error(Constants.API_KEY_ERROR_MESSAGE);
+  }
+
+  const prompt = `Bạn là một chuyên gia xây dựng PC tại cửa hàng Việt Nam có tên "IQ Technology". Dựa trên nhu cầu của người dùng, hãy đề xuất 2-3 cấu hình PC riêng biệt (ví dụ: một cấu hình tối ưu giá, một cấu hình hiệu năng cao, hoặc một dùng Intel và một dùng AMD).
+
+Nhu cầu của người dùng:
+- Mục đích: ${useCase}
+- Ngân sách: ${budget} VNĐ
+- Yêu cầu thêm: ${additionalRequirements || 'Không có'}
+
+Đối với mỗi cấu hình, hãy cung cấp một tên gọi (ví dụ: "Cấu hình Gaming Tầm trung"), một tổng giá tiền ước tính (dạng số), một lý do ngắn gọn tại sao cấu hình này phù hợp, và danh sách các linh kiện cụ thể bao gồm: CPU, GPU, RAM, Motherboard, SSD, PSU, và Case.
+Phản hồi của bạn PHẢI tuân thủ nghiêm ngặt theo JSON schema đã được cung cấp.`;
+
+  const responseSchema = {
+    type: Type.OBJECT,
+    properties: {
+      suggestions: {
+        type: Type.ARRAY,
+        description: "Một danh sách các cấu hình PC được đề xuất.",
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING, description: "Tên của cấu hình, ví dụ: Cấu hình Gaming Tầm Trung." },
+            total_price: { type: Type.NUMBER, description: "Tổng chi phí ước tính bằng VNĐ." },
+            reasoning: { type: Type.STRING, description: "Giải thích ngắn gọn tại sao cấu hình này phù hợp." },
+            components: {
+              type: Type.OBJECT,
+              properties: {
+                CPU: { type: Type.STRING },
+                GPU: { type: Type.STRING },
+                RAM: { type: Type.STRING },
+                Motherboard: { type: Type.STRING },
+                SSD: { type: Type.STRING },
+                PSU: { type: Type.STRING },
+                Case: { type: Type.STRING },
+              },
+              required: ["CPU", "GPU", "RAM", "Motherboard", "SSD", "PSU", "Case"]
+            },
+          },
+          required: ["name", "total_price", "reasoning", "components"]
+        },
+      },
+    },
+    required: ["suggestions"],
+  };
+
+  try {
+    const response: GenerateContentResponse = await client.models.generateContent({
+      model: BUILDER_MODEL_NAME,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema,
+      },
+    });
+
+    const jsonStr = response.text.trim();
+    return JSON.parse(jsonStr) as AIBuildSuggestionsResponse;
+
+  } catch (error) {
+    console.error("Lỗi khi tạo gợi ý cấu hình PC:", error);
+    throw new Error("Không thể nhận gợi ý từ AI. Vui lòng thử lại sau.");
+  }
+};
+
 
 export const generateTextWithGoogleSearch = async (
   prompt: string
@@ -268,6 +360,7 @@ export default {
   startChat,
   sendMessageToChatStream,
   generatePCBuildRecommendation,
+  generatePCBuildSuggestions,
   generateTextWithGoogleSearch,
   generateImage,
   sendMessageWithImage,

@@ -1,68 +1,46 @@
-
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom'; // useParams and Link are compatible with v6/v7
-import { MOCK_ARTICLES as FALLBACK_ARTICLES } from '../data/mockData';
 import { Article } from '../types';
 import Markdown from 'react-markdown';
-import * as Constants from '../constants';
 import ArticlePreview from '../components/blog/ArticlePreview';
-
-const ARTICLES_STORAGE_KEY = 'adminArticles_v1';
+import { getArticle, getArticles } from '../services/localDataService';
 
 const ArticleDetailPage: React.FC = () => {
   const { articleId } = useParams<{ articleId: string }>();
   const [article, setArticle] = useState<Article | null>(null);
-  const [allArticles, setAllArticles] = useState<Article[]>(FALLBACK_ARTICLES);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
-
-  const loadArticles = useCallback(() => {
-    try {
-      const storedArticles = localStorage.getItem(ARTICLES_STORAGE_KEY);
-      if (storedArticles) {
-        setAllArticles(JSON.parse(storedArticles));
-      } else {
-        setAllArticles(FALLBACK_ARTICLES);
-      }
-    } catch (error) {
-      console.error("Error loading articles from localStorage:", error);
-      setAllArticles(FALLBACK_ARTICLES);
-    }
-  }, []);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadArticles();
-    window.addEventListener('articlesUpdated', loadArticles);
-    return () => {
-      window.removeEventListener('articlesUpdated', loadArticles);
+    const loadArticle = async () => {
+      if (!articleId) {
+          setIsLoading(false);
+          return;
+      }
+      setIsLoading(true);
+      try {
+          const foundArticle = await getArticle(articleId);
+          setArticle(foundArticle);
+
+          if(foundArticle) {
+              const allArticles = await getArticles();
+              const filteredRelated = allArticles.filter(
+                  a => a.id !== foundArticle.id && a.category === foundArticle.category
+              ).slice(0, 3);
+              setRelatedArticles(filteredRelated);
+          }
+      } catch (error) {
+          console.error("Error fetching article:", error);
+      } finally {
+          setIsLoading(false);
+          window.scrollTo(0, 0);
+      }
     };
-  }, [loadArticles]);
 
-  useEffect(() => {
-    if (articleId && allArticles.length > 0) {
-      const foundArticle = allArticles.find(a => a.id === articleId);
-      setArticle(foundArticle || null);
-      window.scrollTo(0, 0);
+    loadArticle();
+  }, [articleId]);
 
-      if (foundArticle) {
-        const filteredRelated = allArticles.filter(
-          a => a.id !== foundArticle.id && a.category === foundArticle.category
-        ).slice(0, 3);
-
-        if (filteredRelated.length < 3) {
-            const otherArticles = allArticles.filter(a => a.id !== foundArticle.id && a.category !== foundArticle.category)
-                                          .slice(0, 3 - filteredRelated.length);
-            setRelatedArticles([...filteredRelated, ...otherArticles]);
-        } else {
-            setRelatedArticles(filteredRelated);
-        }
-      } else {
-        setRelatedArticles([]);
-      }
-    }
-  }, [articleId, allArticles]);
-
-  if (!article && allArticles.length === 0) {
+  if (isLoading) {
     return (
         <div className="container mx-auto px-4 py-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>

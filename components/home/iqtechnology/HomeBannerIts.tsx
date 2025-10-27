@@ -35,7 +35,7 @@ const HomeBannerIts: React.FC = () => {
 
     const timer = setInterval(() => {
       setCurrentIndex(prevIndex => (prevIndex + 1) % banners.length);
-    }, 7000); // Change slide every 7 seconds
+    }, 3000); // Change slide every 3 seconds
 
     return () => clearInterval(timer);
   }, [banners]);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import * as Constants from '../../constants';
 import { MainCategoryInfo } from '../../types';
 
@@ -7,14 +7,17 @@ const MegaMenu: React.FC = () => {
   const categories = Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.slug !== 'pc_xay_dung');
   // Set the first category as active by default to avoid a blank panel on initial hover
   const [activeCategory, setActiveCategory] = useState<MainCategoryInfo | null>(categories[0] || null);
+  const location = useLocation();
+  const isActive = location.pathname.startsWith('/shop') || location.pathname.startsWith('/product');
 
   if (categories.length === 0) {
     return (
        <Link
         to="/shop"
-        className="py-2 px-4 rounded-md text-sm font-semibold transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 text-gray-300 hover:bg-white/10 hover:text-white"
+        className="nav-link-item"
       >
-        Sản phẩm
+        <i className="fas fa-store mr-2"></i>
+        <span>Sản phẩm</span>
       </Link>
     );
   }
@@ -23,11 +26,11 @@ const MegaMenu: React.FC = () => {
     <div className="group relative">
       <Link
         to="/shop"
-        className="py-2 px-4 rounded-md text-sm font-semibold transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 text-gray-300 hover:bg-white/10 hover:text-white flex items-center"
-        // When mouse enters the main link area but is over the dropdown, it should stay open, so onMouseEnter on the link is sufficient
+        className={`nav-link-item ${isActive ? 'active' : ''}`}
         onMouseEnter={() => setActiveCategory(categories[0])} 
       >
-        Sản phẩm
+        <i className="fas fa-store mr-2"></i>
+        <span>Sản phẩm</span>
         <i className="fas fa-chevron-down text-xs ml-2 transition-transform duration-200 group-hover:rotate-180"></i>
       </Link>
       

@@ -34,18 +34,18 @@ const Footer: React.FC = () => {
 
 
   return (
-    <footer className="bg-neutral-900 text-neutral-300 py-12 border-t border-neutral-700">
+    <footer className="bg-gray-900 text-gray-300 py-12 border-t border-gray-700">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-semibold text-neutral-100 mb-4">{settings.companyName}</h3>
-            <p className="text-sm text-neutral-400 mb-4">
+            <h3 className="text-xl font-semibold text-gray-100 mb-4">{settings.companyName}</h3>
+            <p className="text-sm text-gray-400 mb-4">
               {settings.companySlogan || "Cung cấp linh kiện PC chất lượng cao và dịch vụ IT chuyên nghiệp."}
             </p>
             {socialLinksData.length > 0 && (
                 <div className="flex space-x-4">
                 {socialLinksData.map(link => (
-                    <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" title={link.name} className="text-neutral-400 hover:text-primary transition-colors text-xl">
+                    <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" title={link.name} className="text-gray-400 hover:text-primary transition-colors text-xl">
                     <i className={link.iconClass}></i>
                     </a>
                 ))}
@@ -54,30 +54,30 @@ const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold text-neutral-100 mb-4">Liên kết nhanh</h3>
+            <h3 className="text-xl font-semibold text-gray-100 mb-4">Liên kết nhanh</h3>
             <ul className="space-y-2">
               {Constants.NAVIGATION_LINKS_BASE.slice(0, 6).map(link => (
                  <li key={link.path}>
-                   <Link to={link.path} className="hover:text-primary transition-colors text-sm text-neutral-400">{link.label}</Link>
+                   <Link to={link.path} className="hover:text-primary transition-colors text-sm text-gray-400">{link.label}</Link>
                  </li>
               ))}
             </ul>
           </div>
 
            <div>
-            <h3 className="text-xl font-semibold text-neutral-100 mb-4">Dịch vụ chính</h3>
+            <h3 className="text-xl font-semibold text-gray-100 mb-4">Dịch vụ chính</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/services" className="hover:text-primary transition-colors text-neutral-400">Sửa PC, Laptop</Link></li>
-              <li><Link to="/services" className="hover:text-primary transition-colors text-neutral-400">Nâng cấp máy tính</Link></li>
-              <li><Link to="/services" className="hover:text-primary transition-colors text-neutral-400">Bảo trì hệ thống doanh nghiệp</Link></li>
-              <li><Link to="/pc-builder" className="hover:text-primary transition-colors text-neutral-400">Xây dựng cấu hình PC</Link></li>
-              <li><Link to="/projects" className="hover:text-primary transition-colors text-neutral-400">Giải pháp Camera, Mạng</Link></li>
+              <li><Link to="/services" className="hover:text-primary transition-colors text-gray-400">Sửa PC, Laptop</Link></li>
+              <li><Link to="/services" className="hover:text-primary transition-colors text-gray-400">Nâng cấp máy tính</Link></li>
+              <li><Link to="/services" className="hover:text-primary transition-colors text-gray-400">Bảo trì hệ thống doanh nghiệp</Link></li>
+              <li><Link to="/pc-builder" className="hover:text-primary transition-colors text-gray-400">Xây dựng cấu hình PC</Link></li>
+              <li><Link to="/projects" className="hover:text-primary transition-colors text-gray-400">Giải pháp Camera, Mạng</Link></li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold text-neutral-100 mb-4">Thông Tin Liên Hệ</h3>
-            <address className="not-italic text-sm space-y-2 text-neutral-400">
+            <h3 className="text-xl font-semibold text-gray-100 mb-4">Thông Tin Liên Hệ</h3>
+            <address className="not-italic text-sm space-y-2 text-gray-400">
               <p><i className="fas fa-map-marker-alt mr-2 text-primary"></i>{settings.companyAddress}</p>
               <p><i className="fas fa-phone-alt mr-2 text-primary"></i>Hotline: <a href={`tel:${settings.companyPhone.replace(/\./g, '')}`} className="hover:text-primary">{settings.companyPhone}</a></p>
               <p><i className="fas fa-envelope mr-2 text-primary"></i>Email: <a href={`mailto:${settings.companyEmail}`} className="hover:text-primary">{settings.companyEmail}</a></p>
@@ -85,7 +85,7 @@ const Footer: React.FC = () => {
             </address>
           </div>
         </div>
-        <div className="mt-10 border-t border-neutral-700 pt-8 text-center text-sm text-neutral-500">
+        <div className="mt-10 border-t border-gray-700 pt-8 text-center text-sm text-gray-500">
           <p>&copy; {new Date().getFullYear()} {settings.companyName}. Bảo lưu mọi quyền.</p>
         </div>
       </div>

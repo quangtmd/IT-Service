@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
@@ -11,7 +10,7 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
   return (
     <div
         ref={ref}
-        className={`modern-card p-6 md:p-8 group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col text-center items-center relative`}
+        className={`modern-card p-6 md:p-8 group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col text-center items-center relative h-full`}
         style={{ animationDelay: `${index * 100}ms` }}
     >
         <div className="modern-card-icon-wrapper">
@@ -80,9 +79,11 @@ const HomeServicesBenefitsIts: React.FC = () => {
           </h2>
         </div>
         {sortedBenefits.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-8 overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             {sortedBenefits.map((item, index) => (
-                <ServiceBenefitCard key={item.id} item={item} index={index} />
+                <div key={item.id} className="w-[85vw] max-w-sm sm:w-auto flex-shrink-0">
+                    <ServiceBenefitCard item={item} index={index} />
+                </div>
             ))}
             </div>
         ) : (

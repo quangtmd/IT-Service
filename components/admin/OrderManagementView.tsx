@@ -1,8 +1,8 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
+import { getOrders, updateOrderStatus } from '../../services/localDataService';
 
 const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -15,14 +15,29 @@ const getStatusColor = (status: OrderStatus) => {
     }
 }
 
-interface OrderManagementViewProps {
-    orders: Order[];
-    onUpdate: (updatedOrders: Order[]) => void;
-}
-
-const OrderManagementView: React.FC<OrderManagementViewProps> = ({ orders, onUpdate }) => {
+const OrderManagementView: React.FC = () => {
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+    const loadOrders = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const ordersFromDb = await getOrders();
+            setOrders(ordersFromDb);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu đơn hàng.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadOrders();
+    }, [loadOrders]);
 
     const filteredOrders = useMemo(() =>
         orders.filter(o =>
@@ -33,10 +48,14 @@ const OrderManagementView: React.FC<OrderManagementViewProps> = ({ orders, onUpd
         ).sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()),
     [orders, searchTerm]);
 
-    const handleUpdateStatus = (orderId: string, newStatus: OrderStatus) => {
-        const updatedOrders = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
-        onUpdate(updatedOrders);
-        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+    const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
+        try {
+            await updateOrderStatus(orderId, newStatus);
+            loadOrders(); // Refresh data from Local Storage
+            setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "Đã xảy ra lỗi khi cập nhật trạng thái.");
+        }
     };
     
     return (
@@ -65,18 +84,26 @@ const OrderManagementView: React.FC<OrderManagementViewProps> = ({ orders, onUpd
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredOrders.map(order => (
-                                <tr key={order.id}>
-                                    <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{order.id.slice(-6)}</span></td>
-                                    <td>{order.customerInfo.fullName}</td>
-                                    <td>{new Date(order.orderDate).toLocaleString('vi-VN')}</td>
-                                    <td className="font-semibold text-primary">{order.totalAmount.toLocaleString('vi-VN')}₫</td>
-                                    <td><span className={`status-badge ${getStatusColor(order.status)}`}>{order.status}</span></td>
-                                    <td>
-                                        <Button onClick={() => setSelectedOrder(order)} size="sm" variant="outline">Xem</Button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {isLoading ? (
+                                <tr><td colSpan={6} className="text-center py-4">Đang tải đơn hàng...</td></tr>
+                            ) : error ? (
+                                <tr><td colSpan={6} className="text-center py-4 text-red-500">{error}</td></tr>
+                            ) : filteredOrders.length === 0 ? (
+                                <tr><td colSpan={6} className="text-center py-4">Không tìm thấy đơn hàng.</td></tr>
+                            ) : (
+                                filteredOrders.map(order => (
+                                    <tr key={order.id}>
+                                        <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{order.id.slice(-6)}</span></td>
+                                        <td>{order.customerInfo.fullName}</td>
+                                        <td>{new Date(order.orderDate).toLocaleString('vi-VN')}</td>
+                                        <td className="font-semibold text-primary">{order.totalAmount.toLocaleString('vi-VN')}₫</td>
+                                        <td><span className={`status-badge ${getStatusColor(order.status)}`}>{order.status}</span></td>
+                                        <td>
+                                            <Button onClick={() => setSelectedOrder(order)} size="sm" variant="outline">Xem</Button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>

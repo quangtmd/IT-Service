@@ -1,14 +1,12 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
-import * as Constants from '../constants.tsx';
+import * as Constants from '../constants';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(Constants.ADMIN_EMAIL);
+  const [password, setPassword] = useState('password123');
   const [error, setError] = useState<string | null>(null);
   const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -32,43 +30,44 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!email.trim()) {
-      setError('Vui lòng nhập email.');
+    if (!email.trim() || !password.trim()) {
+      setError('Vui lòng nhập đầy đủ email và mật khẩu.');
       return;
     }
 
-    // The handler's only job is to attempt the login and set errors.
-    // Navigation is handled declaratively by the useEffect above.
-    const user = await login({ email, password });
-    if (!user) {
-      setError('Email hoặc mật khẩu không đúng. Vui lòng thử lại.');
+    try {
+        await login({ email, password });
+        // On success, the useEffect hook above will handle navigation.
+    } catch (err) {
+        console.error("Login page caught error:", err);
+        const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định.';
+        setError(errorMessage);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bgCanvas py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-bgBase p-10 rounded-xl shadow-xl border border-borderDefault">
-        <div>
-          <Link to="/home" className="flex justify-center">
-            <span className="text-3xl font-bold text-primary">{Constants.COMPANY_NAME}</span>
-          </Link>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-textBase">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-lg shadow-lg border border-gray-200">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-primary">IQ Technology</h1>
+          <h2 className="mt-4 text-center text-3xl font-bold text-gray-900">
             Đăng nhập tài khoản
           </h2>
-          <p className="mt-2 text-center text-sm text-textMuted">
+          <p className="mt-2 text-center text-sm text-primary">
             Hoặc{' '}
-            <Link to="/register" className="font-medium text-primary hover:text-primary-dark">
+            <Link to="/register" className="font-medium hover:text-primary-dark">
               đăng ký nếu bạn chưa có tài khoản
             </Link>
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="p-3 bg-danger-bg border border-danger-border text-danger-text rounded-md text-sm">
+        
+        {error && (
+            <div className="p-4 bg-danger-bg border border-danger-border text-danger-text rounded-md text-sm">
               {error}
             </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
+        )}
+        
+        <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email-address" className="sr-only">
                 Địa chỉ email
@@ -79,7 +78,7 @@ const LoginPage: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                className="appearance-none relative block w-full px-4 py-3 bg-slate-50 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
                 placeholder="Địa chỉ email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -94,22 +93,27 @@ const LoginPage: React.FC = () => {
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
-                placeholder="Mật khẩu (bỏ trống để demo)"
+                required
+                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+                placeholder="Mật khẩu"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-          </div>
-          <div>
-            <Button type="submit" className="w-full" size="lg" isLoading={authLoading}>
+          
+          <div className="pt-2">
+            <Button type="submit" className="w-full !py-3 !text-base" size="lg" isLoading={authLoading}>
               Đăng nhập
             </Button>
           </div>
         </form>
-         <p className="mt-4 text-center text-xs text-textSubtle">
-            Lưu ý: Đây là hệ thống demo. Mật khẩu không bắt buộc để đăng nhập.
-          </p>
+        
+        <p className="text-center text-sm text-gray-500">
+            Quên mật khẩu?{' '}
+            <a href="#" className="font-medium text-primary hover:text-primary-dark">
+                Đặt lại mật khẩu
+            </a>
+        </p>
       </div>
     </div>
   );

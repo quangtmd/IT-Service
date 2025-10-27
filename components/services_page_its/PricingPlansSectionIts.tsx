@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PricingPlan } from '../../types';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
@@ -49,9 +48,9 @@ const PricingPlansSectionIts: React.FC<PricingPlansSectionItsProps> = ({ title, 
             {subtitle && <p className="text-gray-600 max-w-xl mx-auto">{subtitle}</p>}
           </div>
           
-          <div ref={plansRef} className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch animate-on-scroll fade-in-up ${arePlansVisible ? 'is-visible' : ''}`}>
+          <div ref={plansRef} className={`flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 items-stretch overflow-x-auto md:overflow-visible pb-4 md:pb-0 scrollbar-hide animate-on-scroll fade-in-up ${arePlansVisible ? 'is-visible' : ''}`}>
             {plans.map((plan) => (
-              <div key={plan.id} className={`transition-transform duration-300 ${plan.isPopular ? 'lg:scale-105' : ''}`}>
+              <div key={plan.id} className={`w-[85vw] max-w-sm md:w-auto flex-shrink-0 transition-transform duration-300 ${plan.isPopular ? 'lg:scale-105' : ''}`}>
                 <PricingPlanCard 
                   plan={plan} 
                   isPopular={plan.isPopular}
@@ -74,4 +73,3 @@ const PricingPlansSectionIts: React.FC<PricingPlansSectionItsProps> = ({ title, 
 };
 
 export default PricingPlansSectionIts;
-      

@@ -1,6 +1,5 @@
-// Fix: Removed reference to "vite/client" as the type definition file could not be found.
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import * as Constants from './constants'; 
+import React, { ErrorInfo, ReactNode } from 'react';
+import * as Constants from './constants';
 
 interface Props {
   children: ReactNode;
@@ -9,93 +8,68 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error?: Error;
-  errorInfo?: ErrorInfo;
+  errorMessage: string;
 }
 
-class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-  };
-
-  public static getDerivedStateFromError(error: Error): State {
-    console.error("ErrorBoundary caught an error (getDerivedStateFromError):", error);
-    return { hasError: true, error };
+class ErrorBoundary extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      errorMessage: '',
+    };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("ErrorBoundary caught an error (componentDidCatch):", error, errorInfo);
-    this.setState({ errorInfo });
+  static getDerivedStateFromError(error: Error): State {
+    // Update state so the next render will show the fallback UI.
+    // We only store the safe, serializable message string.
+    const safeErrorMessage = `${error.name}: ${error.message}`;
+    return { hasError: true, errorMessage: safeErrorMessage };
   }
 
-  public render() {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // You can also log the error to an error reporting service
+    console.error("ErrorBoundary caught an error:", error, errorInfo.componentStack);
+  }
+
+  render() {
     if (this.state.hasError) {
-      console.log("ErrorBoundary rendering fallback UI. Error:", this.state.error?.message);
-      
-      let displayMessage = this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
-      const errorName = this.state.error?.name || "UnknownError";
-      const errorMessage = this.state.error?.message || "No error message available";
+      const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
-      if (errorMessage.includes(Constants.API_KEY_ERROR_MESSAGE.split(' (')[0])) {
-          displayMessage = Constants.API_KEY_ERROR_MESSAGE + " Hãy kiểm tra cấu hình môi trường của bạn hoặc liên hệ quản trị viên.";
-      } else if (errorMessage.toLowerCase().includes('process is not defined')) {
-          displayMessage = "Lỗi cấu hình môi trường: Biến 'process' không được định nghĩa. Điều này thường xảy ra khi API Key hoặc các biến môi trường khác không được thiết lập đúng cách cho ứng dụng phía client. " + Constants.API_KEY_ERROR_MESSAGE;
-      }
-
-      // Extremely simplified fallback UI
       return (
         <div style={{
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          backgroundColor: '#FFD2D2', // Light red
-          color: '#D8000C', // Dark red
+          position: 'fixed', top: '1rem', left: '1rem', right: '1rem', 
+          backgroundColor: '#fee2e2', color: '#b91c1c', 
+          padding: '1rem', borderRadius: '0.5rem',
+          border: '1px solid #fca5a5',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          zIndex: 999999,
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
           alignItems: 'center',
-          padding: '20px',
-          boxSizing: 'border-box',
-          fontFamily: 'Arial, sans-serif',
-          zIndex: 999999
+          gap: '1rem'
         }}>
-          <h1 style={{ fontSize: '24px', marginBottom: '15px' }}>Application Error!</h1>
-          <p style={{ fontSize: '16px', lineHeight: '1.6', textAlign: 'center', maxWidth: '600px' }}>
-            {displayMessage}
-          </p>
+          <i className="fas fa-exclamation-triangle text-2xl"></i>
+          <div>
+            <h1 style={{ fontSize: '1.125rem', fontWeight: '600', margin: 0 }}>Lỗi Ứng Dụng</h1>
+            <p style={{ fontSize: '0.875rem', lineHeight: '1.5', margin: '0.25rem 0 0 0' }}>
+              {displayMessage}
+            </p>
+          </div>
           <button 
             onClick={() => window.location.reload()}
             style={{
-                marginTop: '20px',
-                padding: '10px 20px',
-                fontSize: '16px',
-                color: 'white',
-                backgroundColor: '#D8000C',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer'
+                marginLeft: 'auto', padding: '0.5rem 1rem', fontSize: '0.875rem', color: '#b91c1c',
+                backgroundColor: 'transparent', border: '1px solid #fca5a5', borderRadius: '0.375rem', cursor: 'pointer'
             }}
           >
-            Reload Page
+            Tải lại
           </button>
-          {/* Fix: Use Vite's `import.meta.env.DEV` which is a build-time constant
-              and avoids runtime ReferenceError for 'process'. */}
-          {/* Fix: Added type assertion to bypass TypeScript error when vite/client types are not available. */}
-          {((import.meta as any).env?.DEV || window.location.hostname === 'localhost') && this.state.error && (
-            <div style={{ marginTop: '20px', textAlign: 'left', background: '#f0f0f0', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', maxWidth: '80%', maxHeight: '30vh', overflow: 'auto' }}>
-              <p style={{ fontWeight: 'bold', color: '#333', margin: '0 0 5px 0' }}>Error Details (Dev):</p>
-              <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: '#333', fontSize: '12px', margin: 0 }}>
-                {`${errorName}: ${errorMessage}\n\nStack:\n${this.state.error.stack}`}
-                {this.state.errorInfo && `\n\nComponent Stack:\n${this.state.errorInfo.componentStack}`}
-              </pre>
-            </div>
-          )}
         </div>
       );
     }
+
     return this.props.children;
   }
 }
+
 export default ErrorBoundary;

@@ -161,8 +161,8 @@ const Header: React.FC = () => {
         </div>
         
         {/* MAIN NAVIGATION BAR */}
-        <nav className="bg-neutral-900 border-t border-t-gray-700/50 hidden lg:flex justify-center items-center h-12 shadow-md">
-          <div className="flex items-center space-x-2">
+        <nav className="main-navbar">
+          <div className="main-navbar-links">
             {desktopNavLinks.map((link) => {
               if (link.path === '/shop') {
                 return <MegaMenu key={link.path} />;
@@ -171,16 +171,11 @@ const Header: React.FC = () => {
                 <NavLink
                   key={link.path}
                   to={link.path}
-                  className={({ isActive }) =>
-                    `py-2 px-4 rounded-md text-sm font-semibold transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 ${
-                      isActive
-                        ? 'bg-primary text-white shadow-sm'
-                        : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                    }`
-                  }
+                  className={({ isActive }) => `nav-link-item ${isActive ? 'active' : ''}`}
                   end={link.path === "/home"}
                 >
-                  {link.label}
+                  {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} mr-2`}></i>}
+                  <span>{link.label}</span>
                 </NavLink>
               );
             })}

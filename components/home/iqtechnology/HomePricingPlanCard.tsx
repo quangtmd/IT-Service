@@ -1,14 +1,14 @@
 import React from 'react';
 import { PricingPlan } from '../../../types';
-import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 
 interface HomePricingPlanCardProps {
   plan: PricingPlan;
   isPopular?: boolean;
+  onSelect: (planName: string) => void;
 }
 
-const HomePricingPlanCard: React.FC<HomePricingPlanCardProps> = ({ plan, isPopular }) => {
+const HomePricingPlanCard: React.FC<HomePricingPlanCardProps> = ({ plan, isPopular, onSelect }) => {
   return (
     <div className={`modern-card p-6 flex flex-col h-full relative overflow-hidden border-2 ${isPopular ? 'border-primary' : 'border-borderDefault'}`}>
       {isPopular && (
@@ -24,11 +24,14 @@ const HomePricingPlanCard: React.FC<HomePricingPlanCardProps> = ({ plan, isPopul
         ))}
       </ul>
       <div className="mt-auto">
-        <Link to="/services" className="block">
-          <Button variant="outline" size="sm" className="w-full group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
+        <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all"
+            onClick={() => onSelect(plan.name)}
+        >
             Xem chi tiết
-          </Button>
-        </Link>
+        </Button>
       </div>
     </div>
   );

@@ -1,9 +1,8 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { User, StaffRole, STAFF_ROLE_OPTIONS, UserStatus, USER_STATUS_OPTIONS } from '../../types';
 import Button from '../ui/Button';
-import ImageUploadPreview from '../ui/ImageUploadPreview';
+import ImageUploadInput from '../ui/ImageUploadInput';
 
 const HRMProfileView: React.FC = () => {
     const { users, addUser, updateUser, deleteUser, currentUser } = useAuth();
@@ -130,25 +129,11 @@ interface HRMFormModalProps {
 
 const HRMFormModal: React.FC<HRMFormModalProps> = ({ user, onClose, onSave }) => {
     const [formData, setFormData] = useState<User>(user || {} as User);
-    const [imagePreview, setImagePreview] = useState<string | null>(formData.imageUrl || null);
     const { currentUser } = useAuth();
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const result = reader.result as string;
-                setImagePreview(result);
-                setFormData(prev => ({...prev, imageUrl: result }));
-            };
-            reader.readAsDataURL(file);
-        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -175,12 +160,12 @@ const HRMFormModal: React.FC<HRMFormModalProps> = ({ user, onClose, onSave }) =>
                     <div className="admin-modal-body">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="md:col-span-1">
-                                <label className="admin-form-group label">Ảnh đại diện</label>
-                                {imagePreview ? (
-                                    <ImageUploadPreview src={imagePreview} onRemove={() => setImagePreview(null)} />
-                                ) : (
-                                    <input type="file" accept="image/*" onChange={handleImageChange} className="admin-form-group w-full text-sm" />
-                                )}
+                                <ImageUploadInput 
+                                    label="Ảnh đại diện"
+                                    value={formData.imageUrl || ''}
+                                    onChange={value => setFormData(p => ({...p, imageUrl: value}))}
+                                    showPreview={true}
+                                />
                             </div>
                             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="admin-form-group">
@@ -205,7 +190,7 @@ const HRMFormModal: React.FC<HRMFormModalProps> = ({ user, onClose, onSave }) =>
                                 </div>
                                 <div className="admin-form-group">
                                     <label htmlFor="joinDate">Ngày vào làm</label>
-                                    <input type="date" name="joinDate" id="joinDate" value={formData.joinDate || ''} onChange={handleChange} />
+                                    <input type="date" name="joinDate" id="joinDate" value={formData.joinDate ? formData.joinDate.split('T')[0] : ''} onChange={handleChange} />
                                 </div>
                                 <div className="admin-form-group">
                                     <label htmlFor="status">Trạng thái</label>

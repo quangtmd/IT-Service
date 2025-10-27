@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
@@ -6,10 +5,9 @@ import Card from '../components/ui/Card';
 import { 
     Product, Article, User, StaffRole, Order, OrderStatus, AdminNotification, UserRole, 
     FaqItem, DiscountCode, SiteThemeSettings, CustomMenuLink, SiteSettings,
-    MediaItem, ChatLogSession
+    MediaItem, ChatLogSession, FinancialTransaction, PayrollRecord, TransactionType, TransactionCategory
 } from '../types';
 import * as Constants from '../constants.tsx';
-import { MOCK_PRODUCTS as INITIAL_MOCK_PRODUCTS, MOCK_ARTICLES as ALL_MOCK_ARTICLES, MOCK_ORDERS } from '../data/mockData';
 import { useAuth, AdminPermission } from '../contexts/AuthContext';
 import HRMProfileView from '../components/admin/HRMProfileView';
 import ProductManagementView from '../components/admin/ProductManagementView';
@@ -22,24 +20,9 @@ import ChatLogView from '../components/admin/ChatLogView';
 import SiteSettingsView from '../components/admin/SiteSettingsView';
 import MediaLibraryView from '../components/admin/MediaLibraryView';
 import NotificationsView from '../components/admin/NotificationsView';
-
-
-// Helper functions
-const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
-    try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultValue; } 
-    catch (error) { console.error(`Lỗi đọc localStorage key "${key}":`, error); return defaultValue; }
-};
-const setLocalStorageItem = <T,>(key: string, value: T) => {
-    try {
-        localStorage.setItem(key, JSON.stringify(value));
-        const eventMap: Record<string, string> = {
-            [Constants.SITE_CONFIG_STORAGE_KEY]: 'siteSettingsUpdated', [Constants.PRODUCTS_STORAGE_KEY]: 'productsUpdated',
-            'adminArticles_v1': 'articlesUpdated', [Constants.CHAT_LOGS_STORAGE_KEY]: 'chatLogsUpdated',
-            [Constants.ORDERS_STORAGE_KEY]: 'ordersUpdated'
-        };
-        if (eventMap[key]) window.dispatchEvent(new CustomEvent(eventMap[key]));
-    } catch (error) { console.error(`Lỗi cài đặt localStorage key "${key}":`, error); }
-};
+import HomepageManagementView from '../components/admin/HomepageManagementView';
+import FinancialManagementView from '../components/admin/FinancialManagementView';
+import { getOrders, getProducts } from '../services/localDataService';
 
 type AdminView = 
   | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
@@ -47,6 +30,7 @@ type AdminView =
   | 'orders' | 'discounts' | 'chat_logs' 
   | 'theme_settings' | 'menu_settings' | 'site_settings'
   | 'notifications_panel'
+  | 'homepage_management'
   // Placeholders
   | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard';
 
@@ -73,42 +57,28 @@ const AdminPage: React.FC = () => {
         content_management: true, sales_management: true, hrm_management: true,
     });
     
-    // --- STATE MANAGEMENT FOR ADMIN DATA ---
-    const [products, setProducts] = useState<Product[]>(() => getLocalStorageItem(Constants.PRODUCTS_STORAGE_KEY, INITIAL_MOCK_PRODUCTS));
-    const [articles, setArticles] = useState<Article[]>(() => getLocalStorageItem('adminArticles_v1', ALL_MOCK_ARTICLES));
-    const [orders, setOrders] = useState<Order[]>(() => getLocalStorageItem(Constants.ORDERS_STORAGE_KEY, MOCK_ORDERS));
-    const [customerUsers, setCustomerUsers] = useState<User[]>([]);
+    // State for dashboard data only
+    const [dashboardProducts, setDashboardProducts] = useState<Product[]>([]);
+    const [dashboardOrders, setDashboardOrders] = useState<Order[]>([]);
+    const customerUsers = useMemo(() => authUsers.filter(u => u.role === 'customer'), [authUsers]);
 
-    useEffect(() => {
-      setCustomerUsers(authUsers.filter(u => u.role === 'customer'));
-    }, [authUsers]);
-
-    const handleDataUpdate = useCallback(<T,>(setter: React.Dispatch<React.SetStateAction<T[]>>, key: string, newValue: T[]) => {
-        setter(newValue);
-        setLocalStorageItem(key, newValue);
+    const loadDashboardData = useCallback(async () => {
+        try {
+            setDashboardProducts(await getProducts());
+            setDashboardOrders(await getOrders());
+        } catch (error) {
+            console.error("Failed to load dashboard data from Local Storage:", error);
+        }
     }, []);
 
-    const onProductsUpdate = (newProducts: Product[]) => handleDataUpdate(setProducts, Constants.PRODUCTS_STORAGE_KEY, newProducts);
-    const onArticlesUpdate = (newArticles: Article[]) => handleDataUpdate(setArticles, 'adminArticles_v1', newArticles);
-    const onOrdersUpdate = (newOrders: Order[]) => handleDataUpdate(setOrders, Constants.ORDERS_STORAGE_KEY, newOrders);
+    useEffect(() => {
+        loadDashboardData();
+    }, [loadDashboardData]);
 
     useEffect(() => {
-        const handleStorageEvents = () => {
-            setProducts(getLocalStorageItem(Constants.PRODUCTS_STORAGE_KEY, INITIAL_MOCK_PRODUCTS));
-            setArticles(getLocalStorageItem('adminArticles_v1', ALL_MOCK_ARTICLES));
-            setOrders(getLocalStorageItem(Constants.ORDERS_STORAGE_KEY, MOCK_ORDERS));
-        };
-        
-        window.addEventListener('productsUpdated', handleStorageEvents);
-        window.addEventListener('articlesUpdated', handleStorageEvents);
-        window.addEventListener('ordersUpdated', handleStorageEvents);
-        
         document.body.classList.add('admin-panel-active');
         return () => {
             document.body.classList.remove('admin-panel-active');
-            window.removeEventListener('productsUpdated', handleStorageEvents);
-            window.removeEventListener('articlesUpdated', handleStorageEvents);
-            window.removeEventListener('ordersUpdated', handleStorageEvents);
         };
     }, []);
 
@@ -127,6 +97,7 @@ const AdminPage: React.FC = () => {
         { 
             id: 'content_management', label: 'Quản Trị Website', icon: 'fas fa-file-alt', permission: ['viewContent'],
             children: [
+                { id: 'homepage_management', label: 'Quản lý Trang chủ', icon: 'fas fa-home', permission: ['manageSiteSettings'] },
                 { id: 'products', label: 'Sản Phẩm', icon: 'fas fa-box-open', permission: ['viewProducts'] },
                 { id: 'articles', label: 'Bài Viết', icon: 'fas fa-newspaper', permission: ['viewArticles'] },
                 { id: 'media_library', label: 'Thư Viện Media', icon: 'fas fa-photo-video', permission: ['manageSiteSettings'] },
@@ -175,23 +146,24 @@ const AdminPage: React.FC = () => {
         }
 
         switch(activeView) {
-            case 'dashboard': return <DashboardView orders={orders} products={products} customers={customerUsers} />;
-            case 'products': return <ProductManagementView products={products} onUpdate={onProductsUpdate} />;
-            case 'articles': return <ArticleManagementView articles={articles} onUpdate={onArticlesUpdate} />;
-            case 'orders': return <OrderManagementView orders={orders} onUpdate={onOrdersUpdate} />;
+            case 'dashboard': return <DashboardView orders={dashboardOrders} products={dashboardProducts} customers={customerUsers} />;
+            case 'products': return <ProductManagementView />;
+            case 'articles': return <ArticleManagementView />;
+            case 'orders': return <OrderManagementView />;
             case 'hrm_dashboard': return <HRMProfileView />;
             case 'customers': return <CustomerManagementView />;
             case 'discounts': return <DiscountManagementView />;
             case 'faqs': return <FaqManagementView />;
             case 'chat_logs': return <ChatLogView />;
             case 'media_library': return <MediaLibraryView />;
+            case 'homepage_management': return <HomepageManagementView />;
             case 'site_settings':
             case 'theme_settings':
             case 'menu_settings':
                 return <SiteSettingsView initialTab={activeView} />;
             case 'notifications_panel': return <NotificationsView />;
 
-            case 'accounting_dashboard': return <div className="admin-card"><div className="admin-card-body">Module Kế toán đang trong kế hoạch phát triển.</div></div>;
+            case 'accounting_dashboard': return <FinancialManagementView />;
             case 'analytics_dashboard': return <div className="admin-card"><div className="admin-card-body">Module Phân tích Báo cáo đang trong kế hoạch phát triển.</div></div>;
 
             default: return <div className="admin-card"><div className="admin-card-body"><h3 className="admin-card-title">{currentMenuItem?.label || 'Chào mừng'}</h3><p>Tính năng này đang được phát triển.</p></div></div>;

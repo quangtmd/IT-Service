@@ -11,8 +11,6 @@ export default defineConfig({
     // This makes the configuration more robust regardless of how the user names the variable.
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY || process.env.VITE_API_KEY),
     
-    // The backend URL is likely set as VITE_BACKEND_API_BASE_URL.
-    // Using process.env here makes it consistent.
-    'process.env.BACKEND_API_BASE_URL': JSON.stringify(process.env.VITE_BACKEND_API_BASE_URL || '')
+    // The backend URL is no longer needed in a backend-less architecture.
   }
 });

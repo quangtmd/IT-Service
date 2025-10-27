@@ -1,18 +1,32 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Article } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
+import ImageUploadInput from '../ui/ImageUploadInput';
+import { getArticles, addArticle, updateArticle, deleteArticle } from '../../services/localDataService';
 
-interface ArticleManagementViewProps {
-    articles: Article[];
-    onUpdate: (updatedArticles: Article[]) => void;
-}
-
-const ArticleManagementView: React.FC<ArticleManagementViewProps> = ({ articles, onUpdate }) => {
+const ArticleManagementView: React.FC = () => {
+    const [articles, setArticles] = useState<Article[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+
+    const loadArticles = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const articlesFromDb = await getArticles();
+            setArticles(articlesFromDb);
+        } catch (error) {
+            console.error("Failed to load articles:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadArticles();
+    }, [loadArticles]);
 
     const filteredArticles = useMemo(() =>
         articles.filter(a =>
@@ -45,21 +59,20 @@ const ArticleManagementView: React.FC<ArticleManagementViewProps> = ({ articles,
         setIsModalOpen(false);
     };
 
-    const handleSave = (articleData: Article) => {
-        let updatedArticles;
+    const handleSave = async (articleData: Article) => {
         if (articleData.id) {
-            updatedArticles = articles.map(a => a.id === articleData.id ? articleData : a);
+            await updateArticle(articleData.id, articleData);
         } else {
-            const newArticle = { ...articleData, id: `art-${Date.now()}` };
-            updatedArticles = [newArticle, ...articles];
+            await addArticle(articleData);
         }
-        onUpdate(updatedArticles);
+        loadArticles();
         closeModal();
     };
 
-    const handleDelete = (articleId: string) => {
+    const handleDelete = async (articleId: string) => {
         if (window.confirm('Bạn có chắc muốn xóa bài viết này?')) {
-            onUpdate(articles.filter(a => a.id !== articleId));
+            await deleteArticle(articleId);
+            loadArticles();
         }
     };
     
@@ -91,25 +104,29 @@ const ArticleManagementView: React.FC<ArticleManagementViewProps> = ({ articles,
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredArticles.map(article => (
-                                <tr key={article.id}>
-                                    <td>
-                                        <div className="flex items-center">
-                                            <img src={article.imageUrl || `https://picsum.photos/seed/${article.id}/40/40`} alt={article.title} className="w-10 h-10 rounded-md mr-3 object-cover"/>
-                                            <p className="font-semibold text-textBase">{article.title}</p>
-                                        </div>
-                                    </td>
-                                    <td>{article.author}</td>
-                                    <td>{article.category}</td>
-                                    <td>{new Date(article.date).toLocaleDateString('vi-VN')}</td>
-                                    <td>
-                                        <div className="flex gap-2">
-                                            <Button onClick={() => openModalForEdit(article)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
-                                            <Button onClick={() => handleDelete(article.id)} size="sm" variant="ghost" className="text-red-500 hover:bg-red-50"><i className="fas fa-trash"></i></Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            {isLoading ? (
+                                <tr><td colSpan={5} className="text-center py-4">Đang tải...</td></tr>
+                            ) : (
+                                filteredArticles.map(article => (
+                                    <tr key={article.id}>
+                                        <td>
+                                            <div className="flex items-center">
+                                                <img src={article.imageUrl || `https://picsum.photos/seed/${article.id}/40/40`} alt={article.title} className="w-10 h-10 rounded-md mr-3 object-cover"/>
+                                                <p className="font-semibold text-textBase">{article.title}</p>
+                                            </div>
+                                        </td>
+                                        <td>{article.author}</td>
+                                        <td>{article.category}</td>
+                                        <td>{new Date(article.date).toLocaleDateString('vi-VN')}</td>
+                                        <td>
+                                            <div className="flex gap-2">
+                                                <Button onClick={() => openModalForEdit(article)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
+                                                <Button onClick={() => handleDelete(article.id)} size="sm" variant="ghost" className="text-red-500 hover:bg-red-50"><i className="fas fa-trash"></i></Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -163,10 +180,11 @@ const ArticleFormModal: React.FC<ArticleFormModalProps> = ({ article, onClose, o
                                 </select>
                             </div>
                         </div>
-                        <div className="admin-form-group">
-                            <label htmlFor="imageUrl">URL Ảnh đại diện</label>
-                            <input type="text" name="imageUrl" id="imageUrl" value={formData.imageUrl} onChange={handleChange} />
-                        </div>
+                        <ImageUploadInput
+                            label="URL Ảnh đại diện"
+                            value={formData.imageUrl}
+                            onChange={value => setFormData(p => ({ ...p, imageUrl: value }))}
+                        />
                         <div className="admin-form-group">
                             <label htmlFor="summary">Tóm tắt *</label>
                             <textarea name="summary" id="summary" rows={3} value={formData.summary} onChange={handleChange} required></textarea>

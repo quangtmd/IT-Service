@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 
 const app = express();
-// Railway sẽ cung cấp biến PORT. Nếu không có, dùng cổng 3001 cho local.
+// Railway hoặc Hostinger sẽ cung cấp biến PORT. Nếu không có, dùng cổng 3001 cho local.
 const port = process.env.PORT || 3001; 
 
 // Kích hoạt CORS để React App (chạy ở cổng khác) có thể gọi API
@@ -22,8 +22,8 @@ CREATE TABLE products (
     mainCategory VARCHAR(255),
     subCategory VARCHAR(255),
     category VARCHAR(255),
-    price DECIMAL(10, 2) NOT NULL,
-    originalPrice DECIMAL(10, 2),
+    price DECIMAL(10, 0) NOT NULL,
+    originalPrice DECIMAL(10, 0),
     imageUrls JSON, -- Lưu dưới dạng mảng JSON: '["url1", "url2"]'
     description TEXT,
     shortDescription TEXT,
@@ -41,20 +41,34 @@ CREATE TABLE products (
     slug VARCHAR(255) UNIQUE
 );
 
-4. Thêm một vài dữ liệu mẫu vào bảng 'products'.
+4. Chạy câu lệnh SQL dưới đây để tạo bảng 'orders':
+CREATE TABLE orders (
+    id VARCHAR(255) PRIMARY KEY,
+    customerInfo JSON NOT NULL, -- { fullName, phone, address, email, notes }
+    items JSON NOT NULL, -- [{ productId, productName, quantity, price }]
+    totalAmount DECIMAL(12, 0) NOT NULL,
+    orderDate DATETIME NOT NULL,
+    status VARCHAR(50) NOT NULL, -- 'Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'
+    shippingInfo JSON, -- { carrier, trackingNumber, shippingStatus }
+    paymentInfo JSON NOT NULL -- { method, status, transactionId, amountToPay }
+);
+
+5. Thêm một vài dữ liệu mẫu vào bảng 'products'.
 */
 
 
 // --- CẤU HÌNH KẾT NỐI MYSQL ---
-// Đọc thông tin kết nối từ các biến môi trường mà Railway cung cấp
-// Sẽ tự động dùng các biến này khi được deploy trên Railway.
+// Đọc thông tin kết nối từ các biến môi trường (ưu tiên) hoặc dùng giá trị fallback.
+// Các biến môi trường này cần được thiết lập trên server hosting của bạn (ví dụ: Hostinger, Railway).
+// Khi chạy local, bạn có thể tạo file .env trong thư mục backend để định nghĩa chúng.
 const dbConfig = {
-  host: process.env.MYSQLHOST || 'localhost',
-  user: process.env.MYSQLUSER || 'root',
-  password: process.env.MYSQLPASSWORD || 'your_password', // Thay 'your_password' bằng mật khẩu local của bạn
-  database: process.env.MYSQLDATABASE || 'iq_technology_db', // Thay 'iq_technology_db' bằng tên DB local của bạn
+  host: process.env.MYSQLHOST || 'your_hostinger_mysql_host', // Thay thế bằng Host của Hostinger
+  user: process.env.MYSQLUSER || 'your_hostinger_mysql_user', // Thay thế bằng User của Hostinger
+  password: process.env.MYSQLPASSWORD || 'your_database_password', // Thay thế bằng mật khẩu DB
+  database: process.env.MYSQLDATABASE || 'your_hostinger_database_name', // Thay thế bằng tên DB
   port: process.env.MYSQLPORT || 3306
 };
+
 
 let pool;
 try {
@@ -65,7 +79,9 @@ try {
     process.exit(1); // Thoát ứng dụng nếu không thể tạo pool
 }
 
-// Hàm trợ giúp để xử lý các trường JSON
+// --- HELPERS FOR JSON FIELDS ---
+
+// PRODUCTS
 const parseJsonFields = (product) => {
     try {
         if (product.imageUrls && typeof product.imageUrls === 'string') product.imageUrls = JSON.parse(product.imageUrls);
@@ -73,32 +89,147 @@ const parseJsonFields = (product) => {
         if (product.tags && typeof product.tags === 'string') product.tags = JSON.parse(product.tags);
     } catch (e) {
         console.error(`Lỗi khi phân tích JSON cho sản phẩm ID ${product.id}:`, e);
-        // Đặt giá trị mặc định để tránh lỗi ở frontend
         if (typeof product.imageUrls !== 'object' || product.imageUrls === null) product.imageUrls = [];
         if (typeof product.specifications !== 'object' || product.specifications === null) product.specifications = {};
         if (typeof product.tags !== 'object' || product.tags === null) product.tags = [];
     }
     return product;
 }
+const prepareProductForDb = (product) => {
+    const dbProduct = { ...product };
+    if (Array.isArray(dbProduct.imageUrls)) dbProduct.imageUrls = JSON.stringify(dbProduct.imageUrls);
+    if (typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null) dbProduct.specifications = JSON.stringify(dbProduct.specifications);
+    if (Array.isArray(dbProduct.tags)) dbProduct.tags = JSON.stringify(dbProduct.tags);
+    return dbProduct;
+};
 
-// --- TẠO CÁC ĐƯỜNG DẪN API (ENDPOINTS) ---
+// ORDERS
+const parseOrderJsonFields = (order) => {
+    try {
+        if (order.customerInfo && typeof order.customerInfo === 'string') order.customerInfo = JSON.parse(order.customerInfo);
+        if (order.items && typeof order.items === 'string') order.items = JSON.parse(order.items);
+        if (order.shippingInfo && typeof order.shippingInfo === 'string') order.shippingInfo = JSON.parse(order.shippingInfo);
+        if (order.paymentInfo && typeof order.paymentInfo === 'string') order.paymentInfo = JSON.parse(order.paymentInfo);
+    } catch (e) {
+        console.error(`Lỗi khi phân tích JSON cho đơn hàng ID ${order.id}:`, e);
+    }
+    return order;
+};
+const prepareOrderForDb = (order) => {
+    const dbOrder = { ...order };
+    if (typeof dbOrder.customerInfo === 'object') dbOrder.customerInfo = JSON.stringify(dbOrder.customerInfo);
+    if (Array.isArray(dbOrder.items)) dbOrder.items = JSON.stringify(dbOrder.items);
+    if (typeof dbOrder.shippingInfo === 'object' && dbOrder.shippingInfo !== null) dbOrder.shippingInfo = JSON.stringify(dbOrder.shippingInfo);
+    if (typeof dbOrder.paymentInfo === 'object') dbOrder.paymentInfo = JSON.stringify(dbOrder.paymentInfo);
+    return dbOrder;
+};
 
-// API để lấy TẤT CẢ sản phẩm
+// Share category hierarchy with backend for slug mapping
+const PRODUCT_CATEGORIES_HIERARCHY = [
+  { name: "Máy tính để bàn (PC)", slug: "may_tinh_de_ban", icon: "fas fa-desktop", subCategories: [ { name: "Máy tính văn phòng", slug: "pc_van_phong" }, {name: "Máy tính Gaming", slug: "pc_gaming"}, {name: "Workstation (Máy trạm)", slug:"pc_workstation"}, { name: "Máy đồng bộ", slug: "pc_dong_bo" }, ] },
+  { name: "Laptop", slug: "laptop", icon: "fas fa-laptop", subCategories: [ { name: "Laptop văn phòng", slug: "laptop_van_phong" }, {name: "Laptop Gaming", slug: "laptop_gaming"}, {name: "MacBook", slug:"macbook"}, { name: "Laptop cũ", slug: "laptop_cu" }, ] },
+  { name: "Linh kiện máy tính", slug: "linh_kien_may_tinh", icon: "fas fa-microchip", subCategories: [ { name: "CPU (Vi xử lý Intel, AMD)", slug: "cpu" }, { name: "RAM (DDR4, DDR5…)", slug: "ram" }, { name: "Ổ cứng HDD / SSD (SATA, NVMe)", slug: "storage" }, { name: "VGA (Card màn hình)", slug: "vga" }, { name: "Bo mạch chủ (Mainboard)", slug: "mainboard"}, { name: "Nguồn máy tính (PSU)", slug: "psu"}, { name: "Vỏ máy (Case)", slug: "case"}, { name: "Tản nhiệt (Khí, Nước)", slug: "cooling"} ] },
+  { name: "Thiết bị ngoại vi", slug: "thiet_bi_ngoai_vi", icon: "fas fa-keyboard", subCategories: [ { name: "Màn hình (LCD, LED, 2K, 4K, Gaming…)", slug: "man_hinh" }, { name: "Bàn phím (Cơ, Giả cơ, Thường)", slug: "ban_phim" }, { name: "Chuột (Gaming, Văn phòng)", slug: "chuot" }, { name: "Tai nghe (Có dây, Không dây)", slug: "tai_nghe" } ] },
+  { name: "Camera giám sát", slug: "camera_giam_sat", icon: "fas fa-video", subCategories: [ { name: "Camera IP (WiFi / LAN)", slug: "camera_ip" }, { name: "Đầu ghi hình (DVR, NVR)", slug: "dau_ghi_hinh" } ] },
+  { name: "Thiết bị mạng", slug: "thiet_bi_mang", icon: "fas fa-wifi", subCategories: [ { name: "Router WiFi (TP-Link, Asus, UniFi…)", slug: "router_wifi" }, { name: "Switch mạng (PoE, Thường)", slug: "switch_mang" } ] },
+  { name: "Phần mềm & dịch vụ", slug: "phan_mem_dich_vu", icon: "fas fa-cogs", subCategories: [ { name: "Bản quyền Windows, Office", slug: "ban_quyen_phan_mem" }, { name: "Dịch vụ cài đặt (Tận nơi / Online)", slug: "dich_vu_cai_dat" } ] },
+  { name: "Phụ kiện & thiết bị khác", slug: "phu_kien_khac", icon: "fas fa-plug", subCategories: [ { name: "Cáp chuyển, Hub USB, Docking", slug: "cap_hub_docking" }, { name: "Balo, Túi chống sốc", slug: "balo_tui" } ] },
+  { name: "PC Xây Dựng", slug: "pc_xay_dung", icon: "fas fa-tools", subCategories: [ { name: "Theo Yêu Cầu", slug: "theo_yeu_cau" } ] }
+];
+
+const MOCK_SERVICES = [
+  { id: 'svc001', name: 'Thiết Kế & Phát Triển Web Chuyên Nghiệp', description: 'Chúng tôi cung cấp giải pháp website toàn diện, từ thiết kế UX/UI hiện đại, trực quan đến phát triển frontend & backend mạnh mẽ, đảm bảo tối ưu hóa SEO và mang lại trải nghiệm người dùng vượt trội.', icon: 'fas fa-laptop-code', imageUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1770&auto=format&fit=crop', slug: 'thiet-ke-phat-trien-web' },
+  { id: 'svc002', name: 'Quản Trị Hệ Thống Mạng Doanh Nghiệp', description: 'Dịch vụ quản trị, giám sát và bảo trì hệ thống mạng chuyên nghiệp cho doanh nghiệp. Đảm bảo hệ thống của bạn hoạt động ổn định, an toàn, hiệu quả với hiệu suất tối đa.', icon: 'fas fa-network-wired', imageUrl: 'https://images.unsplash.com/photo-1587135304381-e3f43845b4ca?q=80&w=1770&auto=format&fit=crop', slug: 'quan-tri-he-thong-mang'},
+  { id: 'svc003', name: 'Giải Pháp Lưu Trữ & Sao Lưu Đám Mây', description: 'Tư vấn và triển khai các giải pháp lưu trữ đám mây (Cloud Storage) và sao lưu dữ liệu (Cloud Backup) linh hoạt, an toàn và tiết kiệm chi phí cho cá nhân và doanh nghiệp.', icon: 'fas fa-cloud-upload-alt', imageUrl: 'https://images.unsplash.com/photo-1534972195531-d756b9bfa9f2?q=80&w=1770&auto=format&fit=crop', slug: 'luu-tru-sao-luu-dam-may' },
+  { id: 'svc004', name: 'Hỗ Trợ Kỹ Thuật Từ Xa Nhanh Chóng', description: 'Đội ngũ kỹ thuật viên chuyên nghiệp của chúng tôi sẵn sàng giải quyết nhanh chóng các sự cố máy tính, phần mềm qua TeamViewer, UltraViewer, đảm bảo công việc của bạn không bị gián đoạn.', icon: 'fas fa-headset', imageUrl: 'https://images.unsplash.com/photo-1616587894285-3d17c752531a?q=80&w=1770&auto=format&fit=crop', slug: 'ho-tro-ky-thuat-tu-xa'},
+  { id: 'svc005', name: 'Tư Vấn & Triển Khai Chuyển Đổi Số', description: 'Đánh giá toàn diện hiện trạng công nghệ và tư vấn lộ trình chuyển đổi số tối ưu, giúp doanh nghiệp của bạn tự động hóa quy trình, nâng cao năng lực cạnh tranh và phát triển bền vững.', icon: 'fas fa-project-diagram', imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1774&auto=format&fit=crop', slug: 'tu-van-chuyen-doi-so' },
+  { id: 'svc006', name: 'Bảo Mật Hệ Thống & An Toàn Dữ Liệu', description: 'Dịch vụ kiểm tra, đánh giá lỗ hổng và triển khai các giải pháp bảo mật tiên tiến. Phòng chống hiệu quả virus, mã độc, tấn công mạng, bảo vệ an toàn tuyệt đối cho dữ liệu quan trọng.', icon: 'fas fa-shield-alt', imageUrl: 'https://images.unsplash.com/photo-1558006511-aa7131a44e53?q=80&w=1770&auto=format&fit=crop', slug: 'bao-mat-he-thong-du-lieu' },
+];
+
+
+// --- PRODUCTS API ENDPOINTS ---
+
 app.get('/api/products', async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM products WHERE isVisible = TRUE");
+    const getCategoryNameFromSlug_Backend = (slug, type) => {
+        if (type === 'main') {
+            const mainCat = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
+            return mainCat ? mainCat.name : null;
+        }
+        if (type === 'sub') {
+            for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
+                const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
+                if (subCat) return subCat.name;
+            }
+            return null;
+        }
+        return null;
+    };
+
+    const { q, mainCategory, subCategory, brand, status, tags, page = 1, limit = 12 } = req.query;
+
+    let whereClauses = ["isVisible = TRUE"];
+    const params = [];
+
+    if (q) {
+        whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR tags LIKE ?)");
+        const searchTerm = `%${q}%`;
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+    if (mainCategory) {
+        const mainCategoryName = getCategoryNameFromSlug_Backend(mainCategory, 'main');
+        if (mainCategoryName) {
+            whereClauses.push("mainCategory = ?");
+            params.push(mainCategoryName);
+        }
+    }
+    if (subCategory) {
+        const subCategoryName = getCategoryNameFromSlug_Backend(subCategory, 'sub');
+        if (subCategoryName) {
+            whereClauses.push("subCategory = ?");
+            params.push(subCategoryName);
+        }
+    }
+    if (brand) {
+        whereClauses.push("brand = ?");
+        params.push(brand);
+    }
+    if (status) {
+        whereClauses.push("status = ?");
+        params.push(status);
+    }
+    if (tags) {
+      whereClauses.push("JSON_CONTAINS(tags, JSON_QUOTE(?))");
+      params.push(tags);
+    }
+
+    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    // Query for total count
+    const countQuery = `SELECT COUNT(*) as total FROM products ${whereString}`;
+    const [countRows] = await pool.query(countQuery, params);
+    const totalProducts = countRows[0].total;
+
+    // Query for paginated data
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const offset = (pageNum - 1) * limitNum;
+    
+    const dataQuery = `SELECT * FROM products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
+    const dataParams = [...params, limitNum, offset];
+
+    const [rows] = await pool.query(dataQuery, dataParams);
     const products = rows.map(parseJsonFields);
-    res.json(products);
+
+    res.json({ products, totalProducts });
   } catch (err) {
     console.error("Lỗi khi truy vấn sản phẩm:", err);
     res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu sản phẩm.' });
   }
 });
 
-// API để lấy các sản phẩm NỔI BẬT (ví dụ: có tag 'Bán chạy' hoặc có khuyến mãi)
 app.get('/api/products/featured', async (req, res) => {
     try {
-        // Ưu tiên sản phẩm có tag 'Bán chạy', nếu không đủ thì lấy sản phẩm có khuyến mãi
         const [rows] = await pool.query(`
             (SELECT * FROM products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, '["Bán chạy"]'))
             UNION
@@ -113,8 +244,6 @@ app.get('/api/products/featured', async (req, res) => {
     }
 });
 
-
-// API để lấy MỘT sản phẩm theo ID
 app.get('/api/products/:id', async (req, res) => {
     const productId = req.params.id;
     try {
@@ -128,6 +257,120 @@ app.get('/api/products/:id', async (req, res) => {
     } catch (err) {
         console.error(`Lỗi khi truy vấn sản phẩm ID ${productId}:`, err);
         res.status(500).json({ error: 'Lỗi server.' });
+    }
+});
+
+app.post('/api/products', async (req, res) => {
+    const newProductData = req.body;
+    const productForDb = prepareProductForDb(newProductData);
+    try {
+        await pool.query("INSERT INTO products SET ?", [productForDb]);
+        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productForDb.id]);
+        res.status(201).json(parseJsonFields(rows[0]));
+    } catch (err) {
+        console.error("Lỗi khi tạo sản phẩm:", err);
+        res.status(500).json({ error: 'Lỗi server khi tạo sản phẩm.' });
+    }
+});
+
+app.put('/api/products/:id', async (req, res) => {
+    const productId = req.params.id;
+    const updatedProductData = req.body;
+    delete updatedProductData.id; 
+    const productForDb = prepareProductForDb(updatedProductData);
+    try {
+        const [result] = await pool.query("UPDATE products SET ? WHERE id = ?", [productForDb, productId]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy sản phẩm để cập nhật.' });
+        }
+        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productId]);
+        res.json(parseJsonFields(rows[0]));
+    } catch (err) {
+        console.error(`Lỗi khi cập nhật sản phẩm ID ${productId}:`, err);
+        res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm.' });
+    }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+    const productId = req.params.id;
+    try {
+        const [result] = await pool.query("DELETE FROM products WHERE id = ?", [productId]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy sản phẩm để xóa.' });
+        }
+        res.status(200).json({ message: 'Sản phẩm đã được xóa thành công.' });
+    } catch (err) {
+        console.error(`Lỗi khi xóa sản phẩm ID ${productId}:`, err);
+        res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm.' });
+    }
+});
+
+
+// --- SERVICES API ENDPOINTS ---
+app.get('/api/services/search', (req, res) => {
+  const { query } = req.query;
+  if (!query) {
+    return res.json(MOCK_SERVICES.slice(0, 3)); // Return a few if no query
+  }
+  const lowerQuery = query.toLowerCase();
+  const results = MOCK_SERVICES.filter(s => 
+    s.name.toLowerCase().includes(lowerQuery) || 
+    s.description.toLowerCase().includes(lowerQuery)
+  );
+  res.json(results);
+});
+
+
+// --- ORDERS API ENDPOINTS ---
+
+// GET all orders
+app.get('/api/orders', async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT * FROM orders ORDER BY orderDate DESC");
+        const orders = rows.map(parseOrderJsonFields);
+        res.json(orders);
+    } catch (err) {
+        console.error("Lỗi khi truy vấn đơn hàng:", err);
+        res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu đơn hàng.' });
+    }
+});
+
+// POST a new order
+app.post('/api/orders', async (req, res) => {
+    const newOrderData = req.body;
+    // Đảm bảo orderDate là đối tượng Date hợp lệ của SQL
+    newOrderData.orderDate = new Date(newOrderData.orderDate);
+
+    const orderForDb = prepareOrderForDb(newOrderData);
+    try {
+        await pool.query("INSERT INTO orders SET ?", [orderForDb]);
+        const [rows] = await pool.query("SELECT * FROM orders WHERE id = ?", [newOrderData.id]);
+        res.status(201).json(parseOrderJsonFields(rows[0]));
+    } catch (err) {
+        console.error("Lỗi khi tạo đơn hàng:", err);
+        res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng.' });
+    }
+});
+
+// PUT to update an order's status
+app.put('/api/orders/:id/status', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+        return res.status(400).json({ error: 'Trạng thái mới là bắt buộc.' });
+    }
+
+    try {
+        const [result] = await pool.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy đơn hàng để cập nhật.' });
+        }
+        const [rows] = await pool.query("SELECT * FROM orders WHERE id = ?", [id]);
+        res.json(parseOrderJsonFields(rows[0]));
+    } catch (err) {
+        console.error(`Lỗi khi cập nhật trạng thái đơn hàng ID ${id}:`, err);
+        res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái.' });
     }
 });
 

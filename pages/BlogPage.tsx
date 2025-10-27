@@ -1,13 +1,11 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import ArticlePreview from '../components/blog/ArticlePreview';
 import SearchBar from '../components/shared/SearchBar';
 import { Article } from '../types';
 import geminiService from '../services/geminiService';
-import { MOCK_ARTICLES } from '../data/mockData';
+import { getArticles } from '../services/localDataService';
 import * as Constants from '../constants';
 
-const MANUAL_ARTICLES_KEY = 'adminArticles_v1';
 const AI_ARTICLES_KEY = 'aiGeneratedArticles_v1';
 const AI_LAST_FETCHED_KEY = 'aiArticlesLastFetched_v1';
 const CACHE_DURATION_MS = 6 * 60 * 60 * 1000; // 6 hours
@@ -24,9 +22,8 @@ const BlogPage: React.FC = () => {
     const loadAndFetchArticles = async () => {
       setIsLoading(true);
       
-      // Load manual articles from localStorage or mock
-      const manualArticlesRaw = localStorage.getItem(MANUAL_ARTICLES_KEY);
-      const manualArticles: Article[] = manualArticlesRaw ? JSON.parse(manualArticlesRaw) : MOCK_ARTICLES;
+      // Load manual articles from Local Storage
+      const manualArticles = await getArticles();
 
       // Load cached AI articles
       const aiArticlesRaw = localStorage.getItem(AI_ARTICLES_KEY);

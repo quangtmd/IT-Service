@@ -1,6 +1,4 @@
-
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'; // Updated imports for v6/v7
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
@@ -19,6 +17,7 @@ import ProjectsPage from './pages/ProjectsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ScrollToTop from './components/shared/ScrollToTop';
 import FloatingActionButtons from './components/shared/FloatingActionButtons';
+import PCBuildSuggestionsPage from './pages/PCBuildSuggestionsPage'; // Import the new page
 
 // Auth and Admin
 import AdminPage from './pages/AdminPage';
@@ -27,14 +26,14 @@ import RegisterPage from './pages/RegisterPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CheckoutPage from './pages/CheckoutPage';
 
-
 const App: React.FC = () => {
+
   return (
     <HashRouter>
       <ScrollToTop />
       <div className="flex flex-col min-h-screen bg-bgCanvas">
         <Header />
-        <main className="flex-grow pt-[160px]">
+        <main className="flex-grow pt-[168px]">
           <Routes> {/* Replaced Switch with Routes */}
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/home" element={<HomePage />} />
@@ -49,6 +48,7 @@ const App: React.FC = () => {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/pc-builder" element={<PCBuilderPage />} />
+            <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} /> {/* Add new route */}
 
             {/* Auth Routes */}
             <Route path="/login" element={<LoginPage />} />

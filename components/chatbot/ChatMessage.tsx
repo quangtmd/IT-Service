@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ChatMessage as ChatMessageType, GroundingChunk } from '../../types';
 import Markdown from 'react-markdown';
 
@@ -27,7 +28,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, groundingChunks }) =
           <Markdown
             components={{
               p: ({node, ...props}) => <p className="mb-1 last:mb-0" {...props} />,
-              a: ({node, ...props}) => <a className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+              a: ({ node, href, ...props }) => {
+                // Check if it's an internal hash link for our SPA
+                if (href && href.includes(window.location.origin) && href.includes('#/')) {
+                  const path = href.substring(href.indexOf('#') + 1); // Get the path after the '#'
+                  return <Link to={path} {...props} className="text-primary hover:underline" />;
+                }
+                // Default to external link behavior
+                return <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />;
+              },
             }}
           >
             {message.text}

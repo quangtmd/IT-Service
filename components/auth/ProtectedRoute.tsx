@@ -1,10 +1,12 @@
 
+
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom'; // Updated imports for v6/v7
 import { useAuth } from '../../contexts/AuthContext';
 
 interface ProtectedRouteProps {
-  children: JSX.Element;
+  // Fix: Use React.ReactElement to avoid issues with JSX namespace resolution.
+  children: React.ReactElement;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {

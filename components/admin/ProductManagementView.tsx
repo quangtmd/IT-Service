@@ -1,30 +1,45 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Product, MainCategoryInfo, SubCategoryInfo } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadPreview from '../ui/ImageUploadPreview';
+import { getProducts, addProduct, updateProduct, deleteProduct } from '../../services/localDataService';
 
 const PRODUCTS_PER_PAGE = 10;
 
-interface ProductManagementViewProps {
-    products: Product[];
-    onUpdate: (updatedProducts: Product[]) => void;
-}
-
-const ProductManagementView: React.FC<ProductManagementViewProps> = ({ products, onUpdate }) => {
+const ProductManagementView: React.FC = () => {
+    const [allProducts, setAllProducts] = useState<Product[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+    const loadProducts = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const products = await getProducts();
+            setAllProducts(products);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadProducts();
+    }, [loadProducts]);
+
     const filteredProducts = useMemo(() =>
-        products.filter(p =>
+        allProducts.filter(p =>
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.mainCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.subCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
-        ), [products, searchTerm]);
+        ), [allProducts, searchTerm]);
 
     const paginatedProducts = useMemo(() => {
         const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
@@ -52,22 +67,77 @@ const ProductManagementView: React.FC<ProductManagementViewProps> = ({ products,
         setIsModalOpen(false);
     };
 
-    const handleSave = (productData: Product) => {
-        let updatedProducts;
-        if (productData.id) { // Edit
-            updatedProducts = products.map(p => p.id === productData.id ? productData : p);
-        } else { // Add
-            const newProduct = { ...productData, id: `prod-${Date.now()}` };
-            updatedProducts = [newProduct, ...products];
+    const handleSave = async (productData: Product) => {
+        try {
+            if (productData.id) { // Update
+                await updateProduct(productData.id, productData);
+            } else { // Create
+                await addProduct(productData);
+            }
+            loadProducts(); // Refresh data
+            closeModal();
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi lưu sản phẩm.');
         }
-        onUpdate(updatedProducts);
-        closeModal();
     };
 
-    const handleDelete = (productId: string) => {
+    const handleDelete = async (productId: string) => {
         if (window.confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
-            onUpdate(products.filter(p => p.id !== productId));
+            try {
+                await deleteProduct(productId);
+                loadProducts(); // Refresh data
+            } catch (err) {
+                alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi xóa sản phẩm.');
+            }
         }
+    };
+
+    const renderTableBody = () => {
+        if (isLoading) {
+            return <tr><td colSpan={6} className="text-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div></td></tr>;
+        }
+        if (error) {
+            return (
+                <tr>
+                    <td colSpan={6} className="text-center py-8">
+                        <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 max-w-2xl mx-auto">
+                            <h4 className="font-bold text-lg mb-2"><i className="fas fa-exclamation-triangle mr-2"></i>Lỗi Tải Dữ Liệu</h4>
+                            <p className="text-sm">{error}</p>
+                        </div>
+                    </td>
+                </tr>
+            );
+        }
+        if (paginatedProducts.length === 0) {
+            return <tr><td colSpan={6} className="text-center py-8 text-textMuted">Không tìm thấy sản phẩm.</td></tr>;
+        }
+        return paginatedProducts.map(product => (
+            <tr key={product.id}>
+                <td>
+                    <div className="flex items-center">
+                        <img src={(product.imageUrls && product.imageUrls[0]) || `https://picsum.photos/seed/${product.id}/40/40`} alt={product.name} className="w-10 h-10 rounded-md mr-3 object-cover" />
+                        <div>
+                            <p className="font-semibold text-textBase">{product.name}</p>
+                            <p className="text-xs text-textMuted">{product.brand || 'Không có'}</p>
+                        </div>
+                    </div>
+                </td>
+                <td>{product.mainCategory} &gt; {product.subCategory}</td>
+                <td className="font-semibold text-primary">{product.price.toLocaleString('vi-VN')}₫</td>
+                <td>{product.stock}</td>
+                <td>
+                    <span className={`status-badge ${product.isVisible ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {product.isVisible ? 'Hiển thị' : 'Ẩn'}
+                    </span>
+                </td>
+                <td>
+                    <div className="flex gap-2">
+                        <Button onClick={() => openModalForEdit(product)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
+                        <Button onClick={() => handleDelete(product.id)} size="sm" variant="ghost" className="text-red-500 hover:bg-red-50"><i className="fas fa-trash"></i></Button>
+                    </div>
+                </td>
+            </tr>
+        ));
     };
 
     return (
@@ -99,33 +169,7 @@ const ProductManagementView: React.FC<ProductManagementViewProps> = ({ products,
                             </tr>
                         </thead>
                         <tbody>
-                            {paginatedProducts.map(product => (
-                                <tr key={product.id}>
-                                    <td>
-                                        <div className="flex items-center">
-                                            <img src={product.imageUrls[0] || `https://picsum.photos/seed/${product.id}/40/40`} alt={product.name} className="w-10 h-10 rounded-md mr-3 object-cover" />
-                                            <div>
-                                                <p className="font-semibold text-textBase">{product.name}</p>
-                                                <p className="text-xs text-textMuted">{product.brand || 'Không có'}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>{product.mainCategory} &gt; {product.subCategory}</td>
-                                    <td className="font-semibold text-primary">{product.price.toLocaleString('vi-VN')}₫</td>
-                                    <td>{product.stock}</td>
-                                    <td>
-                                        <span className={`status-badge ${product.isVisible ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                            {product.isVisible ? 'Hiển thị' : 'Ẩn'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="flex gap-2">
-                                            <Button onClick={() => openModalForEdit(product)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
-                                            <Button onClick={() => handleDelete(product.id)} size="sm" variant="ghost" className="text-red-500 hover:bg-red-50"><i className="fas fa-trash"></i></Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            {renderTableBody()}
                         </tbody>
                     </table>
                 </div>

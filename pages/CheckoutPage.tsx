@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
@@ -7,7 +5,7 @@ import { useCart } from '../hooks/useCart';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants.tsx';
 import { CheckoutFormData, Order, PaymentInfo } from '../types';
-import { MOCK_ORDERS } from '../data/mockData';
+import { addOrder } from '../services/localDataService';
 
 const CheckoutPage: React.FC = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
@@ -24,6 +22,7 @@ const CheckoutPage: React.FC = () => {
   
   const [checkoutStep, setCheckoutStep] = useState<'form' | 'payment_details' | 'success'>('form');
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && currentUser) {
@@ -52,41 +51,50 @@ const CheckoutPage: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const total = getTotalPrice();
-    const newOrderId = `order-${Date.now()}`;
-
-    let paymentInfo: PaymentInfo;
-    if (paymentMethod === 'transfer') {
-      const isDeposit = transferOption === 'deposit';
-      paymentInfo = {
-        method: 'Chuyển khoản ngân hàng',
-        status: 'Chưa thanh toán',
-        amountToPay: isDeposit ? total * Constants.DEPOSIT_PERCENTAGE : total,
-      };
-    } else {
-      paymentInfo = { method: 'Thanh toán khi nhận hàng (COD)', status: 'Chưa thanh toán' };
-    }
+    setIsSubmitting(true);
     
-    const newOrder: Order = {
-      id: newOrderId, customerInfo: formData,
-      items: cart.map(item => ({ productId: item.id, productName: item.name, quantity: item.quantity, price: item.price })),
-      totalAmount: total, orderDate: new Date().toISOString(), status: 'Chờ xử lý', paymentInfo: paymentInfo,
-    };
-    MOCK_ORDERS.unshift(newOrder); // Simulate saving order
-    console.log("Order details:", newOrder);
-    addAdminNotification(`Đơn hàng mới #${newOrderId.slice(-6)} từ ${formData.fullName} (${formData.email}) đã được tạo.`, 'success');
-    
-    setSubmittedOrder(newOrder);
+    try {
+        const total = getTotalPrice();
+        const newOrderId = `order-${Date.now()}`;
+        
+        let paymentInfo: PaymentInfo;
+        if (paymentMethod === 'transfer') {
+            const isDeposit = transferOption === 'deposit';
+            paymentInfo = {
+                method: 'Chuyển khoản ngân hàng',
+                status: 'Chưa thanh toán',
+                amountToPay: isDeposit ? total * Constants.DEPOSIT_PERCENTAGE : total,
+            };
+        } else {
+            paymentInfo = { method: 'Thanh toán khi nhận hàng (COD)', status: 'Chưa thanh toán' };
+        }
+        
+        const newOrder: Order = {
+            id: newOrderId, customerInfo: formData,
+            items: cart.map(item => ({ productId: item.id, productName: item.name, quantity: item.quantity, price: item.price })),
+            totalAmount: total, orderDate: new Date().toISOString(), status: 'Chờ xử lý', paymentInfo: paymentInfo,
+        };
 
-    if (paymentMethod === 'cod') {
-      clearCart();
-      setCheckoutStep('success');
-    } else {
-      setCheckoutStep('payment_details');
+        await addOrder(newOrder);
+
+        addAdminNotification(`Đơn hàng mới #${newOrder.id.slice(-6)} từ ${formData.fullName} đã được tạo.`, 'success');
+        setSubmittedOrder(newOrder);
+
+        if (paymentMethod === 'cod') {
+            clearCart();
+            setCheckoutStep('success');
+        } else {
+            setCheckoutStep('payment_details');
+        }
+    } catch (error) {
+        console.error("Lỗi khi lưu đơn hàng vào Local Storage:", error);
+        alert('Đã xảy ra lỗi không mong muốn khi tạo đơn hàng.');
+    } finally {
+        setIsSubmitting(false);
     }
   };
   
@@ -193,7 +201,7 @@ const CheckoutPage: React.FC = () => {
               <label htmlFor="notes" className="block text-sm font-medium text-textMuted mb-1">Ghi chú (tùy chọn)</label>
               <textarea name="notes" id="notes" rows={3} value={formData.notes} onChange={handleChange} className="input-style"></textarea>
             </div>
-             <Button type="submit" className="w-full" size="lg">Xác Nhận & Đặt Hàng</Button>
+             <Button type="submit" className="w-full" size="lg" isLoading={isSubmitting}>Xác Nhận & Đặt Hàng</Button>
           </form>
         </div>
         {/* Summary Section */}

@@ -140,6 +140,27 @@ export interface AIBuildResponse {
   error?: string;
 }
 
+export interface SuggestedComponent {
+  CPU: string;
+  GPU: string;
+  RAM: string;
+  Motherboard: string;
+  SSD: string;
+  PSU: string;
+  Case: string;
+}
+
+export interface PCBuildSuggestion {
+  name: string;
+  total_price: number;
+  reasoning: string;
+  components: SuggestedComponent;
+}
+
+export interface AIBuildSuggestionsResponse {
+  suggestions: PCBuildSuggestion[];
+}
+
 export interface GroundingChunkWeb {
   uri: string;
   title: string;
@@ -568,4 +589,32 @@ export interface SiteSettings {
   smtpSettings: SMTPSettings;
   paymentGateways: PaymentGatewaySettings;
   siteMediaLibrary: MediaItem[];
+}
+
+// --- NEW FINANCIAL TYPES ---
+export type TransactionType = 'income' | 'expense';
+export type TransactionCategory = 'Doanh thu Bán hàng' | 'Thu nội bộ' | 'Chi phí Nhà Cung Cấp' | 'Chi phí Lương' | 'Chi phí Vận hành' | 'Chi phí Marketing' | 'Chi phí Khác';
+
+export interface FinancialTransaction {
+  id: string;
+  date: string; // ISO string date
+  amount: number;
+  type: TransactionType;
+  category: TransactionCategory;
+  description: string;
+  relatedEntity?: string; // e.g., Supplier Name, Customer Name, Employee Name
+  invoiceNumber?: string;
+}
+
+export interface PayrollRecord {
+  id: string; // e.g., 'payroll-2024-08-user001'
+  employeeId: string;
+  employeeName: string;
+  payPeriod: string; // e.g., '2024-08'
+  baseSalary: number;
+  bonus: number;
+  deduction: number;
+  finalSalary: number;
+  notes: string;
+  status: 'Chưa thanh toán' | 'Đã thanh toán';
 }

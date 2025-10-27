@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SiteSettings, SiteThemeSettings, CustomMenuLink } from '../../types';
 import * as Constants from '../../constants';
@@ -6,14 +5,28 @@ import Button from '../ui/Button';
 
 type SettingsTab = 'site_settings' | 'theme_settings' | 'menu_settings';
 
+declare global {
+    interface Window {
+        applyThemeFromLocalStorage: () => void;
+    }
+}
+
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
-    try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultValue; } 
-    catch (e) { console.error(e); return defaultValue; }
+    try { 
+        const item = localStorage.getItem(key); 
+        return item ? JSON.parse(item) : defaultValue; 
+    } catch (e) { 
+        console.error(`Error reading localStorage key "${key}":`, e); 
+        return defaultValue; 
+    }
 };
 
 const setLocalStorageItem = <T,>(key: string, value: T) => {
-    try { localStorage.setItem(key, JSON.stringify(value)); } 
-    catch (e) { console.error(e); }
+    try { 
+        localStorage.setItem(key, JSON.stringify(value)); 
+    } catch (e) { 
+        console.error(`Error setting localStorage key "${key}":`, e); 
+    }
 };
 
 const SiteSettingsView: React.FC<{ initialTab?: SettingsTab }> = ({ initialTab = 'site_settings' }) => {
@@ -23,6 +36,10 @@ const SiteSettingsView: React.FC<{ initialTab?: SettingsTab }> = ({ initialTab =
     const [menuLinks, setMenuLinks] = useState<CustomMenuLink[]>(() => getLocalStorageItem(Constants.CUSTOM_MENU_STORAGE_KEY, Constants.INITIAL_CUSTOM_MENU_LINKS));
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 
+    useEffect(() => {
+        setActiveTab(initialTab);
+    }, [initialTab]);
+
     const handleSave = () => {
         setSaveStatus('saving');
         try {
@@ -31,7 +48,10 @@ const SiteSettingsView: React.FC<{ initialTab?: SettingsTab }> = ({ initialTab =
                 window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
             } else if (activeTab === 'theme_settings') {
                 setLocalStorageItem(Constants.THEME_SETTINGS_STORAGE_KEY, themeSettings);
-                window.dispatchEvent(new CustomEvent('siteSettingsUpdated')); // Also triggers theme reload script
+                if (typeof window.applyThemeFromLocalStorage === 'function') {
+                    window.applyThemeFromLocalStorage();
+                }
+                window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
             } else if (activeTab === 'menu_settings') {
                 setLocalStorageItem(Constants.CUSTOM_MENU_STORAGE_KEY, menuLinks);
                 window.dispatchEvent(new CustomEvent('menuUpdated'));
@@ -39,6 +59,7 @@ const SiteSettingsView: React.FC<{ initialTab?: SettingsTab }> = ({ initialTab =
             setSaveStatus('success');
         } catch (error) {
             setSaveStatus('error');
+            console.error("Failed to save settings:", error);
         } finally {
             setTimeout(() => setSaveStatus('idle'), 2000);
         }
@@ -46,16 +67,16 @@ const SiteSettingsView: React.FC<{ initialTab?: SettingsTab }> = ({ initialTab =
     
     const renderSaveButton = () => {
         switch(saveStatus) {
-            case 'saving': return <Button isLoading>Đang lưu...</Button>
-            case 'success': return <Button className="bg-green-500 hover:bg-green-600"><i className="fas fa-check mr-2"></i>Đã lưu!</Button>
-            case 'error': return <Button className="bg-red-500 hover:bg-red-600">Lỗi!</Button>
-            default: return <Button onClick={handleSave}>Lưu thay đổi</Button>
+            case 'saving': return <Button isLoading>Đang lưu...</Button>;
+            case 'success': return <Button className="!bg-green-500 !hover:bg-green-600"><i className="fas fa-check mr-2"></i>Đã lưu!</Button>;
+            case 'error': return <Button className="!bg-red-500 !hover:bg-red-600">Lỗi!</Button>;
+            default: return <Button onClick={handleSave}>Lưu thay đổi</Button>;
         }
-    }
+    };
 
     return (
         <div className="admin-card">
-            <div className="admin-card-header flex justify-between items-center">
+            <div className="admin-card-header flex justify-between items-center flex-wrap gap-2">
                 <h3 className="admin-card-title">Cài đặt & Cấu hình</h3>
                 {renderSaveButton()}
             </div>
@@ -65,7 +86,7 @@ const SiteSettingsView: React.FC<{ initialTab?: SettingsTab }> = ({ initialTab =
                     <button onClick={() => setActiveTab('theme_settings')} className={`admin-tab-button ${activeTab === 'theme_settings' ? 'active' : ''}`}>Theme & Màu sắc</button>
                     <button onClick={() => setActiveTab('menu_settings')} className={`admin-tab-button ${activeTab === 'menu_settings' ? 'active' : ''}`}>Menu điều hướng</button>
                 </nav>
-                <div>
+                <div className="mt-6">
                     {activeTab === 'site_settings' && <SiteInfoForm settings={siteSettings} setSettings={setSiteSettings} />}
                     {activeTab === 'theme_settings' && <ThemeSettingsForm settings={themeSettings} setSettings={setThemeSettings} />}
                     {activeTab === 'menu_settings' && <MenuSettingsForm links={menuLinks} setLinks={setMenuLinks} />}
@@ -89,6 +110,7 @@ const SiteInfoForm: React.FC<{settings: SiteSettings, setSettings: React.Dispatc
             <div className="admin-form-group md:col-span-2"><label>Địa chỉ</label><input type="text" name="companyAddress" value={settings.companyAddress} onChange={handleChange} /></div>
             <div className="admin-form-group"><label>Facebook URL</label><input type="text" name="socialFacebookUrl" value={settings.socialFacebookUrl} onChange={handleChange} /></div>
             <div className="admin-form-group"><label>Zalo URL</label><input type="text" name="socialZaloUrl" value={settings.socialZaloUrl} onChange={handleChange} /></div>
+            <div className="admin-form-group"><label>YouTube URL</label><input type="text" name="socialYoutubeUrl" value={settings.socialYoutubeUrl} onChange={handleChange} /></div>
         </div>
     );
 }
@@ -98,12 +120,12 @@ const ThemeSettingsForm: React.FC<{settings: SiteThemeSettings, setSettings: Rea
         setSettings(p => ({...p, [e.target.name]: e.target.value}));
     }
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {Object.entries(settings).map(([key, value]) => (
                 <div key={key} className="admin-form-group">
                     <label className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</label>
                     <div className="flex items-center gap-2">
-                        <input type="color" name={key} value={value} onChange={handleChange} className="w-10 h-10 p-1" />
+                        <input type="color" name={key} value={value} onChange={handleChange} className="w-10 h-10 p-1 rounded border-none cursor-pointer" />
                         <input type="text" name={key} value={value} onChange={handleChange} className="font-mono text-sm" />
                     </div>
                 </div>
@@ -128,15 +150,16 @@ const MenuSettingsForm: React.FC<{links: CustomMenuLink[], setLinks: React.Dispa
 
     return (
         <div>
+            <p className="text-sm text-textMuted mb-4">Kéo thả hoặc dùng mũi tên để sắp xếp thứ tự menu. Các thay đổi sẽ được áp dụng sau khi lưu.</p>
             {links.map((link, index) => (
-                <div key={link.id} className="flex items-center gap-2 p-2 border-b">
+                <div key={link.id} className="flex items-center gap-2 p-2 border-b last:border-b-0 hover:bg-gray-50 rounded">
                     <div className="flex flex-col gap-1">
-                        <Button type="button" size="sm" variant="ghost" onClick={() => handleMove(index, 'up')} disabled={index === 0}><i className="fas fa-arrow-up"></i></Button>
-                        <Button type="button" size="sm" variant="ghost" onClick={() => handleMove(index, 'down')} disabled={index === links.length - 1}><i className="fas fa-arrow-down"></i></Button>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => handleMove(index, 'up')} disabled={index === 0} aria-label="Move up"><i className="fas fa-arrow-up"></i></Button>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => handleMove(index, 'down')} disabled={index === links.length - 1} aria-label="Move down"><i className="fas fa-arrow-down"></i></Button>
                     </div>
-                    <input type="text" value={link.label} onChange={e => handleChange(link.id, 'label', e.target.value)} className="w-1/3" />
-                    <input type="text" value={link.path} onChange={e => handleChange(link.id, 'path', e.target.value)} className="flex-grow" />
-                    <label className="flex items-center"><input type="checkbox" checked={link.isVisible} onChange={e => handleChange(link.id, 'isVisible', e.target.checked)} className="w-4 h-4 mr-2" /> Hiển thị</label>
+                    <div className="admin-form-group flex-grow !mb-0"><label className="sr-only">Label</label><input type="text" value={link.label} onChange={e => handleChange(link.id, 'label', e.target.value)} /></div>
+                    <div className="admin-form-group flex-grow !mb-0"><label className="sr-only">Path</label><input type="text" value={link.path} onChange={e => handleChange(link.id, 'path', e.target.value)} /></div>
+                    <label className="flex items-center text-sm"><input type="checkbox" checked={link.isVisible} onChange={e => handleChange(link.id, 'isVisible', e.target.checked)} className="w-4 h-4 mr-2" /> Hiển thị</label>
                 </div>
             ))}
         </div>

@@ -1,8 +1,7 @@
-
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { User, UserRole, AdminNotification, StaffRole, STAFF_ROLE_OPTIONS } from '../types'; 
-import * as Constants from '../constants.tsx'; // Changed import
+import { User, UserRole, AdminNotification, StaffRole } from '../types'; 
+import * as Constants from '../constants';
+import { MOCK_STAFF_USERS } from '../data/mockData';
 
 export type AdminPermission = 
   // General
@@ -40,11 +39,10 @@ export type AdminPermission =
   // High-level (Future)
   | 'viewAnalytics';
 
-
 export interface AuthContextType {
   isAuthenticated: boolean;
   currentUser: User | null;
-  login: (credentials: { email: string; password?: string }) => Promise<User | null>;
+  login: (credentials: { email: string; password?: string }) => Promise<void>;
   logout: () => void;
   register: (details: { username: string; email: string; password?: string, role?: UserRole }) => Promise<User | null>;
   isLoading: boolean;
@@ -61,100 +59,84 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USERS_STORAGE_KEY = 'registeredUsers_v3'; 
-const CURRENT_USER_STORAGE_KEY = 'currentUser_v3';
 const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
+const USERS_STORAGE_KEY = 'siteUsers_v1_local';
+const CURRENT_USER_SESSION_KEY = 'currentUserSession_v1_local';
 
+const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+        return defaultValue;
+    }
+};
+
+const getSessionStorageItem = <T,>(key: string, defaultValue: T): T => {
+    try {
+        const item = sessionStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+        return defaultValue;
+    }
+};
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => getSessionStorageItem(CURRENT_USER_SESSION_KEY, null));
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!currentUser);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [users, setUsers] = useState<User[]>([]);
-  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
+  const [users, setUsers] = useState<User[]>(() => getLocalStorageItem(USERS_STORAGE_KEY, []));
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>(() => getLocalStorageItem(ADMIN_NOTIFICATIONS_STORAGE_KEY, []));
 
-  const getRegisteredUsers = (): User[] => {
-    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-    return storedUsers ? JSON.parse(storedUsers) : [];
-  };
-
-  const saveRegisteredUsers = (updatedUsers: User[]) => {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-    setUsers(updatedUsers);
-  };
-  
-  const loadNotifications = () => {
-    const storedNotifications = localStorage.getItem(ADMIN_NOTIFICATIONS_STORAGE_KEY);
-    setAdminNotifications(storedNotifications ? JSON.parse(storedNotifications) : []);
-  };
-
-  const saveNotifications = (notifications: AdminNotification[]) => {
-    localStorage.setItem(ADMIN_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications.slice(0, 50)));
-    setAdminNotifications(notifications.slice(0,50));
-  };
-
-
-  // Initialize users and pre-register admin if first time
   useEffect(() => {
-    let storedUsers = getRegisteredUsers();
-    if (storedUsers.length === 0 || !storedUsers.find(u => u.email === Constants.ADMIN_EMAIL && u.role === 'admin')) {
-      const adminUser: User = {
-        id: 'admin-001',
-        username: 'Admin Quang',
-        email: Constants.ADMIN_EMAIL, // Use Constants.ADMIN_EMAIL
-        password: 'A@a0908225224', 
-        role: 'admin',
-      };
-      storedUsers = storedUsers.filter(u => u.email !== Constants.ADMIN_EMAIL); // Use Constants.ADMIN_EMAIL
-      storedUsers.unshift(adminUser); 
-      saveRegisteredUsers(storedUsers);
-      if (storedUsers.length === 1) { 
-          addAdminNotification(`Tài khoản quản trị (${Constants.ADMIN_EMAIL}) đã được tạo tự động.`, 'success'); // Use Constants.ADMIN_EMAIL
-      }
-    }
-    setUsers(storedUsers);
-    loadNotifications();
-
-    const storedCurrentUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
-    if (storedCurrentUser) {
-      try {
-        const user = JSON.parse(storedCurrentUser) as User;
-        const liveUser = storedUsers.find(u => u.id === user.id);
-        if (liveUser) {
-            const { password, ...userToStore } = liveUser;
-            setCurrentUser(userToStore);
-            setIsAuthenticated(true);
+    const initializeUsers = () => {
+        const storedUsers = getLocalStorageItem<User[]>(USERS_STORAGE_KEY, []);
+        if (storedUsers.length === 0) {
+            const adminUser: User = {
+                id: 'admin001',
+                username: 'Admin Quang',
+                email: Constants.ADMIN_EMAIL,
+                password: 'password123', // In a real app, this should be hashed.
+                role: 'admin',
+                staffRole: 'Nhân viên Toàn quyền',
+            };
+            const initialUsers = [adminUser, ...MOCK_STAFF_USERS];
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
+            setUsers(initialUsers);
         } else {
-             localStorage.removeItem(CURRENT_USER_STORAGE_KEY); 
+            setUsers(storedUsers);
         }
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
-      }
-    }
-    setIsLoading(false);
+        
+        const sessionUser = getSessionStorageItem<User | null>(CURRENT_USER_SESSION_KEY, null);
+        if (sessionUser) {
+            setCurrentUser(sessionUser);
+            setIsAuthenticated(true);
+        }
+        setIsLoading(false);
+    };
+    initializeUsers();
   }, []);
 
-  const login = async (credentials: { email: string; password?: string }): Promise<User | null> => {
-    setIsLoading(true);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const registeredUsers = getRegisteredUsers();
-        const foundUser = registeredUsers.find(
-          (user) => user.email.toLowerCase() === credentials.email.toLowerCase() &&
-                     (user.password === credentials.password || !user.password || !credentials.password) 
-        );
+  const saveUsers = (updatedUsers: User[]) => {
+    setUsers(updatedUsers);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+  }
 
-        if (foundUser) {
-          const { password, ...userToStore } = foundUser; 
-          localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(userToStore));
-          setCurrentUser(userToStore);
+  const login = async (credentials: { email: string; password?: string }): Promise<void> => {
+    setIsLoading(true);
+    return new Promise((resolve, reject) => {
+      setTimeout(() => { // Simulate network delay
+        const user = users.find(u => u.email === credentials.email && u.password === credentials.password);
+        if (user) {
+          const { password, ...userToStore } = user;
+          setCurrentUser(userToStore as User);
           setIsAuthenticated(true);
+          sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(userToStore));
           setIsLoading(false);
-          resolve(userToStore);
+          resolve();
         } else {
           setIsLoading(false);
-          resolve(null); 
+          reject(new Error('Email hoặc mật khẩu không đúng.'));
         }
       }, 500);
     });
@@ -162,153 +144,95 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const register = async (details: { username: string; email: string; password?: string, role?: UserRole }): Promise<User | null> => {
     setIsLoading(true);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const registeredUsers = getRegisteredUsers();
-        const emailExists = registeredUsers.some(
-          (user) => user.email.toLowerCase() === details.email.toLowerCase()
-        );
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            if (users.some(u => u.email === details.email)) {
+                setIsLoading(false);
+                reject(new Error('Email đã được sử dụng.'));
+                return null;
+            }
 
-        if (emailExists) {
-          setIsLoading(false);
-          resolve(null); 
-          return;
-        }
-        
-        if (details.email.includes('@') && details.username) {
-          const newUser: User = {
-            id: `user-${Date.now().toString()}`,
-            username: details.username,
-            email: details.email,
-            password: details.password, 
-            role: details.role || 'customer', 
-          };
-          
-          const updatedUsers = [...registeredUsers, newUser];
-          saveRegisteredUsers(updatedUsers);
-          
-          if (newUser.role === 'customer') {
+            const newUser: User = {
+                id: `user-${Date.now()}`,
+                username: details.username,
+                email: details.email,
+                password: details.password,
+                role: details.role || 'customer',
+                joinDate: new Date().toISOString(),
+                status: 'Đang hoạt động',
+            };
+            
+            const updatedUsers = [...users, newUser];
+            saveUsers(updatedUsers);
+
+            addAdminNotification(`Người dùng mới '${newUser.username}' (${newUser.email}) đã đăng ký.`, 'info');
+            
+            // Auto-login after registration
             const { password, ...userToStore } = newUser;
-            localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(userToStore));
-            setCurrentUser(userToStore);
+            setCurrentUser(userToStore as User);
             setIsAuthenticated(true);
-          }
-          
-          addAdminNotification(`Người dùng mới '${newUser.username}' (${newUser.email}) đã đăng ký với vai trò ${newUser.role}.`, 'info');
-          
-          setIsLoading(false);
-          resolve(newUser); 
-        } else {
-          setIsLoading(false);
-          resolve(null); 
-        }
-      }, 500);
+            sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(userToStore));
+            
+            setIsLoading(false);
+            resolve(newUser);
+        }, 500);
     });
   };
 
-  const logout = () => {
-    localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
+  const logout = async () => {
     setCurrentUser(null);
     setIsAuthenticated(false);
+    sessionStorage.removeItem(CURRENT_USER_SESSION_KEY);
   };
 
   const addUser = async (userDto: Omit<User, 'id'>): Promise<User | null> => {
-    if (currentUser?.role !== 'admin' && !(currentUser?.role === 'staff' && hasPermission(['manageStaff']))) {
-        addAdminNotification("Không có quyền thêm người dùng.", 'error');
-        return null;
-    }
-    const registeredUsers = getRegisteredUsers();
-    const emailExists = registeredUsers.some(u => u.email.toLowerCase() === userDto.email.toLowerCase());
-    if (emailExists) {
-        addAdminNotification(`Email ${userDto.email} đã được sử dụng.`, 'error');
-        return null;
-    }
-
-    const newUser: User = {
-        ...userDto,
-        id: `user-${Date.now()}`,
-        role: userDto.role || 'staff', 
-    };
-    
-    saveRegisteredUsers([...registeredUsers, newUser]);
-    addAdminNotification(`Quản trị viên đã thêm người dùng mới: ${newUser.username} (${newUser.email}) với vai trò ${newUser.staffRole || newUser.role}.`, 'success');
+    const newUser = { ...userDto, id: `user-${Date.now()}`};
+    saveUsers([...users, newUser]);
+    addAdminNotification(`Quản trị viên đã thêm hồ sơ: ${newUser.username}.`, 'success');
     return newUser;
   };
 
   const updateUser = async (userId: string, updates: Partial<User>): Promise<boolean> => {
-     if (currentUser?.role !== 'admin' && !(currentUser?.role === 'staff' && hasPermission(['manageStaff']))) {
-        addAdminNotification("Không có quyền cập nhật người dùng.", 'error');
-        return false;
-    }
-    
-    const usersToUpdate = getRegisteredUsers();
-    const userIndex = usersToUpdate.findIndex(u => u.id === userId);
-    if (userIndex === -1) return false;
-
-    if (usersToUpdate[userIndex].email === Constants.ADMIN_EMAIL && (updates.role && updates.role !== 'admin' || updates.email && updates.email !== Constants.ADMIN_EMAIL)) { // Use Constants.ADMIN_EMAIL
-        addAdminNotification("Không thể thay đổi vai trò hoặc email của quản trị viên chính.", "error");
-        return false;
-    }
-    if (updates.email === Constants.ADMIN_EMAIL && usersToUpdate[userIndex].email !== Constants.ADMIN_EMAIL) { // Use Constants.ADMIN_EMAIL
-        addAdminNotification(`Không thể đặt email thành ${Constants.ADMIN_EMAIL} cho người dùng này.`, "error"); // Use Constants.ADMIN_EMAIL
-        return false;
-    }
-
-    usersToUpdate[userIndex] = { ...usersToUpdate[userIndex], ...updates };
-    saveRegisteredUsers(usersToUpdate);
-    addAdminNotification(`Thông tin người dùng ${usersToUpdate[userIndex].username} đã được cập nhật.`, 'info');
-    
-    if (currentUser?.id === userId) {
-        const { password, ...userToStore} = usersToUpdate[userIndex];
-        setCurrentUser(userToStore);
-        localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(userToStore));
-    }
+    const updatedUsers = users.map(u => u.id === userId ? { ...u, ...updates } : u);
+    saveUsers(updatedUsers);
+    addAdminNotification(`Thông tin người dùng đã được cập nhật.`, 'info');
     return true;
   };
 
   const deleteUser = async (userId: string): Promise<boolean> => {
-     if (currentUser?.role !== 'admin' && !(currentUser?.role === 'staff' && hasPermission(['manageStaff']))) {
-        addAdminNotification("Không có quyền xóa người dùng.", 'error');
-        return false;
-     }
-     
-     const userToDelete = getRegisteredUsers().find(u => u.id === userId);
-     if (!userToDelete) return false;
-
-     if (userToDelete.email === Constants.ADMIN_EMAIL && userToDelete.role === 'admin') { // Use Constants.ADMIN_EMAIL
+     if (users.find(u => u.id === userId)?.email === Constants.ADMIN_EMAIL) {
         addAdminNotification("Không thể xóa tài khoản quản trị viên chính.", "error");
         return false;
      }
-
-     saveRegisteredUsers(getRegisteredUsers().filter(u => u.id !== userId));
-     addAdminNotification(`Người dùng ${userToDelete.username} (${userToDelete.email}) đã bị xóa.`, 'warning');
+     saveUsers(users.filter(u => u.id !== userId));
+     addAdminNotification(`Hồ sơ người dùng đã bị xóa.`, 'warning');
      return true;
   };
-
+  
+  const saveNotifications = (notifications: AdminNotification[]) => {
+    const limitedNotifications = notifications.slice(0, 50);
+    localStorage.setItem(ADMIN_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(limitedNotifications));
+    setAdminNotifications(limitedNotifications);
+  };
+  
   const addAdminNotification = (message: string, type: AdminNotification['type'] = 'info') => {
     const newNotification: AdminNotification = {
-        id: `notif-${Date.now()}`,
-        message,
-        type,
-        timestamp: new Date().toISOString(),
-        isRead: false,
+        id: `notif-${Date.now()}`, message, type,
+        timestamp: new Date().toISOString(), isRead: false,
     };
-    const updatedNotifications = [newNotification, ...adminNotifications];
-    saveNotifications(updatedNotifications);
+    saveNotifications([newNotification, ...adminNotifications]);
   };
 
   const markAdminNotificationRead = (notificationId: string) => {
-    const updatedNotifications = adminNotifications.map(n => 
-      n.id === notificationId ? { ...n, isRead: true } : n
-    );
-    saveNotifications(updatedNotifications);
+    const updated = adminNotifications.map(n => n.id === notificationId ? { ...n, isRead: true } : n);
+    saveNotifications(updated);
   };
 
   const clearAdminNotifications = () => {
     saveNotifications([]);
   };
 
-  const hasPermission = (requiredPermissions: Array<AdminPermission>): boolean => {
+   const hasPermission = (requiredPermissions: Array<AdminPermission>): boolean => {
     if (!isAuthenticated || !currentUser) return false;
     if (currentUser.role === 'admin') return true; 
 
@@ -339,21 +263,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   return (
     <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      currentUser, 
-      login, 
-      logout, 
-      register, 
-      isLoading,
-      users,
-      addUser,
-      updateUser,
-      deleteUser,
-      adminNotifications,
-      addAdminNotification,
-      markAdminNotificationRead,
-      clearAdminNotifications,
-      hasPermission
+      isAuthenticated, currentUser, login, logout, register, isLoading, users, addUser, updateUser, deleteUser,
+      adminNotifications, addAdminNotification, markAdminNotificationRead, clearAdminNotifications, hasPermission
     }}>
       {children}
     </AuthContext.Provider>

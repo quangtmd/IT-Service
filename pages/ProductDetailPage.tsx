@@ -5,7 +5,7 @@ import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
-import { MOCK_PRODUCTS } from '../data/mockData';
+import { getProduct, getProducts } from '../services/localDataService';
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -21,7 +21,7 @@ const ProductDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProductData = async () => {
+    const loadProductData = async () => {
       if (!productId) {
         setError("Không có ID sản phẩm.");
         setIsLoading(false);
@@ -30,61 +30,30 @@ const ProductDetailPage: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      const baseUrl = Constants.BACKEND_API_BASE_URL;
-
-      const loadFromMock = () => {
-          console.warn(`Falling back to mock data for product ID: ${productId}`);
-          const foundProduct = MOCK_PRODUCTS.find(p => p.id === productId);
-          if (foundProduct) {
-              setProduct(foundProduct);
-              setMainImage(foundProduct.imageUrls?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
-              const related = MOCK_PRODUCTS.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
-              setRelatedProducts(related);
-              setError(null);
-          } else {
-              setError('Không tìm thấy sản phẩm.');
-          }
-      };
-
-      if (!baseUrl) {
-          loadFromMock();
-          setIsLoading(false);
-          window.scrollTo(0, 0);
-          return;
-      }
-
       try {
-        const productRes = await fetch(`${baseUrl}/api/products/${productId}`);
-        if (!productRes.ok) {
-          throw new Error('Không tìm thấy sản phẩm từ API.');
-        }
-        const foundProduct: Product = await productRes.json();
-        setProduct(foundProduct);
-        setMainImage(foundProduct.imageUrls?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
-        
-        try {
-            const allProductsRes = await fetch(`${baseUrl}/api/products`);
-            if (allProductsRes.ok) {
-                const allProducts: Product[] = await allProductsRes.json();
-                const related = allProducts.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
-                setRelatedProducts(related);
-            }
-        } catch (relatedErr) {
-            console.error("Could not fetch all products for related items, using mock.", relatedErr);
-            const related = MOCK_PRODUCTS.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
-            setRelatedProducts(related);
-        }
+        const foundProduct = await getProduct(productId);
 
+        if (foundProduct) {
+          setProduct(foundProduct);
+          setMainImage(foundProduct.imageUrls?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
+          
+          const allProducts = await getProducts();
+          const related = allProducts.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
+          setRelatedProducts(related);
+
+        } else {
+          setError('Không tìm thấy sản phẩm.');
+        }
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu sản phẩm:", err);
-        loadFromMock();
+        console.error("Lỗi khi tải dữ liệu sản phẩm từ Local Storage:", err);
+        setError("Đã xảy ra lỗi khi tải sản phẩm.");
       } finally {
         setIsLoading(false);
         window.scrollTo(0, 0);
       }
     };
 
-    fetchProductData();
+    loadProductData();
     setQuantity(1);
     setActiveTab('description');
   }, [productId]);

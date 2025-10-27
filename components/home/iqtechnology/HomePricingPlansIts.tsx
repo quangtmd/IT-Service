@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants';
 import { PricingPlan } from '../../../types';
-import PricingPlanCard from '../../shared/PricingPlanCard';
+import HomePricingPlanCard from './HomePricingPlanCard';
 import ConsultationRequestModal from '../../shared/ConsultationRequestModal';
 
 const HomePricingPlansIts: React.FC = () => {
@@ -38,13 +37,12 @@ const HomePricingPlansIts: React.FC = () => {
             </p>
           </div>
           
-          <div ref={plansRef} className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch animate-on-scroll fade-in-up ${arePlansVisible ? 'is-visible' : ''}`}>
+          <div ref={plansRef} className={`flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 items-stretch overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 scrollbar-hide animate-on-scroll fade-in-up ${arePlansVisible ? 'is-visible' : ''}`}>
             {plans.map((plan, index) => (
-              <div key={plan.id} style={{ animationDelay: `${index * 100}ms` }}>
-                <PricingPlanCard 
+              <div key={plan.id} className="w-[85vw] max-w-xs sm:w-auto flex-shrink-0" style={{ animationDelay: `${index * 100}ms` }}>
+                <HomePricingPlanCard 
                   plan={plan} 
                   isPopular={plan.isPopular}
-                  showPrice={false}
                   onSelect={handleSelectPlan}
                 />
               </div>
@@ -63,4 +61,3 @@ const HomePricingPlansIts: React.FC = () => {
 };
 
 export default HomePricingPlansIts;
-      

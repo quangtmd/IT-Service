@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
 import { useCart } from '../hooks/useCart';
@@ -49,12 +50,15 @@ const CartPage: React.FC = () => {
                   {isCustomBuild && item.buildComponents && (
                     <div className="text-xs text-textMuted mt-1 space-y-0.5">
                       <p className="font-medium text-textSubtle">Chi tiết cấu hình:</p>
-                      {Object.entries(item.buildComponents).map(([type, comp]) => (
-                        <p key={type} className="truncate" title={`${type}: ${comp.name} (${(comp.price || 0).toLocaleString('vi-VN')}₫)`}>
-                          - {type}: {comp.name}
-                          {(comp.price || 0) > 0 && ` (${(comp.price || 0).toLocaleString('vi-VN')}₫)`}
+                      {Object.entries(item.buildComponents).map(([type, comp]) => {
+                        const component = comp as { name: string; price?: number };
+                        return (
+                        <p key={type} className="truncate" title={`${type}: ${component.name} (${(component.price || 0).toLocaleString('vi-VN')}₫)`}>
+                          - {type}: {component.name}
+                          {(component.price || 0) > 0 && ` (${(component.price || 0).toLocaleString('vi-VN')}₫)`}
                         </p>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </div>
