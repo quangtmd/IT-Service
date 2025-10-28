@@ -14,8 +14,11 @@ const port = process.env.PORT || 10000;
 app.use(cors()); 
 app.use(express.json()); 
 
-// Serve static files for the admin panel
-app.use('/admin', express.static(path.join(__dirname, '../admin')));
+// Serve CLIENT-FACING WEBSITE (from the 'public' folder)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Serve ADMIN PANEL (from the 'admin' folder inside 'backend')
+app.use('/admin', express.static(path.join(__dirname, 'admin')));
 
 // Redirect root of /admin to the login page
 app.get('/admin', (req, res) => {
@@ -50,9 +53,8 @@ const testDbConnection = async () => {
 // 3. API ENDPOINTS
 // =================================================================
 
-app.get('/', (req, res) => {
-  res.send('IT Service Backend is running!');
-});
+// NOTE: The app.get('/', ...) has been removed. 
+// express.static will now handle serving the index.html from the 'public' folder.
 
 app.post('/api/chat-logs', async (req, res) => {
   const { sessionId, userName, userPhone, startTime, messages } = req.body;
