@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import ArticlePreview from '../components/blog/ArticlePreview';
 import SearchBar from '../components/shared/SearchBar';
 import { Article } from '../types';
-import geminiService from '../services/geminiService';
+import { fetchLatestTechNews } from '../services/geminiService'; // Updated import
 import { getArticles } from '../services/localDataService';
 import * as Constants from '../constants';
 
@@ -22,14 +23,12 @@ const BlogPage: React.FC = () => {
     const loadAndFetchArticles = async () => {
       setIsLoading(true);
       
-      // Load manual articles from Local Storage
+      // Load manual articles
       const manualArticles = await getArticles();
 
-      // Load cached AI articles
+      // Load cached AI articles and last fetch time
       const aiArticlesRaw = localStorage.getItem(AI_ARTICLES_KEY);
       const cachedAiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
-
-      // Load last fetch time
       const lastFetchedTimestamp = localStorage.getItem(AI_LAST_FETCHED_KEY);
       const lastFetchedTime = lastFetchedTimestamp ? parseInt(lastFetchedTimestamp, 10) : null;
       setLastFetched(lastFetchedTime);
@@ -38,13 +37,14 @@ const BlogPage: React.FC = () => {
       setIsLoading(false);
 
       const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
-      const apiKey = process.env.API_KEY;
 
-      if (apiKey && apiKey !== 'undefined' && isCacheStale) {
+      // The check for the API key is now implicitly handled by the service itself.
+      if (isCacheStale) {
         setIsLoadingAI(true);
         setAiError(null);
         try {
-          const newAiArticlesData = await geminiService.fetchLatestTechNews();
+          // Use the newly exported function directly
+          const newAiArticlesData = await fetchLatestTechNews();
           const newAiArticles: Article[] = newAiArticlesData.map((art, index) => ({
             id: `ai-${Date.now()}-${index}`,
             title: art.title || "Không có tiêu đề",
@@ -52,7 +52,7 @@ const BlogPage: React.FC = () => {
             content: art.content || "Nội dung đang được cập nhật.",
             category: art.category || "Tin tức công nghệ",
             imageSearchQuery: art.imageSearchQuery || "technology",
-            imageUrl: '', // Will be generated from query
+            imageUrl: '', // Will be generated later if needed
             author: "AI News Bot",
             date: new Date().toISOString(),
             isAIGenerated: true,
@@ -67,10 +67,12 @@ const BlogPage: React.FC = () => {
         } catch (error) {
           console.error("Failed to fetch AI articles:", error);
           const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
-          if (errorMessage.includes("API Key chưa được cấu hình")) {
+          // Display a more generic message if the API key is the issue, 
+          // as the service now handles the specifics.
+          if (errorMessage.includes('API key') || errorMessage.includes('initialization')) {
             setAiError(Constants.API_KEY_ERROR_MESSAGE);
           } else {
-            setAiError(errorMessage);
+            setAiError("Không thể tải tin tức từ AI vào lúc này.");
           }
         } finally {
           setIsLoadingAI(false);
@@ -91,7 +93,7 @@ const BlogPage: React.FC = () => {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [allArticles, searchTerm]);
 
-  const renderStatus = () => {
+    const renderStatus = () => {
     if (isLoadingAI) {
       return (
         <div className="flex items-center justify-center text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
