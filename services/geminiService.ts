@@ -15,11 +15,15 @@ let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
 
 const getAiClient = (): GoogleGenAI | null => {
-  const apiKey = process.env.API_KEY;
-  // This robust check handles both missing keys and the 'undefined' string issue from some build tools.
-  if (!apiKey || apiKey === 'undefined') {
-    if (!aiInstance) { // Log this warning only once to avoid spamming the console
-        console.warn("Gemini Service: API_KEY is not configured. AI features will be disabled.");
+  // CORRECTED: Read the API key from Vite's environment variables
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  
+  // This robust check handles missing keys
+  if (!apiKey) {
+    // Log this warning only once to avoid spamming the console
+    if (!aiInstance) { 
+        // CORRECTED: Log the correct variable name for easier debugging
+        console.warn("Gemini Service: VITE_GEMINI_API_KEY is not configured. AI features will be disabled.");
     }
     return null;
   }
