@@ -46,6 +46,11 @@ const testDbConnection = async () => {
 // 3. API ENDPOINTS
 // =================================================================
 
+// GET Gemini API Key
+app.get('/api/gemini-key', (req, res) => {
+  res.json({ apiKey: process.env.GEMINI_API_KEY });
+});
+
 // GET all orders
 app.get('/api/orders', async (req, res) => {
   let connection;
