@@ -15,7 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static files from the React app's build directory
-const buildPath = path.join(__dirname, '../production_assets');
+const buildPath = path.join(__dirname, '../dist');
 app.use(express.static(buildPath));
 
 // =================================================================
