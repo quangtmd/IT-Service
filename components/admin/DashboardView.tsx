@@ -52,46 +52,110 @@ const DashboardStatCard: React.FC<{
     );
 };
 
-const RevenueChart: React.FC = () => {
+const RevenueTrendChart: React.FC<{ orders: Order[] }> = ({ orders }) => {
     const data = useMemo(() => {
-        const months = ["T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"];
-        return months.map(month => ({
-            month,
-            previousYear: Math.floor(Math.random() * (200 - 80 + 1) + 80) * 1000000,
-            currentYear: Math.floor(Math.random() * (250 - 90 + 1) + 90) * 1000000
-        }));
-    }, []);
+        const days = 30;
+        const dailyRevenue = Array(days).fill(0);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
 
-    const svgWidth = 800, svgHeight = 300, margin = { top: 20, right: 30, bottom: 30, left: 70 };
-    const chartWidth = svgWidth - margin.left - margin.right;
-    const chartHeight = svgHeight - margin.top - margin.bottom;
-    const maxRevenue = Math.max(...data.map(d => Math.max(d.previousYear, d.currentYear)));
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - (days - 1));
+        startDate.setHours(0, 0, 0, 0);
 
-    const toSvgX = (i: number) => margin.left + (i / (data.length - 1)) * chartWidth;
-    const toSvgY = (val: number) => margin.top + chartHeight - (val / maxRevenue) * chartHeight;
-    const linePoints = (year: 'previousYear' | 'currentYear') => data.map((d, i) => `${toSvgX(i)},${toSvgY(d[year])}`).join(' ');
+        const completedOrders = orders.filter(o => o.status === 'Hoàn thành');
+
+        for (const order of completedOrders) {
+            const orderDate = new Date(order.orderDate);
+            if (orderDate >= startDate && orderDate <= today) {
+                const diffTime = today.getTime() - orderDate.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                const index = days - 1 - diffDays;
+                if (index >= 0 && index < days) {
+                    dailyRevenue[index] += order.totalAmount;
+                }
+            }
+        }
+        return dailyRevenue;
+    }, [orders]);
+
+    const maxRevenue = Math.max(...data, 1); // Avoid division by zero
+    const points = data.map((value, index) => {
+        const x = (index / (data.length - 1)) * 100;
+        const y = 100 - (value / maxRevenue) * 90; // Use 90% of height to avoid touching top
+        return `${x},${y}`;
+    }).join(' ');
+
+    const areaPoints = `0,100 ${points} 100,100`;
 
     return (
-      <div className="admin-card">
-        <div className="admin-card-header"><h3 className="admin-card-title">So sánh Doanh thu Năm</h3></div>
-        <div className="admin-card-body">
-            <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto">
-                {Array.from({ length: 6 }).map((_, i) => (
-                    <g key={i}>
-                        <line x1={margin.left} y1={toSvgY(i * maxRevenue / 5)} x2={svgWidth - margin.right} y2={toSvgY(i * maxRevenue / 5)} stroke="#e2e8f0" />
-                        <text x={margin.left - 10} y={toSvgY(i * maxRevenue / 5) + 5} textAnchor="end" fill="#94a3b8" fontSize="10">{(i * maxRevenue / 5 / 1000000).toFixed(0)}tr</text>
-                    </g>
-                ))}
-                {data.map((d, i) => <text key={i} x={toSvgX(i)} y={svgHeight - margin.bottom + 15} textAnchor="middle" fill="#94a3b8" fontSize="10">{d.month}</text>)}
-                <polyline points={linePoints('previousYear')} fill="none" stroke="#a78bfa" strokeWidth="2" />
-                <polyline points={linePoints('currentYear')} fill="none" stroke="var(--color-primary-default)" strokeWidth="2" />
-            </svg>
-            <div className="flex justify-center gap-6 mt-2 text-sm text-textMuted">
-                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-[#a78bfa]"></div>Năm trước</div>
-                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-primary"></div>Năm nay</div>
+        <div className="admin-card h-full">
+            <div className="admin-card-header"><h3 className="admin-card-title">Doanh thu 30 ngày qua</h3></div>
+            <div className="admin-card-body p-4">
+                <div className="h-64 relative">
+                    <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="var(--color-primary-default)" stopOpacity="0.3"/>
+                                <stop offset="100%" stopColor="var(--color-primary-default)" stopOpacity="0"/>
+                            </linearGradient>
+                        </defs>
+                        <polygon points={areaPoints} fill="url(#revenueGradient)" />
+                        <polyline points={points} fill="none" stroke="var(--color-primary-default)" strokeWidth="0.5" />
+                    </svg>
+                     <div className="absolute bottom-0 left-0 w-full flex justify-between text-xs text-slate-400 px-1">
+                        <span>30 ngày trước</span>
+                        <span>Hôm nay</span>
+                    </div>
+                </div>
             </div>
         </div>
-      </div>
+    );
+};
+
+const TopCategoriesChart: React.FC<{ orders: Order[], products: Product[] }> = ({ orders, products }) => {
+    const categoryData = useMemo(() => {
+        const categoryRevenue: { [key: string]: number } = {};
+        const completedOrders = orders.filter(o => o.status === 'Hoàn thành');
+
+        for (const order of completedOrders) {
+            for (const item of order.items) {
+                const product = products.find(p => p.id === item.productId);
+                if (product && product.mainCategory) {
+                    categoryRevenue[product.mainCategory] = (categoryRevenue[product.mainCategory] || 0) + (item.price * item.quantity);
+                }
+            }
+        }
+
+        return Object.entries(categoryRevenue)
+            .map(([name, revenue]) => ({ name, revenue }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5); // Get top 5
+    }, [orders, products]);
+
+    if (categoryData.length === 0) return <div className="admin-card h-full flex items-center justify-center"><p className="text-sm text-textMuted">Chưa có dữ liệu doanh thu.</p></div>;
+
+    const maxRevenue = Math.max(...categoryData.map(c => c.revenue), 1);
+
+    return (
+        <div className="admin-card h-full">
+            <div className="admin-card-header"><h3 className="admin-card-title">Top Danh mục</h3></div>
+            <div className="admin-card-body p-4">
+                <div className="space-y-4">
+                    {categoryData.map(cat => (
+                        <div key={cat.name} className="text-sm">
+                            <div className="flex justify-between mb-1 items-center gap-2">
+                                <span className="font-medium text-textBase truncate" title={cat.name}>{cat.name}</span>
+                                <span className="font-semibold text-primary flex-shrink-0 text-xs">{cat.revenue.toLocaleString('vi-VN')}₫</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-primary h-2 rounded-full" style={{ width: `${(cat.revenue / maxRevenue) * 100}%` }}></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -152,20 +216,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
     }, [orders, products, users, adminNotifications]);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
             {/* Row 1: Main Stats */}
-            <DashboardStatCard title="Doanh thu Tháng này" value={`${dashboardData.revenue.value.toLocaleString('vi-VN')}₫`} change={dashboardData.revenue.change} icon="fa-wallet" colorClass="text-green-500" />
-            <DashboardStatCard title="Đơn hàng Mới" value={dashboardData.newOrders.value.toString()} change={dashboardData.newOrders.change} icon="fa-receipt" colorClass="text-blue-500" />
-            <DashboardStatCard title="Khách hàng Mới" value={dashboardData.newCustomers.value.toString()} change={dashboardData.newCustomers.change} icon="fa-user-plus" colorClass="text-indigo-500" />
-            <DashboardStatCard title="Tỷ lệ Chuyển đổi" value={`${dashboardData.conversionRate.value}%`} change={dashboardData.conversionRate.change} icon="fa-chart-line" colorClass="text-amber-500" />
+            <div className="xl:col-span-1"><DashboardStatCard title="Doanh thu Tháng này" value={`${dashboardData.revenue.value.toLocaleString('vi-VN')}₫`} change={dashboardData.revenue.change} icon="fa-wallet" colorClass="text-green-500" /></div>
+            <div className="xl:col-span-1"><DashboardStatCard title="Đơn hàng Mới" value={dashboardData.newOrders.value.toString()} change={dashboardData.newOrders.change} icon="fa-receipt" colorClass="text-blue-500" /></div>
+            <div className="xl:col-span-1"><DashboardStatCard title="Khách hàng Mới" value={dashboardData.newCustomers.value.toString()} change={dashboardData.newCustomers.change} icon="fa-user-plus" colorClass="text-indigo-500" /></div>
+            <div className="xl:col-span-1"><DashboardStatCard title="Tỷ lệ Chuyển đổi" value={`${dashboardData.conversionRate.value}%`} change={dashboardData.conversionRate.change} icon="fa-chart-line" colorClass="text-amber-500" /></div>
             
             {/* Row 2: Charts */}
-            <div className="lg:col-span-2 xl:col-span-4"><RevenueChart /></div>
+            <div className="xl:col-span-3"><RevenueTrendChart orders={orders} /></div>
+            <div className="xl:col-span-1"><TopCategoriesChart orders={orders} products={products} /></div>
             
             {/* Row 3: Lists & Charts */}
-            <div className="admin-card lg:col-span-2">
+            <div className="admin-card xl:col-span-4">
                 <div className="admin-card-header"><h3 className="admin-card-title">Đơn hàng cần xử lý</h3></div>
-                <div className="admin-card-body overflow-x-auto">
+                <div className="admin-card-body overflow-x-auto p-0">
                     <table className="admin-table w-full">
                         <thead><tr><th>Mã ĐH</th><th>Khách hàng</th><th>Tổng tiền</th><th>Trạng thái</th></tr></thead>
                         <tbody>
@@ -179,13 +244,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                             ))}
                         </tbody>
                     </table>
+                     {dashboardData.recentOrders.filter(o => o.status === 'Chờ xử lý').length === 0 && <p className="p-4 text-sm text-center text-slate-500">Không có đơn hàng nào cần xử lý.</p>}
                 </div>
             </div>
-            <div className="admin-card lg:col-span-2">
-                <div className="admin-card-header"><h3 className="admin-card-title">Top 5 Sản phẩm Bán chạy (Tháng)</h3></div>
-                <div className="admin-card-body"><TopProductsBarChart data={dashboardData.topProducts} /></div>
-            </div>
-
+            
             {/* Row 4: More Lists */}
             <div className="admin-card xl:col-span-2">
                 <div className="admin-card-header"><h3 className="admin-card-title">Sản phẩm sắp hết hàng</h3></div>
@@ -209,24 +271,5 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
         </div>
     );
 };
-
-const TopProductsBarChart: React.FC<{ data: { name: string; revenue: number }[] }> = ({ data }) => {
-    if (!data || data.length === 0) return <p className="text-sm text-textMuted">Chưa có dữ liệu.</p>;
-    const maxRevenue = Math.max(...data.map(p => p.revenue));
-    return (
-        <div className="space-y-4">
-            {data.map(product => (
-                <div key={product.name} className="text-sm">
-                    <div className="flex justify-between mb-1 items-center gap-2">
-                        <span className="font-medium text-textBase truncate" title={product.name}>{product.name}</span>
-                        <span className="font-semibold text-primary flex-shrink-0">{product.revenue.toLocaleString('vi-VN')}₫</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-primary h-2 rounded-full" style={{ width: `${(product.revenue / maxRevenue) * 100}%` }}></div></div>
-                </div>
-            ))}
-        </div>
-    );
-};
-
 
 export default DashboardView;
