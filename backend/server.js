@@ -16,8 +16,6 @@ app.use(express.json());
 
 // Serve static files from the React app's build directory
 const buildPath = path.join(__dirname, '../dist');
-console.log(`[DEBUG] Current directory: ${__dirname}`);
-console.log(`[DEBUG] Calculated build path: ${buildPath}`);
 app.use(express.static(buildPath));
 
 // =================================================================
@@ -151,11 +149,12 @@ app.post('/api/orders', async (req, res) => {
 // =================================================================
 // This serves the index.html file for any request that doesn't match an API route or a static file.
 app.get('*', (req, res) => {
-  const indexPath = path.join(buildPath, 'index.html');
-  console.log(`[DEBUG] Attempting to send file: ${indexPath}`);
-  res.sendFile(indexPath, (err) => {
+  res.sendFile(path.join(buildPath, 'index.html'), (err) => {
     if (err) {
-      console.error('[DEBUG] Error sending file:', err);
+      // The error is expected if the file doesn't exist, especially on first load.
+      // We can log it for debugging but it's not a critical server failure.
+      console.error("Error sending index.html:", err.message);
+      res.status(404).send('Frontend not found. Check build process.');
     }
   });
 });
