@@ -1,13 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
-import Card from '../components/ui/Card'; 
 import { 
-    Product, Article, User, StaffRole, Order, OrderStatus, AdminNotification, UserRole, 
-    FaqItem, DiscountCode, SiteThemeSettings, CustomMenuLink, SiteSettings,
-    MediaItem, ChatLogSession, FinancialTransaction, PayrollRecord, TransactionType, TransactionCategory
+    User, AdminNotification
 } from '../types';
-import * as Constants from '../constants.tsx';
+// Fix: Import AdminPermission from where it is defined.
 import { useAuth, AdminPermission } from '../contexts/AuthContext';
 import HRMProfileView from '../components/admin/HRMProfileView';
 import ProductManagementView from '../components/admin/ProductManagementView';
@@ -22,7 +19,7 @@ import MediaLibraryView from '../components/admin/MediaLibraryView';
 import NotificationsView from '../components/admin/NotificationsView';
 import HomepageManagementView from '../components/admin/HomepageManagementView';
 import FinancialManagementView from '../components/admin/FinancialManagementView';
-import { getOrders, getProducts } from '../services/localDataService';
+import DashboardView from '../components/admin/DashboardView'; // Import the new dashboard view
 
 type AdminView = 
   | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
@@ -31,7 +28,6 @@ type AdminView =
   | 'theme_settings' | 'menu_settings' | 'site_settings'
   | 'notifications_panel'
   | 'homepage_management'
-  // Placeholders
   | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard';
 
 interface MenuItemConfig {
@@ -46,7 +42,7 @@ interface MenuItemConfig {
 
 const AdminPage: React.FC = () => {
     const { 
-        currentUser, users: authUsers,
+        currentUser,
         adminNotifications, hasPermission,
     } = useAuth();
     
@@ -56,24 +52,6 @@ const AdminPage: React.FC = () => {
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
         content_management: true, sales_management: true, hrm_management: true,
     });
-    
-    // State for dashboard data only
-    const [dashboardProducts, setDashboardProducts] = useState<Product[]>([]);
-    const [dashboardOrders, setDashboardOrders] = useState<Order[]>([]);
-    const customerUsers = useMemo(() => authUsers.filter(u => u.role === 'customer'), [authUsers]);
-
-    const loadDashboardData = useCallback(async () => {
-        try {
-            setDashboardProducts(await getProducts());
-            setDashboardOrders(await getOrders());
-        } catch (error) {
-            console.error("Failed to load dashboard data from Local Storage:", error);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadDashboardData();
-    }, [loadDashboardData]);
 
     useEffect(() => {
         document.body.classList.add('admin-panel-active');
@@ -146,7 +124,7 @@ const AdminPage: React.FC = () => {
         }
 
         switch(activeView) {
-            case 'dashboard': return <DashboardView orders={dashboardOrders} products={dashboardProducts} customers={customerUsers} />;
+            case 'dashboard': return <DashboardView setActiveView={setActiveView as (view: string) => void} />;
             case 'products': return <ProductManagementView />;
             case 'articles': return <ArticleManagementView />;
             case 'orders': return <OrderManagementView />;
@@ -162,7 +140,6 @@ const AdminPage: React.FC = () => {
             case 'menu_settings':
                 return <SiteSettingsView initialTab={activeView} />;
             case 'notifications_panel': return <NotificationsView />;
-
             case 'accounting_dashboard': return <FinancialManagementView />;
             case 'analytics_dashboard': return <div className="admin-card"><div className="admin-card-body">Module Phân tích Báo cáo đang trong kế hoạch phát triển.</div></div>;
 
@@ -291,59 +268,5 @@ const AdminHeader: React.FC<{
         </div>
     </header>
 );
-
-const DashboardView: React.FC<{
-    orders: Order[];
-    products: Product[];
-    customers: User[];
-}> = ({ orders, products, customers }) => {
-    const totalRevenue = orders.filter(o => o.status === 'Hoàn thành').reduce((sum, o) => sum + o.totalAmount, 0);
-    const newOrdersCount = orders.filter(o => o.status === 'Chờ xử lý').length;
-    const lowStockCount = products.filter(p => p.stock > 0 && p.stock < 5).length;
-    
-    return (
-        <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <Card className="admin-card !shadow-sm"><div className="admin-card-body">
-                    <h4 className="text-sm text-admin-textSecondary">Tổng Doanh Thu</h4>
-                    <p className="text-2xl font-bold text-admin-textPrimary">{totalRevenue.toLocaleString('vi-VN')}₫</p>
-                </div></Card>
-                <Card className="admin-card !shadow-sm"><div className="admin-card-body">
-                    <h4 className="text-sm text-admin-textSecondary">Đơn Hàng Mới</h4>
-                    <p className="text-2xl font-bold text-admin-textPrimary">{newOrdersCount}</p>
-                </div></Card>
-                <Card className="admin-card !shadow-sm"><div className="admin-card-body">
-                    <h4 className="text-sm text-admin-textSecondary">Sản Phẩm Sắp Hết</h4>
-                    <p className="text-2xl font-bold text-admin-textPrimary">{lowStockCount}</p>
-                </div></Card>
-                <Card className="admin-card !shadow-sm"><div className="admin-card-body">
-                    <h4 className="text-sm text-admin-textSecondary">Tổng Khách Hàng</h4>
-                    <p className="text-2xl font-bold text-admin-textPrimary">{customers.length}</p>
-                </div></Card>
-            </div>
-            <Card className="admin-card">
-                <div className="admin-card-header"><h3 className="admin-card-title">5 Đơn hàng gần nhất</h3></div>
-                <div className="admin-card-body !p-0 overflow-x-auto">
-                    <table className="admin-table">
-                        <thead><tr><th>Mã ĐH</th><th>Khách hàng</th><th>Ngày</th><th>Tổng tiền</th><th>Trạng thái</th><th></th></tr></thead>
-                        <tbody>
-                            {orders.slice(0, 5).map(o => (
-                                <tr key={o.id}>
-                                    <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{o.id.slice(-6)}</span></td>
-                                    <td>{o.customerInfo.fullName}</td>
-                                    <td>{new Date(o.orderDate).toLocaleDateString('vi-VN')}</td>
-                                    <td className="font-semibold">{o.totalAmount.toLocaleString('vi-VN')}₫</td>
-                                    <td><span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">{o.status}</span></td>
-                                    <td><Button size="sm" variant="ghost">Chi tiết</Button></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
-        </div>
-    );
-};
-
 
 export default AdminPage;

@@ -98,7 +98,7 @@ const HomepageManagementView: React.FC = () => {
                 {renderSaveButton()}
             </div>
             <div className="admin-card-body">
-                <nav className="admin-tabs overflow-x-auto scrollbar-hide whitespace-nowrap">
+                <nav className="admin-tabs scrollbar-hide">
                     {TABS.map(tab => (
                         <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`admin-tab-button ${activeTab === tab.id ? 'active' : ''}`}>
                             {tab.label}

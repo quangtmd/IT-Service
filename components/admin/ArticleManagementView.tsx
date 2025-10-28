@@ -158,7 +158,7 @@ const ArticleFormModal: React.FC<ArticleFormModalProps> = ({ article, onClose, o
     return (
         <div className="admin-modal-overlay">
             <div className="admin-modal-panel">
-                <form onSubmit={handleSubmit} className="flex flex-col h-full">
+                <form onSubmit={handleSubmit} className="contents">
                     <div className="admin-modal-header">
                         <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Bài viết' : 'Thêm Bài viết Mới'}</h4>
                         <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>

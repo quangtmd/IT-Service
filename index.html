@@ -522,18 +522,46 @@
     }
     
     /* --- NEW ADMIN MODULES CSS --- */
-    .admin-tabs { border-bottom: 1px solid #e2e8f0; margin-bottom: 1.5rem; }
-    .admin-tab-button {
-      padding: 0.75rem 1.25rem; font-size: 0.875rem; font-weight: 500;
-      border-bottom: 2px solid transparent; color: #475569;
-      transition: all 0.2s;
+    .admin-tabs { 
+        display: flex;
+        border-bottom: 1px solid #e2e8f0; 
+        margin-bottom: 1.5rem; 
     }
-    .admin-tab-button:hover { background-color: #f8fafc; color: #1e293b; }
+    .admin-tab-button {
+      padding: 0.75rem 1rem; 
+      font-size: 0.875rem; 
+      font-weight: 500;
+      color: #475569;
+      transition: color 0.3s ease-in-out;
+      position: relative;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+    }
+    .admin-tab-button::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        width: 0;
+        margin: auto;
+        height: 2px;
+        background-color: var(--color-primary-default);
+        transition: width 0.3s ease;
+    }
+    .admin-tab-button:hover { 
+      color: #1e293b; 
+      background-color: transparent;
+    }
+    .admin-tab-button.active::after,
+    .admin-tab-button:hover::after {
+        width: 100%;
+    }
     .admin-tab-button.active {
       color: var(--color-primary-default);
-      border-bottom-color: var(--color-primary-default);
       font-weight: 600;
     }
+
     .key-value-editor .key-value-pair { display: flex; gap: 0.5rem; align-items: center; }
     
     .media-library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem; }

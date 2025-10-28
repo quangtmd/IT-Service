@@ -1,5 +1,4 @@
 import React, { ErrorInfo, ReactNode } from 'react';
-import * as Constants from './constants';
 
 interface Props {
   children: ReactNode;
@@ -12,13 +11,10 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      hasError: false,
-      errorMessage: '',
-    };
-  }
+  public state: State = {
+    hasError: false,
+    errorMessage: '',
+  };
 
   static getDerivedStateFromError(error: Error): State {
     // Update state so the next render will show the fallback UI.
@@ -34,6 +30,7 @@ class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      // Fix: Use 'this.props' to access component props in a class component.
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
@@ -68,6 +65,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
+    // Fix: Use 'this.props' to access component props in a class component.
     return this.props.children;
   }
 }

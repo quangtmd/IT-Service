@@ -4,6 +4,7 @@ import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadPreview from '../ui/ImageUploadPreview';
 import { getProducts, addProduct, updateProduct, deleteProduct } from '../../services/localDataService';
+import MediaLibraryView from './MediaLibraryView'; // Import the MediaLibraryView
 
 const PRODUCTS_PER_PAGE = 10;
 
@@ -203,6 +204,7 @@ interface ProductFormModalProps {
 const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, onSave }) => {
     const [formData, setFormData] = useState<Product>(product || {} as Product);
     const [subCategoryOptions, setSubCategoryOptions] = useState<SubCategoryInfo[]>([]);
+    const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
     useEffect(() => {
         if (formData.mainCategory) {
@@ -238,6 +240,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
         setFormData(prev => ({...prev, specifications: rest}));
     }
 
+    const handleImageSelectFromLibrary = (url: string) => {
+        setFormData(prev => ({
+            ...prev,
+            imageUrls: [...(prev.imageUrls || []), url]
+        }));
+        setIsMediaModalOpen(false);
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(formData);
@@ -246,7 +256,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
     return (
         <div className="admin-modal-overlay">
             <div className="admin-modal-panel">
-                <form onSubmit={handleSubmit} className="flex flex-col h-full">
+                <form onSubmit={handleSubmit} className="contents">
                     <div className="admin-modal-header">
                         <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Sản phẩm' : 'Thêm Sản phẩm Mới'}</h4>
                         <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
@@ -273,7 +283,16 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                         </div>
                         <div className="admin-form-group"><label htmlFor="description">Mô tả chi tiết</label><textarea name="description" id="description" rows={5} value={formData.description} onChange={handleChange}></textarea></div>
                         <div className="admin-form-group"><label htmlFor="shortDescription">Mô tả ngắn</label><textarea name="shortDescription" id="shortDescription" rows={2} value={formData.shortDescription || ''} onChange={handleChange}></textarea></div>
-                        <div className="admin-form-group"><label htmlFor="imageUrls">Link ảnh (mỗi link 1 dòng)</label><textarea name="imageUrls" id="imageUrls" rows={3} value={(formData.imageUrls || []).join('\n')} onChange={e => setFormData(p => ({...p, imageUrls: e.target.value.split('\n').map(t=>t.trim()).filter(Boolean)}))}></textarea></div>
+                        
+                        <div className="admin-form-group">
+                            <div className="flex justify-between items-center mb-1">
+                                <label htmlFor="imageUrls">Link ảnh (mỗi link 1 dòng)</label>
+                                <Button type="button" size="sm" variant="outline" onClick={() => setIsMediaModalOpen(true)}>
+                                    <i className="fas fa-photo-video mr-2"></i> Chọn từ Thư viện
+                                </Button>
+                            </div>
+                            <textarea name="imageUrls" id="imageUrls" rows={3} value={(formData.imageUrls || []).join('\n')} onChange={e => setFormData(p => ({...p, imageUrls: e.target.value.split('\n').map(t=>t.trim()).filter(Boolean)}))}></textarea>
+                        </div>
                         
                         {/* --- Pricing & Stock --- */}
                         <div className="admin-form-subsection-title">Giá & Kho hàng</div>
@@ -308,6 +327,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                         <Button type="submit" variant="primary">Lưu Sản phẩm</Button>
                     </div>
                 </form>
+                {isMediaModalOpen && (
+                    <MediaLibraryView
+                        isModalMode={true}
+                        onSelect={handleImageSelectFromLibrary}
+                        onClose={() => setIsMediaModalOpen(false)}
+                    />
+                )}
             </div>
         </div>
     );
