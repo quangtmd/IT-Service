@@ -16,6 +16,8 @@ app.use(express.json());
 
 // Serve static files from the React app's build directory
 const buildPath = path.join(__dirname, '../dist');
+console.log(`[DEBUG] Current directory: ${__dirname}`);
+console.log(`[DEBUG] Calculated build path: ${buildPath}`);
 app.use(express.static(buildPath));
 
 // =================================================================
@@ -149,7 +151,13 @@ app.post('/api/orders', async (req, res) => {
 // =================================================================
 // This serves the index.html file for any request that doesn't match an API route or a static file.
 app.get('*', (req, res) => {
-  res.sendFile(path.join(buildPath, 'index.html'));
+  const indexPath = path.join(buildPath, 'index.html');
+  console.log(`[DEBUG] Attempting to send file: ${indexPath}`);
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('[DEBUG] Error sending file:', err);
+    }
+  });
 });
 
 
