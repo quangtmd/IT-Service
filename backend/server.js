@@ -37,8 +37,9 @@ const testDbConnection = async () => {
     connection.release();
   } catch (error) {
     console.error("Error connecting to the MySQL database:", error);
-    // Exit the process if the database connection fails, as the app is useless without it.
-    process.exit(1); 
+    // DIAGNOSTIC: Temporarily disabled process.exit to keep the server running
+    // even if the DB connection fails. This helps debug deployment issues.
+    // process.exit(1); 
   }
 };
 
