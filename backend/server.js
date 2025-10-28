@@ -46,7 +46,42 @@ const testDbConnection = async () => {
 // 3. API ENDPOINTS
 // =================================================================
 
-// API routes go here...
+// GET all orders
+app.get('/api/orders', async (req, res) => {
+  let connection;
+  try {
+    connection = await dbPool.getConnection();
+    // Also fetch associated order items for each order
+    const [orders] = await connection.query('SELECT * FROM orders ORDER BY order_date DESC');
+    for (let order of orders) {
+        const [items] = await connection.query('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
+        order.items = items;
+    }
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ error: 'Failed to fetch orders.' });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// GET all chat logs
+app.get('/api/chat-logs', async (req, res) => {
+  let connection;
+  try {
+    connection = await dbPool.getConnection();
+    const [logs] = await connection.query('SELECT * FROM chat_logs ORDER BY start_time DESC');
+    res.status(200).json(logs);
+  } catch (error) {
+    console.error('Error fetching chat logs:', error);
+    res.status(500).json({ error: 'Failed to fetch chat logs.' });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+// POST a new chat log
 app.post('/api/chat-logs', async (req, res) => {
   const { sessionId, userName, userPhone, startTime, messages } = req.body;
   if (!sessionId || !userName || !userPhone || !startTime || !Array.isArray(messages)) {
@@ -71,6 +106,7 @@ app.post('/api/chat-logs', async (req, res) => {
   }
 });
 
+// POST a new order
 app.post('/api/orders', async (req, res) => {
   const { customerName, customerPhone, customerAddress, customerEmail, notes, totalAmount, items } = req.body;
   if (!customerName || !customerPhone || !customerAddress || totalAmount === undefined || !Array.isArray(items) || items.length === 0) {
