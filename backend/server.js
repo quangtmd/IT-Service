@@ -19,7 +19,7 @@ app.use(express.json());
 const dbPool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
-  password: 'Aa0908225224', // DIAGNOSTIC: Hardcoded password (Corrected)
+  password: process.env.DB_PASSWORD, // Reverted to environment variable
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
@@ -33,7 +33,8 @@ const testDbConnection = async () => {
     connection.release();
   } catch (error) {
     console.error("Error connecting to the MySQL database:", error);
-    // process.exit(1); // Temporarily disabled for diagnostics
+    // Re-enabled process.exit for production stability
+    process.exit(1); 
   }
 };
 
