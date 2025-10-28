@@ -19,7 +19,7 @@ app.use(express.json());
 const dbPool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
-  password: 'Aa0908225224', // FINAL DIAGNOSTIC: Hardcoded password with whitelisted IP
+  password: process.env.DB_PASSWORD, // Reverted to environment variable for security
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
