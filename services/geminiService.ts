@@ -1,5 +1,5 @@
 
-import { GoogleGenerativeAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // A singleton class to manage the Gemini AI instance
 class GeminiService {
