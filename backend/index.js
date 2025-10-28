@@ -14,7 +14,7 @@ const dbConfig = {
   host: process.env.DB_HOST || "194.59.164.14",
   user: process.env.DB_USER || "u573621538_IT",
   password: process.env.DB_PASSWORD || "A@a0908225224",
-  database: process.env.DB_DATABASE || "u573621538_Dich_vu_cong_nghe",
+  database: process.env.DB_DATABASE || "u573621538_Itservice",
 };
 
 let connection;
