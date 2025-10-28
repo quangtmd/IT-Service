@@ -11,19 +11,12 @@ const port = process.env.PORT || 10000;
 // =================================================================
 // 1. MIDDLEWARE SETUP
 // =================================================================
-app.use(cors()); 
-app.use(express.json()); 
+app.use(cors());
+app.use(express.json());
 
-// Serve CLIENT-FACING WEBSITE (from the 'public' folder)
-app.use(express.static(path.join(__dirname, '../public')));
-
-// Serve ADMIN PANEL (from the 'admin' folder inside 'backend')
-app.use('/admin', express.static(path.join(__dirname, 'admin')));
-
-// Redirect root of /admin to the login page
-app.get('/admin', (req, res) => {
-    res.redirect('/admin/login.html');
-});
+// Serve static files from the React app's build directory
+const buildPath = path.join(__dirname, '../dist');
+app.use(express.static(buildPath));
 
 // =================================================================
 // 2. MYSQL DATABASE CONNECTION SETUP
@@ -31,7 +24,7 @@ app.get('/admin', (req, res) => {
 const dbPool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD, 
+  password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
@@ -45,7 +38,7 @@ const testDbConnection = async () => {
     connection.release();
   } catch (error) {
     console.error("Error connecting to the MySQL database:", error);
-    process.exit(1); 
+    process.exit(1);
   }
 };
 
@@ -53,9 +46,7 @@ const testDbConnection = async () => {
 // 3. API ENDPOINTS
 // =================================================================
 
-// NOTE: The app.get('/', ...) has been removed. 
-// express.static will now handle serving the index.html from the 'public' folder.
-
+// API routes go here...
 app.post('/api/chat-logs', async (req, res) => {
   const { sessionId, userName, userPhone, startTime, messages } = req.body;
   if (!sessionId || !userName || !userPhone || !startTime || !Array.isArray(messages)) {
@@ -116,8 +107,18 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
+
 // =================================================================
-// 4. START THE SERVER
+// 4. "CATCH-ALL" HANDLER FOR REACT ROUTER
+// =================================================================
+// This serves the index.html file for any request that doesn't match an API route or a static file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
+});
+
+
+// =================================================================
+// 5. START THE SERVER
 // =================================================================
 const startServer = async () => {
   await testDbConnection();
