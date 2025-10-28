@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 10000;
@@ -13,13 +14,21 @@ const port = process.env.PORT || 10000;
 app.use(cors()); 
 app.use(express.json()); 
 
+// Serve static files for the admin panel
+app.use('/admin', express.static(path.join(__dirname, '../admin')));
+
+// Redirect root of /admin to the login page
+app.get('/admin', (req, res) => {
+    res.redirect('/admin/login.html');
+});
+
 // =================================================================
 // 2. MYSQL DATABASE CONNECTION SETUP
 // =================================================================
 const dbPool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD, // Reverted to environment variable for security
+  password: process.env.DB_PASSWORD, 
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
