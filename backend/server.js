@@ -61,16 +61,16 @@ CREATE TABLE orders (
 // Đọc thông tin kết nối từ các biến môi trường.
 // Các biến môi trường này cần được thiết lập trên server hosting của bạn (ví dụ: Hostinger, Railway).
 const dbConfig = {
-  host: process.env.MYSQLHOST,
-  user: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: process.env.MYSQLDATABASE,
+  host: process.env.MYSQLHOST || process.env.DB_HOST,
+  user: process.env.MYSQLUSER || process.env.DB_USER,
+  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
+  database: process.env.MYSQLDATABASE || process.env.DB_NAME,
   port: process.env.MYSQLPORT || 3306
 };
 
 // Kiểm tra các biến môi trường cần thiết
 if (!dbConfig.host || !dbConfig.user || !dbConfig.database) {
-    console.error('FATAL ERROR: Database configuration is missing. Please set MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, and MYSQLDATABASE environment variables.');
+    console.error('FATAL ERROR: Database configuration is missing. Please set MYSQLHOST/DB_HOST, MYSQLUSER/DB_USER, MYSQLPASSWORD/DB_PASSWORD, and MYSQLDATABASE/DB_NAME environment variables.');
     process.exit(1);
 }
 
@@ -156,21 +156,6 @@ const MOCK_SERVICES = [
 
 app.get('/api/products', async (req, res) => {
   try {
-    const getCategoryNameFromSlug_Backend = (slug, type) => {
-        if (type === 'main') {
-            const mainCat = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
-            return mainCat ? mainCat.name : null;
-        }
-        if (type === 'sub') {
-            for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
-                const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
-                if (subCat) return subCat.name;
-            }
-            return null;
-        }
-        return null;
-    };
-
     const { q, mainCategory, subCategory, brand, status, tags, page = 1, limit = 12 } = req.query;
 
     let whereClauses = ["isVisible = TRUE"];
@@ -181,20 +166,37 @@ app.get('/api/products', async (req, res) => {
         const searchTerm = `%${q}%`;
         params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
+    
     if (mainCategory) {
-        const mainCategoryName = getCategoryNameFromSlug_Backend(mainCategory, 'main');
-        if (mainCategoryName) {
+        const mainCatInfo = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === mainCategory || c.name === mainCategory);
+        if (mainCatInfo) {
             whereClauses.push("mainCategory = ?");
-            params.push(mainCategoryName);
+            params.push(mainCatInfo.name);
+
+            // Nested subcategory check for accuracy
+            if (subCategory) {
+                const subCatInfo = mainCatInfo.subCategories.find(sc => sc.slug === subCategory || sc.name === subCategory);
+                if (subCatInfo) {
+                    whereClauses.push("subCategory = ?");
+                    params.push(subCatInfo.name);
+                }
+            }
         }
-    }
-    if (subCategory) {
-        const subCategoryName = getCategoryNameFromSlug_Backend(subCategory, 'sub');
-        if (subCategoryName) {
+    } else if (subCategory) { // Handle subcategory search without main category
+        let subCatName = null;
+        for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
+            const subCatInfo = mainCat.subCategories.find(sc => sc.slug === subCategory || sc.name === subCategory);
+            if (subCatInfo) {
+                subCatName = subCatInfo.name;
+                break;
+            }
+        }
+        if (subCatName) {
             whereClauses.push("subCategory = ?");
-            params.push(subCategoryName);
+            params.push(subCatName);
         }
     }
+
     if (brand) {
         whereClauses.push("brand = ?");
         params.push(brand);
@@ -204,8 +206,8 @@ app.get('/api/products', async (req, res) => {
         params.push(status);
     }
     if (tags) {
-      whereClauses.push("JSON_CONTAINS(tags, JSON_QUOTE(?))");
-      params.push(tags);
+      whereClauses.push("tags LIKE ?");
+      params.push(`%"${tags}"%`);
     }
 
     const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
@@ -235,17 +237,28 @@ app.get('/api/products', async (req, res) => {
 
 app.get('/api/products/featured', async (req, res) => {
     try {
-        const [rows] = await pool.query(`
-            (SELECT * FROM products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, '["Bán chạy"]'))
-            UNION
-            (SELECT * FROM products WHERE isVisible = TRUE AND originalPrice IS NOT NULL AND id NOT IN (SELECT id FROM products WHERE JSON_CONTAINS(tags, '["Bán chạy"]')))
-            LIMIT 4
-        `);
+        // Using LIKE instead of JSON_CONTAINS for robustness, in case the 'tags' column is not a valid JSON type in the database.
+        // This is less efficient but safer against potential server crashes from SQL errors.
+        const query = `
+            SELECT * FROM products
+            WHERE isVisible = TRUE
+            AND (
+                tags LIKE ? 
+                OR (originalPrice IS NOT NULL AND price < originalPrice)
+            )
+            ORDER BY id DESC
+            LIMIT 8
+        `;
+        const params = ['%"Bán chạy"%'];
+        
+        const [rows] = await pool.query(query, params);
+        
         const products = rows.map(parseJsonFields);
+
         res.json(products);
     } catch (err) {
-        console.error("Lỗi khi truy vấn sản phẩm nổi bật:", err);
-        res.status(500).json({ error: 'Lỗi server.' });
+        console.error("Lỗi khi truy vấn sản phẩm nổi bật (v4 - using LIKE):", err);
+        res.status(500).json({ error: 'Lỗi server khi lấy sản phẩm nổi bật.' });
     }
 });
 

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Product } from '../../types';
 import ProductCard from './ProductCard';
 import Button from '../ui/Button';
-import { getProducts } from '../../services/localDataService';
+import { getFilteredProducts, getFeaturedProducts } from '../../services/localDataService';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 
 interface ProductCarouselSectionProps {
@@ -25,27 +25,35 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
 }) => {
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const loadProducts = async () => {
             setIsLoading(true);
+            setError(null);
             try {
-                const allProducts = await getProducts();
-                let filteredProducts;
+                let fetchedProducts: Product[];
 
-                if (filterTag) {
-                    filteredProducts = allProducts.filter(p => Array.isArray(p.tags) && p.tags.includes(filterTag) && p.isVisible !== false);
-                } else if (categoryName) {
-                    filteredProducts = allProducts.filter(p => (p.mainCategory === categoryName || p.subCategory === categoryName) && p.isVisible !== false);
+                if (filterTag === 'Bán chạy') {
+                    // Use the dedicated, optimized endpoint for featured products
+                    fetchedProducts = await getFeaturedProducts();
                 } else {
-                    filteredProducts = allProducts.filter(p => p.isVisible !== false);
+                    // Use backend filtering for other cases
+                    const filters = {
+                        tags: filterTag || null,
+                        mainCategory: categoryName || null,
+                    };
+                    const response = await getFilteredProducts(filters, 1, 8);
+                    fetchedProducts = response.products;
                 }
+                
+                setProducts(fetchedProducts);
 
-                setProducts(filteredProducts.slice(0, 8)); // Load more products for carousel
             } catch (err) {
                 console.error(`Error loading products for carousel "${title}":`, err);
+                setError('Lỗi mạng hoặc server không phản hồi');
             } finally {
                 setIsLoading(false);
             }
@@ -62,6 +70,28 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
             });
         }
     };
+    
+    if (error) {
+        return (
+             <section ref={ref}>
+                <div className="container mx-auto px-4">
+                    <div className={`${bgColor} rounded-t-lg shadow-md`}>
+                       <div className="flex justify-between items-center py-4 px-5">
+                           <h2 className={`text-2xl md:text-3xl font-extrabold font-condensed ${textColor}`}>{title}</h2>
+                       </div>
+                   </div>
+                   <div className="bg-white p-6 rounded-b-lg shadow-md border-x border-b border-borderDefault">
+                       <div className="text-center py-10 text-danger-text">
+                           <i className="fas fa-exclamation-triangle text-3xl mb-3"></i>
+                           <p className="font-semibold">Lỗi tải sản phẩm</p>
+                           <p className="text-sm">{`Không thể tải dữ liệu cho mục "${title}".`}</p>
+                           <p className="text-xs mt-1 text-textSubtle">({error})</p>
+                       </div>
+                   </div>
+               </div>
+           </section>
+        );
+    }
 
     if (products.length === 0 && !isLoading) {
         return null;
