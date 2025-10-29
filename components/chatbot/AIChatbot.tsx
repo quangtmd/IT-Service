@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChatMessage as ChatMessageType, GroundingChunk, SiteSettings, ChatLogSession } from '../../types';
+import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product } from '../../types';
 import ChatMessage from './ChatMessage';
 import Button from '../ui/Button';
-import { startChat, sendMessageToChatStream } from '../../services/geminiService'; // Correctly import named functions
-import { Chat, GenerateContentResponse } from '@google/generative-ai';
-import * as Constants from '../../constants';
+import geminiService from '../../services/geminiService';
+import { Chat, GenerateContentResponse } from '@google/genai';
+import * as Constants from '../../constants.tsx'; 
 
 interface AIChatbotProps {
   isOpen: boolean;
@@ -19,6 +18,8 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatSession, setChatSession] = useState<Chat | null>(null);
+  const [currentBotMessageId, setCurrentBotMessageId] = useState<string | null>(null);
+  const [currentGroundingChunks, setCurrentGroundingChunks] = useState<GroundingChunk[] | undefined>(undefined);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
 
   const [userName, setUserName] = useState('');
@@ -27,88 +28,103 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [userInfoError, setUserInfoError] = useState<string | null>(null);
   const [currentChatLogSession, setCurrentChatLogSession] = useState<ChatLogSession | null>(null);
 
+
   const loadSiteSettings = useCallback(() => {
     const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
-    setSiteSettings(storedSettingsRaw ? JSON.parse(storedSettingsRaw) : Constants.INITIAL_SITE_SETTINGS);
+    if (storedSettingsRaw) {
+      setSiteSettings(JSON.parse(storedSettingsRaw));
+    } else {
+      setSiteSettings(Constants.INITIAL_SITE_SETTINGS);
+    }
   }, []);
 
   useEffect(() => {
     loadSiteSettings();
     window.addEventListener('siteSettingsUpdated', loadSiteSettings);
-    return () => window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
+    return () => {
+      window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
+    };
   }, [loadSiteSettings]);
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  };
 
+  useEffect(scrollToBottom, [messages]);
+  
   const initializeChat = useCallback(async () => {
-    if (!isUserInfoSubmitted || !isOpen || chatSession) return;
+    if (!isUserInfoSubmitted || !isOpen || chatSession) return; 
 
     setIsLoading(true);
     setError(null);
-    setMessages([]); // Clear previous messages
-
     try {
-      const newChatSession = await startChat(siteSettings); 
+      // This call will now throw a specific, catchable error if the API key is missing.
+      const newChatSession = geminiService.startChat(siteSettings); 
       setChatSession(newChatSession);
-      
       const initialBotGreeting = `Xin chào ${userName}! Tôi là trợ lý AI của ${siteSettings.companyName}. Tôi có thể giúp gì cho bạn?`;
-      const initialMsg: ChatMessageType = { 
-        id: `bot-${Date.now()}`,
+      setMessages([{ 
+        id: Date.now().toString(), 
         text: initialBotGreeting,
         sender: 'bot', 
         timestamp: new Date() 
-      };
-      setMessages([initialMsg]);
+      }]);
       
       const newLogSession: ChatLogSession = {
         id: `chat-${Date.now()}`,
         userName: userName,
         userPhone: userPhone,
         startTime: new Date().toISOString(),
-        messages: [initialMsg]
+        messages: [{ 
+            id: Date.now().toString(), 
+            text: initialBotGreeting,
+            sender: 'bot', 
+            timestamp: new Date() 
+          }]
       };
       setCurrentChatLogSession(newLogSession);
 
     } catch (err) {
+      // Gracefully handle the error inside the component instead of crashing.
       console.error("Failed to initialize chat:", err);
       const errorMessage = err instanceof Error ? err.message : "Lỗi không xác định.";
-      const displayError = errorMessage.includes("API key") || errorMessage.includes("initialization")
+      const displayError = errorMessage.includes("API Key") 
         ? Constants.API_KEY_ERROR_MESSAGE 
         : "Không thể khởi tạo chatbot. Vui lòng thử lại sau.";
       setError(displayError);
+      setMessages([{
+        id: Date.now().toString(),
+        text: `Lỗi: ${displayError}`,
+        sender: 'system',
+        timestamp: new Date()
+      }]);
     } finally {
       setIsLoading(false);
     }
   }, [isOpen, isUserInfoSubmitted, chatSession, siteSettings, userName, userPhone]);
 
+
   useEffect(() => {
-    if (isOpen && isUserInfoSubmitted && !chatSession) {
+    if (isOpen && isUserInfoSubmitted && !chatSession) { 
       initializeChat();
     }
   }, [isOpen, isUserInfoSubmitted, chatSession, initializeChat]);
 
-  const saveChatLogToApi = useCallback(async (logData: ChatLogSession) => {
-      try {
-        await fetch('/api/chat-logs', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                sessionId: logData.id,
-                userName: logData.userName,
-                userPhone: logData.userPhone,
-                startTime: logData.startTime,
-                messages: logData.messages,
-            }),
-        });
-      } catch (error) {
-          console.error("Failed to save chat log to API:", error);
-      }
-  }, []);
+  const saveChatLog = useCallback(() => {
+    if (currentChatLogSession && currentChatLogSession.messages.length > 0) {
+      const existingLogsRaw = localStorage.getItem(Constants.CHAT_LOGS_STORAGE_KEY);
+      const existingLogs: ChatLogSession[] = existingLogsRaw ? JSON.parse(existingLogsRaw) : [];
+      // Add the current session to the beginning, ensuring it's the most recent
+      const updatedLogs = [currentChatLogSession, ...existingLogs.filter(log => log.id !== currentChatLogSession.id)].slice(0, 50);
+      localStorage.setItem(Constants.CHAT_LOGS_STORAGE_KEY, JSON.stringify(updatedLogs));
+    }
+  }, [currentChatLogSession]);
 
+  useEffect(() => {
+    if (currentChatLogSession) {
+      saveChatLog();
+    }
+  }, [messages, currentChatLogSession, saveChatLog]);
+  
   const handleUserInfoSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setUserInfoError(null);
@@ -123,52 +139,68 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     setIsUserInfoSubmitted(true);
   };
 
+
   const handleSendMessage = async (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
-    if (!input.trim() || isLoading || !chatSession) return;
+    if (!input.trim() || isLoading || !chatSession || !isUserInfoSubmitted) return;
 
+    const userMessageText = input;
     const userMessage: ChatMessageType = {
       id: `user-${Date.now()}`,
-      text: input,
+      text: userMessageText,
       sender: 'user',
       timestamp: new Date(),
     };
-    
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    setMessages((prev) => [...prev, userMessage]);
+    setCurrentChatLogSession(prevLog => prevLog ? {...prevLog, messages: [...prevLog.messages, userMessage]} : null);
     setInput('');
     setIsLoading(true);
     setError(null);
+    setCurrentGroundingChunks(undefined);
 
-    let botResponseText = '';
     const botMessageId = `bot-${Date.now()}`;
-    const botMessage: ChatMessageType = { id: botMessageId, text: '...', sender: 'bot', timestamp: new Date() };
-    setMessages(prev => [...prev, botMessage]);
-
+    const initialBotMessage: ChatMessageType = { id: botMessageId, text: '', sender: 'bot', timestamp: new Date() };
+    setMessages((prev) => [...prev, initialBotMessage]);
+    setCurrentChatLogSession(prevLog => prevLog ? {...prevLog, messages: [...prevLog.messages, initialBotMessage]} : null);
+    
     try {
-      const stream = await sendMessageToChatStream(userMessage.text, chatSession);
+      const stream: AsyncIterable<GenerateContentResponse> = await geminiService.sendMessageToChatStream(userMessageText, chatSession);
+      let currentText = '';
       for await (const chunk of stream) {
-        botResponseText += chunk.text();
-        setMessages(prev => prev.map(msg => 
-            msg.id === botMessageId ? { ...msg, text: botResponseText } : msg
-        ));
+        currentText += chunk.text; 
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg.id === botMessageId ? { ...msg, text: currentText } : msg
+          )
+        );
+        setCurrentChatLogSession(prevLog => {
+            if (!prevLog) return null;
+            const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: currentText } : m);
+            return {...prevLog, messages: updatedMessages};
+        });
+
+         if (chunk.candidates?.[0]?.groundingMetadata?.groundingChunks) {
+          setCurrentGroundingChunks(chunk.candidates[0].groundingMetadata.groundingChunks as GroundingChunk[]);
+        }
       }
     } catch (err) {
       console.error("Error sending message:", err);
-      const errorText = err instanceof Error ? err.message : "Đã xảy ra lỗi.";
-      setMessages(prev => prev.map(msg => 
+      const errorText = err instanceof Error ? err.message : "Đã xảy ra lỗi khi gửi tin nhắn.";
+      setError(errorText);
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
           msg.id === botMessageId ? { ...msg, text: `Lỗi: ${errorText}`, sender: 'system' } : msg
-      ));
+        )
+      );
+      setCurrentChatLogSession(prevLog => {
+        if (!prevLog) return null;
+        const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: `Lỗi: ${errorText}`, sender: 'system' as const } : m);
+        return {...prevLog, messages: updatedMessages};
+      });
     } finally {
       setIsLoading(false);
-      // Update log session after bot has finished responding
-      setCurrentChatLogSession(prevLog => {
-          if (!prevLog) return null;
-          const finalBotMessage: ChatMessageType = { id: botMessageId, text: botResponseText, sender: 'bot', timestamp: new Date() };
-          const newLog = { ...prevLog, messages: [...prevLog.messages, userMessage, finalBotMessage] };
-          saveChatLogToApi(newLog); // Save the complete log to API
-          return newLog;
-      });
+      setCurrentBotMessageId(null); 
+      saveChatLog(); 
     }
   };
 
@@ -227,13 +259,10 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
         <>
           <div className="flex-grow p-4 overflow-y-auto bg-bgCanvas" aria-live="polite">
             {messages.map((msg) => (
-              <ChatMessage key={msg.id} message={msg} />
+              <ChatMessage key={msg.id} message={msg} groundingChunks={msg.id === currentBotMessageId ? currentGroundingChunks : undefined} />
             ))}
             <div ref={messagesEndRef} />
-            {isLoading && messages[messages.length - 1]?.sender === 'user' && (
-                <ChatMessage message={{id: 'thinking', text: '...', sender: 'bot', timestamp: new Date()}} />
-            )}
-            {error && <div className="text-center text-danger-text text-sm p-2 bg-danger-bg rounded my-2">{error}</div>}
+            {error && <div className="text-danger-text text-sm p-2 bg-danger-bg rounded border border-danger-border">{error}</div>}
           </div>
 
           <form onSubmit={handleSendMessage} className="p-4 border-t border-borderDefault bg-bgBase">
