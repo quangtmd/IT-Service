@@ -15,7 +15,7 @@ let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
 
 const getAiClient = (): GoogleGenAI | null => {
-  // Fix: Use process.env.API_KEY as per the coding guidelines.
+  // Fix: Use process.env.API_KEY as per guidelines. It's assumed to be available in the execution context.
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
     if (!aiInstance) { // Log this warning only once to avoid spamming the console

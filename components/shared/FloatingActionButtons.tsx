@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import * as Constants from '../../constants';
+import * as Constants from '../../constants.tsx';
 import { SiteSettings } from '../../types';
 import AIChatbot from '../chatbot/AIChatbot';
 
@@ -8,7 +8,7 @@ const FloatingActionButtons: React.FC = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     
     // This check determines if the AI feature is available.
-    // Fix: Use process.env.API_KEY as per the coding guidelines.
+    // Fix: Use process.env.API_KEY as per guidelines. It's assumed to be available in the execution context.
     const isAiEnabled = !!process.env.API_KEY;
 
     const loadSiteSettings = useCallback(() => {

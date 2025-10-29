@@ -59,7 +59,7 @@ const PCBuilderPage: React.FC = () => {
   const getAIRecommendation = async () => {
     // This check is now secondary; the primary error handling is in the service.
     // However, it provides a fast failure path without a service call.
-    // Fix: Use process.env.API_KEY as per the coding guidelines.
+    // Fix: Use process.env.API_KEY as per guidelines. It's assumed to be available in the execution context.
     if (!process.env.API_KEY) {
       setError(Constants.API_KEY_ERROR_MESSAGE);
       return;
@@ -217,13 +217,13 @@ const PCBuilderPage: React.FC = () => {
                 step="1000000"
               />
             </div>
-            {/* Fix: Use process.env.API_KEY as per the coding guidelines. */}
+            {/* Fix: Use process.env.API_KEY as per guidelines. It's assumed to be available in the execution context. */}
             <Button onClick={getAIRecommendation} isLoading={isLoading} className="w-full" size="lg" disabled={!process.env.API_KEY}>
               <i className="fas fa-robot mr-2"></i> AI Đề Xuất Cấu Hình
             </Button>
             {error && <p className="text-sm text-danger-text mt-2">{error}</p>}
             {aiRecommendation?.error && !error && <p className="text-sm text-warning-text mt-2">{aiRecommendation.error}</p>}
-            {/* Fix: Use process.env.API_KEY as per the coding guidelines. */}
+            {/* Fix: Use process.env.API_KEY as per guidelines. It's assumed to be available in the execution context. */}
             {!process.env.API_KEY && <p className="text-xs text-warning-text mt-1">API_KEY chưa được cấu hình. Tính năng AI sẽ không hoạt động.</p>}
           </Card>
 
