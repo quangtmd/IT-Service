@@ -8,7 +8,7 @@ const FloatingActionButtons: React.FC = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     
     // This check determines if the AI feature is available.
-    const isAiEnabled = process.env.API_KEY && process.env.API_KEY !== 'undefined';
+    const isAiEnabled = import.meta.env.VITE_GEMINI_API_KEY && import.meta.env.VITE_GEMINI_API_KEY !== 'undefined';
 
     const loadSiteSettings = useCallback(() => {
         const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
