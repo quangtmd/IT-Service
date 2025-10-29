@@ -1,7 +1,4 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageTestimonialItem } from '../../../types';
 
@@ -11,12 +8,9 @@ interface TestimonialCardProps {
 }
 
 const TestimonialCardIts: React.FC<TestimonialCardProps> = ({ testimonial, index }) => {
-  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   return (
     <div 
-        ref={ref} 
-        className={`testimonial-card-its p-6 md:p-8 animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col`}
-        style={{ animationDelay: `${index * 150}ms` }}
+        className="testimonial-card-its p-6 md:p-8 flex flex-col"
     >
         <i className="fas fa-quote-right quote-icon"></i>
         <div className="flex items-center mb-4">
@@ -40,7 +34,6 @@ const TestimonialCardIts: React.FC<TestimonialCardProps> = ({ testimonial, index
 
 const HomeTestimonialsIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-  const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   
   const testimonialsConfig = settings.homepageTestimonials;
 
@@ -66,9 +59,9 @@ const HomeTestimonialsIts: React.FC = () => {
   const sortedTestimonials = [...testimonialsConfig.testimonials].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="home-section bg-bgCanvas">
+    <section className="bg-bgCanvas">
       <div className="container mx-auto px-4">
-        <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
+        <div className="home-section-title-area">
           {testimonialsConfig.preTitle && (
             <span className="home-section-pretitle">
               {testimonialsConfig.sectionTitleIconUrl && <img src={testimonialsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}

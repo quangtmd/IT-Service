@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Product } from '../../types';
 import ProductCard from './ProductCard';
 import Button from '../ui/Button';
-import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 import { getProducts } from '../../services/localDataService';
 
 interface ProductCarouselSectionProps {
@@ -21,7 +20,6 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
     bgColor = 'bg-primary', 
     textColor = 'text-white' 
 }) => {
-    const [sectionRef, isSectionVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -49,8 +47,7 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
 
     return (
         <section 
-            ref={sectionRef} 
-            className={`py-8 md:py-12 bg-bgCanvas animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}
+            className="bg-bgCanvas"
         >
             <div className="container mx-auto px-4">
                 <div className={`${bgColor} rounded-t-lg shadow-md`}>
@@ -65,11 +62,9 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
                 </div>
                 <div className="bg-white p-6 rounded-b-lg shadow-md border-x border-b border-borderDefault">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                        {products.map((product, index) => (
+                        {products.map((product) => (
                             <div
                                 key={product.id}
-                                className={`animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`} 
-                                style={{ animationDelay: `${index * 100 + 100}ms` }} 
                             >
                                 <ProductCard product={product} />
                             </div>

@@ -17,7 +17,7 @@ import HomeCategoryShowcase from '../components/home/HomeCategoryShowcase';
 
 const HomePage: React.FC = () => {
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-8 md:gap-12">
       {/* 1. Banner slideshow (khuyến mãi, dịch vụ IT, sản phẩm mới) */}
       <HomeBannerIts />
 

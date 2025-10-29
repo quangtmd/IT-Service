@@ -1,17 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageServiceBenefit } from '../../../types';
 
 const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number }> = ({ item, index }) => {
-  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
-
   return (
     <div
-        ref={ref}
-        className={`modern-card p-6 md:p-8 group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col text-center items-center relative h-full`}
-        style={{ animationDelay: `${index * 100}ms` }}
+        className="modern-card p-6 md:p-8 group flex flex-col text-center items-center relative h-full"
     >
         <div className="modern-card-icon-wrapper">
           <i className={`${item.iconClass || 'fas fa-check-circle'} modern-card-icon`}></i>
@@ -33,7 +28,6 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
 
 const HomeServicesBenefitsIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-  const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
 
   const servicesBenefitsConfig = settings.homepageServicesBenefits;
 
@@ -59,9 +53,9 @@ const HomeServicesBenefitsIts: React.FC = () => {
   const sortedBenefits = [...servicesBenefitsConfig.benefits].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="home-section bg-bgCanvas">
+    <section className="bg-bgCanvas">
       <div className="container mx-auto px-4">
-        <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
+        <div className="home-section-title-area">
           {servicesBenefitsConfig.preTitle && (
             <span className="home-section-pretitle">
               {servicesBenefitsConfig.sectionTitleIconUrl &&

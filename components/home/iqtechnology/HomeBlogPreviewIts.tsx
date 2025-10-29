@@ -1,21 +1,16 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { MOCK_ARTICLES } from '../../../data/mockData';
 import { SiteSettings, Article } from '../../../types';
 import Button from '../../ui/Button'; // Import Button
 
 const BlogItemCard: React.FC<{article: Article, index: number}> = ({article, index}) => {
-    const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
     const placeholderImg = article.imageUrl || `https://picsum.photos/seed/modernTechBlog${article.id.replace(/\D/g,'') || index}/400/260`;
 
     return (
         <div
-            ref={ref}
-            className={`modern-card group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col`}
-            style={{animationDelay: `${index * 100}ms`}}
+            className="modern-card group flex flex-col"
         >
             <Link to={`/article/${article.id}`} className="block aspect-[16/10] overflow-hidden rounded-t-xl">
                 <img src={placeholderImg} alt={article.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -48,11 +43,10 @@ interface HomeBlogPreviewItsProps {
 
 const HomeBlogPreviewIts: React.FC<HomeBlogPreviewItsProps> = ({ categoryFilter, maxArticles: maxArticlesProp }) => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-  const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   const [loadedArticles, setLoadedArticles] = useState<Article[]>([]);
 
   const blogConfig = settings.homepageBlogPreview;
-  const ARTICLES_STORAGE_KEY = 'adminArticles_v1';
+  const ARTICLES_STORAGE_KEY = 'adminArticles_v1_local';
   const DEFAULT_MAX_ARTICLES = 3; // Show 3 articles in a 3-column grid
 
   const loadContent = useCallback(() => {
@@ -103,14 +97,14 @@ const HomeBlogPreviewIts: React.FC<HomeBlogPreviewItsProps> = ({ categoryFilter,
 
 
   if (!blogConfig.enabled && !categoryFilter) return null;
-  if (loadedArticles.length === 0) return <p className="text-center text-textMuted py-8 home-section">No recent articles to display.</p>;
+  if (loadedArticles.length === 0) return <p className="text-center text-textMuted py-8">No recent articles to display.</p>;
 
 
   return (
-    <section className="home-section bg-bgMuted">
+    <section className="bg-bgMuted">
       <div className="container mx-auto px-4">
         {!categoryFilter && (
-          <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
+          <div className="home-section-title-area">
             {blogConfig.preTitle && (
                 <span className="home-section-pretitle">
                     {blogConfig.sectionTitleIconUrl && <img src={blogConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
@@ -134,7 +128,7 @@ const HomeBlogPreviewIts: React.FC<HomeBlogPreviewItsProps> = ({ categoryFilter,
         </div>
 
         {!categoryFilter && (
-            <div className={`text-center mt-12 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`} style={{animationDelay: '0.3s'}}>
+            <div className="text-center mt-12">
                 <Link to="/blog">
                 <Button variant="primary" size="lg" className="px-10 py-3.5 text-base shadow-lg hover:shadow-primary/40">
                     Visit Our Blog <i className="fas fa-arrow-right ml-2 text-sm"></i>

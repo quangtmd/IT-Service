@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { MOCK_SERVICES } from '../../../data/mockData';
 import { SiteSettings, Service } from '../../../types';
@@ -13,14 +11,11 @@ interface ProjectItemProps {
 }
 
 const ProjectCardIts: React.FC<ProjectItemProps> = ({ item, index }) => {
-    const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
     const placeholderImg = item.imageUrl || `https://picsum.photos/seed/modernService${item.id.replace(/\D/g,'') || index}/500/350`;
 
     return (
         <div
-            ref={ref}
-            className={`modern-card group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col relative`}
-            style={{ animationDelay: `${index * 100}ms` }}
+            className="modern-card group flex flex-col relative"
         >
             <Link to={`/service/${item.slug || item.id}`} className="block aspect-video overflow-hidden rounded-t-lg">
                 <img src={placeholderImg} alt={item.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -49,7 +44,6 @@ const ProjectCardIts: React.FC<ProjectItemProps> = ({ item, index }) => {
 
 const HomeFeaturedProjectsIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-  const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
 
   const projectsConfig = settings.homepageFeaturedProjects;
 
@@ -77,9 +71,9 @@ const HomeFeaturedProjectsIts: React.FC = () => {
     .filter(Boolean) as Service[];
 
   return (
-    <section className="home-section bg-bgCanvas">
+    <section className="bg-bgCanvas">
       <div className="container mx-auto px-4">
-        <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
+        <div className="home-section-title-area">
             {projectsConfig.preTitle && (
               <span className="home-section-pretitle">
                 {projectsConfig.sectionTitleIconUrl && <img src={projectsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
@@ -105,7 +99,7 @@ const HomeFeaturedProjectsIts: React.FC = () => {
         )}
 
         {projectsConfig.buttonLink && projectsConfig.buttonText && featuredItems.length > 0 && (
-            <div className={`text-center mt-12 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`} style={{animationDelay: '0.3s'}}>
+            <div className="text-center mt-12">
                 <Link to={projectsConfig.buttonLink}>
                 <Button variant="primary" size="lg" className="px-10 py-3.5 text-base shadow-lg hover:shadow-primary/40">
                     {projectsConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>

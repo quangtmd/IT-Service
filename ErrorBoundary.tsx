@@ -11,29 +11,26 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  // Fix: Replaced class property state initialization with a constructor to ensure `this.props` is correctly set up, which resolves the TypeScript error about 'props' not existing.
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      hasError: false,
-      errorMessage: '',
-    };
-  }
+  public state: State = {
+    hasError: false,
+    errorMessage: '',
+  };
 
-  static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): State {
     // Update state so the next render will show the fallback UI.
     // We only store the safe, serializable message string.
     const safeErrorMessage = `${error.name}: ${error.message}`;
     return { hasError: true, errorMessage: safeErrorMessage };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // You can also log the error to an error reporting service
     console.error("ErrorBoundary caught an error:", error, errorInfo.componentStack);
   }
 
-  render() {
+  public render() {
     if (this.state.hasError) {
+      // Fix: In a class component, props must be accessed via `this.props`.
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
@@ -68,6 +65,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
+    // Fix: In a class component, children are accessed via `this.props.children`.
     return this.props.children;
   }
 }

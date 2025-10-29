@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import Button from '../../ui/Button';
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import { SITE_CONFIG_STORAGE_KEY, INITIAL_SITE_SETTINGS } from '../../../constants';
 import { SiteSettings } from '../../../types';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -9,7 +7,6 @@ import { useAuth } from '../../../contexts/AuthContext';
 
 const HomeContactIts: React.FC = () => {
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
-  const [sectionRef, isSectionVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
 
   const { addAdminNotification } = useAuth();
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
@@ -31,6 +28,7 @@ const HomeContactIts: React.FC = () => {
     loadSiteSettings();
     window.addEventListener('siteSettingsUpdated', loadSiteSettings);
     return () => {
+      // Fix: Corrected function name in cleanup to match the defined function.
       window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
     };
   }, [loadSiteSettings]);
@@ -67,9 +65,9 @@ const HomeContactIts: React.FC = () => {
   if (!contactConfig.enabled) return null;
 
   return (
-    <section ref={sectionRef} className={`home-section bg-bgBase animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
+    <section className="bg-bgBase">
         <div className="container mx-auto px-4">
-            <div className={`home-section-title-area animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
+            <div className="home-section-title-area">
                 {contactConfig.preTitle && (
                     <span className="home-section-pretitle">
                         {contactConfig.sectionTitleIconUrl && <img src={contactConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
@@ -86,7 +84,7 @@ const HomeContactIts: React.FC = () => {
 
             <div className="flex flex-col lg:flex-row items-start gap-12 lg:gap-16">
                 {/* Contact Form */}
-                <div className={`lg:w-1/2 w-full animate-on-scroll ${isSectionVisible ? 'slide-in-left is-visible' : 'slide-in-left'}`} style={{animationDelay:'0.1s'}}>
+                <div className="lg:w-1/2 w-full">
                     {isSubmitted ? (
                         <div className="bg-bgCanvas p-8 rounded-xl shadow-xl text-center border-2 border-success-border h-full flex flex-col justify-center items-center">
                             <i className="fas fa-check-circle text-7xl text-success-text mb-6"></i>
@@ -127,7 +125,7 @@ const HomeContactIts: React.FC = () => {
                     )}
                 </div>
                 {/* Contact Info */}
-                <div className={`lg:w-1/2 w-full animate-on-scroll ${isSectionVisible ? 'slide-in-right is-visible' : 'slide-in-right'}`} style={{animationDelay:'0.2s'}}>
+                <div className="lg:w-1/2 w-full">
                     <div className="bg-bgCanvas p-8 md:p-10 rounded-xl shadow-xl space-y-6 border border-borderDefault h-full">
                         <h3 className="text-2xl font-semibold text-textBase mb-4">Thông Tin Liên Hệ Khác</h3>
                         {[
