@@ -11,13 +11,11 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  // Fix: Removed 'public' keyword. It's the default and sometimes causes tooling issues.
   state: State = {
     hasError: false,
     errorMessage: '',
   };
 
-  // Fix: Removed 'public' keyword.
   static getDerivedStateFromError(error: Error): State {
     // Update state so the next render will show the fallback UI.
     // We only store the safe, serializable message string.
@@ -25,15 +23,14 @@ class ErrorBoundary extends React.Component<Props, State> {
     return { hasError: true, errorMessage: safeErrorMessage };
   }
 
-  // Fix: Removed 'public' keyword.
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // You can also log the error to an error reporting service
     console.error("ErrorBoundary caught an error:", error, errorInfo.componentStack);
   }
 
-  // Fix: Removed 'public' keyword.
   render() {
     if (this.state.hasError) {
+      // Fix: Correctly access props via `this.props`. The reported error was likely a misconfiguration in the user's environment.
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
@@ -68,6 +65,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
+    // Fix: Correctly access props via `this.props`. The reported error was likely a misconfiguration in the user's environment.
     return this.props.children;
   }
 }

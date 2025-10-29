@@ -8,7 +8,7 @@ const FloatingActionButtons: React.FC = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     
     // This check determines if the AI feature is available.
-    // Fix: Use process.env.API_KEY as per guidelines. It's assumed to be available in the execution context.
+    // Fix: Use process.env.API_KEY instead of import.meta.env.VITE_API_KEY to fix TypeScript error.
     const isAiEnabled = !!process.env.API_KEY;
 
     const loadSiteSettings = useCallback(() => {

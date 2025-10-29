@@ -55,8 +55,8 @@ const INITIAL_HOMEPAGE_BANNERS: HomepageBannerSettings[] = [
         secondaryButtonLink: "/contact",
         order: 1,
         isActive: true,
-        decorTopLeftImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group-1_p2gL.png",
-        decorBottomRightImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group_gLnp.png"
+        decorTopLeftImageUrl: "https://picsum.photos/seed/decor1/300/200",
+        decorBottomRightImageUrl: "https://picsum.photos/seed/decor2/400/300"
     },
     {
         id: 'banner2',
@@ -70,8 +70,8 @@ const INITIAL_HOMEPAGE_BANNERS: HomepageBannerSettings[] = [
         secondaryButtonLink: "/contact",
         order: 2,
         isActive: true,
-        decorTopLeftImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group-1_p2gL.png",
-        decorBottomRightImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group_gLnp.png"
+        decorTopLeftImageUrl: "https://picsum.photos/seed/decor3/300/200",
+        decorBottomRightImageUrl: "https://picsum.photos/seed/decor4/400/300"
     },
     {
         id: 'banner3',
@@ -85,8 +85,8 @@ const INITIAL_HOMEPAGE_BANNERS: HomepageBannerSettings[] = [
         secondaryButtonLink: "/about",
         order: 3,
         isActive: true,
-        decorTopLeftImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group-1_p2gL.png",
-        decorBottomRightImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group_gLnp.png"
+        decorTopLeftImageUrl: "https://picsum.photos/seed/decor5/300/200",
+        decorBottomRightImageUrl: "https://picsum.photos/seed/decor6/400/300"
     }
 ];
 
