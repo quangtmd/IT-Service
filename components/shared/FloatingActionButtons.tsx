@@ -8,7 +8,7 @@ const FloatingActionButtons: React.FC = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     
     // This check determines if the AI feature is available.
-    // Fix: Use process.env.API_KEY instead of import.meta.env.VITE_API_KEY to fix TypeScript error.
+    // Fix: Use process.env.API_KEY as per Gemini API guidelines. This also resolves the 'import.meta.env' error.
     const isAiEnabled = !!process.env.API_KEY;
 
     const loadSiteSettings = useCallback(() => {

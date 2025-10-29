@@ -15,7 +15,7 @@ let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
 
 const getAiClient = (): GoogleGenAI | null => {
-  // Fix: Use process.env.API_KEY instead of import.meta.env.VITE_API_KEY to fix TypeScript error and align with guidelines.
+  // Fix: Use process.env.API_KEY as per Gemini API guidelines. This also resolves the 'import.meta.env' error.
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
     if (!aiInstance) { // Log this warning only once to avoid spamming the console

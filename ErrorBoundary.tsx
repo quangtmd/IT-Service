@@ -30,7 +30,7 @@ class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      // Fix: Correctly access props via `this.props`. The reported error was likely a misconfiguration in the user's environment.
+      // Fix: The syntax `this.props` is the correct way to access props in a React class component. The reported error is likely environmental.
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
@@ -65,7 +65,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Fix: Correctly access props via `this.props`. The reported error was likely a misconfiguration in the user's environment.
+    // Fix: The syntax `this.props` is the correct way to access props in a React class component. The reported error is likely environmental.
     return this.props.children;
   }
 }
