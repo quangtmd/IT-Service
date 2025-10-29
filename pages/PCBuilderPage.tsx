@@ -57,8 +57,8 @@ const PCBuilderPage: React.FC = () => {
   const getAIRecommendation = async () => {
     // This check is now secondary; the primary error handling is in the service.
     // However, it provides a fast failure path without a service call.
-    // Fix: Use process.env.API_KEY as per Gemini API guidelines. This also resolves the 'import.meta.env' error.
-    if (!process.env.API_KEY) {
+    // Fix: Use process.env.API_KEY or process.env.GEMINI_API_KEY
+    if (!(process.env.API_KEY || process.env.GEMINI_API_KEY)) {
       setError(Constants.API_KEY_ERROR_MESSAGE);
       return;
     }
@@ -179,6 +179,8 @@ const PCBuilderPage: React.FC = () => {
     return null;
   };
 
+  const isApiKeyConfigured = !!(process.env.API_KEY || process.env.GEMINI_API_KEY);
+
   try {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -215,14 +217,12 @@ const PCBuilderPage: React.FC = () => {
                 step="1000000"
               />
             </div>
-            {/* Fix: Use process.env.API_KEY as per Gemini API guidelines. This also resolves the 'import.meta.env' error. */}
-            <Button onClick={getAIRecommendation} isLoading={isLoading} className="w-full" size="lg" disabled={!process.env.API_KEY}>
+            <Button onClick={getAIRecommendation} isLoading={isLoading} className="w-full" size="lg" disabled={!isApiKeyConfigured}>
               <i className="fas fa-robot mr-2"></i> AI Đề Xuất Cấu Hình
             </Button>
             {error && <p className="text-sm text-danger-text mt-2">{error}</p>}
             {aiRecommendation?.error && !error && <p className="text-sm text-warning-text mt-2">{aiRecommendation.error}</p>}
-            {/* Fix: Use process.env.API_KEY as per Gemini API guidelines. This also resolves the 'import.meta.env' error. */}
-            {!process.env.API_KEY && <p className="text-xs text-warning-text mt-1">API_KEY chưa được cấu hình. Tính năng AI sẽ không hoạt động.</p>}
+            {!isApiKeyConfigured && <p className="text-xs text-warning-text mt-1">{Constants.API_KEY_ERROR_MESSAGE}</p>}
           </Card>
 
           <div className="lg:col-span-2 space-y-6">

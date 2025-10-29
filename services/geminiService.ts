@@ -15,11 +15,11 @@ let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
 
 const getAiClient = (): GoogleGenAI | null => {
-  // Fix: Use process.env.API_KEY as per Gemini API guidelines. This also resolves the 'import.meta.env' error.
-  const apiKey = process.env.API_KEY;
+  // Fix: Use process.env.API_KEY or process.env.GEMINI_API_KEY for flexibility.
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     if (!aiInstance) { // Log this warning only once to avoid spamming the console
-        console.warn("Gemini Service: API_KEY is not configured. AI features will be disabled.");
+        console.warn("Gemini Service: API_KEY or GEMINI_API_KEY is not configured. AI features will be disabled.");
     }
     return null;
   }

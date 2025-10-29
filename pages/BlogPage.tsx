@@ -38,8 +38,8 @@ const BlogPage: React.FC = () => {
       setIsLoading(false);
 
       const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
-      // Fix: Use process.env.API_KEY as per Gemini API guidelines. This also resolves the 'import.meta.env' error.
-      const apiKey = process.env.API_KEY;
+      // Fix: Use process.env.API_KEY or process.env.GEMINI_API_KEY
+      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 
       if (apiKey && isCacheStale) {
         setIsLoadingAI(true);
