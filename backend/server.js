@@ -168,22 +168,17 @@ app.get('/api/products', async (req, res) => {
         params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
     
+    let mainCategoryFound = false;
     if (mainCategory) {
         const mainCatInfo = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === mainCategory || c.name === mainCategory);
         if (mainCatInfo) {
             whereClauses.push("mainCategory = ?");
             params.push(mainCatInfo.name);
-
-            // Nested subcategory check for accuracy
-            if (subCategory) {
-                const subCatInfo = mainCatInfo.subCategories.find(sc => sc.slug === subCategory || sc.name === subCategory);
-                if (subCatInfo) {
-                    whereClauses.push("subCategory = ?");
-                    params.push(subCatInfo.name);
-                }
-            }
+            mainCategoryFound = true;
         }
-    } else if (subCategory) { // Handle subcategory search without main category
+    }
+
+    if (subCategory) {
         let subCatName = null;
         for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
             const subCatInfo = mainCat.subCategories.find(sc => sc.slug === subCategory || sc.name === subCategory);
@@ -196,7 +191,23 @@ app.get('/api/products', async (req, res) => {
             whereClauses.push("subCategory = ?");
             params.push(subCatName);
         }
+    } else if (mainCategory && !mainCategoryFound) {
+        // If a value was passed for mainCategory but it wasn't a valid main category,
+        // let's check if it's a sub-category. This fixes the carousel issue.
+        let subCatName = null;
+        for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
+            const subCatInfo = mainCat.subCategories.find(sc => sc.slug === mainCategory || sc.name === mainCategory);
+            if (subCatInfo) {
+                subCatName = subCatInfo.name;
+                break;
+            }
+        }
+        if (subCatName) {
+            whereClauses.push("subCategory = ?");
+            params.push(subCatName);
+        }
     }
+
 
     if (brand) {
         whereClauses.push("brand = ?");
