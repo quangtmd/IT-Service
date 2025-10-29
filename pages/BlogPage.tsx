@@ -38,9 +38,10 @@ const BlogPage: React.FC = () => {
       setIsLoading(false);
 
       const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
+      // Fix: Use process.env.API_KEY as per the coding guidelines.
       const apiKey = process.env.API_KEY;
 
-      if (apiKey && apiKey !== 'undefined' && isCacheStale) {
+      if (apiKey && isCacheStale) {
         setIsLoadingAI(true);
         setAiError(null);
         try {

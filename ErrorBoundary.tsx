@@ -30,7 +30,6 @@ class ErrorBoundary extends React.Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
-      // Fix: In a class component, props must be accessed via `this.props`.
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
@@ -65,7 +64,6 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Fix: In a class component, children are accessed via `this.props.children`.
     return this.props.children;
   }
 }

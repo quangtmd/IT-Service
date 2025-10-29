@@ -15,11 +15,11 @@ let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
 
 const getAiClient = (): GoogleGenAI | null => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  // This robust check handles both missing keys and the 'undefined' string issue from some build tools.
-  if (!apiKey || apiKey === 'undefined') {
+  // Fix: Use process.env.API_KEY as per the coding guidelines.
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
     if (!aiInstance) { // Log this warning only once to avoid spamming the console
-        console.warn("Gemini Service: VITE_GEMINI_API_KEY is not configured. AI features will be disabled.");
+        console.warn("Gemini Service: API_KEY is not configured. AI features will be disabled.");
     }
     return null;
   }

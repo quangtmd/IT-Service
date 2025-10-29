@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../types';
 import ProductCard from './ProductCard';
@@ -26,6 +26,7 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const loadProducts = async () => {
@@ -42,7 +43,7 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
                     filteredProducts = allProducts.filter(p => p.isVisible !== false);
                 }
 
-                setProducts(filteredProducts.slice(0, 4));
+                setProducts(filteredProducts.slice(0, 8)); // Load more products for carousel
             } catch (err) {
                 console.error(`Error loading products for carousel "${title}":`, err);
             } finally {
@@ -51,6 +52,16 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
         };
         loadProducts();
     }, [categoryName, filterTag, title]);
+
+    const handleScroll = (direction: 'left' | 'right') => {
+        if (scrollContainerRef.current) {
+            const scrollAmount = scrollContainerRef.current.offsetWidth * 0.75;
+            scrollContainerRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth',
+            });
+        }
+    };
 
     if (products.length === 0 && !isLoading) {
         return null;
@@ -72,17 +83,42 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
                         </Link>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-b-lg shadow-md border-x border-b border-borderDefault">
+                <div className="bg-white p-6 rounded-b-lg shadow-md border-x border-b border-borderDefault relative">
                     {isLoading ? (
                         <div className="text-center py-10 text-textMuted">Đang tải sản phẩm...</div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                            {products.map((product) => (
-                                <div key={product.id}>
-                                    <ProductCard product={product} />
-                                </div>
-                            ))}
-                        </div>
+                        <>
+                            <div
+                                ref={scrollContainerRef}
+                                className="flex gap-6 md:gap-8 overflow-x-auto scrollbar-hide scroll-smooth"
+                            >
+                                {products.map((product) => (
+                                    <div key={product.id} className="w-64 flex-shrink-0">
+                                        <ProductCard product={product} />
+                                    </div>
+                                ))}
+                            </div>
+                            {products.length > 4 && (
+                                <>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => handleScroll('left')}
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white/80 hover:bg-white rounded-full w-12 h-12 shadow-lg border hidden md:flex"
+                                    aria-label="Previous Products"
+                                >
+                                    <i className="fas fa-chevron-left"></i>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => handleScroll('right')}
+                                    className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 bg-white/80 hover:bg-white rounded-full w-12 h-12 shadow-lg border hidden md:flex"
+                                    aria-label="Next Products"
+                                >
+                                    <i className="fas fa-chevron-right"></i>
+                                </Button>
+                                </>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
