@@ -7,10 +7,6 @@ const FloatingActionButtons: React.FC = () => {
     const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
     const [isChatOpen, setIsChatOpen] = useState(false);
     
-    // This check determines if the AI feature is available.
-    // Fix: Use process.env.API_KEY as per Gemini API guidelines. This also resolves the 'import.meta.env' error.
-    const isAiEnabled = !!process.env.API_KEY;
-
     const loadSiteSettings = useCallback(() => {
         const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
         if (storedSettingsRaw) {
@@ -29,14 +25,15 @@ const FloatingActionButtons: React.FC = () => {
     }, [loadSiteSettings]);
     
     useEffect(() => {
-        if (isAiEnabled) { // Only auto-open if AI is enabled
-            const alreadyOpened = localStorage.getItem(Constants.CHATBOT_AUTO_OPENED_KEY);
-            if (!alreadyOpened) {
-              setIsChatOpen(true);
-              localStorage.setItem(Constants.CHATBOT_AUTO_OPENED_KEY, 'true');
-            }
+        const alreadyOpened = localStorage.getItem(Constants.CHATBOT_AUTO_OPENED_KEY);
+        if (!alreadyOpened) {
+          // Auto-open logic is now handled inside the chatbot component if needed
+          // to allow it to check for API key availability itself.
+          // For now, we enable auto-open for first-time visitors.
+          setIsChatOpen(true);
+          localStorage.setItem(Constants.CHATBOT_AUTO_OPENED_KEY, 'true');
         }
-    }, [isAiEnabled]);
+    }, []);
 
     const quickContactCommonClasses = "w-14 h-14 text-white rounded-full p-3.5 shadow-lg transition-all duration-300 flex items-center justify-center text-xl transform hover:scale-110";
     const fabVisibilityClass = isChatOpen ? 'opacity-0 scale-0 pointer-events-none' : 'opacity-100 scale-100';
@@ -59,14 +56,12 @@ const FloatingActionButtons: React.FC = () => {
                         <i className="fab fa-facebook-messenger"></i>
                     </a>
                 )}
-                {isAiEnabled && (
-                     <button onClick={() => setIsChatOpen(true)} className={`${quickContactCommonClasses} bg-primary hover:bg-primary-dark`} aria-label="Toggle Chatbot" title="Mở Chatbot AI">
-                        <i className="fas fa-comments"></i>
-                    </button>
-                )}
+                <button onClick={() => setIsChatOpen(true)} className={`${quickContactCommonClasses} bg-primary hover:bg-primary-dark`} aria-label="Toggle Chatbot" title="Mở Chatbot AI">
+                    <i className="fas fa-comments"></i>
+                </button>
             </div>
 
-            {isAiEnabled && <AIChatbot isOpen={isChatOpen} setIsOpen={setIsChatOpen} />}
+            <AIChatbot isOpen={isChatOpen} setIsOpen={setIsChatOpen} />
         </>
     );
 };

@@ -11,7 +11,9 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  state: State = {
+  // Fix: Initialize state as a class property. This modern syntax is more concise and correctly
+  // declares the state on the class instance, resolving TypeScript errors about 'state' and 'props' not existing.
+  public state: State = {
     hasError: false,
     errorMessage: '',
   };
@@ -30,7 +32,6 @@ class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      // Fix: The syntax `this.props` is the correct way to access props in a React class component. The reported error is likely environmental.
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
@@ -65,7 +66,6 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Fix: The syntax `this.props` is the correct way to access props in a React class component. The reported error is likely environmental.
     return this.props.children;
   }
 }

@@ -6,26 +6,11 @@ import SearchBar from '../components/shared/SearchBar';
 import Pagination from '../components/shared/Pagination';
 import * as Constants from '../constants.tsx';
 import CategorySidebar from '../components/shop/CategorySidebar';
-import { getProducts } from '../services/localDataService';
+import { getFilteredProducts } from '../services/localDataService';
 import PageTitleBannerIts from '../components/services_page_its/PageTitleBannerIts';
 import ProductCarouselSection from '../components/shop/ProductCarouselSection';
 
 const PRODUCTS_PER_PAGE = 12;
-
-const getCategoryNameFromSlug = (slug: string, type: 'main' | 'sub'): string | null => {
-    if (type === 'main') {
-        const mainCat = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
-        return mainCat ? mainCat.name : null;
-    }
-    if (type === 'sub') {
-        for (const mainCat of Constants.PRODUCT_CATEGORIES_HIERARCHY) {
-            const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
-            if (subCat) return subCat.name;
-        }
-        return null;
-    }
-    return null;
-};
 
 const ProductCategoryNav: React.FC<{
   activeSlug: string | null;
@@ -58,9 +43,7 @@ const ShopPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const hasSearchParams = location.search.length > 1;
-
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,49 +61,25 @@ const ShopPage: React.FC = () => {
   }), [queryParams]);
 
   const currentPage = parseInt(queryParams.get('page') || '1', 10);
+  const hasSearchParams = location.search.length > 1 && location.search !== '?';
+
 
   useEffect(() => {
-    if (!hasSearchParams) return; // Only filter if params exist
+    if (!hasSearchParams) {
+        setIsLoading(false);
+        setError(null);
+        setDisplayedProducts([]);
+        setTotalProducts(0);
+        return;
+    }; 
 
     const loadAndFilterProducts = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const productsFromDb = await getProducts();
-        
-        let filtered = productsFromDb.filter(p => p.isVisible !== false);
-
-        if (currentFilters.q) {
-          const q = currentFilters.q.toLowerCase();
-          filtered = filtered.filter(p => 
-            p.name.toLowerCase().includes(q) ||
-            (p.brand && p.brand.toLowerCase().includes(q)) ||
-            p.description.toLowerCase().includes(q) ||
-            (p.tags && p.tags.some(t => t.toLowerCase().includes(q)))
-          );
-        }
-        if (currentFilters.mainCategory) {
-            const mainCategoryName = getCategoryNameFromSlug(currentFilters.mainCategory, 'main');
-            if(mainCategoryName) filtered = filtered.filter(p => p.mainCategory === mainCategoryName);
-        }
-        if (currentFilters.subCategory) {
-            const subCategoryName = getCategoryNameFromSlug(currentFilters.subCategory, 'sub');
-            if(subCategoryName) filtered = filtered.filter(p => p.subCategory === subCategoryName);
-        }
-        if (currentFilters.brand) {
-            filtered = filtered.filter(p => p.brand === currentFilters.brand);
-        }
-        if (currentFilters.status) {
-            filtered = filtered.filter(p => p.status === currentFilters.status);
-        }
-        if (currentFilters.tags) {
-            filtered = filtered.filter(p => p.tags && p.tags.includes(currentFilters.tags as string));
-        }
-
-        setTotalProducts(filtered.length);
-        const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-        setDisplayedProducts(filtered.slice(startIndex, startIndex + PRODUCTS_PER_PAGE));
-        
+        const { products, totalProducts } = await getFilteredProducts(currentFilters, currentPage, PRODUCTS_PER_PAGE);
+        setDisplayedProducts(products);
+        setTotalProducts(totalProducts);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
         setDisplayedProducts([]);

@@ -58,16 +58,21 @@ CREATE TABLE orders (
 
 
 // --- CẤU HÌNH KẾT NỐI MYSQL ---
-// Đọc thông tin kết nối từ các biến môi trường (ưu tiên) hoặc dùng giá trị fallback.
+// Đọc thông tin kết nối từ các biến môi trường.
 // Các biến môi trường này cần được thiết lập trên server hosting của bạn (ví dụ: Hostinger, Railway).
-// Khi chạy local, bạn có thể tạo file .env trong thư mục backend để định nghĩa chúng.
 const dbConfig = {
-  host: process.env.MYSQLHOST || 'your_hostinger_mysql_host', // Thay thế bằng Host của Hostinger
-  user: process.env.MYSQLUSER || 'your_hostinger_mysql_user', // Thay thế bằng User của Hostinger
-  password: process.env.MYSQLPASSWORD || 'your_database_password', // Thay thế bằng mật khẩu DB
-  database: process.env.MYSQLDATABASE || 'your_hostinger_database_name', // Thay thế bằng tên DB
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
   port: process.env.MYSQLPORT || 3306
 };
+
+// Kiểm tra các biến môi trường cần thiết
+if (!dbConfig.host || !dbConfig.user || !dbConfig.database) {
+    console.error('FATAL ERROR: Database configuration is missing. Please set MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, and MYSQLDATABASE environment variables.');
+    process.exit(1);
+}
 
 
 let pool;
