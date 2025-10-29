@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/shop/ProductCard';
-import { Product, MainCategoryInfo } from '../types';
+import { Product } from '../types';
 import SearchBar from '../components/shared/SearchBar';
 import Pagination from '../components/shared/Pagination';
 import * as Constants from '../constants.tsx';
@@ -12,7 +12,6 @@ import ProductCarouselSection from '../components/shop/ProductCarouselSection';
 
 const PRODUCTS_PER_PAGE = 12;
 
-// Helper to get category name from slug
 const getCategoryNameFromSlug = (slug: string, type: 'main' | 'sub'): string | null => {
     if (type === 'main') {
         const mainCat = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
@@ -28,12 +27,11 @@ const getCategoryNameFromSlug = (slug: string, type: 'main' | 'sub'): string | n
     return null;
 };
 
-
 const ProductCategoryNav: React.FC<{
-  categories: MainCategoryInfo[];
   activeSlug: string | null;
   onSelect: (slug: string | null) => void;
-}> = ({ categories, activeSlug, onSelect }) => {
+}> = ({ activeSlug, onSelect }) => {
+  const categories = Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng");
   return (
     <nav className="shop-category-nav scrollbar-hide overflow-x-auto whitespace-nowrap">
       <button
@@ -55,57 +53,13 @@ const ProductCategoryNav: React.FC<{
   );
 };
 
+
 const ShopPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const hasSearchParams = location.search.length > 1;
 
-  // New Carousel Layout for the main /shop page
-  if (!hasSearchParams) {
-    const breadcrumbs = [{ label: "Trang chủ", path: "/home" }, { label: "Sản phẩm" }];
-    const handleSearch = (term: string) => {
-      if (term.trim()) {
-        navigate(`/shop?q=${term}`);
-      }
-    };
-
-    return (
-      <div className="bg-bgCanvas">
-        <PageTitleBannerIts title="Cửa Hàng Sản Phẩm" breadcrumbs={breadcrumbs} />
-        <div className="container mx-auto px-4 py-8 space-y-12">
-          <div className="mt-4 mb-8 max-w-3xl mx-auto">
-             <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu..." />
-          </div>
-
-          <ProductCarouselSection 
-            title="Linh Kiện PC Bán Chạy" 
-            categoryName="Linh kiện máy tính" 
-            viewAllLink="/shop?mainCategory=linh_kien_may_tinh" 
-          />
-          <ProductCarouselSection 
-            title="Laptop Nổi Bật" 
-            categoryName="Laptop" 
-            viewAllLink="/shop?mainCategory=laptop" 
-          />
-          <ProductCarouselSection 
-            title="PC Gaming Cấu Hình Khủng" 
-            categoryName="Máy tính Gaming" 
-            viewAllLink="/shop?mainCategory=may_tinh_de_ban&subCategory=pc_gaming" 
-          />
-          <ProductCarouselSection 
-            title="Thiết Bị Ngoại Vi" 
-            categoryName="Thiết bị ngoại vi" 
-            viewAllLink="/shop?mainCategory=thiet_bi_ngoai_vi"
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // --- Existing Filtered Grid Layout (runs if search params exist) ---
-  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -113,37 +67,31 @@ const ShopPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [currentFilters, setCurrentFilters] = useState({
-    mainCategory: null as string | null,
-    subCategory: null as string | null,
-    brand: null as string | null,
-    status: null as string | null,
-    q: '',
-    tags: null as string | null,
-  });
+  
+  const currentFilters = useMemo(() => ({
+    mainCategory: queryParams.get('mainCategory') || null,
+    subCategory: queryParams.get('subCategory') || null,
+    brand: queryParams.get('brand') || null,
+    status: queryParams.get('status') || null,
+    q: queryParams.get('q') || '',
+    tags: queryParams.get('tags') || null,
+  }), [queryParams]);
 
   const currentPage = parseInt(queryParams.get('page') || '1', 10);
 
-   useEffect(() => {
+  useEffect(() => {
+    if (!hasSearchParams) return; // Only filter if params exist
+
     const loadAndFilterProducts = async () => {
       setIsLoading(true);
       setError(null);
       try {
         const productsFromDb = await getProducts();
-        setAllProducts(productsFromDb);
-
-        // Apply filters from queryParams
-        const params = new URLSearchParams(location.search);
-        const q = params.get('q')?.toLowerCase() || '';
-        const mainCategorySlug = params.get('mainCategory');
-        const subCategorySlug = params.get('subCategory');
-        const brand = params.get('brand');
-        const status = params.get('status');
-        const tags = params.get('tags');
-
+        
         let filtered = productsFromDb.filter(p => p.isVisible !== false);
 
-        if (q) {
+        if (currentFilters.q) {
+          const q = currentFilters.q.toLowerCase();
           filtered = filtered.filter(p => 
             p.name.toLowerCase().includes(q) ||
             (p.brand && p.brand.toLowerCase().includes(q)) ||
@@ -151,34 +99,30 @@ const ShopPage: React.FC = () => {
             (p.tags && p.tags.some(t => t.toLowerCase().includes(q)))
           );
         }
-        if (mainCategorySlug) {
-            const mainCategoryName = getCategoryNameFromSlug(mainCategorySlug, 'main');
+        if (currentFilters.mainCategory) {
+            const mainCategoryName = getCategoryNameFromSlug(currentFilters.mainCategory, 'main');
             if(mainCategoryName) filtered = filtered.filter(p => p.mainCategory === mainCategoryName);
         }
-        if (subCategorySlug) {
-            const subCategoryName = getCategoryNameFromSlug(subCategorySlug, 'sub');
+        if (currentFilters.subCategory) {
+            const subCategoryName = getCategoryNameFromSlug(currentFilters.subCategory, 'sub');
             if(subCategoryName) filtered = filtered.filter(p => p.subCategory === subCategoryName);
         }
-        if (brand) {
-            filtered = filtered.filter(p => p.brand === brand);
+        if (currentFilters.brand) {
+            filtered = filtered.filter(p => p.brand === currentFilters.brand);
         }
-        if (status) {
-            filtered = filtered.filter(p => p.status === status);
+        if (currentFilters.status) {
+            filtered = filtered.filter(p => p.status === currentFilters.status);
         }
-        if (tags) {
-            filtered = filtered.filter(p => p.tags && p.tags.includes(tags));
+        if (currentFilters.tags) {
+            filtered = filtered.filter(p => p.tags && p.tags.includes(currentFilters.tags as string));
         }
 
         setTotalProducts(filtered.length);
-
-        // Apply pagination
-        const page = parseInt(params.get('page') || '1', 10);
-        const startIndex = (page - 1) * PRODUCTS_PER_PAGE;
+        const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
         setDisplayedProducts(filtered.slice(startIndex, startIndex + PRODUCTS_PER_PAGE));
         
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
-        console.error("Lỗi khi tải sản phẩm từ Local Storage:", err);
         setDisplayedProducts([]);
         setTotalProducts(0);
       } finally {
@@ -187,7 +131,7 @@ const ShopPage: React.FC = () => {
     };
     
     loadAndFilterProducts();
-  }, [location.search]);
+  }, [location.search, hasSearchParams, currentFilters, currentPage]);
 
 
   const handleScroll = useCallback(() => {
@@ -204,17 +148,6 @@ const ShopPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  useEffect(() => {
-    setCurrentFilters({
-      mainCategory: queryParams.get('mainCategory') || null,
-      subCategory: queryParams.get('subCategory') || null,
-      brand: queryParams.get('brand') || null,
-      status: queryParams.get('status') || null,
-      q: queryParams.get('q') || '',
-      tags: queryParams.get('tags') || null,
-    });
-  }, [queryParams]);
-
   const handleFilterChange = (filterType: string, value: string | null) => {
     const newParams = new URLSearchParams(location.search);
     if (value) {
@@ -225,7 +158,7 @@ const ShopPage: React.FC = () => {
     if (filterType === 'mainCategory') {
         newParams.delete('subCategory');
     }
-    newParams.set('page', '1'); // Reset to first page on filter change
+    newParams.set('page', '1');
     navigate(`/shop?${newParams.toString()}`);
   };
   
@@ -233,7 +166,7 @@ const ShopPage: React.FC = () => {
     const newParams = new URLSearchParams(location.search);
     if (term) newParams.set('q', term);
     else newParams.delete('q');
-    newParams.set('page', '1'); // Reset to first page on search
+    newParams.set('page', '1');
     navigate(`/shop?${newParams.toString()}`);
   };
 
@@ -263,8 +196,8 @@ const ShopPage: React.FC = () => {
     if (currentFilters.q) name = `Kết quả cho "${currentFilters.q}"`;
     return name;
   };
-  
-  const renderContent = () => {
+
+  const renderFilteredContent = () => {
     if (isLoading) {
       return (
         <div className="text-center py-20 w-full flex-grow">
@@ -274,17 +207,11 @@ const ShopPage: React.FC = () => {
       );
     }
     if (error) {
-      return (
-        <div className="text-center py-20 w-full flex-grow text-red-500 bg-red-50 p-4 rounded-lg">
-          <strong>Lỗi:</strong> {error}
-        </div>
-      );
+      return <div className="text-center py-20 w-full flex-grow text-red-500 bg-red-50 p-4 rounded-lg"><strong>Lỗi:</strong> {error}</div>;
     }
-    
     return (
         <main className="flex-grow w-full min-w-0">
             <ProductCategoryNav
-                categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
                 activeSlug={currentFilters.mainCategory}
                 onSelect={(slug) => handleFilterChange('mainCategory', slug)}
             />
@@ -295,17 +222,9 @@ const ShopPage: React.FC = () => {
             {displayedProducts.length > 0 ? (
             <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-                {displayedProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
-                ))}
+                {displayedProducts.map(product => <ProductCard key={product.id} product={product} />)}
                 </div>
-                {totalPages > 1 && (
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                />
-                )}
+                {totalPages > 1 && <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />}
             </>
             ) : (
             <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
@@ -315,14 +234,24 @@ const ShopPage: React.FC = () => {
             </div>
             )}
         </main>
-    )
-  }
+    );
+  };
+  
+  const renderCarouselContent = () => (
+      <div className="space-y-12">
+        <ProductCarouselSection title="Linh Kiện PC Bán Chạy" filterTag="Bán chạy" viewAllLink="/shop?tags=Bán%20chạy" />
+        <ProductCarouselSection title="Laptop Nổi Bật" categoryName="Laptop" viewAllLink="/shop?mainCategory=laptop" />
+        <ProductCarouselSection title="PC Gaming Cấu Hình Khủng" categoryName="Máy tính Gaming" viewAllLink="/shop?mainCategory=may_tinh_de_ban&subCategory=pc_gaming" />
+        <ProductCarouselSection title="Thiết Bị Ngoại Vi" categoryName="Thiết bị ngoại vi" viewAllLink="/shop?mainCategory=thiet_bi_ngoai_vi"/>
+      </div>
+  );
 
   return (
     <div className="bg-bgCanvas">
+      <PageTitleBannerIts title="Cửa Hàng Sản Phẩm" breadcrumbs={[{ label: "Trang chủ", path: "/home" }, { label: "Sản phẩm" }]} />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-            <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
+            <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
         </div>
         <div className="shop-layout-container">
           <aside className="shop-sidebar">
@@ -333,7 +262,7 @@ const ShopPage: React.FC = () => {
             />
           </aside>
           <div className="shop-main-content">
-            {renderContent()}
+            {hasSearchParams ? renderFilteredContent() : renderCarouselContent()}
           </div>
         </div>
       </div>
