@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageAboutFeature } from '../../../types';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const HomeAboutIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   const aboutConfig = settings.homepageAbout;
 
   const loadSettings = useCallback(() => {
@@ -29,7 +30,7 @@ const HomeAboutIts: React.FC = () => {
   if (!aboutConfig.enabled) return null;
 
   return (
-    <section className="bg-bgBase">
+    <section ref={ref} className={`bg-bgBase animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           {/* Image Column */}

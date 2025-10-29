@@ -3,11 +3,11 @@ import Button from '../../ui/Button';
 import { SITE_CONFIG_STORAGE_KEY, INITIAL_SITE_SETTINGS } from '../../../constants';
 import { SiteSettings } from '../../../types';
 import { useAuth } from '../../../contexts/AuthContext';
-
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const HomeContactIts: React.FC = () => {
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
-
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   const { addAdminNotification } = useAuth();
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -28,7 +28,6 @@ const HomeContactIts: React.FC = () => {
     loadSiteSettings();
     window.addEventListener('siteSettingsUpdated', loadSiteSettings);
     return () => {
-      // Fix: Corrected function name in cleanup to match the defined function.
       window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
     };
   }, [loadSiteSettings]);
@@ -65,7 +64,7 @@ const HomeContactIts: React.FC = () => {
   if (!contactConfig.enabled) return null;
 
   return (
-    <section className="bg-bgBase">
+    <section ref={ref} className={`bg-bgBase animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
         <div className="container mx-auto px-4">
             <div className="home-section-title-area">
                 {contactConfig.preTitle && (

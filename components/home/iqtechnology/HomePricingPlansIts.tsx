@@ -3,10 +3,12 @@ import * as Constants from '../../../constants';
 import { PricingPlan } from '../../../types';
 import HomePricingPlanCard from './HomePricingPlanCard';
 import ConsultationRequestModal from '../../shared/ConsultationRequestModal';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const HomePricingPlansIts: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
 
   const plans: PricingPlan[] = Constants.MOCK_PRICING_PLANS_DATA;
 
@@ -21,7 +23,7 @@ const HomePricingPlansIts: React.FC = () => {
 
   return (
     <>
-      <section className="bg-bgBase">
+      <section ref={ref} className={`bg-bgBase animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
         <div className="container mx-auto px-4">
           <div className="home-section-title-area">
             <span className="home-section-pretitle">BẢNG GIÁ DỊCH VỤ</span>

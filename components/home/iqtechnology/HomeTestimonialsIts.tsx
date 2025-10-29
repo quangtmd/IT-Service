@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageTestimonialItem } from '../../../types';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 interface TestimonialCardProps {
   testimonial: HomepageTestimonialItem;
@@ -34,7 +35,7 @@ const TestimonialCardIts: React.FC<TestimonialCardProps> = ({ testimonial, index
 
 const HomeTestimonialsIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-  
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   const testimonialsConfig = settings.homepageTestimonials;
 
   const loadSettings = useCallback(() => {
@@ -59,7 +60,7 @@ const HomeTestimonialsIts: React.FC = () => {
   const sortedTestimonials = [...testimonialsConfig.testimonials].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="bg-bgCanvas">
+    <section ref={ref} className={`bg-bgCanvas animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="home-section-title-area">
           {testimonialsConfig.preTitle && (

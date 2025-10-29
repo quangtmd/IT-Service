@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageStatItem } from '../../../types';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 // New sub-component to handle individual stat item's intersection observation
 const StatDisplayItem: React.FC<{ stat: HomepageStatItem; index: number }> = ({ stat, index }) => {
@@ -24,6 +25,7 @@ const StatDisplayItem: React.FC<{ stat: HomepageStatItem; index: number }> = ({ 
 
 const HomeStatsCounterIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   const statsConfig = settings.homepageStatsCounter;
 
   const loadSettings = useCallback(() => {
@@ -48,7 +50,7 @@ const HomeStatsCounterIts: React.FC = () => {
   const sortedStats = [...statsConfig.stats].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="bg-gradient-to-r from-primary to-red-600 text-white">
+    <section ref={ref} className={`bg-gradient-to-r from-primary to-red-600 text-white animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
           {sortedStats.map((stat: HomepageStatItem, index) => (

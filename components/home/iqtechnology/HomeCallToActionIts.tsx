@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings } from '../../../types';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const HomeCallToActionIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   const ctaConfig = settings.homepageCallToAction;
 
   const loadSettings = useCallback(() => {
@@ -34,7 +35,8 @@ const HomeCallToActionIts: React.FC = () => {
 
   return (
     <section
-        className={`${!ctaConfig.backgroundImageUrl && 'bg-primary'} text-white relative overflow-hidden`}
+        ref={ref}
+        className={`${!ctaConfig.backgroundImageUrl && 'bg-primary'} text-white relative overflow-hidden animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}
         style={sectionStyle}
     >
       {!ctaConfig.backgroundImageUrl && <div className="absolute inset-0 opacity-10" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/carbon-fibre.png')", backgroundSize: 'auto'}}></div>}

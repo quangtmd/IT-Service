@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageProcessStep } from '../../../types';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const ProcessStepCard: React.FC<{ step: HomepageProcessStep; index: number; isEven: boolean }> = ({ step, index, isEven }) => {
 
@@ -26,7 +27,7 @@ const ProcessStepCard: React.FC<{ step: HomepageProcessStep; index: number; isEv
 
 const HomeProcessIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   const processConfig = settings.homepageProcess;
 
   const loadSettings = useCallback(() => {
@@ -51,7 +52,7 @@ const HomeProcessIts: React.FC = () => {
   const sortedSteps = [...processConfig.steps].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="bg-bgMuted relative overflow-hidden">
+    <section ref={ref} className={`bg-bgMuted relative overflow-hidden animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
       <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 h-full w-px bg-gray-300/70 hidden lg:block" style={{height: '70%'}}></div>
 
       <div className="container mx-auto px-4 relative z-10">

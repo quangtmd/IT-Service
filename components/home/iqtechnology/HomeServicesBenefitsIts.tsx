@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageServiceBenefit } from '../../../types';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number }> = ({ item, index }) => {
   return (
@@ -28,7 +29,7 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
 
 const HomeServicesBenefitsIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   const servicesBenefitsConfig = settings.homepageServicesBenefits;
 
   const loadSettings = useCallback(() => {
@@ -53,7 +54,7 @@ const HomeServicesBenefitsIts: React.FC = () => {
   const sortedBenefits = [...servicesBenefitsConfig.benefits].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="bg-bgCanvas">
+    <section ref={ref} className={`bg-bgCanvas animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="home-section-title-area">
           {servicesBenefitsConfig.preTitle && (

@@ -4,10 +4,12 @@ import { Product } from '../../types';
 import ProductCard from './ProductCard';
 import Button from '../ui/Button';
 import { getProducts } from '../../services/localDataService';
+import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 
 interface ProductCarouselSectionProps {
     title: string;
-    categoryName: string;
+    categoryName?: string;
+    filterTag?: string;
     viewAllLink: string;
     bgColor?: string;
     textColor?: string;
@@ -16,38 +18,48 @@ interface ProductCarouselSectionProps {
 const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({ 
     title, 
     categoryName, 
+    filterTag,
     viewAllLink, 
     bgColor = 'bg-primary', 
     textColor = 'text-white' 
 }) => {
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
 
     useEffect(() => {
         const loadProducts = async () => {
             setIsLoading(true);
             try {
                 const allProducts = await getProducts();
-                const categoryProducts = allProducts
-                    .filter(p => (p.mainCategory === categoryName || p.subCategory === categoryName) && p.isVisible !== false)
-                    .slice(0, 4); // Show up to 4 products
-                setProducts(categoryProducts);
+                let filteredProducts;
+
+                if (filterTag) {
+                    filteredProducts = allProducts.filter(p => Array.isArray(p.tags) && p.tags.includes(filterTag) && p.isVisible !== false);
+                } else if (categoryName) {
+                    filteredProducts = allProducts.filter(p => (p.mainCategory === categoryName || p.subCategory === categoryName) && p.isVisible !== false);
+                } else {
+                    filteredProducts = allProducts.filter(p => p.isVisible !== false);
+                }
+
+                setProducts(filteredProducts.slice(0, 4));
             } catch (err) {
-                console.error(`Error loading products for category ${categoryName}:`, err);
+                console.error(`Error loading products for carousel "${title}":`, err);
             } finally {
                 setIsLoading(false);
             }
         };
         loadProducts();
-    }, [categoryName]);
+    }, [categoryName, filterTag, title]);
 
-    if (products.length === 0) {
+    if (products.length === 0 && !isLoading) {
         return null;
     }
 
     return (
         <section 
-            className="bg-bgCanvas"
+            ref={ref}
+            className={`animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}
         >
             <div className="container mx-auto px-4">
                 <div className={`${bgColor} rounded-t-lg shadow-md`}>
@@ -61,15 +73,17 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-b-lg shadow-md border-x border-b border-borderDefault">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                        {products.map((product) => (
-                            <div
-                                key={product.id}
-                            >
-                                <ProductCard product={product} />
-                            </div>
-                        ))}
-                    </div>
+                    {isLoading ? (
+                        <div className="text-center py-10 text-textMuted">Đang tải sản phẩm...</div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                            {products.map((product) => (
+                                <div key={product.id}>
+                                    <ProductCard product={product} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </section>

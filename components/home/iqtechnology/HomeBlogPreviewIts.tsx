@@ -4,6 +4,7 @@ import * as Constants from '../../../constants.tsx';
 import { MOCK_ARTICLES } from '../../../data/mockData';
 import { SiteSettings, Article } from '../../../types';
 import Button from '../../ui/Button'; // Import Button
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const BlogItemCard: React.FC<{article: Article, index: number}> = ({article, index}) => {
     const placeholderImg = article.imageUrl || `https://picsum.photos/seed/modernTechBlog${article.id.replace(/\D/g,'') || index}/400/260`;
@@ -44,7 +45,6 @@ interface HomeBlogPreviewItsProps {
 const HomeBlogPreviewIts: React.FC<HomeBlogPreviewItsProps> = ({ categoryFilter, maxArticles: maxArticlesProp }) => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
   const [loadedArticles, setLoadedArticles] = useState<Article[]>([]);
-
   const blogConfig = settings.homepageBlogPreview;
   const ARTICLES_STORAGE_KEY = 'adminArticles_v1_local';
   const DEFAULT_MAX_ARTICLES = 3; // Show 3 articles in a 3-column grid

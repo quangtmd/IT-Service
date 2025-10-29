@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageBrandLogo } from '../../../types';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const HomeBrandLogosIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-  
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   const brandLogosConfig = settings.homepageBrandLogos;
 
   const loadSettings = useCallback(() => {
@@ -29,7 +30,7 @@ const HomeBrandLogosIts: React.FC = () => {
   const sortedLogos = [...brandLogosConfig.logos].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="bg-bgMuted">
+    <section ref={ref} className={`bg-bgMuted animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-10 md:gap-x-20 lg:gap-x-24">
           {sortedLogos.map((brand: HomepageBrandLogo) => (

@@ -4,6 +4,7 @@ import Button from '../../ui/Button';
 import * as Constants from '../../../constants.tsx';
 import { MOCK_SERVICES } from '../../../data/mockData';
 import { SiteSettings, Service } from '../../../types';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 interface ProjectItemProps {
   item: Service;
@@ -44,7 +45,7 @@ const ProjectCardIts: React.FC<ProjectItemProps> = ({ item, index }) => {
 
 const HomeFeaturedProjectsIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   const projectsConfig = settings.homepageFeaturedProjects;
 
   const loadSettings = useCallback(() => {
@@ -71,7 +72,7 @@ const HomeFeaturedProjectsIts: React.FC = () => {
     .filter(Boolean) as Service[];
 
   return (
-    <section className="bg-bgCanvas">
+    <section ref={ref} className={`bg-bgCanvas animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="home-section-title-area">
             {projectsConfig.preTitle && (

@@ -7,6 +7,8 @@ import Pagination from '../components/shared/Pagination';
 import * as Constants from '../constants.tsx';
 import CategorySidebar from '../components/shop/CategorySidebar';
 import { getProducts } from '../services/localDataService';
+import PageTitleBannerIts from '../components/services_page_its/PageTitleBannerIts';
+import ProductCarouselSection from '../components/shop/ProductCarouselSection';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -56,6 +58,52 @@ const ProductCategoryNav: React.FC<{
 const ShopPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  
+  const hasSearchParams = location.search.length > 1;
+
+  // New Carousel Layout for the main /shop page
+  if (!hasSearchParams) {
+    const breadcrumbs = [{ label: "Trang chủ", path: "/home" }, { label: "Sản phẩm" }];
+    const handleSearch = (term: string) => {
+      if (term.trim()) {
+        navigate(`/shop?q=${term}`);
+      }
+    };
+
+    return (
+      <div className="bg-bgCanvas">
+        <PageTitleBannerIts title="Cửa Hàng Sản Phẩm" breadcrumbs={breadcrumbs} />
+        <div className="container mx-auto px-4 py-8 space-y-12">
+          <div className="mt-4 mb-8 max-w-3xl mx-auto">
+             <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu..." />
+          </div>
+
+          <ProductCarouselSection 
+            title="Linh Kiện PC Bán Chạy" 
+            categoryName="Linh kiện máy tính" 
+            viewAllLink="/shop?mainCategory=linh_kien_may_tinh" 
+          />
+          <ProductCarouselSection 
+            title="Laptop Nổi Bật" 
+            categoryName="Laptop" 
+            viewAllLink="/shop?mainCategory=laptop" 
+          />
+          <ProductCarouselSection 
+            title="PC Gaming Cấu Hình Khủng" 
+            categoryName="Máy tính Gaming" 
+            viewAllLink="/shop?mainCategory=may_tinh_de_ban&subCategory=pc_gaming" 
+          />
+          <ProductCarouselSection 
+            title="Thiết Bị Ngoại Vi" 
+            categoryName="Thiết bị ngoại vi" 
+            viewAllLink="/shop?mainCategory=thiet_bi_ngoai_vi"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // --- Existing Filtered Grid Layout (runs if search params exist) ---
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -212,7 +260,7 @@ const ShopPage: React.FC = () => {
     }
     if (currentFilters.brand) name += ` (Hãng: ${currentFilters.brand})`;
     if (currentFilters.status) name += ` (Tình trạng: ${currentFilters.status})`;
-    if (currentFilters.q) name = `Kết quả cho "${currentFilters.q}"` + (currentFilters.mainCategory || currentFilters.brand || currentFilters.status ? ` trong ${name}` : ``);
+    if (currentFilters.q) name = `Kết quả cho "${currentFilters.q}"`;
     return name;
   };
   
