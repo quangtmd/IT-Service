@@ -88,6 +88,7 @@ try {
 
 // PRODUCTS
 const parseJsonFields = (product) => {
+    if (!product) return product; // Return early if product is null/undefined
     try {
         if (product.imageUrls && typeof product.imageUrls === 'string') product.imageUrls = JSON.parse(product.imageUrls);
         if (product.specifications && typeof product.specifications === 'string') product.specifications = JSON.parse(product.specifications);
@@ -280,14 +281,37 @@ app.get('/api/products/:id', async (req, res) => {
 
 app.post('/api/products', async (req, res) => {
     const newProductData = req.body;
+    
+    // Ensure there's an ID. Frontend should provide it, but this is a safeguard.
+    if (!newProductData.id) {
+        newProductData.id = `prod-${Date.now()}`;
+    }
+
     const productForDb = prepareProductForDb(newProductData);
+    
     try {
-        await pool.query("INSERT INTO products SET ?", [productForDb]);
+        const [insertResult] = await pool.query("INSERT INTO products SET ?", [productForDb]);
+        
+        // Check if insert was successful
+        if (insertResult.affectedRows === 0) {
+            throw new Error("Không thể chèn sản phẩm vào cơ sở dữ liệu.");
+        }
+
         const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productForDb.id]);
-        res.status(201).json(parseJsonFields(rows[0]));
+        
+        if (rows.length > 0) {
+            // Success case
+            res.status(201).json(parseJsonFields(rows[0]));
+        } else {
+            // This is a critical server error, but we can recover by sending back the data we tried to insert.
+            // This prevents the frontend from crashing on JSON parse.
+            console.error(`CRITICAL: Inserted product with ID ${productForDb.id} but could not SELECT it back immediately.`);
+            res.status(201).json(newProductData); // Send back the original data with a 201 status
+        }
     } catch (err) {
         console.error("Lỗi khi tạo sản phẩm:", err);
-        res.status(500).json({ error: 'Lỗi server khi tạo sản phẩm.' });
+        // Provide the actual SQL error message in the response for better debugging.
+        res.status(500).json({ error: `Lỗi server khi tạo sản phẩm: ${err.message}` });
     }
 });
 
