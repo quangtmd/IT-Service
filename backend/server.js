@@ -77,7 +77,7 @@ app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         // NOTE: In a real app, passwords should be hashed and compared with bcrypt.
-        const [userRows] = await pool.query("SELECT id, username, email, image_url as imageUrl, is_locked as isLocked FROM Users WHERE email = ? AND password_hash = ?", [email, password]);
+        const [userRows] = await pool.query("SELECT id, username, email, image_url as imageUrl, is_locked as isLocked FROM users WHERE email = ? AND password_hash = ?", [email, password]);
         
         if (userRows.length > 0) {
             const user = userRows[0];
@@ -88,8 +88,8 @@ app.post('/api/login', async (req, res) => {
             // Fetch user role
             const [roleRows] = await pool.query(
                 `SELECT r.name as roleName 
-                 FROM Roles r 
-                 JOIN UserRoles ur ON r.id = ur.role_id 
+                 FROM roles r 
+                 JOIN userroles ur ON r.id = ur.role_id 
                  WHERE ur.user_id = ?`, 
                 [user.id]
             );
@@ -100,7 +100,7 @@ app.post('/api/login', async (req, res) => {
 
             if (userRole === 'admin' || userRole === 'staff') {
                  const [contractRows] = await pool.query(
-                    `SELECT job_title FROM Contracts WHERE employee_id = ? AND is_active = TRUE`,
+                    `SELECT job_title FROM contracts WHERE employee_id = ? AND is_active = TRUE`,
                     [user.id]
                  );
                  if (contractRows.length > 0) {
@@ -135,11 +135,11 @@ app.get('/api/users', async (req, res) => {
                 ep.full_name as fullName, ep.date_of_birth as dateOfBirth,
                 ep.join_date as joinDate, ep.status,
                 c.job_title as position,
-                (SELECT r.name FROM Roles r JOIN UserRoles ur ON r.id = ur.role_id WHERE ur.user_id = u.id LIMIT 1) as role,
+                (SELECT r.name FROM roles r JOIN userroles ur ON r.id = ur.role_id WHERE ur.user_id = u.id LIMIT 1) as role,
                 c.job_title as staffRole 
-            FROM Users u
-            LEFT JOIN EmployeeProfiles ep ON u.id = ep.user_id
-            LEFT JOIN Contracts c ON u.id = c.employee_id AND c.is_active = TRUE
+            FROM users u
+            LEFT JOIN employeeprofiles ep ON u.id = ep.user_id
+            LEFT JOIN contracts c ON u.id = c.employee_id AND c.is_active = TRUE
         `;
         const [users] = await pool.query(query);
         res.json(users);
@@ -152,7 +152,7 @@ app.get('/api/users', async (req, res) => {
 // --- API: PRODUCT CATEGORIES ---
 app.get('/api/product_categories', async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT id, name, slug, description, parent_category_id as parentCategoryId FROM ProductCategories ORDER BY name");
+        const [rows] = await pool.query("SELECT id, name, slug, description, parent_category_id as parentCategoryId FROM productcategories ORDER BY name");
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -182,7 +182,7 @@ app.get('/api/products', async (req, res) => {
         
         const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
         
-        const countQuery = `SELECT COUNT(*) as total FROM Products p ${whereString}`;
+        const countQuery = `SELECT COUNT(*) as total FROM products p ${whereString}`;
         const [countRows] = await pool.query(countQuery, params);
         const totalProducts = countRows[0].total;
 
@@ -192,11 +192,11 @@ app.get('/api/products', async (req, res) => {
         
         const dataQuery = `
             SELECT p.*, c.name as categoryName,
-                COALESCE((SELECT SUM(i.quantity) FROM Inventory i WHERE i.product_id = p.id), 0) as stock,
+                COALESCE((SELECT SUM(i.quantity) FROM inventory i WHERE i.product_id = p.id), 0) as stock,
                 pc.specs
-            FROM Products p
-            LEFT JOIN ProductCategories c ON p.category_id = c.id
-            LEFT JOIN PCComponents pc ON p.id = pc.product_id
+            FROM products p
+            LEFT JOIN productcategories c ON p.category_id = c.id
+            LEFT JOIN pccomponents pc ON p.id = pc.product_id
             ${whereString} 
             ORDER BY p.created_at DESC 
             LIMIT ? OFFSET ?`;
@@ -214,11 +214,11 @@ app.get('/api/products/featured', async (req, res) => {
     try {
         const query = `
             SELECT p.*, c.name as categoryName,
-                COALESCE((SELECT SUM(i.quantity) FROM Inventory i WHERE i.product_id = p.id), 0) as stock,
+                COALESCE((SELECT SUM(i.quantity) FROM inventory i WHERE i.product_id = p.id), 0) as stock,
                 pc.specs
-            FROM Products p
-            LEFT JOIN ProductCategories c ON p.category_id = c.id
-            LEFT JOIN PCComponents pc ON p.id = pc.product_id
+            FROM products p
+            LEFT JOIN productcategories c ON p.category_id = c.id
+            LEFT JOIN pccomponents pc ON p.id = pc.product_id
             WHERE p.is_published = TRUE
             ORDER BY p.created_at DESC 
             LIMIT 8`;
@@ -235,11 +235,11 @@ app.get('/api/products/:id', async (req, res) => {
     try {
         const query = `
             SELECT p.*, c.name as categoryName,
-                COALESCE((SELECT SUM(i.quantity) FROM Inventory i WHERE i.product_id = p.id), 0) as stock,
+                COALESCE((SELECT SUM(i.quantity) FROM inventory i WHERE i.product_id = p.id), 0) as stock,
                 pc.specs
-            FROM Products p 
-            LEFT JOIN ProductCategories c ON p.category_id = c.id
-            LEFT JOIN PCComponents pc ON p.id = pc.product_id
+            FROM products p 
+            LEFT JOIN productcategories c ON p.category_id = c.id
+            LEFT JOIN pccomponents pc ON p.id = pc.product_id
             WHERE p.id = ?
         `;
         const [rows] = await pool.query(query, [req.params.id]);
@@ -258,7 +258,7 @@ app.post('/api/products', async (req, res) => {
     const { name, slug, sku, description, price, images, category_id, brand, is_published, specs } = req.body;
     try {
         // This is a simplified version. A real app would handle specs and inventory separately.
-        const query = `INSERT INTO Products (name, slug, sku, description, price, images, category_id, brand, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        const query = `INSERT INTO products (name, slug, sku, description, price, images, category_id, brand, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         const [result] = await pool.query(query, [name, slug, sku, description, price, JSON.stringify(images || []), category_id, brand, is_published]);
         res.status(201).json({ id: result.insertId, ...req.body });
     } catch (err) {
@@ -271,7 +271,7 @@ app.put('/api/products/:id', async (req, res) => {
     const { name, slug, sku, description, price, images, category_id, brand, is_published, specs } = req.body;
     try {
         // This is a simplified version. A real app would handle specs and inventory separately.
-        const query = `UPDATE Products SET name=?, slug=?, sku=?, description=?, price=?, images=?, category_id=?, brand=?, is_published=? WHERE id=?`;
+        const query = `UPDATE products SET name=?, slug=?, sku=?, description=?, price=?, images=?, category_id=?, brand=?, is_published=? WHERE id=?`;
         await pool.query(query, [name, slug, sku, description, price, JSON.stringify(images || []), category_id, brand, is_published, id]);
         res.json({ id, ...req.body });
     } catch (err) {
@@ -282,7 +282,7 @@ app.put('/api/products/:id', async (req, res) => {
 app.delete('/api/products/:id', async (req, res) => {
     try {
         // In a real app with foreign keys, you might need to delete from child tables first or set ON DELETE CASCADE
-        await pool.query('DELETE FROM Products WHERE id = ?', [req.params.id]);
+        await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
         res.status(204).send();
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -305,9 +305,9 @@ app.get('/api/orders', async (req, res) => {
                            'product_name', oi.product_name
                         )
                    ) 
-                   FROM OrderItems oi
+                   FROM orderitems oi
                    WHERE oi.order_id = o.id) as items
-            FROM Orders o
+            FROM orders o
             ORDER BY o.created_at DESC
         `;
         const [orders] = await pool.query(query);
@@ -333,7 +333,7 @@ app.post('/api/orders', async (req, res) => {
     try {
         await connection.beginTransaction();
         
-        const orderQuery = `INSERT INTO Orders (user_id, total_amount, status, customer_info, shipping_address, payment_details) VALUES (?, ?, ?, ?, ?, ?)`;
+        const orderQuery = `INSERT INTO orders (user_id, total_amount, status, customer_info, shipping_address, payment_details) VALUES (?, ?, ?, ?, ?, ?)`;
         const [orderResult] = await connection.query(orderQuery, [
             userId || null, 
             totalAmount, 
@@ -346,7 +346,7 @@ app.post('/api/orders', async (req, res) => {
 
         if (items && items.length > 0) {
             const itemPromises = items.map((item) => {
-                const itemQuery = "INSERT INTO OrderItems (order_id, product_id, quantity, price_at_purchase, product_name) VALUES (?, ?, ?, ?, ?)";
+                const itemQuery = "INSERT INTO orderitems (order_id, product_id, quantity, price_at_purchase, product_name) VALUES (?, ?, ?, ?, ?)";
                 return connection.query(itemQuery, [orderId, item.productId, item.quantity, item.priceAtPurchase, item.productName]);
             });
             await Promise.all(itemPromises);
@@ -366,7 +366,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     try {
-        await pool.query("UPDATE Orders SET status = ? WHERE id = ?", [status, id]);
+        await pool.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
         res.json({ message: 'Cập nhật trạng thái thành công.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -378,9 +378,9 @@ app.get('/api/articles', async (req, res) => {
     try {
         const [rows] = await pool.query(`
             SELECT a.*, u.username as author, ac.name as category
-            FROM Articles a
-            LEFT JOIN Users u ON a.author_id = u.id
-            LEFT JOIN ArticleCategories ac ON a.category_id = ac.id
+            FROM articles a
+            LEFT JOIN users u ON a.author_id = u.id
+            LEFT JOIN articlecategories ac ON a.category_id = ac.id
             ORDER BY a.published_at DESC
         `);
         // Massage data for frontend compatibility
@@ -399,7 +399,7 @@ app.get('/api/articles', async (req, res) => {
 // --- API: Service Tickets ---
 app.get('/api/service_tickets', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM ServiceTickets ORDER BY created_at DESC');
+        const [rows] = await pool.query('SELECT * FROM servicetickets ORDER BY created_at DESC');
         res.json(rows.map(row => parseJsonFields(row, ['customer_info'])));
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -412,9 +412,9 @@ app.get('/api/inventory', async (req, res) => {
     try {
         const query = `
             SELECT i.product_id, p.name as product_name, i.warehouse_id, w.name as warehouse_name, i.quantity
-            FROM Inventory i
-            JOIN Products p ON i.product_id = p.id
-            JOIN Warehouses w ON i.warehouse_id = w.id
+            FROM inventory i
+            JOIN products p ON i.product_id = p.id
+            JOIN warehouses w ON i.warehouse_id = w.id
             ORDER BY p.name, w.name
         `;
         const [rows] = await pool.query(query);
@@ -428,7 +428,7 @@ app.get('/api/inventory', async (req, res) => {
 // --- API: Financials (Suppliers & Bills) ---
 app.get('/api/suppliers', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM Suppliers ORDER BY name');
+        const [rows] = await pool.query('SELECT * FROM suppliers ORDER BY name');
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -439,8 +439,8 @@ app.get('/api/bills', async (req, res) => {
     try {
         const query = `
             SELECT b.*, s.name as supplier_name
-            FROM Bills b
-            LEFT JOIN Suppliers s ON b.supplier_id = s.id
+            FROM bills b
+            LEFT JOIN suppliers s ON b.supplier_id = s.id
             ORDER BY b.bill_date DESC
         `;
         const [rows] = await pool.query(query);
@@ -453,7 +453,7 @@ app.get('/api/bills', async (req, res) => {
 // --- API: SITE SETTINGS ---
 app.get('/api/site_settings', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM SiteSettings');
+        const [rows] = await pool.query('SELECT * FROM sitesettings');
         const settings = rows.reduce((acc, row) => {
             acc[row.setting_key] = parseJsonFields(row, ['setting_value']).setting_value;
             return acc;
@@ -469,7 +469,7 @@ app.post('/api/site_settings', async (req, res) => {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
-        const query = `INSERT INTO SiteSettings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`;
+        const query = `INSERT INTO sitesettings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`;
         for (const [key, value] of Object.entries(settings)) {
             await connection.query(query, [key, JSON.stringify(value)]);
         }

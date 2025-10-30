@@ -11,6 +11,22 @@ interface CategorySidebarProps {
   isCollapsed: boolean;
 }
 
+const categoryIcons: Record<string, string> = {
+    'Linh Kiện Máy Tính': 'fas fa-microchip',
+    'Máy Tính Xách Tay': 'fas fa-laptop',
+    'Máy Tính Để Bàn, All-in-one, Server': 'fas fa-desktop',
+    'Màn Hình Máy Tính': 'fas fa-tv',
+    'Máy In, Scan, Vật Tư Máy In': 'fas fa-print',
+    'Phím Chuột, Gaming Gear': 'fas fa-keyboard',
+    'Loa, Tai nghe, Webcam, Hội nghị': 'fas fa-headphones-alt',
+    'Phụ Kiện Công Nghệ, Phần mềm': 'fas fa-plug',
+    'Thiết Bị Mạng, Bộ Lưu Điện (UPS)': 'fas fa-network-wired',
+    'Máy Chiếu, Camera, TBVP': 'fas fa-video',
+    'Apple Center': 'fab fa-apple',
+    'Thiết bị ngoại vi': 'fas fa-keyboard', // Fallback for old name
+    'PC Xây Dựng': 'fas fa-tools', // Fallback
+};
+
 const CategorySidebar: React.FC<CategorySidebarProps> = ({
   currentMainCategoryId,
   currentSubCategoryId,
@@ -26,7 +42,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
           .filter(c => c.parentCategoryId === null)
           .map(mc => ({
             ...mc,
-            icon: 'fas fa-folder', // Placeholder icon
+            icon: categoryIcons[mc.name] || 'fas fa-tag',
             subCategories: allCats.filter(sc => sc.parentCategoryId === mc.id)
           }));
         setCategories(mainCats);
