@@ -48,10 +48,11 @@ const ProductManagementView: React.FC = () => {
     const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
 
     const openModalForNew = () => {
-        // FIX: Object literal may only specify known properties, and 'categoryId' does not exist in type 'SetStateAction<Product>'.
+        // FIX: Initialize with all required properties of the Product type.
         setEditingProduct({
             id: 0, name: '', description: '', price: 0, stock: 0, images: [],
             category_id: null, brand: '', specs: {}, created_at: '', updated_at: '',
+            slug: '', sku: null, is_published: false,
         });
         setIsModalOpen(true);
     };

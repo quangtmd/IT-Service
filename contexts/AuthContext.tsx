@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User, UserRole, AdminNotification, StaffRole } from '../types'; 
 import * as Constants from '../constants';
-import { getUsers as apiGetUsers } from '../services/localDataService';
+import { getUsers as apiGetUsers, loginUser as apiLoginUser } from '../services/localDataService';
 
 export type AdminPermission = 
   // General
@@ -111,14 +111,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (credentials: { email: string; password?: string }): Promise<void> => {
-    // This should call a backend login endpoint
-    const user = users.find(u => u.email === credentials.email /* && check password */);
-    if (user) {
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-        sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(user));
-    } else {
-        throw new Error('Email hoặc mật khẩu không đúng.');
+    try {
+        const user = await apiLoginUser(credentials);
+        if (user) {
+            setCurrentUser(user);
+            setIsAuthenticated(true);
+            sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(user));
+        } else {
+            throw new Error('Không nhận được thông tin người dùng từ server.');
+        }
+    } catch (error) {
+        throw error;
     }
   };
 
@@ -186,11 +189,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
    const hasPermission = (requiredPermissions: Array<AdminPermission>): boolean => {
     if (!isAuthenticated || !currentUser) return false;
-    // The role from DB is now simplified string
-    // FIX: This comparison appears to be unintentional because the types 'UserRole' and '"Admin"' have no overlap.
+    
     if (currentUser.role === 'admin') return true; 
 
-    if (currentUser.role) { // Assuming any other role from DB is 'staff'
+    if (currentUser.role === 'staff') {
         const currentStaffRoleCleaned = currentUser.staffRole?.trim() as StaffRole;
         
         const allPermissions: AdminPermission[] = [

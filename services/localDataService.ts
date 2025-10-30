@@ -123,6 +123,13 @@ export const deleteArticle = async (id: number | string): Promise<void> => {
 };
 
 // --- User Service ---
+export const loginUser = async (credentials: { email: string; password?: string }): Promise<User> => {
+    return apiFetch('/api/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+    });
+};
+
 export const getUsers = async (): Promise<User[]> => {
     return apiFetch('/api/users');
 }

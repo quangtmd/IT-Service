@@ -77,17 +77,52 @@ app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         // NOTE: In a real app, passwords should be hashed and compared with bcrypt.
-        // This is a simplified version for demonstration. The DB field is password_hash.
-        const [rows] = await pool.query("SELECT id, username, email, is_locked FROM Users WHERE email = ? AND password_hash = ?", [email, password]);
-        if (rows.length > 0) {
-            if (rows[0].is_locked) {
+        const [userRows] = await pool.query("SELECT id, username, email, image_url as imageUrl, is_locked as isLocked FROM Users WHERE email = ? AND password_hash = ?", [email, password]);
+        
+        if (userRows.length > 0) {
+            const user = userRows[0];
+            if (user.isLocked) {
                 return res.status(403).json({ error: 'Tài khoản đã bị khóa.' });
             }
-            res.json(rows[0]);
+
+            // Fetch user role
+            const [roleRows] = await pool.query(
+                `SELECT r.name as roleName 
+                 FROM Roles r 
+                 JOIN UserRoles ur ON r.id = ur.role_id 
+                 WHERE ur.user_id = ?`, 
+                [user.id]
+            );
+
+            // Fetch staff-specific details if the user is a staff/admin
+            let staffDetails = {};
+            const userRole = roleRows.length > 0 ? roleRows[0].roleName : 'customer';
+
+            if (userRole === 'admin' || userRole === 'staff') {
+                 const [contractRows] = await pool.query(
+                    `SELECT job_title FROM Contracts WHERE employee_id = ? AND is_active = TRUE`,
+                    [user.id]
+                 );
+                 if (contractRows.length > 0) {
+                    staffDetails = {
+                        staffRole: contractRows[0].job_title,
+                        position: contractRows[0].job_title
+                    }
+                 }
+            }
+
+            const fullUserPayload = {
+                ...user,
+                role: userRole,
+                ...staffDetails
+            };
+
+            res.json(fullUserPayload);
         } else {
             res.status(401).json({ error: 'Email hoặc mật khẩu không đúng.' });
         }
     } catch (err) {
+        console.error('Login error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -97,7 +132,7 @@ app.get('/api/users', async (req, res) => {
         const query = `
             SELECT 
                 u.id, u.username, u.email, u.image_url as imageUrl, u.is_locked as isLocked,
-                ep.full_name as fullName, ep.date_of_birth as dateOfBirth, ep.phone, ep.address,
+                ep.full_name as fullName, ep.date_of_birth as dateOfBirth,
                 ep.join_date as joinDate, ep.status,
                 c.job_title as position,
                 (SELECT r.name FROM Roles r JOIN UserRoles ur ON r.id = ur.role_id WHERE ur.user_id = u.id LIMIT 1) as role,
