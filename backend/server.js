@@ -31,6 +31,7 @@ try {
 
 // --- UTILITY FUNCTIONS ---
 const parseJsonFields = (item, fields) => {
+    if (!item) return item;
     const newItem = { ...item };
     for (const field of fields) {
         if (newItem[field] && typeof newItem[field] === 'string') {
@@ -38,14 +39,13 @@ const parseJsonFields = (item, fields) => {
                 newItem[field] = JSON.parse(newItem[field]);
             } catch (e) {
                 console.error(`Error parsing JSON field "${field}" for item:`, item, e);
-                newItem[field] = Array.isArray(fields) ? [] : {};
+                // Assign a default based on expected type (array for images, object for others)
+                newItem[field] = field === 'images' ? [] : {};
             }
         }
     }
     return newItem;
 };
-const parseProductFields = (product) => parseJsonFields(product, ['images', 'specs']);
-const parseOrderFields = (order) => parseJsonFields(order, ['items', 'customerInfo', 'shippingAddress', 'paymentDetails']);
 
 // --- API: HEALTH CHECK ---
 app.get('/', async (req, res) => {
@@ -163,7 +163,7 @@ app.get('/api/product_categories', async (req, res) => {
 app.get('/api/products', async (req, res) => {
     try {
         const { q, categoryId, brand, page = 1, limit = 12 } = req.query;
-        let whereClauses = [];
+        let whereClauses = ["p.is_published = TRUE"];
         const params = [];
 
         if (q) {
@@ -181,6 +181,7 @@ app.get('/api/products', async (req, res) => {
         }
         
         const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+        
         const countQuery = `SELECT COUNT(*) as total FROM Products p ${whereString}`;
         const [countRows] = await pool.query(countQuery, params);
         const totalProducts = countRows[0].total;
@@ -189,9 +190,18 @@ app.get('/api/products', async (req, res) => {
         const limitNum = parseInt(limit, 10);
         const offset = (pageNum - 1) * limitNum;
         
-        const dataQuery = `SELECT p.*, c.name as categoryName FROM Products p LEFT JOIN ProductCategories c ON p.category_id = c.id ${whereString} ORDER BY p.id DESC LIMIT ? OFFSET ?`;
+        const dataQuery = `
+            SELECT p.*, c.name as categoryName,
+                COALESCE((SELECT SUM(i.quantity) FROM Inventory i WHERE i.product_id = p.id), 0) as stock,
+                pc.specs
+            FROM Products p
+            LEFT JOIN ProductCategories c ON p.category_id = c.id
+            LEFT JOIN PCComponents pc ON p.id = pc.product_id
+            ${whereString} 
+            ORDER BY p.created_at DESC 
+            LIMIT ? OFFSET ?`;
+
         const [rows] = await pool.query(dataQuery, [...params, limitNum, offset]);
-        
         const parsedRows = rows.map(p => parseJsonFields(p, ['images', 'specs']));
 
         res.json({ products: parsedRows, totalProducts });
@@ -202,7 +212,17 @@ app.get('/api/products', async (req, res) => {
 
 app.get('/api/products/featured', async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM Products ORDER BY created_at DESC LIMIT 8");
+        const query = `
+            SELECT p.*, c.name as categoryName,
+                COALESCE((SELECT SUM(i.quantity) FROM Inventory i WHERE i.product_id = p.id), 0) as stock,
+                pc.specs
+            FROM Products p
+            LEFT JOIN ProductCategories c ON p.category_id = c.id
+            LEFT JOIN PCComponents pc ON p.id = pc.product_id
+            WHERE p.is_published = TRUE
+            ORDER BY p.created_at DESC 
+            LIMIT 8`;
+        const [rows] = await pool.query(query);
         const parsedRows = rows.map(p => parseJsonFields(p, ['images', 'specs']));
         res.json(parsedRows);
     } catch (err) {
@@ -214,9 +234,12 @@ app.get('/api/products/featured', async (req, res) => {
 app.get('/api/products/:id', async (req, res) => {
     try {
         const query = `
-            SELECT p.*, c.name as categoryName 
+            SELECT p.*, c.name as categoryName,
+                COALESCE((SELECT SUM(i.quantity) FROM Inventory i WHERE i.product_id = p.id), 0) as stock,
+                pc.specs
             FROM Products p 
             LEFT JOIN ProductCategories c ON p.category_id = c.id
+            LEFT JOIN PCComponents pc ON p.id = pc.product_id
             WHERE p.id = ?
         `;
         const [rows] = await pool.query(query, [req.params.id]);
@@ -234,8 +257,9 @@ app.get('/api/products/:id', async (req, res) => {
 app.post('/api/products', async (req, res) => {
     const { name, slug, sku, description, price, images, category_id, brand, is_published, specs } = req.body;
     try {
-        const query = `INSERT INTO Products (name, slug, sku, description, price, images, category_id, brand, is_published, specs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        const [result] = await pool.query(query, [name, slug, sku, description, price, JSON.stringify(images || []), category_id, brand, is_published, JSON.stringify(specs || {})]);
+        // This is a simplified version. A real app would handle specs and inventory separately.
+        const query = `INSERT INTO Products (name, slug, sku, description, price, images, category_id, brand, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        const [result] = await pool.query(query, [name, slug, sku, description, price, JSON.stringify(images || []), category_id, brand, is_published]);
         res.status(201).json({ id: result.insertId, ...req.body });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -246,8 +270,9 @@ app.put('/api/products/:id', async (req, res) => {
     const { id } = req.params;
     const { name, slug, sku, description, price, images, category_id, brand, is_published, specs } = req.body;
     try {
-        const query = `UPDATE Products SET name=?, slug=?, sku=?, description=?, price=?, images=?, category_id=?, brand=?, is_published=?, specs=? WHERE id=?`;
-        await pool.query(query, [name, slug, sku, description, price, JSON.stringify(images || []), category_id, brand, is_published, JSON.stringify(specs || {}), id]);
+        // This is a simplified version. A real app would handle specs and inventory separately.
+        const query = `UPDATE Products SET name=?, slug=?, sku=?, description=?, price=?, images=?, category_id=?, brand=?, is_published=? WHERE id=?`;
+        await pool.query(query, [name, slug, sku, description, price, JSON.stringify(images || []), category_id, brand, is_published, id]);
         res.json({ id, ...req.body });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -256,6 +281,7 @@ app.put('/api/products/:id', async (req, res) => {
 
 app.delete('/api/products/:id', async (req, res) => {
     try {
+        // In a real app with foreign keys, you might need to delete from child tables first or set ON DELETE CASCADE
         await pool.query('DELETE FROM Products WHERE id = ?', [req.params.id]);
         res.status(204).send();
     } catch (err) {
@@ -268,15 +294,15 @@ app.delete('/api/products/:id', async (req, res) => {
 app.get('/api/orders', async (req, res) => {
     try {
         const query = `
-            SELECT o.*, 
+            SELECT o.id, o.user_id, o.status, o.total_amount, o.customer_info, o.shipping_address, o.payment_details, o.created_at, o.updated_at,
                    (SELECT JSON_ARRAYAGG(
                        JSON_OBJECT(
                            'id', oi.id, 
-                           'orderId', oi.order_id, 
-                           'productId', oi.product_id,
+                           'order_id', oi.order_id, 
+                           'product_id', oi.product_id,
                            'quantity', oi.quantity,
-                           'priceAtPurchase', oi.price_at_purchase,
-                           'productName', oi.product_name
+                           'price_at_purchase', oi.price_at_purchase,
+                           'product_name', oi.product_name
                         )
                    ) 
                    FROM OrderItems oi
@@ -285,7 +311,16 @@ app.get('/api/orders', async (req, res) => {
             ORDER BY o.created_at DESC
         `;
         const [orders] = await pool.query(query);
-        const parsedOrders = orders.map(o => parseJsonFields(o, ['items', 'customer_info', 'shipping_address', 'payment_details']));
+        // Massage data for frontend compatibility
+        const massagedOrders = orders.map(o => ({
+            ...o,
+            customerInfo: o.customer_info,
+            totalAmount: o.total_amount,
+            createdAt: o.created_at,
+            updatedAt: o.updated_at,
+            paymentDetails: o.payment_details
+        }));
+        const parsedOrders = massagedOrders.map(o => parseJsonFields(o, ['items', 'customerInfo', 'shipping_address', 'paymentDetails']));
         res.json(parsedOrders);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -318,7 +353,7 @@ app.post('/api/orders', async (req, res) => {
         }
         
         await connection.commit();
-        res.status(201).json({ id: orderId, ...req.body });
+        res.status(201).json({ id: orderId, ...req.body, order_id: orderId });
     } catch (err) {
         await connection.rollback();
         res.status(500).json({ error: err.message });
@@ -341,8 +376,21 @@ app.put('/api/orders/:id/status', async (req, res) => {
 // --- API: ARTICLES (from DB) ---
 app.get('/api/articles', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM Articles ORDER BY published_at DESC');
-        res.json(rows);
+        const [rows] = await pool.query(`
+            SELECT a.*, u.username as author, ac.name as category
+            FROM Articles a
+            LEFT JOIN Users u ON a.author_id = u.id
+            LEFT JOIN ArticleCategories ac ON a.category_id = ac.id
+            ORDER BY a.published_at DESC
+        `);
+        // Massage data for frontend compatibility
+        const massagedData = rows.map(a => ({
+            ...a,
+            imageUrl: a.image_url,
+            createdAt: a.created_at,
+            updatedAt: a.updated_at,
+        }))
+        res.json(massagedData);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
