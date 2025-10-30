@@ -14,7 +14,7 @@ const PCBuildSuggestionsPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Fix: Use process.env.API_KEY as per guidelines and remove Vite-specific environment variables.
+    // Fix: Use process.env.API_KEY to align with Gemini API guidelines and resolve typing issues.
     const isApiKeyConfigured = !!process.env.API_KEY;
 
     const budgetOptions = [

@@ -38,7 +38,7 @@ const BlogPage: React.FC = () => {
       setIsLoading(false);
 
       const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
-      // Fix: Use process.env.API_KEY as per guidelines and remove Vite-specific environment variables.
+      // Fix: Use process.env.API_KEY to align with Gemini API guidelines and resolve typing issues.
       const apiKey = process.env.API_KEY;
 
       if (apiKey && isCacheStale) {
@@ -68,7 +68,7 @@ const BlogPage: React.FC = () => {
         } catch (error) {
           console.error("Failed to fetch AI articles:", error);
           const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
-          if (errorMessage.includes("API Key chưa được cấu hình")) {
+          if (errorMessage.includes("API Key")) {
             setAiError(Constants.API_KEY_ERROR_MESSAGE);
           } else {
             setAiError(errorMessage);

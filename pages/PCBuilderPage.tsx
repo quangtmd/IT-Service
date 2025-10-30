@@ -59,7 +59,7 @@ const PCBuilderPage: React.FC = () => {
   const getAIRecommendation = async () => {
     // This check is now secondary; the primary error handling is in the service.
     // However, it provides a fast failure path without a service call.
-    // Fix: Use process.env.API_KEY as per guidelines and remove Vite-specific environment variables.
+    // Fix: Use process.env.API_KEY to align with Gemini API guidelines and resolve typing issues.
     if (!process.env.API_KEY) {
       setError(Constants.API_KEY_ERROR_MESSAGE);
       return;
@@ -86,7 +86,7 @@ const PCBuilderPage: React.FC = () => {
       console.error("Lỗi khi nhận đề xuất từ AI:", err);
       const errorMessage = err instanceof Error ? err.message : "Lỗi không xác định từ AI.";
       // Display the specific, user-friendly API key error if it occurs.
-      if (errorMessage.includes("API Key chưa được cấu hình")) {
+      if (errorMessage.includes("API Key")) {
           setError(Constants.API_KEY_ERROR_MESSAGE);
       } else {
           setError(errorMessage);
@@ -182,6 +182,7 @@ const PCBuilderPage: React.FC = () => {
     return null;
   };
 
+  // Fix: Use process.env.API_KEY to align with Gemini API guidelines and resolve typing issues.
   const isApiKeyConfigured = !!process.env.API_KEY;
 
   try {

@@ -1,4 +1,3 @@
-
 // Fix: Import correct types from @google/genai
 // Fix: Removed invalid non-English import.
 import { GoogleGenAI, Chat, GenerateContentResponse, GenerateContentParameters, Part, Content, Type } from "@google/genai"; // Added Part, Content, Type
@@ -18,10 +17,12 @@ let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with '
 const getAiClient = (): GoogleGenAI | null => {
   // In a Vite project, environment variables must be prefixed with VITE_
   // and are accessed via import.meta.env
-  // Fix: Use process.env.API_KEY as per guidelines and remove Vite-specific environment variables.
+  // Fix: Use process.env.API_KEY to align with Gemini API guidelines.
+  // This assumes the build tool (e.g., Vite) is configured to expose this environment variable.
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
     if (!aiInstance) { // Log this warning only once to avoid spamming the console
+        // Fix: Update warning message to reference API_KEY.
         console.warn("Gemini Service: API_KEY is not configured in your environment variables. AI features will be disabled.");
     }
     return null;

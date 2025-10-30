@@ -618,3 +618,14 @@ export interface PayrollRecord {
   notes: string;
   status: 'Chưa thanh toán' | 'Đã thanh toán';
 }
+
+// Fix: Declare process.env for client-side usage, assuming it's defined by the build tool (e.g., Vite).
+// This resolves TypeScript errors about 'process' not being defined and aligns with Gemini API guidelines.
+declare global {
+  var process: {
+    env: {
+      API_KEY?: string;
+      [key: string]: string | undefined;
+    }
+  }
+}
