@@ -14,7 +14,7 @@ const PCBuildSuggestionsPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Fix: Use process.env.API_KEY to align with Gemini API guidelines and resolve typing issues.
+    // FIX: Use process.env.API_KEY for environment variables per guidelines.
     const isApiKeyConfigured = !!process.env.API_KEY;
 
     const budgetOptions = [

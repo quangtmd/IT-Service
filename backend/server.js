@@ -30,52 +30,7 @@ app.use(express.json({ limit: '50mb' })); // Tăng giới hạn payload cho medi
 
 /*
 -- HƯỚNG DẪN CÀI ĐẶT DATABASE MYSQL --
-1.  Tạo một database mới, ví dụ: `CREATE DATABASE iq_technology_db;`
-2.  Chạy LẦN LƯỢT các câu lệnh SQL dưới đây để tạo tất cả các bảng cần thiết.
-
--- Bảng Sản phẩm --
-CREATE TABLE products (
-    id VARCHAR(255) PRIMARY KEY, name VARCHAR(255) NOT NULL, mainCategory VARCHAR(255), subCategory VARCHAR(255),
-    category VARCHAR(255), price DECIMAL(12, 0) NOT NULL, originalPrice DECIMAL(12, 0), imageUrls JSON,
-    description TEXT, shortDescription TEXT, specifications JSON, stock INT NOT NULL, status VARCHAR(50),
-    rating FLOAT, reviews INT, brand VARCHAR(255), tags JSON, brandLogoUrl VARCHAR(255),
-    isVisible BOOLEAN DEFAULT TRUE, seoMetaTitle VARCHAR(255), seoMetaDescription TEXT, slug VARCHAR(255) UNIQUE
-);
-
--- Bảng Đơn hàng --
-CREATE TABLE orders (
-    id VARCHAR(255) PRIMARY KEY, customerInfo JSON NOT NULL, items JSON NOT NULL, totalAmount DECIMAL(12, 0) NOT NULL,
-    orderDate DATETIME NOT NULL, status VARCHAR(50) NOT NULL, shippingInfo JSON, paymentInfo JSON NOT NULL
-);
-
--- Bảng Bài viết --
-CREATE TABLE articles (
-    id VARCHAR(255) PRIMARY KEY, title VARCHAR(255) NOT NULL, summary TEXT, imageUrl TEXT,
-    author VARCHAR(255), date DATETIME NOT NULL, category VARCHAR(255), content LONGTEXT,
-    isAIGenerated BOOLEAN DEFAULT FALSE, imageSearchQuery VARCHAR(255)
-);
-
--- Bảng Thư viện Media --
-CREATE TABLE media_library (
-    id VARCHAR(255) PRIMARY KEY, url LONGTEXT NOT NULL, name VARCHAR(255), type VARCHAR(100), uploadedAt DATETIME NOT NULL
-);
-
--- Bảng FAQs --
-CREATE TABLE faqs (
-    id VARCHAR(255) PRIMARY KEY, question TEXT NOT NULL, answer TEXT, category VARCHAR(100), isVisible BOOLEAN DEFAULT TRUE
-);
-
--- Bảng Mã giảm giá --
-CREATE TABLE discount_codes (
-    id VARCHAR(255) PRIMARY KEY, code VARCHAR(100) NOT NULL UNIQUE, type VARCHAR(50) NOT NULL, value DECIMAL(10, 2) NOT NULL,
-    description TEXT, expiryDate DATE, isActive BOOLEAN DEFAULT TRUE, minSpend DECIMAL(12, 0),
-    usageLimit INT, timesUsed INT DEFAULT 0
-);
-
--- Bảng Cài đặt Trang --
-CREATE TABLE site_settings (
-    settingKey VARCHAR(255) PRIMARY KEY, settingValue JSON
-);
+Vui lòng xem file `SETUP_DATABASE.sql` trong cùng thư mục này để biết hướng dẫn chi tiết.
 */
 
 
@@ -139,21 +94,9 @@ const createApiEndpoints = (tableName, jsonFields = []) => {
     app.post(`/api/${tableName}`, async (req, res) => {
         const newItem = req.body;
         if (!newItem.id) newItem.id = `${tableName.slice(0, 4)}-${Date.now()}`;
-        
-        // Prepare the object for the database.
-        let preparedItem = prepareForDb(newItem, jsonFields);
-
-        // FIX: If the table is 'products', remove the 'id' field before insertion
-        // to handle schema mismatches where 'id' is auto-incremented or missing.
-        let dataToInsert = preparedItem;
-        if (tableName === 'products') {
-            const { id, ...rest } = preparedItem;
-            dataToInsert = rest;
-        }
-
         try {
-            await pool.query(`INSERT INTO ${tableName} SET ?`, [dataToInsert]);
-            res.status(201).json(newItem); // Always return the original object with ID to the client
+            await pool.query(`INSERT INTO ${tableName} SET ?`, [prepareForDb(newItem, jsonFields)]);
+            res.status(201).json(newItem);
         } catch (err) {
              res.status(500).json({ error: `Lỗi server khi tạo ${tableName}: ${err.message}` });
         }
@@ -194,7 +137,6 @@ app.get('/api/products', async (req, res) => {
     const params = [];
 
     if (q) {
-        // FIX: Replaced JSON_SEARCH with a more compatible LIKE search for tags.
         whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR tags LIKE ?)");
         const searchTerm = `%${q}%`;
         // Note the escaped quotes to match the string within the JSON array `["tag1", "tag2"]`
@@ -217,7 +159,6 @@ app.get('/api/products', async (req, res) => {
         params.push(status);
     }
     if (tags) {
-      // FIX: Replaced JSON_CONTAINS with a more compatible LIKE search.
       whereClauses.push("tags LIKE ?");
       params.push(`%\"${tags}\"%`);
     }
@@ -245,7 +186,6 @@ app.get('/api/products', async (req, res) => {
 
 app.get('/api/products/featured', async (req, res) => {
     try {
-        // FIX: Replaced JSON_CONTAINS with a more compatible LIKE search to avoid server errors on some MySQL versions.
         const query = `SELECT * FROM products WHERE isVisible = TRUE AND tags LIKE '%"Bán chạy"%' LIMIT 8`;
         const [rows] = await pool.query(query);
         res.json(rows.map(p => parseJsonFields(p, ['imageUrls', 'specifications', 'tags'])));

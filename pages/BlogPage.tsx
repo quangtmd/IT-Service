@@ -38,7 +38,7 @@ const BlogPage: React.FC = () => {
       setIsLoading(false);
 
       const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
-      // Fix: Use process.env.API_KEY to align with Gemini API guidelines and resolve typing issues.
+      // FIX: Use process.env.API_KEY as per the guidelines.
       const apiKey = process.env.API_KEY;
 
       if (apiKey && isCacheStale) {

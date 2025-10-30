@@ -57,9 +57,7 @@ const PCBuilderPage: React.FC = () => {
   }, []);
 
   const getAIRecommendation = async () => {
-    // This check is now secondary; the primary error handling is in the service.
-    // However, it provides a fast failure path without a service call.
-    // Fix: Use process.env.API_KEY to align with Gemini API guidelines and resolve typing issues.
+    // FIX: Use process.env.API_KEY as per the guidelines.
     if (!process.env.API_KEY) {
       setError(Constants.API_KEY_ERROR_MESSAGE);
       return;
@@ -182,7 +180,7 @@ const PCBuilderPage: React.FC = () => {
     return null;
   };
 
-  // Fix: Use process.env.API_KEY to align with Gemini API guidelines and resolve typing issues.
+  // FIX: Use process.env.API_KEY as per the guidelines.
   const isApiKeyConfigured = !!process.env.API_KEY;
 
   try {

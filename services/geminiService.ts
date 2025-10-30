@@ -15,14 +15,11 @@ let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
 
 const getAiClient = (): GoogleGenAI | null => {
-  // In a Vite project, environment variables must be prefixed with VITE_
-  // and are accessed via import.meta.env
-  // Fix: Use process.env.API_KEY to align with Gemini API guidelines.
-  // This assumes the build tool (e.g., Vite) is configured to expose this environment variable.
+  // FIX: Use process.env.API_KEY as per the guidelines.
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
     if (!aiInstance) { // Log this warning only once to avoid spamming the console
-        // Fix: Update warning message to reference API_KEY.
+        // FIX: Updated warning message to refer to API_KEY.
         console.warn("Gemini Service: API_KEY is not configured in your environment variables. AI features will be disabled.");
     }
     return null;

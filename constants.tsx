@@ -14,7 +14,7 @@ import {
 
 export const ADMIN_EMAIL = "quangtmdit@gmail.com"; 
 
-export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_API_KEY trong cài đặt trên Render.";
+export const API_KEY_ERROR_MESSAGE = "Lỗi: API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_API_KEY trên Render.";
 export const BACKEND_API_BASE_URL = "https://it-service-1.onrender.com"; 
 
 // --- STORAGE KEYS ---

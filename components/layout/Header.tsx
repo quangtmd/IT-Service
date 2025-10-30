@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 // FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { Link, NavLink, useNavigate } from 'react-router-dom';
@@ -24,6 +25,100 @@ const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badg
         <span>{label}</span>
     </Link>
 );
+
+const AnalogClock: React.FC = () => {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timerId = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timerId);
+  }, []);
+
+  const seconds = time.getSeconds();
+  const minutes = time.getMinutes();
+  const hours = time.getHours();
+
+  const secondHandRotation = seconds * 6;
+  const minuteHandRotation = minutes * 6 + seconds * 0.1;
+  const hourHandRotation = (hours % 12) * 30 + minutes * 0.5;
+
+  const clockSize = 72; // Increased size
+
+  return (
+    <div
+      className="hidden md:flex relative rounded-full items-center justify-center bg-gray-800 shadow-lg"
+      style={{ width: `${clockSize}px`, height: `${clockSize}px`, border: '4px solid #4A5568' }}
+      title={time.toLocaleTimeString()}
+      aria-label={`Current time: ${time.toLocaleTimeString()}`}
+    >
+      {/* Clock Markers */}
+      {Array.from({ length: 12 }).map((_, i) => {
+        const isMajor = (i + 1) % 3 === 0;
+        return (
+          <div
+            key={i}
+            className="absolute w-full h-full"
+            style={{ transform: `rotate(${(i + 1) * 30}deg)` }}
+          >
+            <div
+              className={`absolute bg-gray-400 ${isMajor ? 'w-1 h-3 top-1' : 'w-0.5 h-2 top-1'}`}
+              style={{ left: '50%', transform: 'translateX(-50%)' }}
+            ></div>
+          </div>
+        );
+      })}
+
+      {/* Hour Hand */}
+      <div
+        className="absolute bg-white rounded-t-full shadow-md"
+        style={{
+          width: '4px',
+          height: `${clockSize * 0.25}px`,
+          transform: `rotate(${hourHandRotation}deg)`,
+          transformOrigin: 'bottom',
+          bottom: '50%',
+          zIndex: 10,
+        }}
+      ></div>
+      {/* Minute Hand */}
+      <div
+        className="absolute bg-white rounded-t-full shadow-md"
+        style={{
+          width: '3px',
+          height: `${clockSize * 0.35}px`,
+          transform: `rotate(${minuteHandRotation}deg)`,
+          transformOrigin: 'bottom',
+          bottom: '50%',
+          zIndex: 10,
+        }}
+      ></div>
+      
+      {/* Center Logo */}
+      <div 
+        className="absolute w-8 h-8 rounded-full bg-primary flex items-center justify-center z-20 shadow-inner"
+        style={{ fontFamily: 'Impact, sans-serif' }}
+      >
+        <span className="text-white text-sm font-bold">IQ</span>
+      </div>
+
+      {/* Second Hand */}
+      <div
+        className="absolute bg-primary rounded-full shadow-md"
+        style={{
+          width: '2px',
+          height: `${clockSize * 0.4}px`,
+          transform: `rotate(${secondHandRotation}deg)`,
+          transformOrigin: 'bottom',
+          bottom: '50%',
+          zIndex: 30, // On top of everything
+        }}
+      ></div>
+      
+      {/* Center Pivot for Second Hand */}
+      <div className="absolute w-2 h-2 bg-white rounded-full z-40 border border-gray-500"></div>
+    </div>
+  );
+};
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -139,14 +234,17 @@ const Header: React.FC = () => {
         {/* MAIN HEADER */}
         <div className="bg-black text-white">
           <div className="container mx-auto px-4 flex items-center justify-between gap-4 h-20">
-            <Link to="/home" className="flex-shrink-0">
-              <svg width="125" height="45" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg">
-                  <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: var(--color-primary-default); font-style: italic; } .logo-main-white { font-family: Impact, sans-serif; font-size: 36px; fill: #ffffff; font-style: italic; } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #ffffff; letter-spacing: 2px; }`}</style>
-                  <text x="0" y="30" className="logo-main-red">IQ</text>
-                  <text x="38" y="30" className="logo-main-white">TECH</text>
-                  <text x="38" y="42" className="logo-sub">TECHNOLOGY</text>
-              </svg>
-            </Link>
+             <div className="flex items-center gap-6">
+                <AnalogClock />
+                <Link to="/home" className="flex-shrink-0">
+                  <svg width="125" height="45" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg">
+                      <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: var(--color-primary-default); font-style: italic; } .logo-main-white { font-family: Impact, sans-serif; font-size: 36px; fill: #ffffff; font-style: italic; } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #ffffff; letter-spacing: 2px; }`}</style>
+                      <text x="0" y="30" className="logo-main-red">IQ</text>
+                      <text x="38" y="30" className="logo-main-white">TECH</text>
+                      <text x="38" y="42" className="logo-sub">TECHNOLOGY</text>
+                  </svg>
+                </Link>
+            </div>
             
             <div className="flex-grow max-w-2xl hidden lg:block">
               <HeaderSearchBar />
