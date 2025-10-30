@@ -194,9 +194,11 @@ app.get('/api/products', async (req, res) => {
     const params = [];
 
     if (q) {
-        whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR JSON_SEARCH(tags, 'one', ?) IS NOT NULL)");
+        // FIX: Replaced JSON_SEARCH with a more compatible LIKE search for tags.
+        whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR tags LIKE ?)");
         const searchTerm = `%${q}%`;
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+        // Note the escaped quotes to match the string within the JSON array `["tag1", "tag2"]`
+        params.push(searchTerm, searchTerm, searchTerm, `%\"${q}\"%`);
     }
     if (mainCategory) {
         whereClauses.push("mainCategory = ?");
@@ -215,8 +217,9 @@ app.get('/api/products', async (req, res) => {
         params.push(status);
     }
     if (tags) {
-      whereClauses.push("JSON_CONTAINS(tags, JSON_QUOTE(?))");
-      params.push(tags);
+      // FIX: Replaced JSON_CONTAINS with a more compatible LIKE search.
+      whereClauses.push("tags LIKE ?");
+      params.push(`%\"${tags}\"%`);
     }
 
     const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
@@ -242,7 +245,8 @@ app.get('/api/products', async (req, res) => {
 
 app.get('/api/products/featured', async (req, res) => {
     try {
-        const query = `SELECT * FROM products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, JSON_QUOTE('Bán chạy')) LIMIT 8`;
+        // FIX: Replaced JSON_CONTAINS with a more compatible LIKE search to avoid server errors on some MySQL versions.
+        const query = `SELECT * FROM products WHERE isVisible = TRUE AND tags LIKE '%"Bán chạy"%' LIMIT 8`;
         const [rows] = await pool.query(query);
         res.json(rows.map(p => parseJsonFields(p, ['imageUrls', 'specifications', 'tags'])));
     } catch (err) {
