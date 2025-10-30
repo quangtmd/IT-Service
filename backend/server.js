@@ -110,6 +110,45 @@ const createApiEndpoints = (tableName, jsonFields = []) => {
     });
 };
 
+app.post('/api/products', async (req, res) => {
+    // This custom handler addresses the "Unknown column 'id'" error by excluding 'id' from the insert query.
+    // This assumes the 'products' table has an auto-incrementing primary key.
+    const { id, ...productData } = req.body;
+    try {
+        const dbReadyData = prepareForDb(productData, ['imageUrls', 'specifications', 'tags']);
+        const [result] = await pool.query('INSERT INTO products SET ?', [dbReadyData]);
+        const insertedId = result.insertId;
+        // Respond with the full product object, now including the new database-generated ID.
+        res.status(201).json({ ...req.body, id: insertedId });
+    } catch (err) {
+        res.status(500).json({ error: `Lỗi server khi tạo products: ${err.message}` });
+    }
+});
+
+app.put('/api/products/:id', async (req, res) => {
+    const { id } = req.params;
+    const updates = req.body;
+    delete updates.id;
+    try {
+        const [result] = await pool.query('UPDATE products SET ? WHERE id = ?', [prepareForDb(updates, ['imageUrls', 'specifications', 'tags']), id]);
+        if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đối tượng để cập nhật.' });
+        res.json({ id, ...updates });
+    } catch (err) {
+        res.status(500).json({ error: `Lỗi server khi cập nhật products: ${err.message}` });
+    }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [result] = await pool.query('DELETE FROM products WHERE id = ?', [id]);
+        if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đối tượng để xóa.' });
+        res.status(200).json({ message: 'Đã xóa thành công.' });
+    } catch (err) {
+        res.status(500).json({ error: `Lỗi server khi xóa products: ${err.message}` });
+    }
+});
+
 
 // --- PRODUCTS API (Custom implementation for filtering) ---
 
@@ -189,7 +228,6 @@ app.get('/api/products/:id', async (req, res) => {
         res.status(500).json({ error: 'Lỗi server.' });
     }
 });
-createApiEndpoints('products', ['imageUrls', 'specifications', 'tags']);
 
 
 // --- ORDERS API (Custom implementation) ---
