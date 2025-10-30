@@ -29,11 +29,30 @@ try {
     process.exit(1);
 }
 
+const parseProductFields = (product) => {
+    if (product.images && typeof product.images === 'string') {
+        try {
+            product.images = JSON.parse(product.images);
+        } catch (e) {
+            console.error(`Error parsing images for product ${product.id}:`, product.images, e);
+            product.images = []; // Fallback
+        }
+    }
+    if (product.specs && typeof product.specs === 'string') {
+        try {
+            product.specs = JSON.parse(product.specs);
+        } catch (e) {
+            console.error(`Error parsing specs for product ${product.id}:`, product.specs, e);
+            product.specs = {}; // Fallback
+        }
+    }
+    return product;
+};
 
 // --- API: Product Categories ---
 app.get('/api/product_categories', async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM `product categories` ORDER BY name");
+        const [rows] = await pool.query("SELECT * FROM `category` ORDER BY name");
         res.json(rows);
     } catch (err) {
         console.error("Error fetching product categories:", err.message);
@@ -74,7 +93,9 @@ app.get('/api/products', async (req, res) => {
         const dataQuery = `SELECT * FROM products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
         const [rows] = await pool.query(dataQuery, [...params, limitNum, offset]);
         
-        res.json({ products: rows, totalProducts });
+        const parsedRows = rows.map(parseProductFields);
+
+        res.json({ products: parsedRows, totalProducts });
     } catch (err) {
         console.error("Error fetching products:", err.message);
         res.status(500).json({ error: `Lỗi server khi lấy sản phẩm: ${err.message}` });
@@ -84,7 +105,8 @@ app.get('/api/products', async (req, res) => {
 app.get('/api/products/featured', async (req, res) => {
     try {
         const [rows] = await pool.query("SELECT * FROM products ORDER BY createdAt DESC LIMIT 8");
-        res.json(rows);
+        const parsedRows = rows.map(parseProductFields);
+        res.json(parsedRows);
     } catch (err) {
         console.error("Error fetching featured products:", err.message);
         res.status(500).json({ error: `Lỗi server khi lấy sản phẩm nổi bật: ${err.message}` });
@@ -97,19 +119,12 @@ app.get('/api/products/:id', async (req, res) => {
         const query = `
             SELECT p.*, c.name as categoryName 
             FROM products p 
-            LEFT JOIN \`product categories\` c ON p.categoryId = c.id
+            LEFT JOIN \`category\` c ON p.categoryId = c.id
             WHERE p.id = ?
         `;
         const [rows] = await pool.query(query, [req.params.id]);
         if (rows.length > 0) {
-            // Parse JSON fields before sending
-            const product = rows[0];
-            if (product.images && typeof product.images === 'string') {
-                product.images = JSON.parse(product.images);
-            }
-            if (product.specs && typeof product.specs === 'string') {
-                product.specs = JSON.parse(product.specs);
-            }
+            const product = parseProductFields(rows[0]);
             res.json(product);
         } else {
             res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });

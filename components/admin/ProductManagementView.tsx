@@ -165,11 +165,21 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
     const [formData, setFormData] = useState<Partial<Product>>(product || {});
     const [categories, setCategories] = useState<ProductCategory[]>([]);
     const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+    const [categoryError, setCategoryError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchCategories = async () => {
-            const cats = await getProductCategories();
-            setCategories(cats);
+            setCategoryError(null);
+            try {
+                const cats = await getProductCategories();
+                setCategories(cats);
+                if (cats.length === 0) {
+                    setCategoryError("Không tìm thấy danh mục nào. Vui lòng thêm danh mục trước.");
+                }
+            } catch (error) {
+                console.error("Failed to load categories for product form:", error);
+                setCategoryError("Không thể tải danh mục sản phẩm. Vui lòng thử lại.");
+            }
         };
         fetchCategories();
     }, []);
@@ -222,6 +232,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                                         </optgroup>
                                     ))}
                                 </select>
+                                {categoryError && <p className="form-input-description text-danger-text">{categoryError}</p>}
                             </div>
                             <div className="admin-form-group"><label>Hãng sản xuất</label><input type="text" name="brand" value={formData.brand || ''} onChange={handleChange} /></div>
                         </div>
