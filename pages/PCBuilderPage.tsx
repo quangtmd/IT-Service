@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 // FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { useNavigate } from 'react-router-dom';
@@ -60,8 +59,8 @@ const PCBuilderPage: React.FC = () => {
   const getAIRecommendation = async () => {
     // This check is now secondary; the primary error handling is in the service.
     // However, it provides a fast failure path without a service call.
-    // Fix: Use process.env.API_KEY or process.env.GEMINI_API_KEY
-    if (!(process.env.API_KEY || process.env.GEMINI_API_KEY)) {
+    // Fix: Use process.env.API_KEY as per guidelines and remove Vite-specific environment variables.
+    if (!process.env.API_KEY) {
       setError(Constants.API_KEY_ERROR_MESSAGE);
       return;
     }
@@ -183,7 +182,7 @@ const PCBuilderPage: React.FC = () => {
     return null;
   };
 
-  const isApiKeyConfigured = !!(process.env.API_KEY || process.env.GEMINI_API_KEY);
+  const isApiKeyConfigured = !!process.env.API_KEY;
 
   try {
     return (

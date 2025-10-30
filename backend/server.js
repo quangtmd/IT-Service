@@ -130,9 +130,21 @@ const createApiEndpoints = (tableName, jsonFields = []) => {
     app.post(`/api/${tableName}`, async (req, res) => {
         const newItem = req.body;
         if (!newItem.id) newItem.id = `${tableName.slice(0, 4)}-${Date.now()}`;
+        
+        // Prepare the object for the database.
+        let preparedItem = prepareForDb(newItem, jsonFields);
+
+        // FIX: If the table is 'products', remove the 'id' field before insertion
+        // to handle schema mismatches where 'id' is auto-incremented or missing.
+        let dataToInsert = preparedItem;
+        if (tableName === 'products') {
+            const { id, ...rest } = preparedItem;
+            dataToInsert = rest;
+        }
+
         try {
-            await pool.query(`INSERT INTO ${tableName} SET ?`, [prepareForDb(newItem, jsonFields)]);
-            res.status(201).json(newItem);
+            await pool.query(`INSERT INTO ${tableName} SET ?`, [dataToInsert]);
+            res.status(201).json(newItem); // Always return the original object with ID to the client
         } catch (err) {
              res.status(500).json({ error: `Lỗi server khi tạo ${tableName}: ${err.message}` });
         }

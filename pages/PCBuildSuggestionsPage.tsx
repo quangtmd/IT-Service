@@ -14,7 +14,8 @@ const PCBuildSuggestionsPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const isApiKeyConfigured = !!(process.env.API_KEY || process.env.GEMINI_API_KEY);
+    // Fix: Use process.env.API_KEY as per guidelines and remove Vite-specific environment variables.
+    const isApiKeyConfigured = !!process.env.API_KEY;
 
     const budgetOptions = [
         { label: 'Dưới 15 triệu', value: '15000000' },
