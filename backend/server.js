@@ -5,26 +5,9 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 10000; // Use Render's port, fallback to 10000
 
-// Cấu hình CORS an toàn cho production
-const allowedOrigins = [
-    'https://it-service-2.onrender.com',
-    'http://localhost:5173', // Cổng mặc định của Vite
-    'http://localhost:3000', // Cổng phổ biến khác
-];
-
-const corsOptions = {
-    origin: (origin, callback) => {
-        // Cho phép các request không có origin (ví dụ: mobile apps, Postman) hoặc từ whitelist
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-};
-
-app.use(cors(corsOptions));
-
+// Cấu hình CORS để cho phép tất cả các origin (sử dụng cho chẩn đoán)
+// Đây là một biện pháp tạm thời để xác định xem lỗi có phải do CORS hay không.
+app.use(cors());
 
 app.use(express.json({ limit: '50mb' })); // Tăng giới hạn payload cho media
 
