@@ -5,7 +5,18 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 10000; // Use Render's port, fallback to 10000
 
-app.use(cors());
+// Cấu hình CORS chi tiết để cho phép các yêu cầu từ nhiều nguồn
+const corsOptions = {
+    origin: [
+        'http://localhost:5173', // Cho phép từ môi trường dev Vite
+        'https://it-service-2.onrender.com' // Cho phép từ frontend đã deploy
+    ],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true,
+    optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' })); // Tăng giới hạn payload cho media
 
 /*
