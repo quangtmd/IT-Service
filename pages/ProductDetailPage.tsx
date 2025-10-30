@@ -54,8 +54,8 @@ const ProductDetailPage: React.FC = () => {
           setError('Không tìm thấy sản phẩm.');
         }
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu sản phẩm từ Local Storage:", err);
-        setError("Đã xảy ra lỗi khi tải sản phẩm.");
+        console.error("Lỗi khi tải dữ liệu sản phẩm:", err);
+        setError(err instanceof Error ? err.message : "Đã xảy ra lỗi không mong muốn khi tải sản phẩm.");
       } finally {
         setIsLoading(false);
         window.scrollTo(0, 0);

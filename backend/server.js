@@ -3,77 +3,72 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 
 const app = express();
-// Railway hoặc Hostinger sẽ cung cấp biến PORT. Nếu không có, dùng cổng 3001 cho local.
 const port = process.env.PORT || 3001; 
 
-// Kích hoạt CORS để React App (chạy ở cổng khác) có thể gọi API
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Tăng giới hạn payload cho media
 
 /*
 -- HƯỚNG DẪN CÀI ĐẶT DATABASE MYSQL --
-1. Hãy chắc chắn rằng bạn đã cài đặt MySQL Server.
-2. Tạo một database mới, ví dụ: CREATE DATABASE iq_technology_db;
-3. Chạy câu lệnh SQL dưới đây để tạo bảng 'products':
+1.  Tạo một database mới, ví dụ: `CREATE DATABASE iq_technology_db;`
+2.  Chạy LẦN LƯỢT các câu lệnh SQL dưới đây để tạo tất cả các bảng cần thiết.
 
+-- Bảng Sản phẩm --
 CREATE TABLE products (
-    id VARCHAR(255) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    mainCategory VARCHAR(255),
-    subCategory VARCHAR(255),
-    category VARCHAR(255),
-    price DECIMAL(10, 0) NOT NULL,
-    originalPrice DECIMAL(10, 0),
-    imageUrls JSON, -- Lưu dưới dạng mảng JSON: '["url1", "url2"]'
-    description TEXT,
-    shortDescription TEXT,
-    specifications JSON, -- Lưu dưới dạng đối tượng JSON: '{"CPU": "Intel Core i5", "RAM": "16GB"}'
-    stock INT NOT NULL,
-    status VARCHAR(50),
-    rating FLOAT,
-    reviews INT,
-    brand VARCHAR(255),
-    tags JSON, -- Lưu dưới dạng mảng JSON: '["tag1", "tag2"]'
-    brandLogoUrl VARCHAR(255),
-    isVisible BOOLEAN DEFAULT TRUE,
-    seoMetaTitle VARCHAR(255),
-    seoMetaDescription TEXT,
-    slug VARCHAR(255) UNIQUE
+    id VARCHAR(255) PRIMARY KEY, name VARCHAR(255) NOT NULL, mainCategory VARCHAR(255), subCategory VARCHAR(255),
+    category VARCHAR(255), price DECIMAL(12, 0) NOT NULL, originalPrice DECIMAL(12, 0), imageUrls JSON,
+    description TEXT, shortDescription TEXT, specifications JSON, stock INT NOT NULL, status VARCHAR(50),
+    rating FLOAT, reviews INT, brand VARCHAR(255), tags JSON, brandLogoUrl VARCHAR(255),
+    isVisible BOOLEAN DEFAULT TRUE, seoMetaTitle VARCHAR(255), seoMetaDescription TEXT, slug VARCHAR(255) UNIQUE
 );
 
-4. Chạy câu lệnh SQL dưới đây để tạo bảng 'orders':
+-- Bảng Đơn hàng --
 CREATE TABLE orders (
-    id VARCHAR(255) PRIMARY KEY,
-    customerInfo JSON NOT NULL, -- { fullName, phone, address, email, notes }
-    items JSON NOT NULL, -- [{ productId, productName, quantity, price }]
-    totalAmount DECIMAL(12, 0) NOT NULL,
-    orderDate DATETIME NOT NULL,
-    status VARCHAR(50) NOT NULL, -- 'Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'
-    shippingInfo JSON, -- { carrier, trackingNumber, shippingStatus }
-    paymentInfo JSON NOT NULL -- { method, status, transactionId, amountToPay }
+    id VARCHAR(255) PRIMARY KEY, customerInfo JSON NOT NULL, items JSON NOT NULL, totalAmount DECIMAL(12, 0) NOT NULL,
+    orderDate DATETIME NOT NULL, status VARCHAR(50) NOT NULL, shippingInfo JSON, paymentInfo JSON NOT NULL
 );
 
-5. Thêm một vài dữ liệu mẫu vào bảng 'products'.
+-- Bảng Bài viết --
+CREATE TABLE articles (
+    id VARCHAR(255) PRIMARY KEY, title VARCHAR(255) NOT NULL, summary TEXT, imageUrl TEXT,
+    author VARCHAR(255), date DATETIME NOT NULL, category VARCHAR(255), content LONGTEXT,
+    isAIGenerated BOOLEAN DEFAULT FALSE, imageSearchQuery VARCHAR(255)
+);
+
+-- Bảng Thư viện Media --
+CREATE TABLE media_library (
+    id VARCHAR(255) PRIMARY KEY, url LONGTEXT NOT NULL, name VARCHAR(255), type VARCHAR(100), uploadedAt DATETIME NOT NULL
+);
+
+-- Bảng FAQs --
+CREATE TABLE faqs (
+    id VARCHAR(255) PRIMARY KEY, question TEXT NOT NULL, answer TEXT, category VARCHAR(100), isVisible BOOLEAN DEFAULT TRUE
+);
+
+-- Bảng Mã giảm giá --
+CREATE TABLE discount_codes (
+    id VARCHAR(255) PRIMARY KEY, code VARCHAR(100) NOT NULL UNIQUE, type VARCHAR(50) NOT NULL, value DECIMAL(10, 2) NOT NULL,
+    description TEXT, expiryDate DATE, isActive BOOLEAN DEFAULT TRUE, minSpend DECIMAL(12, 0),
+    usageLimit INT, timesUsed INT DEFAULT 0
+);
+
+-- Bảng Cài đặt Trang --
+CREATE TABLE site_settings (
+    settingKey VARCHAR(255) PRIMARY KEY, settingValue JSON
+);
 */
 
 
-// --- CẤU HÌNH KẾT NỐI MYSQL ---
-// Đọc thông tin kết nối từ các biến môi trường.
-// Các biến môi trường này cần được thiết lập trên server hosting của bạn (ví dụ: Hostinger, Railway).
 const dbConfig = {
-  host: process.env.MYSQLHOST || process.env.DB_HOST,
-  user: process.env.MYSQLUSER || process.env.DB_USER,
-  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
-  database: process.env.MYSQLDATABASE || process.env.DB_NAME,
-  port: process.env.MYSQLPORT || 3306
+  host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
+  user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
+  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
+  database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'iq_technology_db',
+  port: process.env.MYSQLPORT || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 };
-
-// Kiểm tra các biến môi trường cần thiết
-if (!dbConfig.host || !dbConfig.user || !dbConfig.database) {
-    console.error('FATAL ERROR: Database configuration is missing. Please set MYSQLHOST/DB_HOST, MYSQLUSER/DB_USER, MYSQLPASSWORD/DB_PASSWORD, and MYSQLDATABASE/DB_NAME environment variables.');
-    process.exit(1);
-}
-
 
 let pool;
 try {
@@ -81,134 +76,104 @@ try {
     console.log('Đã tạo kết nối MySQL pool thành công.');
 } catch (error) {
     console.error('Lỗi khi tạo kết nối MySQL pool:', error);
-    process.exit(1); // Thoát ứng dụng nếu không thể tạo pool
+    process.exit(1);
 }
 
 // --- HELPERS FOR JSON FIELDS ---
-
-// PRODUCTS
-const parseJsonFields = (product) => {
-    if (!product) return product; // Return early if product is null/undefined
-    try {
-        if (product.imageUrls && typeof product.imageUrls === 'string') product.imageUrls = JSON.parse(product.imageUrls);
-        if (product.specifications && typeof product.specifications === 'string') product.specifications = JSON.parse(product.specifications);
-        if (product.tags && typeof product.tags === 'string') product.tags = JSON.parse(product.tags);
-    } catch (e) {
-        console.error(`Lỗi khi phân tích JSON cho sản phẩm ID ${product.id}:`, e);
-        if (typeof product.imageUrls !== 'object' || product.imageUrls === null) product.imageUrls = [];
-        if (typeof product.specifications !== 'object' || product.specifications === null) product.specifications = {};
-        if (typeof product.tags !== 'object' || product.tags === null) product.tags = [];
+const parseJsonFields = (obj, fields) => {
+    if (!obj) return obj;
+    for (const field of fields) {
+        try {
+            if (obj[field] && typeof obj[field] === 'string') {
+                obj[field] = JSON.parse(obj[field]);
+            }
+        } catch (e) {
+            console.error(`Lỗi khi phân tích JSON cho trường ${field} của ID ${obj.id}:`, e);
+            obj[field] = Array.isArray(obj[field]) ? [] : {};
+        }
     }
-    return product;
-}
-const prepareProductForDb = (product) => {
-    const dbProduct = { ...product };
-    if (Array.isArray(dbProduct.imageUrls)) dbProduct.imageUrls = JSON.stringify(dbProduct.imageUrls);
-    if (typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null) dbProduct.specifications = JSON.stringify(dbProduct.specifications);
-    if (Array.isArray(dbProduct.tags)) dbProduct.tags = JSON.stringify(dbProduct.tags);
-    return dbProduct;
+    return obj;
 };
 
-// ORDERS
-const parseOrderJsonFields = (order) => {
-    try {
-        if (order.customerInfo && typeof order.customerInfo === 'string') order.customerInfo = JSON.parse(order.customerInfo);
-        if (order.items && typeof order.items === 'string') order.items = JSON.parse(order.items);
-        if (order.shippingInfo && typeof order.shippingInfo === 'string') order.shippingInfo = JSON.parse(order.shippingInfo);
-        if (order.paymentInfo && typeof order.paymentInfo === 'string') order.paymentInfo = JSON.parse(order.paymentInfo);
-    } catch (e) {
-        console.error(`Lỗi khi phân tích JSON cho đơn hàng ID ${order.id}:`, e);
+const prepareForDb = (obj, fields) => {
+    const dbObj = { ...obj };
+    for (const field of fields) {
+        if (typeof dbObj[field] === 'object' && dbObj[field] !== null) {
+            dbObj[field] = JSON.stringify(dbObj[field]);
+        }
     }
-    return order;
-};
-const prepareOrderForDb = (order) => {
-    const dbOrder = { ...order };
-    if (typeof dbOrder.customerInfo === 'object') dbOrder.customerInfo = JSON.stringify(dbOrder.customerInfo);
-    if (Array.isArray(dbOrder.items)) dbOrder.items = JSON.stringify(dbOrder.items);
-    if (typeof dbOrder.shippingInfo === 'object' && dbOrder.shippingInfo !== null) dbOrder.shippingInfo = JSON.stringify(dbOrder.shippingInfo);
-    if (typeof dbOrder.paymentInfo === 'object') dbOrder.paymentInfo = JSON.stringify(dbOrder.paymentInfo);
-    return dbOrder;
+    return dbObj;
 };
 
-// Share category hierarchy with backend for slug mapping
-const PRODUCT_CATEGORIES_HIERARCHY = [
-  { name: "Máy tính để bàn (PC)", slug: "may_tinh_de_ban", icon: "fas fa-desktop", subCategories: [ { name: "Máy tính văn phòng", slug: "pc_van_phong" }, {name: "Máy tính Gaming", slug: "pc_gaming"}, {name: "Workstation (Máy trạm)", slug:"pc_workstation"}, { name: "Máy đồng bộ", slug: "pc_dong_bo" }, ] },
-  { name: "Laptop", slug: "laptop", icon: "fas fa-laptop", subCategories: [ { name: "Laptop văn phòng", slug: "laptop_van_phong" }, {name: "Laptop Gaming", slug: "laptop_gaming"}, {name: "MacBook", slug:"macbook"}, { name: "Laptop cũ", slug: "laptop_cu" }, ] },
-  { name: "Linh kiện máy tính", slug: "linh_kien_may_tinh", icon: "fas fa-microchip", subCategories: [ { name: "CPU (Vi xử lý Intel, AMD)", slug: "cpu" }, { name: "RAM (DDR4, DDR5…)", slug: "ram" }, { name: "Ổ cứng HDD / SSD (SATA, NVMe)", slug: "storage" }, { name: "VGA (Card màn hình)", slug: "vga" }, { name: "Bo mạch chủ (Mainboard)", slug: "mainboard"}, { name: "Nguồn máy tính (PSU)", slug: "psu"}, { name: "Vỏ máy (Case)", slug: "case"}, { name: "Tản nhiệt (Khí, Nước)", slug: "cooling"} ] },
-  { name: "Thiết bị ngoại vi", slug: "thiet_bi_ngoai_vi", icon: "fas fa-keyboard", subCategories: [ { name: "Màn hình (LCD, LED, 2K, 4K, Gaming…)", slug: "man_hinh" }, { name: "Bàn phím (Cơ, Giả cơ, Thường)", slug: "ban_phim" }, { name: "Chuột (Gaming, Văn phòng)", slug: "chuot" }, { name: "Tai nghe (Có dây, Không dây)", slug: "tai_nghe" } ] },
-  { name: "Camera giám sát", slug: "camera_giam_sat", icon: "fas fa-video", subCategories: [ { name: "Camera IP (WiFi / LAN)", slug: "camera_ip" }, { name: "Đầu ghi hình (DVR, NVR)", slug: "dau_ghi_hinh" } ] },
-  { name: "Thiết bị mạng", slug: "thiet_bi_mang", icon: "fas fa-wifi", subCategories: [ { name: "Router WiFi (TP-Link, Asus, UniFi…)", slug: "router_wifi" }, { name: "Switch mạng (PoE, Thường)", slug: "switch_mang" } ] },
-  { name: "Phần mềm & dịch vụ", slug: "phan_mem_dich_vu", icon: "fas fa-cogs", subCategories: [ { name: "Bản quyền Windows, Office", slug: "ban_quyen_phan_mem" }, { name: "Dịch vụ cài đặt (Tận nơi / Online)", slug: "dich_vu_cai_dat" } ] },
-  { name: "Phụ kiện & thiết bị khác", slug: "phu_kien_khac", icon: "fas fa-plug", subCategories: [ { name: "Cáp chuyển, Hub USB, Docking", slug: "cap_hub_docking" }, { name: "Balo, Túi chống sốc", slug: "balo_tui" } ] },
-  { name: "PC Xây Dựng", slug: "pc_xay_dung", icon: "fas fa-tools", subCategories: [ { name: "Theo Yêu Cầu", slug: "theo_yeu_cau" } ] }
-];
+// Generic CRUD handlers
+const createApiEndpoints = (tableName, jsonFields = []) => {
+    app.get(`/api/${tableName}`, async (req, res) => {
+        try {
+            const [rows] = await pool.query(`SELECT * FROM ${tableName}`);
+            res.json(rows.map(row => parseJsonFields(row, jsonFields)));
+        } catch (err) {
+            res.status(500).json({ error: `Lỗi server khi lấy dữ liệu ${tableName}.` });
+        }
+    });
 
-const MOCK_SERVICES = [
-  { id: 'svc001', name: 'Thiết Kế & Phát Triển Web Chuyên Nghiệp', description: 'Chúng tôi cung cấp giải pháp website toàn diện, từ thiết kế UX/UI hiện đại, trực quan đến phát triển frontend & backend mạnh mẽ, đảm bảo tối ưu hóa SEO và mang lại trải nghiệm người dùng vượt trội.', icon: 'fas fa-laptop-code', imageUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1770&auto=format&fit=crop', slug: 'thiet-ke-phat-trien-web' },
-  { id: 'svc002', name: 'Quản Trị Hệ Thống Mạng Doanh Nghiệp', description: 'Dịch vụ quản trị, giám sát và bảo trì hệ thống mạng chuyên nghiệp cho doanh nghiệp. Đảm bảo hệ thống của bạn hoạt động ổn định, an toàn, hiệu quả với hiệu suất tối đa.', icon: 'fas fa-network-wired', imageUrl: 'https://images.unsplash.com/photo-1587135304381-e3f43845b4ca?q=80&w=1770&auto=format&fit=crop', slug: 'quan-tri-he-thong-mang'},
-  { id: 'svc003', name: 'Giải Pháp Lưu Trữ & Sao Lưu Đám Mây', description: 'Tư vấn và triển khai các giải pháp lưu trữ đám mây (Cloud Storage) và sao lưu dữ liệu (Cloud Backup) linh hoạt, an toàn và tiết kiệm chi phí cho cá nhân và doanh nghiệp.', icon: 'fas fa-cloud-upload-alt', imageUrl: 'https://images.unsplash.com/photo-1534972195531-d756b9bfa9f2?q=80&w=1770&auto=format&fit=crop', slug: 'luu-tru-sao-luu-dam-may' },
-  { id: 'svc004', name: 'Hỗ Trợ Kỹ Thuật Từ Xa Nhanh Chóng', description: 'Đội ngũ kỹ thuật viên chuyên nghiệp của chúng tôi sẵn sàng giải quyết nhanh chóng các sự cố máy tính, phần mềm qua TeamViewer, UltraViewer, đảm bảo công việc của bạn không bị gián đoạn.', icon: 'fas fa-headset', imageUrl: 'https://images.unsplash.com/photo-1616587894285-3d17c752531a?q=80&w=1770&auto=format&fit=crop', slug: 'ho-tro-ky-thuat-tu-xa'},
-  { id: 'svc005', name: 'Tư Vấn & Triển Khai Chuyển Đổi Số', description: 'Đánh giá toàn diện hiện trạng công nghệ và tư vấn lộ trình chuyển đổi số tối ưu, giúp doanh nghiệp của bạn tự động hóa quy trình, nâng cao năng lực cạnh tranh và phát triển bền vững.', icon: 'fas fa-project-diagram', imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1774&auto=format&fit=crop', slug: 'tu-van-chuyen-doi-so' },
-  { id: 'svc006', name: 'Bảo Mật Hệ Thống & An Toàn Dữ Liệu', description: 'Dịch vụ kiểm tra, đánh giá lỗ hổng và triển khai các giải pháp bảo mật tiên tiến. Phòng chống hiệu quả virus, mã độc, tấn công mạng, bảo vệ an toàn tuyệt đối cho dữ liệu quan trọng.', icon: 'fas fa-shield-alt', imageUrl: 'https://images.unsplash.com/photo-1558006511-aa7131a44e53?q=80&w=1770&auto=format&fit=crop', slug: 'bao-mat-he-thong-du-lieu' },
-];
+    app.post(`/api/${tableName}`, async (req, res) => {
+        const newItem = req.body;
+        if (!newItem.id) newItem.id = `${tableName.slice(0, 4)}-${Date.now()}`;
+        try {
+            await pool.query(`INSERT INTO ${tableName} SET ?`, [prepareForDb(newItem, jsonFields)]);
+            res.status(201).json(newItem);
+        } catch (err) {
+             res.status(500).json({ error: `Lỗi server khi tạo ${tableName}: ${err.message}` });
+        }
+    });
+
+    app.put(`/api/${tableName}/:id`, async (req, res) => {
+        const { id } = req.params;
+        const updates = req.body;
+        delete updates.id;
+        try {
+            const [result] = await pool.query(`UPDATE ${tableName} SET ? WHERE id = ?`, [prepareForDb(updates, jsonFields), id]);
+            if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đối tượng để cập nhật.' });
+            res.json({ id, ...updates });
+        } catch (err) {
+            res.status(500).json({ error: `Lỗi server khi cập nhật ${tableName}: ${err.message}` });
+        }
+    });
+
+    app.delete(`/api/${tableName}/:id`, async (req, res) => {
+        const { id } = req.params;
+        try {
+            const [result] = await pool.query(`DELETE FROM ${tableName} WHERE id = ?`, [id]);
+            if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đối tượng để xóa.' });
+            res.status(200).json({ message: 'Đã xóa thành công.' });
+        } catch (err) {
+            res.status(500).json({ error: `Lỗi server khi xóa ${tableName}.` });
+        }
+    });
+};
 
 
-// --- PRODUCTS API ENDPOINTS ---
+// --- PRODUCTS API (Custom implementation for filtering) ---
 
 app.get('/api/products', async (req, res) => {
   try {
     const { q, mainCategory, subCategory, brand, status, tags, page = 1, limit = 12 } = req.query;
-
     let whereClauses = ["isVisible = TRUE"];
     const params = [];
 
     if (q) {
-        whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR tags LIKE ?)");
+        whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR JSON_SEARCH(tags, 'one', ?) IS NOT NULL)");
         const searchTerm = `%${q}%`;
         params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
-    
-    let mainCategoryFound = false;
     if (mainCategory) {
-        const mainCatInfo = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === mainCategory || c.name === mainCategory);
-        if (mainCatInfo) {
-            whereClauses.push("mainCategory = ?");
-            params.push(mainCatInfo.name);
-            mainCategoryFound = true;
-        }
+        whereClauses.push("mainCategory = ?");
+        params.push(mainCategory);
     }
-
     if (subCategory) {
-        let subCatName = null;
-        for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
-            const subCatInfo = mainCat.subCategories.find(sc => sc.slug === subCategory || sc.name === subCategory);
-            if (subCatInfo) {
-                subCatName = subCatInfo.name;
-                break;
-            }
-        }
-        if (subCatName) {
-            whereClauses.push("subCategory = ?");
-            params.push(subCatName);
-        }
-    } else if (mainCategory && !mainCategoryFound) {
-        // If a value was passed for mainCategory but it wasn't a valid main category,
-        // let's check if it's a sub-category. This fixes the carousel issue.
-        let subCatName = null;
-        for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
-            const subCatInfo = mainCat.subCategories.find(sc => sc.slug === mainCategory || sc.name === mainCategory);
-            if (subCatInfo) {
-                subCatName = subCatInfo.name;
-                break;
-            }
-        }
-        if (subCatName) {
-            whereClauses.push("subCategory = ?");
-            params.push(subCatName);
-        }
+        whereClauses.push("subCategory = ?");
+        params.push(subCategory);
     }
-
-
     if (brand) {
         whereClauses.push("brand = ?");
         params.push(brand);
@@ -218,18 +183,15 @@ app.get('/api/products', async (req, res) => {
         params.push(status);
     }
     if (tags) {
-      whereClauses.push("tags LIKE ?");
-      params.push(`%"${tags}"%`);
+      whereClauses.push("JSON_CONTAINS(tags, JSON_QUOTE(?))");
+      params.push(tags);
     }
 
     const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-    // Query for total count
     const countQuery = `SELECT COUNT(*) as total FROM products ${whereString}`;
     const [countRows] = await pool.query(countQuery, params);
     const totalProducts = countRows[0].total;
 
-    // Query for paginated data
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
     const offset = (pageNum - 1) * limitNum;
@@ -238,197 +200,94 @@ app.get('/api/products', async (req, res) => {
     const dataParams = [...params, limitNum, offset];
 
     const [rows] = await pool.query(dataQuery, dataParams);
-    const products = rows.map(parseJsonFields);
-
+    const products = rows.map(p => parseJsonFields(p, ['imageUrls', 'specifications', 'tags']));
     res.json({ products, totalProducts });
+
   } catch (err) {
-    console.error("Lỗi khi truy vấn sản phẩm:", err);
     res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu sản phẩm.' });
   }
 });
 
 app.get('/api/products/featured', async (req, res) => {
     try {
-        // Using LIKE instead of JSON_CONTAINS for robustness, in case the 'tags' column is not a valid JSON type in the database.
-        // This is less efficient but safer against potential server crashes from SQL errors.
-        const query = `
-            SELECT * FROM products
-            WHERE isVisible = TRUE
-            AND (
-                tags LIKE ? 
-                OR (originalPrice IS NOT NULL AND price < originalPrice)
-            )
-            ORDER BY id DESC
-            LIMIT 8
-        `;
-        const params = ['%"Bán chạy"%'];
-        
-        const [rows] = await pool.query(query, params);
-        
-        const products = rows.map(parseJsonFields);
-
-        res.json(products);
+        const query = `SELECT * FROM products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, JSON_QUOTE('Bán chạy')) LIMIT 8`;
+        const [rows] = await pool.query(query);
+        res.json(rows.map(p => parseJsonFields(p, ['imageUrls', 'specifications', 'tags'])));
     } catch (err) {
-        console.error("Lỗi khi truy vấn sản phẩm nổi bật (v4 - using LIKE):", err);
         res.status(500).json({ error: 'Lỗi server khi lấy sản phẩm nổi bật.' });
     }
 });
 
 app.get('/api/products/:id', async (req, res) => {
-    const productId = req.params.id;
     try {
-        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productId]);
+        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [req.params.id]);
         if (rows.length > 0) {
-            const product = parseJsonFields(rows[0]);
-            res.json(product);
+            res.json(parseJsonFields(rows[0], ['imageUrls', 'specifications', 'tags']));
         } else {
             res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
         }
     } catch (err) {
-        console.error(`Lỗi khi truy vấn sản phẩm ID ${productId}:`, err);
         res.status(500).json({ error: 'Lỗi server.' });
     }
 });
-
-app.post('/api/products', async (req, res) => {
-    const newProductData = req.body;
-    
-    // Ensure there's an ID. Frontend should provide it, but this is a safeguard.
-    if (!newProductData.id) {
-        newProductData.id = `prod-${Date.now()}`;
-    }
-
-    const productForDb = prepareProductForDb(newProductData);
-    
-    try {
-        const [insertResult] = await pool.query("INSERT INTO products SET ?", [productForDb]);
-        
-        // Check if insert was successful
-        if (insertResult.affectedRows === 0) {
-            throw new Error("Không thể chèn sản phẩm vào cơ sở dữ liệu.");
-        }
-
-        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productForDb.id]);
-        
-        if (rows.length > 0) {
-            // Success case
-            res.status(201).json(parseJsonFields(rows[0]));
-        } else {
-            // This is a critical server error, but we can recover by sending back the data we tried to insert.
-            // This prevents the frontend from crashing on JSON parse.
-            console.error(`CRITICAL: Inserted product with ID ${productForDb.id} but could not SELECT it back immediately.`);
-            res.status(201).json(newProductData); // Send back the original data with a 201 status
-        }
-    } catch (err) {
-        console.error("Lỗi khi tạo sản phẩm:", err);
-        // Provide the actual SQL error message in the response for better debugging.
-        res.status(500).json({ error: `Lỗi server khi tạo sản phẩm: ${err.message}` });
-    }
-});
-
-app.put('/api/products/:id', async (req, res) => {
-    const productId = req.params.id;
-    const updatedProductData = req.body;
-    delete updatedProductData.id; 
-    const productForDb = prepareProductForDb(updatedProductData);
-    try {
-        const [result] = await pool.query("UPDATE products SET ? WHERE id = ?", [productForDb, productId]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Không tìm thấy sản phẩm để cập nhật.' });
-        }
-        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productId]);
-        res.json(parseJsonFields(rows[0]));
-    } catch (err) {
-        console.error(`Lỗi khi cập nhật sản phẩm ID ${productId}:`, err);
-        res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm.' });
-    }
-});
-
-app.delete('/api/products/:id', async (req, res) => {
-    const productId = req.params.id;
-    try {
-        const [result] = await pool.query("DELETE FROM products WHERE id = ?", [productId]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Không tìm thấy sản phẩm để xóa.' });
-        }
-        res.status(200).json({ message: 'Sản phẩm đã được xóa thành công.' });
-    } catch (err) {
-        console.error(`Lỗi khi xóa sản phẩm ID ${productId}:`, err);
-        res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm.' });
-    }
-});
+createApiEndpoints('products', ['imageUrls', 'specifications', 'tags']);
 
 
-// --- SERVICES API ENDPOINTS ---
-app.get('/api/services/search', (req, res) => {
-  const { query } = req.query;
-  if (!query) {
-    return res.json(MOCK_SERVICES.slice(0, 3)); // Return a few if no query
-  }
-  const lowerQuery = query.toLowerCase();
-  const results = MOCK_SERVICES.filter(s => 
-    s.name.toLowerCase().includes(lowerQuery) || 
-    s.description.toLowerCase().includes(lowerQuery)
-  );
-  res.json(results);
-});
-
-
-// --- ORDERS API ENDPOINTS ---
-
-// GET all orders
-app.get('/api/orders', async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT * FROM orders ORDER BY orderDate DESC");
-        const orders = rows.map(parseOrderJsonFields);
-        res.json(orders);
-    } catch (err) {
-        console.error("Lỗi khi truy vấn đơn hàng:", err);
-        res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu đơn hàng.' });
-    }
-});
-
-// POST a new order
-app.post('/api/orders', async (req, res) => {
-    const newOrderData = req.body;
-    // Đảm bảo orderDate là đối tượng Date hợp lệ của SQL
-    newOrderData.orderDate = new Date(newOrderData.orderDate);
-
-    const orderForDb = prepareOrderForDb(newOrderData);
-    try {
-        await pool.query("INSERT INTO orders SET ?", [orderForDb]);
-        const [rows] = await pool.query("SELECT * FROM orders WHERE id = ?", [newOrderData.id]);
-        res.status(201).json(parseOrderJsonFields(rows[0]));
-    } catch (err) {
-        console.error("Lỗi khi tạo đơn hàng:", err);
-        res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng.' });
-    }
-});
-
-// PUT to update an order's status
+// --- ORDERS API (Custom implementation) ---
+createApiEndpoints('orders', ['customerInfo', 'items', 'shippingInfo', 'paymentInfo']);
 app.put('/api/orders/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
-
-    if (!status) {
-        return res.status(400).json({ error: 'Trạng thái mới là bắt buộc.' });
-    }
-
+    if (!status) return res.status(400).json({ error: 'Trạng thái mới là bắt buộc.' });
     try {
-        const [result] = await pool.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Không tìm thấy đơn hàng để cập nhật.' });
-        }
-        const [rows] = await pool.query("SELECT * FROM orders WHERE id = ?", [id]);
-        res.json(parseOrderJsonFields(rows[0]));
+        await pool.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
+        res.json({ message: 'Cập nhật trạng thái thành công.' });
     } catch (err) {
-        console.error(`Lỗi khi cập nhật trạng thái đơn hàng ID ${id}:`, err);
         res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái.' });
     }
 });
 
+// --- Generic CRUD for other tables ---
+createApiEndpoints('articles');
+createApiEndpoints('media_library');
+createApiEndpoints('faqs');
+createApiEndpoints('discount_codes');
 
-// Khởi động server
+// --- Site Settings API (Special case) ---
+app.get('/api/settings', async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT * FROM site_settings");
+        const settings = rows.reduce((acc, row) => {
+            acc[row.settingKey] = parseJsonFields(row, ['settingValue']).settingValue;
+            return acc;
+        }, {});
+        res.json(settings);
+    } catch (err) {
+        res.status(500).json({ error: 'Lỗi server khi lấy cài đặt.' });
+    }
+});
+
+app.post('/api/settings', async (req, res) => {
+    const settings = req.body;
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+        for (const [key, value] of Object.entries(settings)) {
+            const query = `INSERT INTO site_settings (settingKey, settingValue) VALUES (?, ?) ON DUPLICATE KEY UPDATE settingValue = ?`;
+            const stringValue = JSON.stringify(value);
+            await connection.query(query, [key, stringValue, stringValue]);
+        }
+        await connection.commit();
+        res.json({ message: 'Cài đặt đã được lưu.' });
+    } catch (err) {
+        await connection.rollback();
+        res.status(500).json({ error: `Lỗi server khi lưu cài đặt: ${err.message}` });
+    } finally {
+        connection.release();
+    }
+});
+
+
 app.listen(port, () => {
   console.log(`Backend server đang chạy tại http://localhost:${port}`);
 });

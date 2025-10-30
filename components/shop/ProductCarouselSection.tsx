@@ -53,7 +53,7 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
 
             } catch (err) {
                 console.error(`Error loading products for carousel "${title}":`, err);
-                setError('Lỗi mạng hoặc server không phản hồi');
+                setError(err instanceof Error ? err.message : 'Lỗi không xác định khi tải sản phẩm.');
             } finally {
                 setIsLoading(false);
             }

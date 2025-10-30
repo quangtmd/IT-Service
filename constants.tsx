@@ -15,7 +15,7 @@ import {
 export const ADMIN_EMAIL = "quangtmdit@gmail.com"; 
 
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường API_KEY hoặc GEMINI_API_KEY.";
-export const BACKEND_API_BASE_URL = process.env.BACKEND_API_BASE_URL || ""; 
+export const BACKEND_API_BASE_URL = "http://localhost:3001"; 
 
 // --- STORAGE KEYS ---
 export const SITE_LOGO_STORAGE_KEY = "siteLogoUrl_v1";
