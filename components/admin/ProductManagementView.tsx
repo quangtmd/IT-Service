@@ -48,9 +48,10 @@ const ProductManagementView: React.FC = () => {
     const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
 
     const openModalForNew = () => {
+        // FIX: Object literal may only specify known properties, and 'categoryId' does not exist in type 'SetStateAction<Product>'.
         setEditingProduct({
             id: 0, name: '', description: '', price: 0, stock: 0, images: [],
-            categoryId: null, brand: '', specs: {}, createdAt: '', updatedAt: '',
+            category_id: null, brand: '', specs: {}, created_at: '', updated_at: '',
         });
         setIsModalOpen(true);
     };
@@ -71,7 +72,7 @@ const ProductManagementView: React.FC = () => {
                 await updateProduct(productData.id, productData);
             } else { // Create
                 const { id, ...newProductData } = productData;
-                await addProduct(newProductData as Omit<Product, 'id'|'createdAt'|'updatedAt'>);
+                await addProduct(newProductData as Omit<Product, 'id'|'created_at'|'updated_at'>);
             }
             loadProducts();
             closeModal();
@@ -110,7 +111,8 @@ const ProductManagementView: React.FC = () => {
                 <td>{product.categoryName || 'N/A'}</td>
                 <td className="font-semibold text-primary">{product.price.toLocaleString('vi-VN')}₫</td>
                 <td>{product.stock}</td>
-                <td>{new Date(product.updatedAt).toLocaleDateString('vi-VN')}</td>
+                {/* FIX: Property 'updatedAt' does not exist on type 'Product'. Did you mean 'updated_at'? */}
+                <td>{new Date(product.updated_at).toLocaleDateString('vi-VN')}</td>
                 <td>
                     <div className="flex gap-2">
                         <Button onClick={() => openModalForEdit(product)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
@@ -222,7 +224,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="admin-form-group md:col-span-2"><label>Tên sản phẩm *</label><input type="text" name="name" value={formData.name || ''} onChange={handleChange} required /></div>
                             <div className="admin-form-group"><label>Danh mục *</label>
-                                <select name="categoryId" value={formData.categoryId || ''} onChange={handleChange} required>
+                                {/* FIX: Property 'categoryId' does not exist on type 'Partial<Product>'. Did you mean 'category_id'? */}
+                                <select name="category_id" value={formData.category_id || ''} onChange={handleChange} required>
                                     <option value="">-- Chọn danh mục --</option>
                                     {categories.filter(c => c.parentCategoryId === null).map(mainCat => (
                                         <optgroup key={mainCat.id} label={mainCat.name}>

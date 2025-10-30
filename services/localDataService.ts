@@ -1,4 +1,4 @@
-import { Product, Order, Article, MediaItem, OrderStatus, FaqItem, DiscountCode, SiteSettings, ProductCategory } from '../types';
+import { Product, Order, Article, MediaItem, OrderStatus, FaqItem, DiscountCode, SiteSettings, ProductCategory, ServiceTicket, Warehouse, Inventory, Supplier, Bill, User } from '../types';
 import * as Constants from '../constants';
 
 // --- API Helper ---
@@ -21,7 +21,6 @@ export const getProductCategories = async (): Promise<ProductCategory[]> => {
     return apiFetch('/api/product_categories');
 };
 
-
 // --- Product Service ---
 export const getProducts = async (): Promise<Product[]> => {
     const data = await apiFetch('/api/products?limit=1000'); // Lấy tất cả sản phẩm
@@ -29,13 +28,13 @@ export const getProducts = async (): Promise<Product[]> => {
 };
 
 export const getFilteredProducts = async (
-    filters: { [key: string]: string | number | null },
+    filters: { [key: string]: string | number | boolean | null },
     page: number,
     limit: number
 ): Promise<{ products: Product[], totalProducts: number }> => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     for (const key in filters) {
-        if (filters[key]) {
+        if (filters[key] !== null && filters[key] !== undefined) {
             params.append(key, String(filters[key]));
         }
     }
@@ -46,7 +45,7 @@ export const getProduct = async (id: string): Promise<Product | null> => {
     return apiFetch(`/api/products/${id}`);
 };
 
-export const addProduct = async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> => {
+export const addProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'categoryName'>): Promise<Product> => {
     return apiFetch('/api/products', {
         method: 'POST',
         body: JSON.stringify(product),
@@ -81,92 +80,107 @@ export const addOrder = async (orderData: any): Promise<Order> => {
 };
 
 export const updateOrderStatus = async (id: number | string, status: OrderStatus): Promise<void> => {
-    // FIX: Convert id to string for API endpoint.
     await apiFetch(`/api/orders/${String(id)}/status`, {
         method: 'PUT',
         body: JSON.stringify({ status }),
     });
 };
 
-// --- Article Service (Local) ---
+// --- Article Service (Now from API) ---
 export const getArticles = async (): Promise<Article[]> => {
-    const stored = localStorage.getItem('adminArticles_v1_local');
-    // Ensure all articles have createdAt for sorting robustness
-    const articles: Article[] = stored ? JSON.parse(stored) : [];
-    return articles.map(a => ({ ...a, createdAt: a.createdAt || new Date(0).toISOString() }));
+    return apiFetch('/api/articles');
 };
 
 export const getArticle = async (id: string): Promise<Article | null> => {
     const articles = await getArticles();
-    // FIX: Compare IDs as strings to avoid type mismatch (number vs string).
     return articles.find(a => String(a.id) === String(id)) || null;
 };
 
 export const addArticle = async (article: Omit<Article, 'id'>): Promise<Article> => {
+    // This should be an API call in a real app
+    console.warn("addArticle is using localStorage as a fallback.");
     const articles = await getArticles();
-    const newArticle = { ...article, id: Date.now() }; // Use number for consistency
+    const newArticle = { ...article, id: Date.now() };
     localStorage.setItem('adminArticles_v1_local', JSON.stringify([newArticle, ...articles]));
     window.dispatchEvent(new Event('articlesUpdated'));
     return newArticle as Article;
 };
 
 export const updateArticle = async (id: number | string, articleUpdate: Partial<Article>): Promise<void> => {
+    console.warn("updateArticle is using localStorage as a fallback.");
     const articles = await getArticles();
-    // FIX: Compare IDs as strings.
     const updatedArticles = articles.map(a => String(a.id) === String(id) ? { ...a, ...articleUpdate } : a);
     localStorage.setItem('adminArticles_v1_local', JSON.stringify(updatedArticles));
     window.dispatchEvent(new Event('articlesUpdated'));
 };
 
 export const deleteArticle = async (id: number | string): Promise<void> => {
+    console.warn("deleteArticle is using localStorage as a fallback.");
     const articles = await getArticles();
-    // FIX: Compare IDs as strings.
     const updatedArticles = articles.filter(a => String(a.id) !== String(id));
     localStorage.setItem('adminArticles_v1_local', JSON.stringify(updatedArticles));
     window.dispatchEvent(new Event('articlesUpdated'));
 };
 
+// --- User Service ---
+export const getUsers = async (): Promise<User[]> => {
+    return apiFetch('/api/users');
+}
 
-// --- Local Storage Services ---
-const createLocalSettingsService = <T,>(key: string, initialData: T[]) => ({
-    get: async (): Promise<T[]> => {
-        const stored = localStorage.getItem(key);
-        return stored ? JSON.parse(stored) : initialData;
-    },
-    updateAll: async (data: T[]): Promise<void> => {
-        localStorage.setItem(key, JSON.stringify(data));
-        window.dispatchEvent(new CustomEvent(`${key}Updated`));
-    },
-});
-
-export const faqService = createLocalSettingsService<FaqItem>(Constants.FAQ_STORAGE_KEY, Constants.INITIAL_FAQS);
-export const discountService = createLocalSettingsService<DiscountCode>(Constants.DISCOUNTS_STORAGE_KEY, Constants.INITIAL_DISCOUNT_CODES);
-
+// --- Site Settings Service ---
 export const getSiteSettings = async (): Promise<SiteSettings> => {
-    const settings = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
-    return settings ? JSON.parse(settings) : Constants.INITIAL_SITE_SETTINGS;
+    const settings = await apiFetch('/api/site_settings');
+    // The API returns an object of key-values. We need to merge it with defaults.
+    return { ...Constants.INITIAL_SITE_SETTINGS, ...settings };
 };
 
-export const saveSiteSettings = async (settings: SiteSettings): Promise<void> => {
-    localStorage.setItem(Constants.SITE_CONFIG_STORAGE_KEY, JSON.stringify(settings));
+export const saveSiteSettings = async (settings: Partial<SiteSettings>): Promise<void> => {
+    await apiFetch('/api/site_settings', {
+        method: 'POST',
+        body: JSON.stringify(settings)
+    });
     window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
 };
 
+
+// --- Media Library (still local for simplicity, can be migrated to cloud storage) ---
 export const getMediaItems = async (): Promise<MediaItem[]> => {
   const settings = await getSiteSettings();
-  return settings.siteMediaLibrary || [];
+  return (settings as any).siteMediaLibrary || [];
 };
 
 export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaItem> => {
     const settings = await getSiteSettings();
     const newItem = { ...item, id: `media-${Date.now()}` };
-    const newSettings = { ...settings, siteMediaLibrary: [newItem, ...(settings.siteMediaLibrary || [])] };
+    const newSettings = { ...settings, siteMediaLibrary: [newItem, ...((settings as any).siteMediaLibrary || [])] };
     await saveSiteSettings(newSettings);
     return newItem;
 };
 
 export const deleteMediaItem = async (id: string): Promise<void> => {
     const settings = await getSiteSettings();
-    const newSettings = { ...settings, siteMediaLibrary: (settings.siteMediaLibrary || []).filter(item => item.id !== id) };
+    const newSettings = { ...settings, siteMediaLibrary: ((settings as any).siteMediaLibrary || []).filter((item: MediaItem) => item.id !== id) };
     await saveSiteSettings(newSettings);
 };
+
+// --- NEW SERVICES for Admin Modules ---
+
+// Service Tickets
+export const getServiceTickets = async (): Promise<ServiceTicket[]> => {
+    return apiFetch('/api/service_tickets');
+}
+
+// Inventory
+export const getInventory = async (): Promise<Inventory[]> => {
+    return apiFetch('/api/inventory');
+}
+
+// Suppliers
+export const getSuppliers = async (): Promise<Supplier[]> => {
+    return apiFetch('/api/suppliers');
+}
+
+// Bills
+export const getBills = async (): Promise<Bill[]> => {
+    return apiFetch('/api/bills');
+}

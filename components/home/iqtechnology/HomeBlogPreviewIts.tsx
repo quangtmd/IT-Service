@@ -29,7 +29,8 @@ const BlogItemCard: React.FC<{article: Article, index: number}> = ({article, ind
                 </h3>
                  <p className="text-xs text-textSubtle mb-3">
                     {/* FIX: Property 'date' does not exist on type 'Article'. Use 'publishedAt' or 'createdAt' instead. */}
-                    By {article.author} on {new Date(article.publishedAt || article.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {/* FIX: Property 'publishedAt' does not exist on type 'Article'. Did you mean 'published_at'? */}
+                    By {article.author} on {new Date(article.published_at || article.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
                 <p className="text-sm text-textMuted mb-4 line-clamp-3 flex-grow">{article.summary}</p>
                 <ReactRouterDOM.Link to={`/article/${article.id}`} className="modern-card-link mt-auto self-start">

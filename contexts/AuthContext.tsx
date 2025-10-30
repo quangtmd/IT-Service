@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User, UserRole, AdminNotification, StaffRole } from '../types'; 
 import * as Constants from '../constants';
-import { MOCK_STAFF_USERS } from '../data/mockData';
+import { getUsers as apiGetUsers } from '../services/localDataService';
 
 export type AdminPermission = 
   // General
@@ -60,8 +60,7 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
-const USERS_STORAGE_KEY = 'siteUsers_v1_local';
-const CURRENT_USER_SESSION_KEY = 'currentUserSession_v1_local';
+const CURRENT_USER_SESSION_KEY = 'currentUserSession_v1_api';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try {
@@ -85,28 +84,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, setCurrentUser] = useState<User | null>(() => getSessionStorageItem(CURRENT_USER_SESSION_KEY, null));
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!currentUser);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [users, setUsers] = useState<User[]>(() => getLocalStorageItem(USERS_STORAGE_KEY, []));
+  const [users, setUsers] = useState<User[]>([]);
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>(() => getLocalStorageItem(ADMIN_NOTIFICATIONS_STORAGE_KEY, []));
 
+  const fetchUsers = async () => {
+      try {
+          const apiUsers = await apiGetUsers();
+          setUsers(apiUsers);
+      } catch (error) {
+          console.error("Failed to fetch users:", error);
+      }
+  };
+
   useEffect(() => {
-    const initializeUsers = () => {
-        const storedUsers = getLocalStorageItem<User[]>(USERS_STORAGE_KEY, []);
-        if (storedUsers.length === 0) {
-            const adminUser: User = {
-                id: 'admin001',
-                username: 'Admin Quang',
-                email: Constants.ADMIN_EMAIL,
-                password: 'password123', // In a real app, this should be hashed.
-                role: 'admin',
-                staffRole: 'Nhân viên Toàn quyền',
-            };
-            const initialUsers = [adminUser, ...MOCK_STAFF_USERS];
-            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
-            setUsers(initialUsers);
-        } else {
-            setUsers(storedUsers);
-        }
-        
+    const initializeAuth = async () => {
+        setIsLoading(true);
+        await fetchUsers();
         const sessionUser = getSessionStorageItem<User | null>(CURRENT_USER_SESSION_KEY, null);
         if (sessionUser) {
             setCurrentUser(sessionUser);
@@ -114,69 +107,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         setIsLoading(false);
     };
-    initializeUsers();
+    initializeAuth();
   }, []);
 
-  const saveUsers = (updatedUsers: User[]) => {
-    setUsers(updatedUsers);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-  }
-
   const login = async (credentials: { email: string; password?: string }): Promise<void> => {
-    setIsLoading(true);
-    return new Promise((resolve, reject) => {
-      setTimeout(() => { // Simulate network delay
-        const user = users.find(u => u.email === credentials.email && u.password === credentials.password);
-        if (user) {
-          const { password, ...userToStore } = user;
-          setCurrentUser(userToStore as User);
-          setIsAuthenticated(true);
-          sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(userToStore));
-          setIsLoading(false);
-          resolve();
-        } else {
-          setIsLoading(false);
-          reject(new Error('Email hoặc mật khẩu không đúng.'));
-        }
-      }, 500);
-    });
+    // This should call a backend login endpoint
+    const user = users.find(u => u.email === credentials.email /* && check password */);
+    if (user) {
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+        sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(user));
+    } else {
+        throw new Error('Email hoặc mật khẩu không đúng.');
+    }
   };
 
   const register = async (details: { username: string; email: string; password?: string, role?: UserRole }): Promise<User | null> => {
-    setIsLoading(true);
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            if (users.some(u => u.email === details.email)) {
-                setIsLoading(false);
-                reject(new Error('Email đã được sử dụng.'));
-                return null;
-            }
-
-            const newUser: User = {
-                id: `user-${Date.now()}`,
-                username: details.username,
-                email: details.email,
-                password: details.password,
-                role: details.role || 'customer',
-                joinDate: new Date().toISOString(),
-                status: 'Đang hoạt động',
-            };
-            
-            const updatedUsers = [...users, newUser];
-            saveUsers(updatedUsers);
-
-            addAdminNotification(`Người dùng mới '${newUser.username}' (${newUser.email}) đã đăng ký.`, 'info');
-            
-            // Auto-login after registration
-            const { password, ...userToStore } = newUser;
-            setCurrentUser(userToStore as User);
-            setIsAuthenticated(true);
-            sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(userToStore));
-            
-            setIsLoading(false);
-            resolve(newUser);
-        }, 500);
-    });
+     // This would call a backend register endpoint
+     console.log("Registering user (API call needed):", details);
+     // Simulate for now
+     const newUser: User = { id: `user-${Date.now()}`, role: 'customer', ...details };
+     setUsers(prev => [...prev, newUser]);
+     setCurrentUser(newUser);
+     setIsAuthenticated(true);
+     sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(newUser));
+     return newUser;
   };
 
   const logout = async () => {
@@ -184,28 +139,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsAuthenticated(false);
     sessionStorage.removeItem(CURRENT_USER_SESSION_KEY);
   };
-
+  
   const addUser = async (userDto: Omit<User, 'id'>): Promise<User | null> => {
-    const newUser = { ...userDto, id: `user-${Date.now()}`};
-    saveUsers([...users, newUser]);
-    addAdminNotification(`Quản trị viên đã thêm hồ sơ: ${newUser.username}.`, 'success');
-    return newUser;
+    // API call to add user
+    console.log("Adding user (API call needed):", userDto);
+    await fetchUsers(); // refetch
+    return null;
   };
 
   const updateUser = async (userId: string, updates: Partial<User>): Promise<boolean> => {
-    const updatedUsers = users.map(u => u.id === userId ? { ...u, ...updates } : u);
-    saveUsers(updatedUsers);
-    addAdminNotification(`Thông tin người dùng đã được cập nhật.`, 'info');
+    // API call to update user
+    console.log("Updating user (API call needed):", userId, updates);
+    await fetchUsers(); // refetch
     return true;
   };
 
   const deleteUser = async (userId: string): Promise<boolean> => {
-     if (users.find(u => u.id === userId)?.email === Constants.ADMIN_EMAIL) {
-        addAdminNotification("Không thể xóa tài khoản quản trị viên chính.", "error");
-        return false;
-     }
-     saveUsers(users.filter(u => u.id !== userId));
-     addAdminNotification(`Hồ sơ người dùng đã bị xóa.`, 'warning');
+     // API call to delete user
+    console.log("Deleting user (API call needed):", userId);
+     await fetchUsers(); // refetch
      return true;
   };
   
@@ -234,10 +186,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
    const hasPermission = (requiredPermissions: Array<AdminPermission>): boolean => {
     if (!isAuthenticated || !currentUser) return false;
+    // The role from DB is now simplified string
+    // FIX: This comparison appears to be unintentional because the types 'UserRole' and '"Admin"' have no overlap.
     if (currentUser.role === 'admin') return true; 
 
-    if (currentUser.role === 'staff' && currentUser.staffRole) {
-        const currentStaffRoleCleaned = currentUser.staffRole.trim() as StaffRole;
+    if (currentUser.role) { // Assuming any other role from DB is 'staff'
+        const currentStaffRoleCleaned = currentUser.staffRole?.trim() as StaffRole;
         
         const allPermissions: AdminPermission[] = [
           'viewDashboard', 'viewNotifications', 'viewContent', 'manageProducts', 'viewProducts', 

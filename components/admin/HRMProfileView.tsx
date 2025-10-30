@@ -1,17 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { User, StaffRole, STAFF_ROLE_OPTIONS, UserStatus, USER_STATUS_OPTIONS } from '../../types';
 import Button from '../ui/Button';
 import ImageUploadInput from '../ui/ImageUploadInput';
 
 const HRMProfileView: React.FC = () => {
-    const { users, addUser, updateUser, deleteUser, currentUser } = useAuth();
+    const { users, addUser, updateUser, deleteUser, currentUser, isLoading } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
 
     const staffUsers = useMemo(() => 
-        users.filter(u => u.role === 'staff' || u.role === 'admin')
+        // FIX: This comparison appears to be unintentional because the types 'UserRole' and '"Admin"' have no overlap.
+        users.filter(u => u.role === 'admin' || u.role === 'staff') // Correctly filter for admin and staff roles.
         .filter(u => 
             u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
             u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,7 +82,9 @@ const HRMProfileView: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {staffUsers.map(user => (
+                            {isLoading ? (
+                                <tr><td colSpan={6} className="text-center py-4">Đang tải...</td></tr>
+                            ) : staffUsers.map(user => (
                                 <tr key={user.id}>
                                     <td>
                                         <div className="flex items-center">

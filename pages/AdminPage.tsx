@@ -21,6 +21,8 @@ import NotificationsView from '../components/admin/NotificationsView';
 import HomepageManagementView from '../components/admin/HomepageManagementView';
 import FinancialManagementView from '../components/admin/FinancialManagementView';
 import DashboardView from '../components/admin/DashboardView'; // Import the new dashboard view
+import ServiceTicketView from '../components/admin/ServiceTicketView';
+import InventoryView from '../components/admin/InventoryView';
 
 type AdminView = 
   | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
@@ -29,7 +31,8 @@ type AdminView =
   | 'theme_settings' | 'menu_settings' | 'site_settings'
   | 'notifications_panel'
   | 'homepage_management'
-  | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard';
+  | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard'
+  | 'service_tickets' | 'inventory';
 
 interface MenuItemConfig {
     id: AdminView | string; 
@@ -51,7 +54,7 @@ const AdminPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-        content_management: true, sales_management: true, hrm_management: true,
+        content_management: true, sales_management: true, hrm_management: true, operations_management: true,
     });
 
     useEffect(() => {
@@ -73,30 +76,37 @@ const AdminPage: React.FC = () => {
                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewOrders'] },
             ]
         },
+        {
+            id: 'operations_management', label: 'Vận hành', icon: 'fas fa-cogs', permission: ['viewProducts'],
+            children: [
+                { id: 'products', label: 'Sản Phẩm', icon: 'fas fa-box-open', permission: ['viewProducts'] },
+                { id: 'inventory', label: 'Kho hàng & Tồn kho', icon: 'fas fa-warehouse', permission: ['viewProducts'] },
+                { id: 'service_tickets', label: 'Dịch vụ Sửa chữa', icon: 'fas fa-tools', permission: ['manageOrders'] },
+            ]
+        },
         { 
             id: 'content_management', label: 'Quản Trị Website', icon: 'fas fa-file-alt', permission: ['viewContent'],
             children: [
                 { id: 'homepage_management', label: 'Quản lý Trang chủ', icon: 'fas fa-home', permission: ['manageSiteSettings'] },
-                { id: 'products', label: 'Sản Phẩm', icon: 'fas fa-box-open', permission: ['viewProducts'] },
                 { id: 'articles', label: 'Bài Viết', icon: 'fas fa-newspaper', permission: ['viewArticles'] },
                 { id: 'media_library', label: 'Thư Viện Media', icon: 'fas fa-photo-video', permission: ['manageSiteSettings'] },
                 { id: 'faqs', label: 'FAQs', icon: 'fas fa-question-circle', permission: ['manageFaqs'] },
             ]
         },
         { 
-            id: 'hrm_management', label: 'Quản Lý Nhân Sự (HRM)', icon: 'fas fa-users-cog', permission: ['viewHrm'],
+            id: 'hrm_management', label: 'Quản Lý Nhân Sự', icon: 'fas fa-users-cog', permission: ['viewHrm'],
             children: [
                 { id: 'hrm_dashboard', label: 'Hồ Sơ Nhân Sự', icon: 'fas fa-id-card', permission: ['manageEmployees'] },
             ]
         },
         { 
-            id: 'accounting_management', label: 'Tài Chính - Kế Toán', icon: 'fas fa-calculator', permission: ['viewAccounting'],
+            id: 'accounting_management', label: 'Tài Chính', icon: 'fas fa-calculator', permission: ['viewAccounting'],
             children: [
                 { id: 'accounting_dashboard', label: 'Tổng Quan Tài Chính', icon: 'fas fa-chart-pie', permission: ['viewReports'] },
             ]
         },
         {
-            id: 'settings_management', label: 'Danh Mục & Cấu Hình', icon: 'fas fa-cogs', permission: ['viewAppearance'], 
+            id: 'settings_management', label: 'Cấu Hình Hệ Thống', icon: 'fas fa-sliders-h', permission: ['viewAppearance'], 
             children: [
                 { id: 'site_settings', label: 'Cài Đặt Trang', icon: 'fas fa-cog', permission: ['manageSiteSettings'] }, 
                 { id: 'theme_settings', label: 'Theme Màu', icon: 'fas fa-palette', permission: ['manageTheme'] },
@@ -127,6 +137,8 @@ const AdminPage: React.FC = () => {
         switch(activeView) {
             case 'dashboard': return <DashboardView setActiveView={setActiveView as (view: string) => void} />;
             case 'products': return <ProductManagementView />;
+            case 'inventory': return <InventoryView />;
+            case 'service_tickets': return <ServiceTicketView />;
             case 'articles': return <ArticleManagementView />;
             case 'orders': return <OrderManagementView />;
             case 'hrm_dashboard': return <HRMProfileView />;

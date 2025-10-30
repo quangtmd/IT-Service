@@ -107,7 +107,8 @@ Kết luận, ${article.summary ? article.summary.toLowerCase() : ''}
           <h1 className="text-3xl md:text-4xl font-bold text-textBase mb-3">{article.title}</h1>
           <div className="text-sm text-textMuted">
             {/* FIX: Property 'date' does not exist on type 'Article'. Use 'publishedAt' or 'createdAt' instead. */}
-            <span>Đăng bởi: {article.author}</span> | <span>Ngày: {new Date(article.publishedAt || article.createdAt).toLocaleDateString('vi-VN')}</span>
+            {/* FIX: Property 'publishedAt' does not exist on type 'Article'. Did you mean 'published_at'? */}
+            <span>Đăng bởi: {article.author}</span> | <span>Ngày: {new Date(article.published_at || article.createdAt).toLocaleDateString('vi-VN')}</span>
           </div>
         </header>
 

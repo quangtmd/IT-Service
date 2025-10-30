@@ -37,19 +37,20 @@ const ArticleManagementView: React.FC = () => {
 
     const openModalForNew = () => {
         // FIX: Initialize with a numeric ID (0) to indicate a new article and remove the non-existent 'date' property.
+        // FIX: Object literal may only specify known properties, and 'authorId' does not exist in type 'SetStateAction<Article>'.
         setEditingArticle({
             id: 0,
             title: '',
             slug: '',
             summary: '',
-            imageUrl: '',
+            image_url: '',
             author: 'Admin',
-            authorId: null,
+            author_id: null,
             category: Constants.ARTICLE_CATEGORIES[0],
-            categoryId: null,
+            category_id: null,
             content: '',
             status: 'published',
-            publishedAt: new Date().toISOString(),
+            published_at: new Date().toISOString(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         });
@@ -127,7 +128,8 @@ const ArticleManagementView: React.FC = () => {
                                         <td>{article.author}</td>
                                         <td>{article.category}</td>
                                         {/* FIX: Use 'publishedAt' or 'createdAt' as 'date' does not exist. */}
-                                        <td>{new Date(article.publishedAt || article.createdAt).toLocaleDateString('vi-VN')}</td>
+                                        {/* FIX: Property 'publishedAt' does not exist on type 'Article'. Did you mean 'published_at'? */}
+                                        <td>{new Date(article.published_at || article.createdAt).toLocaleDateString('vi-VN')}</td>
                                         <td>
                                             <div className="flex gap-2">
                                                 <Button onClick={() => openModalForEdit(article)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>

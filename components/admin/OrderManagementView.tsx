@@ -179,10 +179,12 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose, onU
                          <h5 className="admin-form-subsection-title">Sản phẩm</h5>
                          <ul className="space-y-2">
                             {order.items.map((item: OrderItem) => (
-                                <li key={item.productId} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
-                                    <span>{item.productName} (x{item.quantity})</span>
+                                <li key={item.product_id} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
+                                    {/* FIX: Property 'productName' does not exist on type 'OrderItem'. Did you mean 'product_name'? */}
+                                    <span>{item.product_name} (x{item.quantity})</span>
                                     {/* FIX: Use 'priceAtPurchase' instead of 'price'. */}
-                                    <span>{(item.priceAtPurchase * item.quantity).toLocaleString('vi-VN')}₫</span>
+                                    {/* FIX: Property 'priceAtPurchase' does not exist on type 'OrderItem'. Did you mean 'price_at_purchase'? */}
+                                    <span>{(item.price_at_purchase * item.quantity).toLocaleString('vi-VN')}₫</span>
                                 </li>
                             ))}
                          </ul>

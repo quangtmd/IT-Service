@@ -40,7 +40,8 @@ const ProductDetailPage: React.FC = () => {
           
           // Fetch related products based on the same category
           const allProducts = await getProducts();
-          const related = allProducts.filter(p => p.categoryId === foundProduct.categoryId && p.id !== foundProduct.id).slice(0, 4);
+          // FIX: Property 'categoryId' does not exist on type 'Product'. Did you mean 'category_id'?
+          const related = allProducts.filter(p => p.category_id === foundProduct.category_id && p.id !== foundProduct.id).slice(0, 4);
           setRelatedProducts(related);
 
           // Track recently viewed
@@ -107,10 +108,12 @@ const ProductDetailPage: React.FC = () => {
                     <li><ReactRouterDOM.Link to="/home" className="hover:text-primary">Trang chủ</ReactRouterDOM.Link></li>
                     <li><span className="text-textSubtle">/</span></li>
                     <li><ReactRouterDOM.Link to="/shop" className="hover:text-primary">Sản phẩm</ReactRouterDOM.Link></li>
-                    {product.categoryId && product.categoryName && (
+                    {/* FIX: Property 'categoryId' does not exist on type 'Product'. Did you mean 'category_id'? */}
+                    {product.category_id && product.categoryName && (
                       <>
                         <li><span className="text-textSubtle">/</span></li>
-                        <li><ReactRouterDOM.Link to={`/shop?categoryId=${product.categoryId}`} className="hover:text-primary">{product.categoryName}</ReactRouterDOM.Link></li>
+                        {/* FIX: Property 'categoryId' does not exist on type 'Product'. Did you mean 'category_id'? */}
+                        <li><ReactRouterDOM.Link to={`/shop?categoryId=${product.category_id}`} className="hover:text-primary">{product.categoryName}</ReactRouterDOM.Link></li>
                       </>
                     )}
                     <li><span className="text-textSubtle">/</span></li>

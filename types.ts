@@ -16,19 +16,22 @@ export interface ProductCategory {
 export interface Product {
   id: number;
   name: string;
+  slug: string;
+  sku: string | null;
   description: string | null;
   price: number;
-  stock: number;
   images: string[] | null;
-  categoryId: number | null;
+  category_id: number | null;
   brand: string | null;
+  is_published: boolean;
   specs: Record<string, any> | null;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
   // Joined from categories table
   categoryName?: string;
   // Legacy support for forms
   originalPrice?: number;
+  stock: number; // Added from localDataService logic
 }
 
 
@@ -44,28 +47,29 @@ export interface Article {
   slug: string;
   content: string | null;
   summary: string | null;
-  imageUrl: string | null;
-  authorId: string | null;
-  categoryId: number | null;
+  image_url: string | null;
+  author_id: string | null;
+  category_id: number | null;
   status: 'draft' | 'published' | 'archived';
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
+  published_at: string | null;
   // For frontend convenience
   author?: string; 
   category?: string;
   isAIGenerated?: boolean;
   imageSearchQuery?: string;
+  imageUrl?: string; // Alias for image_url
+  createdAt: string; // From old type
+  updatedAt: string; // From old type
 }
 
 
 export interface OrderItem {
   id: number;
-  orderId: number;
-  productId: number;
+  order_id: number;
+  product_id: number;
   quantity: number;
-  priceAtPurchase: number;
-  productName: string;
+  price_at_purchase: number;
+  product_name: string;
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
@@ -74,17 +78,91 @@ export const ORDER_STATUS_OPTIONS: OrderStatus[] = ['pending', 'processing', 'sh
 
 export interface Order {
   id: number;
-  userId: string | null;
+  user_id: string | null;
   status: OrderStatus;
-  totalAmount: number;
-  customerInfo: CheckoutFormData; 
-  shippingAddress: any; 
-  paymentDetails: any; 
-  createdAt: string;
-  updatedAt: string;
+  total_amount: number;
+  customer_info: CheckoutFormData; 
+  shipping_address: any; 
+  payment_details: any; 
+  created_at: string;
+  updated_at: string;
   // Populated by the backend
   items: OrderItem[]; 
+  // For frontend compatibility
+  totalAmount: number;
+  customerInfo: CheckoutFormData;
+  paymentDetails: any;
+  createdAt: string;
+  updatedAt: string;
 }
+
+// --- NEW DB TYPES ---
+export interface ServiceTicket {
+  id: number;
+  ticket_code: string;
+  customer_id: string | null;
+  customer_info: any;
+  device_name: string;
+  serial_number: string | null;
+  reported_issue: string;
+  diagnosis: string | null;
+  status: 'open' | 'in_progress' | 'awaiting_parts' | 'resolved' | 'closed';
+  assigned_to_user_id: string | null;
+  quote_for_repair_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Warehouse {
+  id: number;
+  name: string;
+  location: string | null;
+  is_active: boolean;
+}
+
+export interface Inventory {
+  product_id: number;
+  warehouse_id: number;
+  quantity: number;
+  // Joined fields
+  product_name?: string;
+  warehouse_name?: string;
+}
+
+export interface Supplier {
+  id: number;
+  name: string;
+  contact_person: string | null;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  tax_code: string | null;
+}
+
+export interface Bill {
+  id: number;
+  supplier_id: number;
+  bill_number: string | null;
+  bill_date: string;
+  due_date: string | null;
+  total_amount: number;
+  status: 'draft' | 'submitted' | 'paid' | 'void';
+  created_at: string;
+  // Joined field
+  supplier_name?: string;
+}
+
+export interface EmployeeProfile {
+    user_id: string;
+    full_name: string;
+    date_of_birth: string | null;
+    national_id_number: string | null;
+    phone?: string; // Not in DB, but useful
+    address?: string; // Not in DB, but useful
+    join_date: string | null;
+    status: UserStatus;
+}
+
 
 // --- Frontend-specific Types ---
 
