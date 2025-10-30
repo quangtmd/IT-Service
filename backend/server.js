@@ -263,10 +263,44 @@ app.post('/api/settings', async (req, res) => {
     }
 });
 
-// Add root route for health checks
-app.get('/', (req, res) => {
-  res.send('✅ Backend server is running OK!');
+// Nâng cấp route gốc thành health check toàn diện
+app.get('/', async (req, res) => {
+    try {
+        // Cố gắng lấy một kết nối từ pool để kiểm tra
+        const connection = await pool.getConnection();
+        // Ping database để xác nhận kết nối hoạt động
+        await connection.ping();
+        // Trả lại kết nối cho pool
+        connection.release();
+        
+        // Trả về trang thái thành công
+        res.status(200).send(`
+            <div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">
+                <h1 style="color: #28a745;">✅ Backend server is running OK!</h1>
+                <p style="color: #17a2b8; font-weight: bold;">✔️ Kết nối đến cơ sở dữ liệu MySQL đã thành công.</p>
+                <p>Điều này có nghĩa là các biến môi trường (DB_HOST, DB_USER, etc.) đã chính xác và IP của máy chủ Render đã được whitelist trên Hostinger.</p>
+            </div>
+        `);
+    } catch (error) {
+        // Nếu có lỗi, trả về trang thái thất bại với thông tin chi tiết
+        console.error("Lỗi kiểm tra sức khỏe - Kết nối CSDL thất bại:", error);
+        res.status(500).send(`
+            <div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">
+                <h1 style="color: #dc3545;">❌ Backend server is running, BUT...</h1>
+                <p style="color: #ffc107; font-weight: bold;">⚠️ Không thể kết nối đến cơ sở dữ liệu MySQL.</p>
+                <p><strong>Vui lòng kiểm tra lại các mục sau:</strong></p>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Biến môi trường trên Render:</strong> Đảm bảo các biến <code>DB_HOST</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_NAME</code> đã được thiết lập chính xác.</li>
+                    <li><strong>Cấu hình Remote MySQL trên Hostinger:</strong> Đảm bảo địa chỉ IP của dịch vụ Render đã được thêm vào danh sách "Access host".</li>
+                    <li><strong>Tường lửa hoặc vấn đề mạng:</strong> Đảm bảo không có cấu hình nào khác đang chặn kết nối.</li>
+                </ul>
+                <p><strong>Thông tin lỗi chi tiết:</strong></p>
+                <pre style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px; margin-top: 10px; white-space: pre-wrap; word-wrap: break-word;">${error.message}</pre>
+            </div>
+        `);
+    }
 });
+
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server is running on port ${PORT}`);
