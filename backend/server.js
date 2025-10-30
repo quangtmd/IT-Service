@@ -5,18 +5,11 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 10000; // Use Render's port, fallback to 10000
 
-// Cấu hình CORS chi tiết để cho phép các yêu cầu từ nhiều nguồn
-const corsOptions = {
-    origin: [
-        'http://localhost:5173', // Cho phép từ môi trường dev Vite
-        'https://it-service-2.onrender.com' // Cho phép từ frontend đã deploy
-    ],
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    credentials: true,
-    optionsSuccessStatus: 204
-};
+// Cấu hình CORS mở rộng để gỡ lỗi "Failed to fetch".
+// Tạm thời cho phép TẤT CẢ các nguồn gốc (origins) để xác định xem
+// vấn đề có phải do CORS hay không. Đây là một bước gỡ lỗi phổ biến.
+app.use(cors());
 
-app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' })); // Tăng giới hạn payload cho media
 
 /*
