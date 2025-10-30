@@ -52,7 +52,7 @@ const parseProductFields = (product) => {
 // --- API: Product Categories ---
 app.get('/api/product_categories', async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM `category` ORDER BY name");
+        const [rows] = await pool.query("SELECT * FROM `categories` ORDER BY name");
         res.json(rows);
     } catch (err) {
         console.error("Error fetching product categories:", err.message);
@@ -119,7 +119,7 @@ app.get('/api/products/:id', async (req, res) => {
         const query = `
             SELECT p.*, c.name as categoryName 
             FROM products p 
-            LEFT JOIN \`category\` c ON p.categoryId = c.id
+            LEFT JOIN \`categories\` c ON p.categoryId = c.id
             WHERE p.id = ?
         `;
         const [rows] = await pool.query(query, [req.params.id]);

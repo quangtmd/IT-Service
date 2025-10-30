@@ -1,7 +1,9 @@
 
+
 import React, { useState, useEffect } from 'react';
 // FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants';
@@ -12,8 +14,8 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
   // FIX: Use useNavigate hook for react-router-dom v6
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate = ReactRouterDOM.useNavigate();
+  const location = ReactRouterDOM.useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/home";
 
   useEffect(() => {
@@ -60,9 +62,9 @@ const LoginPage: React.FC = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-primary">
             Hoặc{' '}
-            <Link to="/register" className="font-medium hover:text-primary-dark">
+            <ReactRouterDOM.Link to="/register" className="font-medium hover:text-primary-dark">
               đăng ký nếu bạn chưa có tài khoản
-            </Link>
+            </ReactRouterDOM.Link>
           </p>
         </div>
         

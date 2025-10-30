@@ -1,8 +1,10 @@
 
+
 import React from 'react';
 import { MOCK_PROJECTS } from '../data/mockData';
 import Card from '../components/ui/Card';
-import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 
 const ProjectsPage: React.FC = () => {
   return (

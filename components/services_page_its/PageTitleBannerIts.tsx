@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 
 interface BreadcrumbItem {
@@ -24,9 +25,9 @@ const PageTitleBannerIts: React.FC<PageTitleBannerItsProps> = ({ title, breadcru
             {breadcrumbs.map((crumb, index) => (
               <li key={index} className="flex items-center">
                 {crumb.path ? (
-                  <Link to={crumb.path} className="hover:text-primary transition-colors text-textMuted">
+                  <ReactRouterDOM.Link to={crumb.path} className="hover:text-primary transition-colors text-textMuted">
                     {crumb.label}
-                  </Link>
+                  </ReactRouterDOM.Link>
                 ) : (
                   <span className="text-textSubtle">{crumb.label}</span>
                 )}

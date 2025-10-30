@@ -1,14 +1,16 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 // FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
-import { useNavigate, useLocation } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import * as Constants from '../../constants';
 
 const HeaderSearchBar: React.FC = () => {
     // FIX: Use useNavigate hook for react-router-dom v6
-    const navigate = useNavigate();
-    const location = useLocation();
+    const navigate = ReactRouterDOM.useNavigate();
+    const location = ReactRouterDOM.useLocation();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');

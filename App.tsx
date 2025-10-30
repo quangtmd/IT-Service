@@ -1,7 +1,9 @@
 
+
 import React, { useEffect } from 'react';
 // FIX: Update react-router-dom from v5 to v6 for compatibility.
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
@@ -31,38 +33,38 @@ import CheckoutPage from './pages/CheckoutPage';
 const App: React.FC = () => {
 
   return (
-    <HashRouter>
+    <ReactRouterDOM.HashRouter>
       <ScrollToTop />
       <div className="flex flex-col min-h-screen bg-bgCanvas">
         <Header />
         <main className="flex-grow pt-[168px]">
           {/* FIX: Use Routes instead of Switch for react-router-dom v6 */}
-          <Routes>
+          <ReactRouterDOM.Routes>
             {/* FIX: Use Navigate for redirects in react-router-dom v6 */}
-            <Route path="/" element={<Navigate to="/home" replace />} />
+            <ReactRouterDOM.Route path="/" element={<ReactRouterDOM.Navigate to="/home" replace />} />
             
             {/* FIX: Use the element prop for Route components in react-router-dom v6 */}
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/shop" element={<ShopPage />} />
-            <Route path="/product/:productId" element={<ProductDetailPage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/blog" element={<BlogPage />} />
-            <Route path="/article/:articleId" element={<ArticleDetailPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/pc-builder" element={<PCBuilderPage />} />
-            <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} />
+            <ReactRouterDOM.Route path="/home" element={<HomePage />} />
+            <ReactRouterDOM.Route path="/shop" element={<ShopPage />} />
+            <ReactRouterDOM.Route path="/product/:productId" element={<ProductDetailPage />} />
+            <ReactRouterDOM.Route path="/services" element={<ServicesPage />} />
+            <ReactRouterDOM.Route path="/service/:serviceId" element={<ServiceDetailPage />} />
+            <ReactRouterDOM.Route path="/projects" element={<ProjectsPage />} />
+            <ReactRouterDOM.Route path="/blog" element={<BlogPage />} />
+            <ReactRouterDOM.Route path="/article/:articleId" element={<ArticleDetailPage />} />
+            <ReactRouterDOM.Route path="/about" element={<AboutPage />} />
+            <ReactRouterDOM.Route path="/contact" element={<ContactPage />} />
+            <ReactRouterDOM.Route path="/cart" element={<CartPage />} />
+            <ReactRouterDOM.Route path="/pc-builder" element={<PCBuilderPage />} />
+            <ReactRouterDOM.Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} />
 
             {/* Auth Routes */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
+            <ReactRouterDOM.Route path="/login" element={<LoginPage />} />
+            <ReactRouterDOM.Route path="/register" element={<RegisterPage />} />
+            <ReactRouterDOM.Route path="/checkout" element={<CheckoutPage />} />
 
             {/* Protected Admin Route - Updated for v6 */}
-            <Route
+            <ReactRouterDOM.Route
               path="/admin/*"
               element={
                 <ProtectedRoute>
@@ -71,13 +73,13 @@ const App: React.FC = () => {
               }
             />
 
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
+            <ReactRouterDOM.Route path="*" element={<NotFoundPage />} />
+          </ReactRouterDOM.Routes>
         </main>
         <Footer />
         <FloatingActionButtons />
       </div>
-    </HashRouter>
+    </ReactRouterDOM.HashRouter>
   );
 };
 

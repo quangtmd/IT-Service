@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import { Product } from '../types';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
@@ -8,7 +9,7 @@ import { getProduct, getProducts } from '../services/localDataService';
 import RecentlyViewedProducts from '../components/shop/RecentlyViewedProducts';
 
 const ProductDetailPage: React.FC = () => {
-  const { productId } = useParams<{ productId: string }>();
+  const { productId } = ReactRouterDOM.useParams<{ productId: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -18,7 +19,7 @@ const ProductDetailPage: React.FC = () => {
   const [mainImage, setMainImage] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'reviews'>('description');
   const { addToCart } = useCart();
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate();
 
   useEffect(() => {
     const loadProductData = async () => {
@@ -82,9 +83,9 @@ const ProductDetailPage: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h2 className="text-2xl font-semibold text-textBase">{error || 'Không tìm thấy sản phẩm'}</h2>
-        <Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
+        <ReactRouterDOM.Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
           Quay lại cửa hàng
-        </Link>
+        </ReactRouterDOM.Link>
       </div>
     );
   }
@@ -103,13 +104,13 @@ const ProductDetailPage: React.FC = () => {
             <main className="flex-grow min-w-0 order-1 lg:order-2">
                 <nav aria-label="breadcrumb" className="text-sm text-textMuted mb-6 bg-bgBase p-3 rounded-md border border-borderDefault">
                   <ol className="flex items-center space-x-1.5 flex-wrap">
-                    <li><Link to="/home" className="hover:text-primary">Trang chủ</Link></li>
+                    <li><ReactRouterDOM.Link to="/home" className="hover:text-primary">Trang chủ</ReactRouterDOM.Link></li>
                     <li><span className="text-textSubtle">/</span></li>
-                    <li><Link to="/shop" className="hover:text-primary">Sản phẩm</Link></li>
+                    <li><ReactRouterDOM.Link to="/shop" className="hover:text-primary">Sản phẩm</ReactRouterDOM.Link></li>
                     {product.categoryId && product.categoryName && (
                       <>
                         <li><span className="text-textSubtle">/</span></li>
-                        <li><Link to={`/shop?categoryId=${product.categoryId}`} className="hover:text-primary">{product.categoryName}</Link></li>
+                        <li><ReactRouterDOM.Link to={`/shop?categoryId=${product.categoryId}`} className="hover:text-primary">{product.categoryName}</ReactRouterDOM.Link></li>
                       </>
                     )}
                     <li><span className="text-textSubtle">/</span></li>
@@ -203,16 +204,20 @@ const ProductDetailPage: React.FC = () => {
                     )}
                     {activeTab === 'specs' && (
                         <div className="overflow-x-auto pt-6">
-                            <table className="product-detail-specs-table">
-                                <tbody>
-                                {product.specs && Object.entries(product.specs).map(([key, value]) => (
-                                    <tr key={key}>
-                                        <td>{key}</td>
-                                        <td>{typeof value === 'object' ? JSON.stringify(value) : value}</td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>
+                            {product.specs && Object.keys(product.specs).length > 0 ? (
+                                <table className="product-detail-specs-table">
+                                    <tbody>
+                                        {Object.entries(product.specs).map(([key, value]) => (
+                                            <tr key={key}>
+                                                <td>{key}</td>
+                                                <td>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <p className="text-textMuted">Thông số kỹ thuật cho sản phẩm này đang được cập nhật.</p>
+                            )}
                         </div>
                     )}
                     {activeTab === 'reviews' && (

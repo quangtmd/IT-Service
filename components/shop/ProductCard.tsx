@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import { Product } from '../../types';
 import Button from '../ui/Button';
 import { useCart } from '../../hooks/useCart';
@@ -54,7 +55,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const specHighlights = Object.entries(product.specs || {}).slice(0, 2);
 
   return (
-    <Link to={`/product/${product.id}`} className="block h-full">
+    <ReactRouterDOM.Link to={`/product/${product.id}`} className="block h-full">
       <div className="bg-white rounded-md overflow-hidden h-full flex flex-col group border-2 border-primary/40 hover:border-primary hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
         <div className="p-4 border-b border-gray-200">
           <img
@@ -152,7 +153,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         </div>
       </div>
-    </Link>
+    </ReactRouterDOM.Link>
   );
 };
 

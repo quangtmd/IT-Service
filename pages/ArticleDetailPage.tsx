@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom'; // useParams and Link are compatible with v6/v7
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import { Article } from '../types';
 import Markdown from 'react-markdown';
 import ArticlePreview from '../components/blog/ArticlePreview';
 import { getArticle, getArticles } from '../services/localDataService';
 
 const ArticleDetailPage: React.FC = () => {
-  const { articleId } = useParams<{ articleId: string }>();
+  const { articleId } = ReactRouterDOM.useParams<{ articleId: string }>();
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,9 +55,9 @@ const ArticleDetailPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8 text-center">
         <h2 className="text-2xl font-semibold text-textBase">Không tìm thấy bài viết</h2>
         <p className="text-textMuted mb-4">Bài viết bạn tìm kiếm có thể đã bị xóa hoặc không tồn tại.</p>
-        <Link to="/blog" className="text-primary hover:underline mt-4 inline-block">
+        <ReactRouterDOM.Link to="/blog" className="text-primary hover:underline mt-4 inline-block">
           Quay lại trang Blog
-        </Link>
+        </ReactRouterDOM.Link>
       </div>
     );
   }
@@ -96,9 +97,9 @@ Kết luận, ${article.summary ? article.summary.toLowerCase() : ''}
       <article className="bg-bgBase p-6 md:p-10 rounded-lg shadow-xl border border-borderDefault">
         <header className="mb-8">
           <nav aria-label="breadcrumb" className="text-sm text-textMuted mb-2">
-            <Link to="/home" className="hover:text-primary">Trang chủ</Link>
+            <ReactRouterDOM.Link to="/home" className="hover:text-primary">Trang chủ</ReactRouterDOM.Link>
             <span className="mx-1">/</span>
-            <Link to="/blog" className="hover:text-primary">Blog</Link>
+            <ReactRouterDOM.Link to="/blog" className="hover:text-primary">Blog</ReactRouterDOM.Link>
             <span className="mx-1">/</span>
             <span className="text-textSubtle line-clamp-1" title={article.title}>{article.title}</span>
           </nav>
@@ -141,9 +142,9 @@ Kết luận, ${article.summary ? article.summary.toLowerCase() : ''}
 
 
         <div className="mt-10 pt-6 border-t border-borderDefault">
-            <Link to="/blog" className="text-primary hover:text-primary-dark font-semibold">
+            <ReactRouterDOM.Link to="/blog" className="text-primary hover:text-primary-dark font-semibold">
                 <i className="fas fa-arrow-left mr-2"></i> Quay lại Blog
-            </Link>
+            </ReactRouterDOM.Link>
         </div>
       </article>
 

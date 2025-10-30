@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../ui/Button';
 import { MainCategoryInfo, ProductCategory } from '../../types';
 import { getProductCategories } from '../../services/localDataService';
@@ -43,18 +44,18 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
         <h2 className="text-lg font-semibold sidebar-header-text">DANH MỤC SẢN PHẨM</h2>
       </div>
       <nav className="flex-grow p-3 space-y-1 overflow-y-auto">
-        <Link
+        <ReactRouterDOM.Link
             to="/shop"
             className={`w-full flex items-center py-2 px-3 rounded-md text-sm transition-colors duration-150
                         ${!currentMainCategoryId ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-gray-100 hover:text-primary'}`}
         >
             <i className="fas fa-th-large mr-3 w-5 text-center"></i>
             <span className="sidebar-item-label">Tất cả sản phẩm</span>
-        </Link>
+        </ReactRouterDOM.Link>
 
         {categories.map((mainCat) => (
           <div key={mainCat.id} className="group relative">
-            <Link
+            <ReactRouterDOM.Link
               to={`/shop?categoryId=${mainCat.id}`}
               className={`w-full flex items-center justify-between py-2 px-3 rounded-md text-sm transition-colors duration-150
                           ${currentMainCategoryId === mainCat.id && !currentSubCategoryId ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-gray-100 hover:text-primary'}`}
@@ -66,7 +67,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
               {mainCat.subCategories.length > 0 && (
                 <i className={`fas fa-chevron-right text-xs transition-transform duration-200 lg:group-hover:translate-x-1`}></i>
               )}
-            </Link>
+            </ReactRouterDOM.Link>
             
             {/* Flyout Panel for Desktop */}
             {mainCat.subCategories.length > 0 && (
@@ -75,9 +76,9 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
                 <ul className="space-y-1">
                   {mainCat.subCategories.map(subCat => (
                     <li key={subCat.id}>
-                      <Link to={`/shop?categoryId=${subCat.id}`} className={`block text-sm p-1.5 rounded-md ${currentSubCategoryId === subCat.id ? 'text-primary font-semibold' : 'text-textMuted hover:text-primary'}`}>
+                      <ReactRouterDOM.Link to={`/shop?categoryId=${subCat.id}`} className={`block text-sm p-1.5 rounded-md ${currentSubCategoryId === subCat.id ? 'text-primary font-semibold' : 'text-textMuted hover:text-primary'}`}>
                         {subCat.name}
-                      </Link>
+                      </ReactRouterDOM.Link>
                     </li>
                   ))}
                 </ul>
@@ -87,11 +88,11 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
         ))}
       </nav>
        <div className="p-3 border-t border-borderDefault">
-        <Link to="/shop?featured=true">
+        <ReactRouterDOM.Link to="/shop?featured=true">
             <Button variant="primary" className="w-full">
               <i className="fas fa-fire mr-2"></i> <span className="sidebar-footer-button-text">SẢN PHẨM BÁN CHẠY</span>
             </Button>
-        </Link>
+        </ReactRouterDOM.Link>
       </div>
     </div>
   );

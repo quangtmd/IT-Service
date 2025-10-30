@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../../ui/Button';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageWhyChooseUsFeature } from '../../../types';
@@ -66,11 +67,11 @@ const HomeWhyChooseUsIts: React.FC = () => {
 
               {whyChooseUsConfig.contactButtonLink && whyChooseUsConfig.contactButtonText && (
                  <div>
-                  <Link to={whyChooseUsConfig.contactButtonLink}>
+                  <ReactRouterDOM.Link to={whyChooseUsConfig.contactButtonLink}>
                     <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-md hover:shadow-primary/30">
                         {whyChooseUsConfig.contactButtonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                     </Button>
-                  </Link>
+                  </ReactRouterDOM.Link>
                 </div>
               )}
             </div>

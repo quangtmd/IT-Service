@@ -1,7 +1,9 @@
 
+
 import React, { useState, useEffect } from 'react';
 // FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
-import { Link, useNavigate } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants.tsx';
@@ -14,7 +16,7 @@ const RegisterPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();
   // FIX: Use useNavigate hook for react-router-dom v6
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -58,17 +60,17 @@ const RegisterPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-bgCanvas py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-bgBase p-10 rounded-xl shadow-xl border border-borderDefault">
         <div>
-          <Link to="/home" className="flex justify-center">
+          <ReactRouterDOM.Link to="/home" className="flex justify-center">
              <span className="text-3xl font-bold text-primary">{Constants.COMPANY_NAME}</span>
-          </Link>
+          </ReactRouterDOM.Link>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-textBase">
             Tạo tài khoản mới
           </h2>
           <p className="mt-2 text-center text-sm text-textMuted">
             Hoặc{' '}
-            <Link to="/login" className="font-medium text-primary hover:text-primary-dark">
+            <ReactRouterDOM.Link to="/login" className="font-medium text-primary hover:text-primary-dark">
               đăng nhập nếu bạn đã có tài khoản
-            </Link>
+            </ReactRouterDOM.Link>
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

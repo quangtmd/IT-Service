@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import { ChatMessage as ChatMessageType, GroundingChunk } from '../../types';
 import Markdown from 'react-markdown';
 
@@ -32,7 +33,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, groundingChunks }) =
                 // Check if it's an internal hash link for our SPA
                 if (href && href.includes(window.location.origin) && href.includes('#/')) {
                   const path = href.substring(href.indexOf('#') + 1); // Get the path after the '#'
-                  return <Link to={path} {...props} className="text-primary hover:underline" />;
+                  return <ReactRouterDOM.Link to={path} {...props} className="text-primary hover:underline" />;
                 }
                 // Default to external link behavior
                 return <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import { Product } from '../../types';
 import ProductCard from '../shop/ProductCard';
 import Button from '../ui/Button';
@@ -58,9 +59,9 @@ const HotProducts: React.FC = () => {
         <div className="container mx-auto px-4 text-center">
           <h2 className="home-section-title text-4xl md:text-5xl font-extrabold mb-6 !text-white">Sản Phẩm Nổi Bật</h2>
           <p className="home-section-subtitle mb-8 !text-red-100">Hiện chưa có sản phẩm nổi bật nào. Vui lòng quay lại sau!</p>
-          <Link to="/shop">
+          <ReactRouterDOM.Link to="/shop">
             <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">Khám phá tất cả sản phẩm</Button>
-          </Link>
+          </ReactRouterDOM.Link>
         </div>
       </section>
     );
@@ -89,11 +90,11 @@ const HotProducts: React.FC = () => {
         </div>
 
         <div className={`text-center mt-12 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`} style={{animationDelay: '0.5s'}}>
-          <Link to="/shop">
+          <ReactRouterDOM.Link to="/shop">
             <Button size="lg" variant="outline" className="px-10 py-3.5 text-base shadow-lg border-white text-white hover:bg-white hover:text-primary">
                 Xem Tất Cả Sản Phẩm
             </Button>
-          </Link>
+          </ReactRouterDOM.Link>
         </div>
       </div>
     </section>

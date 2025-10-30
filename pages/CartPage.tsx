@@ -1,9 +1,11 @@
 
 
 
+
 import React from 'react';
 // FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
-import { Link, useNavigate } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import Button from '../components/ui/Button';
 import { CartItem, CustomPCBuildCartItem, Product } from '../types';
@@ -11,7 +13,7 @@ import { CartItem, CustomPCBuildCartItem, Product } from '../types';
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
   // FIX: Use useNavigate hook for react-router-dom v6
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate();
 
   const handleCheckout = () => {
     // FIX: Use navigate for navigation in v6
@@ -24,9 +26,9 @@ const CartPage: React.FC = () => {
         <i className="fas fa-shopping-cart text-6xl text-textSubtle mb-6"></i>
         <h1 className="text-3xl font-semibold text-textBase mb-4">Giỏ hàng của bạn đang trống</h1>
         <p className="text-textMuted mb-6">Hãy khám phá các sản phẩm tuyệt vời của chúng tôi!</p>
-        <Link to="/shop">
+        <ReactRouterDOM.Link to="/shop">
           <Button variant="primary" size="lg">Tiếp tục mua sắm</Button>
-        </Link>
+        </ReactRouterDOM.Link>
       </div>
     );
   }
@@ -51,9 +53,9 @@ const CartPage: React.FC = () => {
                   className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-md mr-4 border border-borderDefault"
                 />
                 <div className="flex-grow">
-                  <Link to={isCustomBuild ? `/pc-builder?load=${item.id}` : `/product/${item.id}`} className="font-semibold text-textBase hover:text-primary text-lg block mb-1">
+                  <ReactRouterDOM.Link to={isCustomBuild ? `/pc-builder?load=${item.id}` : `/product/${item.id}`} className="font-semibold text-textBase hover:text-primary text-lg block mb-1">
                     {item.name}
-                  </Link>
+                  </ReactRouterDOM.Link>
                   {/* FIX: Use a type assertion within the guard to help TypeScript correctly infer the type. */}
                   {!isCustomBuild && (item as Product).categoryName && <p className="text-sm text-textMuted">{(item as Product).categoryName}</p>}
                   {isCustomBuild && (item as CustomPCBuildCartItem).buildComponents && (

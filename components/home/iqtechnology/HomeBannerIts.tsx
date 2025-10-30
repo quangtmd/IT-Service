@@ -1,6 +1,8 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../../ui/Button';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageBannerSettings } from '../../../types';
@@ -87,14 +89,14 @@ const HomeBannerIts: React.FC = () => {
             </p>
             <div className="space-y-3 sm:space-y-0 sm:space-x-4">
               {currentBanner.primaryButtonLink && currentBanner.primaryButtonText && (
-                <Link to={currentBanner.primaryButtonLink}>
+                <ReactRouterDOM.Link to={currentBanner.primaryButtonLink}>
                   <Button size="lg" variant="primary" className="w-full sm:w-auto px-8 py-3.5 text-base shadow-lg hover:shadow-primary/40 transform hover:scale-105">
                     {currentBanner.primaryButtonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                   </Button>
-                </Link>
+                </ReactRouterDOM.Link>
               )}
               {currentBanner.secondaryButtonLink && currentBanner.secondaryButtonText && (
-                <Link to={currentBanner.secondaryButtonLink}>
+                <ReactRouterDOM.Link to={currentBanner.secondaryButtonLink}>
                   <Button
                     size="lg"
                     variant="outline"
@@ -102,7 +104,7 @@ const HomeBannerIts: React.FC = () => {
                   >
                     {currentBanner.secondaryButtonText}
                   </Button>
-                </Link>
+                </ReactRouterDOM.Link>
               )}
             </div>
           </div>

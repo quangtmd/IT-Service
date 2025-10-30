@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../../ui/Button';
 import * as Constants from '../../../constants.tsx';
 import { MOCK_SERVICES } from '../../../data/mockData';
@@ -18,24 +19,24 @@ const ProjectCardIts: React.FC<ProjectItemProps> = ({ item, index }) => {
         <div
             className="modern-card group flex flex-col relative"
         >
-            <Link to={`/service/${item.slug || item.id}`} className="block aspect-video overflow-hidden rounded-t-lg">
+            <ReactRouterDOM.Link to={`/service/${item.slug || item.id}`} className="block aspect-video overflow-hidden rounded-t-lg">
                 <img src={placeholderImg} alt={item.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-            </Link>
+            </ReactRouterDOM.Link>
             <div className="p-6 flex flex-col flex-grow">
                 <div className="flex items-center mb-3 text-primary">
                     <i className={`${item.icon || 'fas fa-cogs'} text-xl mr-3 opacity-80`}></i>
                 </div>
                 <h3 className="modern-card-title mb-3">
-                     <Link to={`/service/${item.slug || item.id}`} className="line-clamp-2">{item.name}</Link>
+                     <ReactRouterDOM.Link to={`/service/${item.slug || item.id}`} className="line-clamp-2">{item.name}</ReactRouterDOM.Link>
                 </h3>
                 <p className="modern-card-description mb-5 line-clamp-3 flex-grow">{item.description}</p>
                 <div className="mt-auto">
-                    <Link
+                    <ReactRouterDOM.Link
                         to={`/service/${item.slug || item.id}`}
                         className="modern-card-link self-start"
                     >
                         Chi tiết dịch vụ <i className="fas fa-arrow-right text-xs ml-1"></i>
-                    </Link>
+                    </ReactRouterDOM.Link>
                 </div>
             </div>
         </div>
@@ -101,11 +102,11 @@ const HomeFeaturedProjectsIts: React.FC = () => {
 
         {projectsConfig.buttonLink && projectsConfig.buttonText && featuredItems.length > 0 && (
             <div className="text-center mt-12">
-                <Link to={projectsConfig.buttonLink}>
+                <ReactRouterDOM.Link to={projectsConfig.buttonLink}>
                 <Button variant="primary" size="lg" className="px-10 py-3.5 text-base shadow-lg hover:shadow-primary/40">
                     {projectsConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                 </Button>
-                </Link>
+                </ReactRouterDOM.Link>
             </div>
         )}
       </div>

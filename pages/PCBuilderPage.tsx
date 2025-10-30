@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 // FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
-import { useNavigate } from 'react-router-dom';
+// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
+import * as ReactRouterDOM from 'react-router-dom';
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
@@ -47,7 +48,7 @@ const PCBuilderPage: React.FC = () => {
   const { addToCart } = useCart();
   const { addAdminNotification } = useAuth();
   // FIX: Use useNavigate hook for react-router-dom v6
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate();
 
   const handleComponentChange = useCallback((
     type: BuilderSelectorKey,
