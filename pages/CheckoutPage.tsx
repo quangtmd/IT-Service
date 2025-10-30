@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
@@ -10,6 +12,7 @@ import { addOrder } from '../services/localDataService';
 const CheckoutPage: React.FC = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
   const { currentUser, isAuthenticated, addAdminNotification } = useAuth();
+  // FIX: Use useNavigate hook for react-router-dom v6
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<CheckoutFormData>({

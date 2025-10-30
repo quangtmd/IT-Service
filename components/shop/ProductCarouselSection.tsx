@@ -8,7 +8,8 @@ import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 
 interface ProductCarouselSectionProps {
     title: string;
-    categoryName?: string;
+    mainCategory?: string;
+    subCategory?: string;
     filterTag?: string;
     viewAllLink: string;
     bgColor?: string;
@@ -17,7 +18,8 @@ interface ProductCarouselSectionProps {
 
 const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({ 
     title, 
-    categoryName, 
+    mainCategory,
+    subCategory,
     filterTag,
     viewAllLink, 
     bgColor = 'bg-primary', 
@@ -43,7 +45,8 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
                     // Use backend filtering for other cases
                     const filters = {
                         tags: filterTag || null,
-                        mainCategory: categoryName || null,
+                        mainCategory: mainCategory || null,
+                        subCategory: subCategory || null,
                     };
                     const response = await getFilteredProducts(filters, 1, 8);
                     fetchedProducts = response.products;
@@ -59,7 +62,7 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({
             }
         };
         loadProducts();
-    }, [categoryName, filterTag, title]);
+    }, [mainCategory, subCategory, filterTag, title]);
 
     const handleScroll = (direction: 'left' | 'right') => {
         if (scrollContainerRef.current) {

@@ -1,5 +1,7 @@
+
 import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
+// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
+import { useNavigate } from 'react-router-dom';
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
@@ -45,7 +47,8 @@ const PCBuilderPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
   const { addAdminNotification } = useAuth();
-  const navigate = useNavigate(); // Changed from useHistory
+  // FIX: Use useNavigate hook for react-router-dom v6
+  const navigate = useNavigate();
 
   const handleComponentChange = useCallback((
     type: BuilderSelectorKey,
@@ -160,7 +163,8 @@ const PCBuilderPage: React.FC = () => {
 
     addToCart(customBuildItem as any);
     addAdminNotification(`Yêu cầu xây dựng PC mới (Ngân sách: ${parseInt(budget).toLocaleString('vi-VN')}₫, Nhu cầu: ${useCase}) đã được thêm vào giỏ hàng.`, 'info');
-    navigate('/cart'); // Changed from history.push
+    // FIX: Use navigate for navigation in v6
+    navigate('/cart');
   };
 
   const renderRecommendation = (componentAiKey: keyof Omit<AIBuildResponse, 'error'>) => {

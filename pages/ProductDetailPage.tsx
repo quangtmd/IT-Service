@@ -1,4 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
+// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import Button from '../components/ui/Button';
@@ -19,6 +21,7 @@ const ProductDetailPage: React.FC = () => {
   const [mainImage, setMainImage] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'reviews'>('description');
   const { addToCart } = useCart();
+  // FIX: Use useNavigate hook for react-router-dom v6
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -68,6 +71,7 @@ const ProductDetailPage: React.FC = () => {
   }, [productId]);
 
   const handleAddToCart = () => { if (product) addToCart(product, quantity); };
+  // FIX: Use navigate for navigation in v6
   const handleBuyNow = () => { if (product) { addToCart(product, quantity); navigate('/checkout'); } };
 
   if (isLoading) {

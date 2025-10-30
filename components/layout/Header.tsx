@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import * as Constants from '../../constants.tsx';
 import { useCart } from '../../hooks/useCart';
@@ -27,6 +29,7 @@ const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cart } = useCart();
   const { isAuthenticated, currentUser, logout, isLoading } = useAuth();
+  // FIX: Use useNavigate hook for react-router-dom v6
   const navigate = useNavigate();
   const totalItemsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -71,6 +74,7 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     logout();
     setIsMobileMenuOpen(false);
+    // FIX: Use navigate for navigation in v6
     navigate('/home');
   };
 

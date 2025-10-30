@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +11,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState<string | null>(null);
   const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
+  // FIX: Use useNavigate hook for react-router-dom v6
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/home";
@@ -18,10 +21,12 @@ const LoginPage: React.FC = () => {
     if (isAuthenticated && currentUser) {
       if (currentUser.role === 'admin' || currentUser.role === 'staff') {
         // For admin/staff, always go to the admin page.
+        // FIX: Use navigate for navigation in v6
         navigate('/admin', { replace: true });
       } else {
         // For regular customers, go back to the page they were on, or to the homepage.
         // Avoids a redirect loop if 'from' is the login page itself.
+        // FIX: Use navigate for navigation in v6
         navigate(from === '/login' ? '/home' : from, { replace: true });
       }
     }

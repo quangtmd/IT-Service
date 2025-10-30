@@ -1,5 +1,7 @@
+
 import React, { useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'; // Updated imports for v6/v7
+// FIX: Update react-router-dom from v5 to v6 for compatibility.
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
@@ -34,8 +36,12 @@ const App: React.FC = () => {
       <div className="flex flex-col min-h-screen bg-bgCanvas">
         <Header />
         <main className="flex-grow pt-[168px]">
-          <Routes> {/* Replaced Switch with Routes */}
+          {/* FIX: Use Routes instead of Switch for react-router-dom v6 */}
+          <Routes>
+            {/* FIX: Use Navigate for redirects in react-router-dom v6 */}
             <Route path="/" element={<Navigate to="/home" replace />} />
+            
+            {/* FIX: Use the element prop for Route components in react-router-dom v6 */}
             <Route path="/home" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/product/:productId" element={<ProductDetailPage />} />
@@ -48,16 +54,16 @@ const App: React.FC = () => {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/pc-builder" element={<PCBuilderPage />} />
-            <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} /> {/* Add new route */}
+            <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} />
 
             {/* Auth Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
 
-            {/* Protected Admin Route - Updated for v6/v7 */}
+            {/* Protected Admin Route - Updated for v6 */}
             <Route
-              path="/admin/*" // Add /* to allow nested routes within AdminPage if any
+              path="/admin/*"
               element={
                 <ProtectedRoute>
                   <AdminPage />

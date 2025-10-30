@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 
 const app = express();
-const port = process.env.PORT || 3001; 
+const PORT = process.env.PORT || 10000; // Use Render's port, fallback to 10000
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Tăng giới hạn payload cho media
@@ -287,7 +287,11 @@ app.post('/api/settings', async (req, res) => {
     }
 });
 
+// Add root route for health checks
+app.get('/', (req, res) => {
+  res.send('✅ Backend server is running OK!');
+});
 
-app.listen(port, () => {
-  console.log(`Backend server đang chạy tại http://localhost:${port}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server is running on port ${PORT}`);
 });

@@ -1,4 +1,6 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/shop/ProductCard';
 import { Product } from '../types';
@@ -41,6 +43,7 @@ const ProductCategoryNav: React.FC<{
 
 const ShopPage: React.FC = () => {
   const location = useLocation();
+  // FIX: Use useNavigate hook for react-router-dom v6
   const navigate = useNavigate();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   
@@ -118,6 +121,7 @@ const ShopPage: React.FC = () => {
         newParams.delete('subCategory');
     }
     newParams.set('page', '1');
+    // FIX: Use navigate for navigation in v6
     navigate(`/shop?${newParams.toString()}`);
   };
   
@@ -126,12 +130,14 @@ const ShopPage: React.FC = () => {
     if (term) newParams.set('q', term);
     else newParams.delete('q');
     newParams.set('page', '1');
+    // FIX: Use navigate for navigation in v6
     navigate(`/shop?${newParams.toString()}`);
   };
 
   const handlePageChange = (newPage: number) => {
     const newParams = new URLSearchParams(location.search);
     newParams.set('page', String(newPage));
+    // FIX: Use navigate for navigation in v6
     navigate(`/shop?${newParams.toString()}`);
   };
 
@@ -199,9 +205,9 @@ const ShopPage: React.FC = () => {
   const renderCarouselContent = () => (
       <div className="space-y-12">
         <ProductCarouselSection title="Linh Kiện PC Bán Chạy" filterTag="Bán chạy" viewAllLink="/shop?tags=Bán%20chạy" />
-        <ProductCarouselSection title="Laptop Nổi Bật" categoryName="Laptop" viewAllLink="/shop?mainCategory=laptop" />
-        <ProductCarouselSection title="PC Gaming Cấu Hình Khủng" categoryName="Máy tính Gaming" viewAllLink="/shop?mainCategory=may_tinh_de_ban&subCategory=pc_gaming" />
-        <ProductCarouselSection title="Thiết Bị Ngoại Vi" categoryName="Thiết bị ngoại vi" viewAllLink="/shop?mainCategory=thiet_bi_ngoai_vi"/>
+        <ProductCarouselSection title="Laptop Nổi Bật" mainCategory="Laptop" viewAllLink="/shop?mainCategory=laptop" />
+        <ProductCarouselSection title="PC Gaming Cấu Hình Khủng" mainCategory="Máy tính để bàn (PC)" subCategory="Máy tính Gaming" viewAllLink="/shop?mainCategory=may_tinh_de_ban&subCategory=pc_gaming" />
+        <ProductCarouselSection title="Thiết Bị Ngoại Vi" mainCategory="Thiết bị ngoại vi" viewAllLink="/shop?mainCategory=thiet_bi_ngoai_vi"/>
       </div>
   );
 

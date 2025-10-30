@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
+// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants.tsx';
@@ -11,11 +13,13 @@ const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate(); // Changed from useHistory
+  // FIX: Use useNavigate hook for react-router-dom v6
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/home'); // Changed from history.push
+      // FIX: Use navigate for navigation in v6
+      navigate('/home');
     }
   }, [isAuthenticated, navigate]);
 
@@ -39,6 +43,7 @@ const RegisterPage: React.FC = () => {
     try {
         const user = await register({ username, email, password });
         if (user) {
+          // FIX: Use navigate for navigation in v6
           navigate('/home');
         } else {
           setError('Đăng ký không thành công. Vui lòng thử lại.');

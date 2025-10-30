@@ -1,17 +1,20 @@
 
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
+// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import Button from '../components/ui/Button';
 import { CartItem, CustomPCBuildCartItem } from '../types';
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
-  const navigate = useNavigate(); // Changed from useHistory
+  // FIX: Use useNavigate hook for react-router-dom v6
+  const navigate = useNavigate();
 
   const handleCheckout = () => {
-    navigate('/checkout'); // Changed from history.push
+    // FIX: Use navigate for navigation in v6
+    navigate('/checkout');
   };
 
   if (cart.length === 0) {

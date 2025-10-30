@@ -1,7 +1,8 @@
 
 
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom'; // Updated imports for v6/v7
+// FIX: Update react-router-dom from v5 to v6. Replaced Redirect with Navigate.
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface ProtectedRouteProps {
@@ -26,6 +27,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     // trying to go to when they were redirected. This allows us to send them
     // along to that page after they login, which is a nicer user experience
     // than dropping them off on the home page.
+    // FIX: Use Navigate component for v6 and add replace prop
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -33,6 +35,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // This component is now used within an <AdminPage /> route, so this check ensures only authorized roles see the content.
   if (currentUser?.role !== 'admin' && currentUser?.role !== 'staff') {
     // If not admin or staff, redirect to a "not authorized" page or homepage
+    // FIX: Use Navigate component for v6 and add replace prop
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
