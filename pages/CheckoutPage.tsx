@@ -1,6 +1,4 @@
-
 import React, { useState, useEffect } from 'react';
-// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
@@ -12,7 +10,6 @@ import { addOrder } from '../services/localDataService';
 const CheckoutPage: React.FC = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
   const { currentUser, isAuthenticated, addAdminNotification } = useAuth();
-  // FIX: Use useNavigate hook for react-router-dom v6
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -57,35 +54,47 @@ const CheckoutPage: React.FC = () => {
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     setIsSubmitting(true);
     
     try {
         const total = getTotalPrice();
-        const newOrderId = `order-${Date.now()}`;
-        
-        let paymentInfo: PaymentInfo;
+        let paymentDetails: any; // Using 'any' for flexibility with new schema
+
         if (paymentMethod === 'transfer') {
             const isDeposit = transferOption === 'deposit';
-            paymentInfo = {
+            paymentDetails = {
                 method: 'Chuyển khoản ngân hàng',
                 status: 'Chưa thanh toán',
                 amountToPay: isDeposit ? total * Constants.DEPOSIT_PERCENTAGE : total,
             };
         } else {
-            paymentInfo = { method: 'Thanh toán khi nhận hàng (COD)', status: 'Chưa thanh toán' };
+            paymentDetails = { method: 'Thanh toán khi nhận hàng (COD)', status: 'Chưa thanh toán' };
         }
         
-        const newOrder: Order = {
-            id: newOrderId, customerInfo: formData,
-            items: cart.map(item => ({ productId: item.id, productName: item.name, quantity: item.quantity, price: item.price })),
-            totalAmount: total, orderDate: new Date().toISOString(), status: 'Chờ xử lý', paymentInfo: paymentInfo,
+        // New payload for the backend
+        const newOrderPayload = {
+            userId: currentUser?.id || null,
+            totalAmount: total,
+            customerInfo: formData,
+            shippingAddress: { address: formData.address }, // Simplified for now
+            paymentDetails: paymentDetails,
+            items: cart.map(item => ({ 
+                productId: item.id, 
+                productName: item.name, 
+                quantity: item.quantity, 
+                priceAtPurchase: item.price 
+            })),
         };
 
-        await addOrder(newOrder);
+        const createdOrder = await addOrder(newOrderPayload);
 
-        addAdminNotification(`Đơn hàng mới #${newOrder.id.slice(-6)} từ ${formData.fullName} đã được tạo.`, 'success');
-        setSubmittedOrder(newOrder);
+        addAdminNotification(`Đơn hàng mới #${createdOrder.id} từ ${formData.fullName} đã được tạo.`, 'success');
+        setSubmittedOrder({
+            ...createdOrder,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        } as Order);
 
         if (paymentMethod === 'cod') {
             clearCart();
@@ -94,7 +103,7 @@ const CheckoutPage: React.FC = () => {
             setCheckoutStep('payment_details');
         }
     } catch (error) {
-        console.error("Lỗi khi lưu đơn hàng vào Local Storage:", error);
+        console.error("Lỗi khi tạo đơn hàng:", error);
         alert('Đã xảy ra lỗi không mong muốn khi tạo đơn hàng.');
     } finally {
         setIsSubmitting(false);
@@ -118,7 +127,7 @@ const CheckoutPage: React.FC = () => {
   }
 
   if (checkoutStep === 'success' && submittedOrder) {
-    const isCOD = submittedOrder.paymentInfo.method === 'Thanh toán khi nhận hàng (COD)';
+    const isCOD = (submittedOrder.paymentDetails as PaymentInfo).method === 'Thanh toán khi nhận hàng (COD)';
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <div className="max-w-lg mx-auto bg-bgBase p-8 rounded-lg shadow-xl border border-borderDefault">
@@ -126,7 +135,7 @@ const CheckoutPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-textBase mb-4">Đặt Hàng Thành Công!</h1>
           <p className="text-textMuted mb-6">
             Cảm ơn {submittedOrder.customerInfo.fullName} đã đặt hàng tại {Constants.COMPANY_NAME}.
-            Mã đơn hàng của bạn là <strong className="text-textBase">#{submittedOrder.id.slice(-6)}</strong>.
+            Mã đơn hàng của bạn là <strong className="text-textBase">#{submittedOrder.id}</strong>.
           </p>
           <p className="text-textMuted mb-8">
             {isCOD 
@@ -144,8 +153,9 @@ const CheckoutPage: React.FC = () => {
   }
   
   if (checkoutStep === 'payment_details' && submittedOrder) {
-    const amountToPay = submittedOrder.paymentInfo.amountToPay || submittedOrder.totalAmount;
-    const qrDescription = `TT DON HANG ${submittedOrder.id.slice(-8)}`;
+    const paymentInfo = submittedOrder.paymentDetails as PaymentInfo;
+    const amountToPay = paymentInfo.amountToPay || submittedOrder.totalAmount;
+    const qrDescription = `TT DON HANG ${submittedOrder.id}`;
     const qrUrl = `https://img.vietqr.io/image/${Constants.VIETCOMBANK_ID}-${Constants.BANK_ACCOUNT_NUMBER}-print.png?amount=${amountToPay}&addInfo=${encodeURIComponent(qrDescription)}&accountName=${encodeURIComponent(Constants.BANK_ACCOUNT_NAME)}`;
 
     return (

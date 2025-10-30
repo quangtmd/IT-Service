@@ -1,16 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import * as Constants from '../../constants';
-import { MainCategoryInfo } from '../../types';
+import { MainCategoryInfo, ProductCategory } from '../../types';
+import { getProductCategories } from '../../services/localDataService';
 
 const MegaMenu: React.FC = () => {
-  const categories = Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.slug !== 'pc_xay_dung');
-  // Set the first category as active by default to avoid a blank panel on initial hover
-  const [activeCategory, setActiveCategory] = useState<MainCategoryInfo | null>(categories[0] || null);
+  const [categories, setCategories] = useState<MainCategoryInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<MainCategoryInfo | null>(null);
   const location = useLocation();
   const isActive = location.pathname.startsWith('/shop') || location.pathname.startsWith('/product');
 
-  if (categories.length === 0) {
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoading(true);
+        const allCats: ProductCategory[] = await getProductCategories();
+        // Process hierarchical data
+        const mainCats: MainCategoryInfo[] = allCats
+          .filter(c => c.parentCategoryId === null)
+          .map(mc => ({
+            ...mc,
+            icon: 'fas fa-tag', // Placeholder icon, can be customized later
+            subCategories: allCats.filter(sc => sc.parentCategoryId === mc.id)
+          }));
+        setCategories(mainCats);
+        if (mainCats.length > 0) {
+          setActiveCategory(mainCats[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch product categories:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+  
+  if (isLoading || categories.length === 0) {
     return (
        <Link
         to="/shop"
@@ -43,7 +69,7 @@ const MegaMenu: React.FC = () => {
               {categories.map(category => (
                 <li key={category.slug}>
                   <Link
-                    to={`/shop?mainCategory=${category.slug}`}
+                    to={`/shop?categoryId=${category.id}`}
                     className={`flex items-center w-full text-left p-3 rounded-md text-sm font-medium transition-colors ${activeCategory?.slug === category.slug ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-200/50'}`}
                     onMouseEnter={() => setActiveCategory(category)}
                   >
@@ -67,7 +93,7 @@ const MegaMenu: React.FC = () => {
                   {activeCategory.subCategories.map(subCategory => (
                     <li key={subCategory.slug}>
                       <Link
-                        to={`/shop?mainCategory=${activeCategory.slug}&subCategory=${subCategory.slug}`}
+                        to={`/shop?categoryId=${subCategory.id}`}
                         className="text-sm text-textMuted hover:text-primary transition-colors block p-1"
                       >
                         {subCategory.name}

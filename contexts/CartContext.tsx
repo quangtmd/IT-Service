@@ -5,8 +5,9 @@ import { CartItem, Product } from '../types';
 interface CartContextType {
   cart: CartItem[];
   addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  // FIX: Allow productId to be number or string to support both Product and CustomPCBuildCartItem.
+  removeFromCart: (productId: number | string) => void;
+  updateQuantity: (productId: number | string, quantity: number) => void;
   clearCart: () => void;
   getItemCount: () => number;
   getTotalPrice: () => number;
@@ -53,17 +54,19 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     });
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  const removeFromCart = (productId: number | string) => {
+    // FIX: Compare as strings to handle mixed types (number for Product, string for CustomPCBuild).
+    setCart((prevCart) => prevCart.filter((item) => String(item.id) !== String(productId)));
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: number | string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
     } else {
       setCart((prevCart) =>
         prevCart.map((item) =>
-          item.id === productId ? { ...item, quantity } : item
+          // FIX: Compare as strings to handle mixed types.
+          String(item.id) === String(productId) ? { ...item, quantity } : item
         )
       );
     }

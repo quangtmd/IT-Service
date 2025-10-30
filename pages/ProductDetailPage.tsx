@@ -1,12 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
-// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
-import * as Constants from '../constants';
 import { getProduct, getProducts } from '../services/localDataService';
 import RecentlyViewedProducts from '../components/shop/RecentlyViewedProducts';
 
@@ -21,7 +18,6 @@ const ProductDetailPage: React.FC = () => {
   const [mainImage, setMainImage] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'reviews'>('description');
   const { addToCart } = useCart();
-  // FIX: Use useNavigate hook for react-router-dom v6
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,19 +35,19 @@ const ProductDetailPage: React.FC = () => {
 
         if (foundProduct) {
           setProduct(foundProduct);
-          setMainImage(foundProduct.imageUrls?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
+          setMainImage(foundProduct.images?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
           
+          // Fetch related products based on the same category
           const allProducts = await getProducts();
-          const related = allProducts.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
+          const related = allProducts.filter(p => p.categoryId === foundProduct.categoryId && p.id !== foundProduct.id).slice(0, 4);
           setRelatedProducts(related);
 
           // Track recently viewed
           const RECENTLY_VIEWED_KEY = 'recentlyViewedProducts';
           const stored = localStorage.getItem(RECENTLY_VIEWED_KEY);
           let recentlyViewed: string[] = stored ? JSON.parse(stored) : [];
-          recentlyViewed = [productId, ...recentlyViewed.filter(id => id !== productId)].slice(0, 5);
+          recentlyViewed = [productId, ...recentlyViewed.filter(id => String(id) !== String(productId))].slice(0, 5);
           localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(recentlyViewed));
-
 
         } else {
           setError('Không tìm thấy sản phẩm.');
@@ -71,7 +67,6 @@ const ProductDetailPage: React.FC = () => {
   }, [productId]);
 
   const handleAddToCart = () => { if (product) addToCart(product, quantity); };
-  // FIX: Use navigate for navigation in v6
   const handleBuyNow = () => { if (product) { addToCart(product, quantity); navigate('/checkout'); } };
 
   if (isLoading) {
@@ -95,8 +90,6 @@ const ProductDetailPage: React.FC = () => {
   }
 
   const savings = product.originalPrice && product.originalPrice > product.price ? product.originalPrice - product.price : 0;
-  const mainCategoryInfo = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.name === product.mainCategory);
-  const subCategoryInfo = mainCategoryInfo?.subCategories.find(sc => sc.name === product.subCategory);
 
   return (
     <div className="bg-bgCanvas">
@@ -104,7 +97,7 @@ const ProductDetailPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-8">
             {/* Recently Viewed Sidebar */}
             <aside className="w-full lg:w-64 flex-shrink-0 order-2 lg:order-1">
-                <RecentlyViewedProducts currentProductId={product.id} />
+                <RecentlyViewedProducts currentProductId={String(product.id)} />
             </aside>
             
             <main className="flex-grow min-w-0 order-1 lg:order-2">
@@ -113,16 +106,10 @@ const ProductDetailPage: React.FC = () => {
                     <li><Link to="/home" className="hover:text-primary">Trang chủ</Link></li>
                     <li><span className="text-textSubtle">/</span></li>
                     <li><Link to="/shop" className="hover:text-primary">Sản phẩm</Link></li>
-                    {mainCategoryInfo && (
+                    {product.categoryId && product.categoryName && (
                       <>
                         <li><span className="text-textSubtle">/</span></li>
-                        <li><Link to={`/shop?mainCategory=${mainCategoryInfo.slug}`} className="hover:text-primary">{mainCategoryInfo.name}</Link></li>
-                      </>
-                    )}
-                    {subCategoryInfo && (
-                      <>
-                        <li><span className="text-textSubtle">/</span></li>
-                        <li><Link to={`/shop?mainCategory=${mainCategoryInfo?.slug}&subCategory=${subCategoryInfo.slug}`} className="hover:text-primary">{subCategoryInfo.name}</Link></li>
+                        <li><Link to={`/shop?categoryId=${product.categoryId}`} className="hover:text-primary">{product.categoryName}</Link></li>
                       </>
                     )}
                     <li><span className="text-textSubtle">/</span></li>
@@ -138,9 +125,9 @@ const ProductDetailPage: React.FC = () => {
                       <div className="mb-4 border border-borderDefault rounded-lg overflow-hidden shadow-md sticky top-24">
                         <img src={mainImage} alt={product.name} className="w-full h-auto object-contain max-h-[450px]" />
                       </div>
-                      {product.imageUrls && product.imageUrls.length > 1 && (
+                      {product.images && product.images.length > 1 && (
                         <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
-                          {product.imageUrls.map((url, index) => (
+                          {product.images.map((url, index) => (
                             <img key={index} src={url} alt={`${product.name} thumbnail ${index + 1}`} className={`flex-shrink-0 w-20 h-20 object-cover rounded-md cursor-pointer border-2 ${mainImage === url ? 'border-primary' : 'border-borderDefault hover:border-primary/50'}`} onClick={() => setMainImage(url)} />
                           ))}
                         </div>
@@ -157,10 +144,6 @@ const ProductDetailPage: React.FC = () => {
                       <div className="flex items-center text-sm text-textMuted mb-3 space-x-4">
                           <span>Mã SP: <span className="font-medium text-textBase">{product.id}</span></span>
                           {product.brand && <span>Thương hiệu: <span className="font-medium text-textBase">{product.brand}</span></span>}
-                          <div className="flex items-center">
-                            <span className="text-yellow-500">{[...Array(Math.floor(product.rating || 4))].map((_, i) => <i key={`star-${i}`} className="fas fa-star text-xs"></i>)}</span>
-                            <span className="text-textMuted ml-1 text-xs">({product.reviews || Math.floor(Math.random() * 200) + 10} đánh giá)</span>
-                          </div>
                       </div>
 
                       <div className="p-4 bg-bgMuted rounded-lg border border-borderDefault mb-4">
@@ -174,13 +157,6 @@ const ProductDetailPage: React.FC = () => {
                               <p className="text-sm text-textMuted">Tiết kiệm: <span className="font-semibold text-primary">{savings.toLocaleString('vi-VN')}₫</span></p>
                           )}
                       </div>
-                      
-                      {product.shortDescription && (
-                          <div className="mb-4 p-4 border border-blue-200 bg-blue-50 rounded-lg">
-                              <h3 className="font-semibold text-blue-800 mb-2"><i className="fas fa-info-circle mr-2"></i>Thông tin nổi bật</h3>
-                              <p className="text-sm text-textMuted leading-relaxed">{product.shortDescription}</p>
-                          </div>
-                      )}
                       
                       <div className="mb-4">
                           <span className="font-semibold text-textBase">Tình trạng: </span>
@@ -229,10 +205,10 @@ const ProductDetailPage: React.FC = () => {
                         <div className="overflow-x-auto pt-6">
                             <table className="product-detail-specs-table">
                                 <tbody>
-                                {Object.entries(product.specifications).map(([key, value], index) => (
+                                {product.specs && Object.entries(product.specs).map(([key, value]) => (
                                     <tr key={key}>
                                         <td>{key}</td>
-                                        <td>{value}</td>
+                                        <td>{typeof value === 'object' ? JSON.stringify(value) : value}</td>
                                     </tr>
                                 ))}
                                 </tbody>
@@ -241,48 +217,7 @@ const ProductDetailPage: React.FC = () => {
                     )}
                     {activeTab === 'reviews' && (
                         <div className="pt-6">
-                            <h3 className="text-xl font-semibold mb-4">Bình luận của khách hàng</h3>
-                            {/* Write a review form */}
-                            <div className="bg-bgCanvas p-4 rounded-lg border border-borderDefault mb-6">
-                                <h4 className="font-semibold mb-3">Viết đánh giá của bạn</h4>
-                                <form className="space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <label className="text-sm">Đánh giá:</label>
-                                        <div className="text-yellow-400 text-lg cursor-pointer">
-                                            <i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="far fa-star"></i>
-                                        </div>
-                                    </div>
-                                    <input type="text" placeholder="Tên của bạn" className="input-style w-full sm:w-1/2" />
-                                    <textarea placeholder="Viết bình luận của bạn ở đây..." rows={4} className="input-style w-full"></textarea>
-                                    <Button type="submit">Gửi bình luận</Button>
-                                </form>
-                            </div>
-                            
-                            {/* Mock reviews */}
-                            <div className="space-y-5">
-                                <div className="flex items-start gap-4 p-4 border-b border-borderDefault">
-                                    <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="avatar" className="w-12 h-12 rounded-full" />
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <h5 className="font-semibold">Nguyễn Văn A</h5>
-                                            <span className="text-xs text-textSubtle">2 ngày trước</span>
-                                        </div>
-                                        <div className="text-yellow-400 text-sm mb-2"><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i></div>
-                                        <p className="text-textMuted text-sm">Sản phẩm tuyệt vời, đúng như mô tả. Hiệu năng rất mạnh, đáng đồng tiền.</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-4 p-4 border-b border-borderDefault">
-                                    <img src="https://i.pravatar.cc/150?u=a042581f4e29026704e" alt="avatar" className="w-12 h-12 rounded-full" />
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <h5 className="font-semibold">Trần Thị B</h5>
-                                            <span className="text-xs text-textSubtle">1 tuần trước</span>
-                                        </div>
-                                        <div className="text-yellow-400 text-sm mb-2"><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="far fa-star"></i></div>
-                                        <p className="text-textMuted text-sm">Giao hàng nhanh, đóng gói cẩn thận. Sản phẩm hoạt động tốt, có điều hơi nóng khi chơi game nặng.</p>
-                                    </div>
-                                </div>
-                            </div>
+                           <p className="text-textMuted">Tính năng đánh giá đang được phát triển.</p>
                         </div>
                     )}
                 </div>
@@ -292,7 +227,7 @@ const ProductDetailPage: React.FC = () => {
                     <h2 className="text-2xl font-bold text-textBase mb-6 text-center">Sản phẩm liên quan</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                       {relatedProducts.map(relatedProduct => (
-                        <ProductCard key={relatedProduct.id} product={relatedProduct} context="detail-view" />
+                        <ProductCard key={relatedProduct.id} product={relatedProduct} />
                       ))}
                     </div>
                   </div>

@@ -1,11 +1,12 @@
 
 
+
 import React from 'react';
 // FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import Button from '../components/ui/Button';
-import { CartItem, CustomPCBuildCartItem } from '../types';
+import { CartItem, CustomPCBuildCartItem, Product } from '../types';
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
@@ -36,12 +37,16 @@ const CartPage: React.FC = () => {
       <div className="bg-bgBase shadow-xl rounded-lg p-4 sm:p-6 border border-borderDefault">
         {cart.map((item) => {
           const isCustomBuild = 'isCustomBuild' in item && item.isCustomBuild;
+          // FIX: Use a type guard to correctly access images for custom builds and standard products.
+          const imageUrl = isCustomBuild 
+            ? item.images?.[0] 
+            : (item.images?.[0] || `https://picsum.photos/seed/${item.id}/100/100`);
 
           return (
             <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 border-b border-borderDefault last:border-b-0">
               <div className="flex items-start mb-4 sm:mb-0 w-full sm:w-3/5 md:w-2/5">
                 <img
-                  src={(item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : `https://picsum.photos/seed/${item.id}/100/100`)}
+                  src={imageUrl}
                   alt={item.name}
                   className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-md mr-4 border border-borderDefault"
                 />
@@ -49,11 +54,12 @@ const CartPage: React.FC = () => {
                   <Link to={isCustomBuild ? `/pc-builder?load=${item.id}` : `/product/${item.id}`} className="font-semibold text-textBase hover:text-primary text-lg block mb-1">
                     {item.name}
                   </Link>
-                  {!isCustomBuild && <p className="text-sm text-textMuted">{item.category}</p>}
-                  {isCustomBuild && item.buildComponents && (
+                  {/* FIX: Use a type assertion within the guard to help TypeScript correctly infer the type. */}
+                  {!isCustomBuild && (item as Product).categoryName && <p className="text-sm text-textMuted">{(item as Product).categoryName}</p>}
+                  {isCustomBuild && (item as CustomPCBuildCartItem).buildComponents && (
                     <div className="text-xs text-textMuted mt-1 space-y-0.5">
                       <p className="font-medium text-textSubtle">Chi tiết cấu hình:</p>
-                      {Object.entries(item.buildComponents).map(([type, comp]) => {
+                      {Object.entries((item as CustomPCBuildCartItem).buildComponents).map(([type, comp]) => {
                         const component = comp as { name: string; price?: number };
                         return (
                         <p key={type} className="truncate" title={`${type}: ${component.name} (${(component.price || 0).toLocaleString('vi-VN')}₫)`}>
@@ -70,7 +76,8 @@ const CartPage: React.FC = () => {
                 {!isCustomBuild && (
                   <div className="flex items-center mb-2 sm:mb-0 sm:w-28">
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      // FIX: Convert item.id to string for cart functions.
+                      onClick={() => updateQuantity(String(item.id), item.quantity - 1)}
                       className="px-2 py-1 border border-borderStrong text-textMuted rounded-l-md hover:bg-bgMuted"
                       disabled={item.quantity <= 1}
                       aria-label="Giảm số lượng"
@@ -80,13 +87,15 @@ const CartPage: React.FC = () => {
                     <input
                       type="number"
                       value={item.quantity}
-                      onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                      // FIX: Convert item.id to string for cart functions.
+                      onChange={(e) => updateQuantity(String(item.id), parseInt(e.target.value))}
                       className="w-10 text-center bg-white border-t border-b border-borderStrong text-textBase p-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                       min="1"
                       aria-label="Số lượng"
                     />
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      // FIX: Convert item.id to string for cart functions.
+                      onClick={() => updateQuantity(String(item.id), item.quantity + 1)}
                       className="px-2 py-1 border border-borderStrong text-textMuted rounded-r-md hover:bg-bgMuted"
                       aria-label="Tăng số lượng"
                     >
@@ -100,7 +109,9 @@ const CartPage: React.FC = () => {
                 <p className="font-semibold text-textBase w-28 text-right mb-2 sm:mb-0">
                   {(item.price * item.quantity).toLocaleString('vi-VN')}₫
                 </p>
-                <button onClick={() => removeFromCart(item.id)} className="text-danger-text hover:text-red-700 text-lg sm:text-xl" aria-label="Xóa khỏi giỏ hàng">
+                <button 
+                  // FIX: Convert item.id to string for cart functions.
+                  onClick={() => removeFromCart(item.id)} className="text-danger-text hover:text-red-700 text-lg sm:text-xl" aria-label="Xóa khỏi giỏ hàng">
                   <i className="fas fa-trash-alt"></i>
                 </button>
               </div>

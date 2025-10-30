@@ -36,7 +36,8 @@ const ArticlePreview: React.FC<ArticlePreviewProps> = ({ article }) => {
           </Link>
         </h3>
         <p className="text-xs text-textSubtle mb-3">
-            By {article.author} on {new Date(article.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            {/* FIX: Property 'date' does not exist on type 'Article'. Use 'publishedAt' or 'createdAt' instead. */}
+            By {article.author} on {new Date(article.publishedAt || article.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
         <p className="modern-card-description mb-4 line-clamp-3 flex-grow">{article.summary}</p>
         <div className="mt-auto">

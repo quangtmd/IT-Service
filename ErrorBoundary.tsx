@@ -11,21 +11,20 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  // FIX: Initialize state as a class property to resolve errors with 'this.state' and 'this.props'.
-  state: State = {
-    hasError: false,
-    errorMessage: '',
-  };
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      errorMessage: '',
+    };
+  }
 
   static getDerivedStateFromError(error: Error): State {
-    // Update state so the next render will show the fallback UI.
-    // We only store the safe, serializable message string.
     const safeErrorMessage = `${error.name}: ${error.message}`;
     return { hasError: true, errorMessage: safeErrorMessage };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // You can also log the error to an error reporting service
     console.error("ErrorBoundary caught an error:", error, errorInfo.componentStack);
   }
 

@@ -1,77 +1,109 @@
-
-
 import React from 'react';
 import { AdminPermission } from './contexts/AuthContext';
 
-export interface Product {
-  id: string;
+// --- Database-aligned Types ---
+
+export interface ProductCategory {
+  id: number;
   name: string;
-  mainCategory: string; 
-  subCategory: string;  
-  category: string; 
-  price: number;
-  originalPrice?: number;
-  imageUrls: string[]; 
-  description: string; // Detailed description
-  shortDescription?: string; // New field for short description
-  specifications: Record<string, string>;
-  stock: number;
-  status?: 'Mới' | 'Cũ' | 'Like new';
-  rating?: number;
-  reviews?: number;
-  brand?: string;
-  tags: string[]; // Changed from optional to required, default to []
-  brandLogoUrl?: string;
-  isVisible?: boolean; // New field for product visibility
-  seoMetaTitle?: string; // New SEO field
-  seoMetaDescription?: string; // New SEO field
-  slug?: string; // New field for custom URL slug
+  slug: string;
+  description: string | null;
+  parentCategoryId: number | null;
+  // For frontend processing
+  subCategories?: ProductCategory[]; 
 }
 
-export interface Service {
-  id: string;
+export interface Product {
+  id: number;
   name: string;
-  description: string;
-  icon: string; // FontAwesome class string
-  imageUrl: string; 
-  slug: string;     
+  description: string | null;
+  price: number;
+  stock: number;
+  images: string[] | null;
+  categoryId: number | null;
+  brand: string | null;
+  specs: Record<string, any> | null;
+  createdAt: string;
+  updatedAt: string;
+  // Joined from categories table
+  categoryName?: string;
+  // Legacy support for forms
+  originalPrice?: number;
+}
+
+
+export interface ArticleCategory {
+  id: number;
+  name: string;
+  slug: string;
 }
 
 export interface Article {
-  id: string;
+  id: number;
   title: string;
-  summary: string;
-  imageUrl: string;
-  author: string;
-  date: string;
-  category: string; 
-  content?: string; 
-  isAIGenerated?: boolean; // New field to mark AI-generated articles
-  imageSearchQuery?: string; // New field for AI-suggested image search term
+  slug: string;
+  content: string | null;
+  summary: string | null;
+  imageUrl: string | null;
+  authorId: string | null;
+  categoryId: number | null;
+  status: 'draft' | 'published' | 'archived';
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  // For frontend convenience
+  author?: string; 
+  category?: string;
+  isAIGenerated?: boolean;
+  imageSearchQuery?: string;
 }
 
-export interface CartItem extends Product {
+
+export interface OrderItem {
+  id: number;
+  orderId: number;
+  productId: number;
   quantity: number;
-  isCustomBuild?: boolean; 
-  buildComponents?: Record<string, { name: string; price?: number }>; 
+  priceAtPurchase: number;
+  productName: string;
 }
 
-export interface CustomPCBuildCartItem extends Omit<Product, 'imageUrls' | 'mainCategory' | 'subCategory' | 'category' | 'specifications' | 'stock' | 'status' | 'brand' | 'tags' | 'description' | 'shortDescription' | 'isVisible' | 'seoMetaTitle' | 'seoMetaDescription' | 'slug'> {
-  id: string;
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export const ORDER_STATUS_OPTIONS: OrderStatus[] = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+
+
+export interface Order {
+  id: number;
+  userId: string | null;
+  status: OrderStatus;
+  totalAmount: number;
+  customerInfo: CheckoutFormData; 
+  shippingAddress: any; 
+  paymentDetails: any; 
+  createdAt: string;
+  updatedAt: string;
+  // Populated by the backend
+  items: OrderItem[]; 
+}
+
+// --- Frontend-specific Types ---
+
+export type CartItem = (Product & {
+  quantity: number;
+}) | CustomPCBuildCartItem;
+
+
+export interface CustomPCBuildCartItem {
+  id: string; // Keep as string for temporary client-side ID
   name: string; 
   price: number;
   quantity: number;
   description: string; 
-  imageUrl: string; 
   isCustomBuild: true;
   buildComponents: Record<string, { name: string; price?: number }>; 
-  mainCategory: "PC Xây Dựng";
-  subCategory: "Theo Yêu Cầu";
-  category: "PC Xây Dựng";
-  imageUrls: [string]; 
-  tags: string[];
+  // For cart display
+  images: [string];
 }
-
 
 export interface Testimonial {
   id: string;
@@ -96,33 +128,20 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-// New Type for Chat Log Sessions
 export interface ChatLogSession {
-  id: string; // Unique ID for the session
+  id: string;
   userName: string;
   userPhone: string;
-  startTime: string; // ISO string date
+  startTime: string;
   messages: ChatMessage[];
-  // Optionally, add end time, duration, etc.
 }
 
-
 export interface PCComponent {
-  type: 'CPU' | 'Motherboard' | 'RAM' | 'GPU' | 'SSD' | 'PSU' | 'Case' | string; 
+  type: string; 
   name: string;
   price?: number;
   imageUrl?: string;
   details?: string;
-}
-
-export interface PCBuildConfiguration {
-  cpu?: PCComponent;
-  motherboard?: PCComponent;
-  ram?: PCComponent;
-  gpu?: PCComponent;
-  ssd?: PCComponent;
-  psu?: PCComponent;
-  case?: PCComponent;
 }
 
 export interface AIRecommendedComponent {
@@ -141,13 +160,8 @@ export interface AIBuildResponse {
 }
 
 export interface SuggestedComponent {
-  CPU: string;
-  GPU: string;
-  RAM: string;
-  Motherboard: string;
-  SSD: string;
-  PSU: string;
-  Case: string;
+  CPU: string; GPU: string; RAM: string; Motherboard: string;
+  SSD: string; PSU: string; Case: string;
 }
 
 export interface PCBuildSuggestion {
@@ -184,13 +198,12 @@ export interface User {
   role: UserRole;
   staffRole?: StaffRole; 
   imageUrl?: string; 
-  isLocked?: boolean; // Added for user locking
+  isLocked?: boolean; 
 
-  // HRM Fields
   position?: string;
   phone?: string;
   address?: string;
-  joinDate?: string; // ISO string date
+  joinDate?: string;
   status?: UserStatus;
 }
 
@@ -213,26 +226,16 @@ export interface CheckoutFormData {
   notes?: string;
 }
 
-export interface SubCategoryInfo {
-  name: string;
-  slug: string;
-}
-export interface MainCategoryInfo {
-  name: string;
-  slug: string;
-  icon: string; 
-  subCategories: SubCategoryInfo[];
-}
-export type ProductCategoryHierarchy = MainCategoryInfo[];
-
-export interface OrderItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
+export interface MainCategoryInfo extends ProductCategory {
+  icon: string;
+  subCategories: ProductCategory[];
 }
 
-export type OrderStatus = 'Chờ xử lý' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy';
+export type SubCategoryInfo = ProductCategory;
+
+export type OrderStatusAdmin = 'Chờ xử lý' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy';
+export const ORDER_STATUS_ADMIN_OPTIONS: OrderStatusAdmin[] = ['Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'];
+
 
 export interface ShippingInfo {
   carrier?: string;
@@ -243,20 +246,10 @@ export interface ShippingInfo {
 export interface PaymentInfo {
   method: 'Thanh toán khi nhận hàng (COD)' | 'Chuyển khoản ngân hàng';
   status: 'Chưa thanh toán' | 'Đã thanh toán' | 'Đã cọc';
-  transactionId?: string; // Optional: For online gateway transaction IDs
-  amountToPay?: number; // Optional: To store deposit/full amount to be paid
+  transactionId?: string; 
+  amountToPay?: number; 
 }
 
-export interface Order {
-  id: string;
-  customerInfo: CheckoutFormData;
-  items: OrderItem[];
-  totalAmount: number;
-  orderDate: string; 
-  status: OrderStatus;
-  shippingInfo?: ShippingInfo; // Added for shipping management
-  paymentInfo: PaymentInfo;
-}
 
 export interface AdminNotification {
   id: string;
@@ -266,7 +259,6 @@ export interface AdminNotification {
   isRead: boolean;
 }
 
-// New types for Admin Panel Expansion
 export interface FaqItem {
   id: string;
   question: string;
@@ -334,8 +326,17 @@ export interface PricingPlan {
   buttonLink?: string;
 }
 
+export interface Service {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  imageUrl: string;
+  slug: string;
+}
+
 // --- Homepage Content Specific Types ---
-export interface HomepageBannerSettings { // Renamed from SiteBanner to HomepageBannerSettings for clarity
+export interface HomepageBannerSettings { 
   id: string; 
   preTitle?: string;
   title: string;
@@ -352,8 +353,8 @@ export interface HomepageBannerSettings { // Renamed from SiteBanner to Homepage
   decorExtraImageUrl?: string; 
   decorExtraText?: string;
   sectionTitleIconUrl?: string; 
-  order: number; // Added for managing multiple banners
-  isActive: boolean; // Added for managing multiple banners
+  order: number; 
+  isActive: boolean; 
 }
 
 export interface HomepageAboutFeature {
@@ -516,22 +517,22 @@ export interface SMTPSettings {
   host: string;
   port: number;
   user: string;
-  pass: string; // Consider secure storage for this if it were a real app
-  secure: boolean; // true for 465, false for other ports
+  pass: string;
+  secure: boolean;
 }
 export interface PaymentGatewaySettings {
   momoEnabled: boolean;
   vnPayEnabled: boolean;
   paypalEnabled: boolean;
-  momoApiKey?: string; // Example, real app would have more complex config
+  momoApiKey?: string;
   vnPayApiKey?: string;
   paypalClientId?: string;
 }
 export interface MediaItem {
   id: string;
-  url: string; // dataURL or external URL
+  url: string; 
   name: string;
-  type: string; // e.g., 'image/jpeg', 'image/png'
+  type: string;
   uploadedAt: string;
 }
 
@@ -550,7 +551,6 @@ export interface SiteSettings {
   defaultMetaDescription: string;
   defaultMetaKeywords: string; 
 
-  // About Page Specific
   aboutPageTitle: string;
   aboutPageSubtitle: string;
   ourStoryContentMarkdown: string;
@@ -559,7 +559,6 @@ export interface SiteSettings {
   teamMembers: TeamMember[];
   storeImages: StoreImage[];
 
-  // Contact Page Specific
   contactPageTitle: string;
   contactPageSubtitle: string;
   workingHours: string;
@@ -571,8 +570,7 @@ export interface SiteSettings {
   socialInstagramUrl?: string;
   socialTwitterUrl?: string;
 
-  // Homepage Content Sections
-  homepageBanners: HomepageBannerSettings[]; // Changed to array for multiple banners
+  homepageBanners: HomepageBannerSettings[];
   homepageAbout: HomepageAboutSettings;
   homepageServicesBenefits: HomepageServicesBenefitsSettings;
   homepageWhyChooseUs: HomepageWhyChooseUsSettings;
@@ -585,7 +583,6 @@ export interface SiteSettings {
   homepageBlogPreview: HomepageBlogPreviewSettings;
   homepageContactSection: HomepageContactSectionSettings;
 
-  // System Settings
   smtpSettings: SMTPSettings;
   paymentGateways: PaymentGatewaySettings;
   siteMediaLibrary: MediaItem[];
@@ -597,20 +594,20 @@ export type TransactionCategory = 'Doanh thu Bán hàng' | 'Thu nội bộ' | 'C
 
 export interface FinancialTransaction {
   id: string;
-  date: string; // ISO string date
+  date: string; 
   amount: number;
   type: TransactionType;
   category: TransactionCategory;
   description: string;
-  relatedEntity?: string; // e.g., Supplier Name, Customer Name, Employee Name
+  relatedEntity?: string; 
   invoiceNumber?: string;
 }
 
 export interface PayrollRecord {
-  id: string; // e.g., 'payroll-2024-08-user001'
+  id: string;
   employeeId: string;
   employeeName: string;
-  payPeriod: string; // e.g., '2024-08'
+  payPeriod: string;
   baseSalary: number;
   bonus: number;
   deduction: number;
@@ -618,6 +615,3 @@ export interface PayrollRecord {
   notes: string;
   status: 'Chưa thanh toán' | 'Đã thanh toán';
 }
-
-// Fix: Removed redundant global declaration for `process` which was causing a redeclaration error.
-// The type for `process` is likely provided by the project's setup (e.g., through @types/node).

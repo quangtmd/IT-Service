@@ -1,19 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import * as Constants from '../../constants.tsx';
 import Button from '../ui/Button';
+import { MainCategoryInfo, ProductCategory } from '../../types';
+import { getProductCategories } from '../../services/localDataService';
 
 interface CategorySidebarProps {
-  currentMainCategorySlug: string | null;
-  currentSubCategorySlug: string | null;
+  currentMainCategoryId: number | null;
+  currentSubCategoryId: number | null;
   isCollapsed: boolean;
 }
 
 const CategorySidebar: React.FC<CategorySidebarProps> = ({
-  currentMainCategorySlug,
-  currentSubCategorySlug,
+  currentMainCategoryId,
+  currentSubCategoryId,
   isCollapsed
 }) => {
+  const [categories, setCategories] = useState<MainCategoryInfo[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const allCats: ProductCategory[] = await getProductCategories();
+        const mainCats: MainCategoryInfo[] = allCats
+          .filter(c => c.parentCategoryId === null)
+          .map(mc => ({
+            ...mc,
+            icon: 'fas fa-folder', // Placeholder icon
+            subCategories: allCats.filter(sc => sc.parentCategoryId === mc.id)
+          }));
+        setCategories(mainCats);
+      } catch (error) {
+        console.error("Failed to fetch product categories for sidebar:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   return (
     <div className={`bg-bgBase rounded-lg shadow-md border border-borderDefault h-full flex flex-col overflow-hidden ${isCollapsed ? 'is-collapsed' : ''}`}>
       <div className="bg-primary text-white p-3 flex items-center rounded-t-lg">
@@ -24,21 +46,21 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
         <Link
             to="/shop"
             className={`w-full flex items-center py-2 px-3 rounded-md text-sm transition-colors duration-150
-                        ${!currentMainCategorySlug ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-gray-100 hover:text-primary'}`}
+                        ${!currentMainCategoryId ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-gray-100 hover:text-primary'}`}
         >
             <i className="fas fa-th-large mr-3 w-5 text-center"></i>
             <span className="sidebar-item-label">Tất cả sản phẩm</span>
         </Link>
 
-        {Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng").map((mainCat) => (
-          <div key={mainCat.slug} className="group relative">
+        {categories.map((mainCat) => (
+          <div key={mainCat.id} className="group relative">
             <Link
-              to={`/shop?mainCategory=${mainCat.slug}`}
+              to={`/shop?categoryId=${mainCat.id}`}
               className={`w-full flex items-center justify-between py-2 px-3 rounded-md text-sm transition-colors duration-150
-                          ${currentMainCategorySlug === mainCat.slug && !currentSubCategorySlug ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-gray-100 hover:text-primary'}`}
+                          ${currentMainCategoryId === mainCat.id && !currentSubCategoryId ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-gray-100 hover:text-primary'}`}
             >
               <div className="flex items-center">
-                <i className={`${mainCat.icon || 'fas fa-folder'} mr-3 w-5 text-center text-base ${currentMainCategorySlug === mainCat.slug ? 'text-primary' : 'text-textSubtle'}`}></i>
+                <i className={`${mainCat.icon || 'fas fa-folder'} mr-3 w-5 text-center text-base ${currentMainCategoryId === mainCat.id ? 'text-primary' : 'text-textSubtle'}`}></i>
                 <span className="sidebar-item-label">{mainCat.name}</span>
               </div>
               {mainCat.subCategories.length > 0 && (
@@ -52,8 +74,8 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
                 <h4 className="font-bold text-primary mb-2 text-base">{mainCat.name}</h4>
                 <ul className="space-y-1">
                   {mainCat.subCategories.map(subCat => (
-                    <li key={subCat.slug}>
-                      <Link to={`/shop?mainCategory=${mainCat.slug}&subCategory=${subCat.slug}`} className={`block text-sm p-1.5 rounded-md ${currentSubCategorySlug === subCat.slug ? 'text-primary font-semibold' : 'text-textMuted hover:text-primary'}`}>
+                    <li key={subCat.id}>
+                      <Link to={`/shop?categoryId=${subCat.id}`} className={`block text-sm p-1.5 rounded-md ${currentSubCategoryId === subCat.id ? 'text-primary font-semibold' : 'text-textMuted hover:text-primary'}`}>
                         {subCat.name}
                       </Link>
                     </li>
@@ -63,18 +85,9 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
             )}
           </div>
         ))}
-         <div className="pt-2 mt-2 border-t border-borderDefault">
-            <Link
-                to="/shop?tags=Khuyến%20mãi"
-                className="w-full flex items-center py-2 px-3 rounded-md text-sm transition-colors duration-150 text-textMuted hover:bg-gray-100 hover:text-primary"
-            >
-                <i className="fas fa-tags mr-3 w-5 text-center text-primary"></i>
-                <span className="sidebar-item-label">Tin Khuyến mãi</span>
-            </Link>
-        </div>
       </nav>
        <div className="p-3 border-t border-borderDefault">
-        <Link to="/shop?tags=Bán%20chạy">
+        <Link to="/shop?featured=true">
             <Button variant="primary" className="w-full">
               <i className="fas fa-fire mr-2"></i> <span className="sidebar-footer-button-text">SẢN PHẨM BÁN CHẠY</span>
             </Button>

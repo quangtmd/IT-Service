@@ -6,7 +6,6 @@ import { useCart } from '../../hooks/useCart';
 
 interface ProductCardProps {
   product: Product;
-  context?: 'preview' | 'detail-view'; // Keep context for potential future use, but styling is now unified.
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
@@ -39,7 +38,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
     if (quantityInCart > 0) {
-      updateQuantity(product.id, quantityInCart - 1);
+      // FIX: Convert product.id to string to match the expected type of updateQuantity.
+      updateQuantity(String(product.id), quantityInCart - 1);
     }
   };
 
@@ -47,19 +47,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const handleWishlistClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    // In a real app, this would dispatch an action to a wishlist context/store
     alert(`Đã thêm "${product.name}" vào danh sách yêu thích!`);
   };
 
   // Get first two specifications for the highlight box
-  const specHighlights = Object.entries(product.specifications || {}).slice(0, 2);
+  const specHighlights = Object.entries(product.specs || {}).slice(0, 2);
 
   return (
     <Link to={`/product/${product.id}`} className="block h-full">
       <div className="bg-white rounded-md overflow-hidden h-full flex flex-col group border-2 border-primary/40 hover:border-primary hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
         <div className="p-4 border-b border-gray-200">
           <img
-            src={(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : `https://source.unsplash.com/300x225/?${encodeURIComponent(product.category + ',' + product.brand)}`)}
+            src={(product.images && product.images.length > 0 ? product.images[0] : `https://source.unsplash.com/300x225/?${encodeURIComponent(product.name)}`)}
             alt={product.name}
             className="w-full h-40 object-contain transition-transform duration-300 group-hover:scale-105"
           />

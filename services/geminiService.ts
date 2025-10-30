@@ -4,6 +4,7 @@ import { GoogleGenAI, Chat, GenerateContentResponse, GenerateContentParameters, 
 import * as Constants from '../constants.tsx';
 import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; // Added SiteSettings, Article, Product
 import { MOCK_SERVICES } from '../data/mockData';
+// FIX: Import PRODUCT_CATEGORIES_HIERARCHY from constants.
 import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
 
 

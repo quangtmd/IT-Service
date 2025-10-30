@@ -1,5 +1,5 @@
 import { 
-    NavLinkItem, ProductCategoryHierarchy, StaffRole, SiteSettings, FaqItem, DiscountCode, 
+    NavLinkItem, StaffRole, SiteSettings, FaqItem, DiscountCode, 
     SiteThemeSettings, CustomMenuLink, PricingPlan, UserRole,
     HomepageBannerSettings, HomepageAboutSettings, HomepageAboutFeature, 
     HomepageServiceBenefit, HomepageServicesBenefitsSettings,
@@ -9,7 +9,9 @@ import {
     HomepageBrandLogo, HomepageBrandLogosSettings,
     HomepageProcessStep, HomepageProcessSettings,
     HomepageCallToActionSettings, HomepageBlogPreviewSettings, HomepageContactSectionSettings,
-    SMTPSettings, PaymentGatewaySettings, MediaItem
+    SMTPSettings, PaymentGatewaySettings, MediaItem, OrderStatus,
+    OrderStatusAdmin,
+    MainCategoryInfo
 } from './types';
 
 export const ADMIN_EMAIL = "quangtmdit@gmail.com"; 
@@ -31,6 +33,14 @@ export const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1';
 export const FINANCIAL_TRANSACTIONS_STORAGE_KEY = 'siteFinancialTransactions_v1';
 export const PAYROLL_RECORDS_STORAGE_KEY = 'sitePayrollRecords_v1';
 export const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
+
+// FIX: Add missing PRODUCT_CATEGORIES_HIERARCHY export.
+export const PRODUCT_CATEGORIES_HIERARCHY: MainCategoryInfo[] = [
+    { id: 1, name: 'Linh kiện máy tính', slug: 'linh_kien_may_tinh', description: null, parentCategoryId: null, icon: 'fa-microchip', subCategories: [] },
+    { id: 2, name: 'Thiết bị ngoại vi', slug: 'thiet_bi_ngoai_vi', description: null, parentCategoryId: null, icon: 'fa-keyboard', subCategories: [] },
+    { id: 3, name: 'Laptop', slug: 'laptop', description: null, parentCategoryId: null, icon: 'fa-laptop', subCategories: [] },
+    { id: 4, name: 'PC Xây Dựng', slug: 'pc_xay_dung', description: null, parentCategoryId: null, icon: 'fa-tools', subCategories: [] },
+];
 
 
 // --- BANKING INFO ---
@@ -351,21 +361,10 @@ export const FALLBACK_NAV_LOGGED_IN: NavLinkItem[] = [
 export const GENERIC_PC_BUILD_IMAGE_URL = "https://images.unsplash.com/photo-1627045236365-b153d09a9f28?q=80&w=800&auto=format&fit=crop"; 
 export const PC_COMPONENT_TYPES: Array<string> = [ 'CPU (Vi xử lý)', 'Bo mạch chủ', 'RAM', 'Ổ cứng', 'Card màn hình (VGA)', 'Nguồn máy tính (PSU)', 'Vỏ máy (Case)', 'Tản nhiệt', 'Màn hình', 'Bàn phím', 'Chuột', 'Tai nghe', 'Webcam', 'Microphone', 'Loa máy tính' ];
 export const USE_CASES = ['Chơi Game', 'Học tập', 'Văn phòng', 'Đồ họa - Video', 'Lập trình', 'Giải trí đa phương tiện'];
-export const PRODUCT_CATEGORIES_HIERARCHY: ProductCategoryHierarchy = [
-  { name: "Máy tính để bàn (PC)", slug: "may_tinh_de_ban", icon: "fas fa-desktop", subCategories: [ { name: "Máy tính văn phòng", slug: "pc_van_phong" }, {name: "Máy tính Gaming", slug: "pc_gaming"}, {name: "Workstation (Máy trạm)", slug:"pc_workstation"}, { name: "Máy đồng bộ", slug: "pc_dong_bo" }, ] },
-  { name: "Laptop", slug: "laptop", icon: "fas fa-laptop", subCategories: [ { name: "Laptop văn phòng", slug: "laptop_van_phong" }, {name: "Laptop Gaming", slug: "laptop_gaming"}, {name: "MacBook", slug:"macbook"}, { name: "Laptop cũ", slug: "laptop_cu" }, ] },
-  { name: "Linh kiện máy tính", slug: "linh_kien_may_tinh", icon: "fas fa-microchip", subCategories: [ { name: "CPU (Vi xử lý Intel, AMD)", slug: "cpu" }, { name: "RAM (DDR4, DDR5…)", slug: "ram" }, { name: "Ổ cứng HDD / SSD (SATA, NVMe)", slug: "storage" }, { name: "VGA (Card màn hình)", slug: "vga" }, { name: "Bo mạch chủ (Mainboard)", slug: "mainboard"}, { name: "Nguồn máy tính (PSU)", slug: "psu"}, { name: "Vỏ máy (Case)", slug: "case"}, { name: "Tản nhiệt (Khí, Nước)", slug: "cooling"} ] },
-  { name: "Thiết bị ngoại vi", slug: "thiet_bi_ngoai_vi", icon: "fas fa-keyboard", subCategories: [ { name: "Màn hình (LCD, LED, 2K, 4K, Gaming…)", slug: "man_hinh" }, { name: "Bàn phím (Cơ, Giả cơ, Thường)", slug: "ban_phim" }, { name: "Chuột (Gaming, Văn phòng)", slug: "chuot" }, { name: "Tai nghe (Có dây, Không dây)", slug: "tai_nghe" } ] },
-  { name: "Camera giám sát", slug: "camera_giam_sat", icon: "fas fa-video", subCategories: [ { name: "Camera IP (WiFi / LAN)", slug: "camera_ip" }, { name: "Đầu ghi hình (DVR, NVR)", slug: "dau_ghi_hinh" } ] },
-  { name: "Thiết bị mạng", slug: "thiet_bi_mang", icon: "fas fa-wifi", subCategories: [ { name: "Router WiFi (TP-Link, Asus, UniFi…)", slug: "router_wifi" }, { name: "Switch mạng (PoE, Thường)", slug: "switch_mang" } ] },
-  { name: "Phần mềm & dịch vụ", slug: "phan_mem_dich_vu", icon: "fas fa-cogs", subCategories: [ { name: "Bản quyền Windows, Office", slug: "ban_quyen_phan_mem" }, { name: "Dịch vụ cài đặt (Tận nơi / Online)", slug: "dich_vu_cai_dat" } ] },
-  { name: "Phụ kiện & thiết bị khác", slug: "phu_kien_khac", icon: "fas fa-plug", subCategories: [ { name: "Cáp chuyển, Hub USB, Docking", slug: "cap_hub_docking" }, { name: "Balo, Túi chống sốc", slug: "balo_tui" } ] },
-  { name: "PC Xây Dựng", slug: "pc_xay_dung", icon: "fas fa-tools", subCategories: [ { name: "Theo Yêu Cầu", slug: "theo_yeu_cau" } ] }
-]; 
 export const ARTICLE_CATEGORIES = ["Mẹo vặt", "Hướng dẫn", "So sánh", "Khuyến mãi", "Tin tức công nghệ", "Đánh giá sản phẩm", "Dịch vụ IT", "Bảo mật"];
 export const USER_ROLES_CONST: UserRole[] = ['admin', 'staff', 'customer'];
 export const STAFF_ROLE_OPTIONS_CONST: StaffRole[] = ['Quản lý Bán hàng', 'Biên tập Nội dung', 'Trưởng nhóm Kỹ thuật', 'Chuyên viên Hỗ trợ', 'Nhân viên Toàn quyền'];
-export const ORDER_STATUSES: Array<import('./types').OrderStatus> = ['Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'];
+export const ORDER_STATUSES: Array<OrderStatusAdmin> = ['Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'];
 export const DEFAULT_SITE_LOGO_URL = ''; 
 
 export const MOCK_PRICING_PLANS_DATA: PricingPlan[] = [

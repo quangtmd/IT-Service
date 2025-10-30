@@ -23,7 +23,8 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({ current
                 try {
                     const allProducts = await getProducts();
                     const products = idsToFetch
-                        .map(id => allProducts.find(p => p.id === id))
+                        // FIX: Compare product ID (number) with stored ID (string) correctly.
+                        .map(id => allProducts.find(p => String(p.id) === id))
                         .filter((p): p is Product => p !== undefined);
                     setViewedProducts(products);
                 } catch (error) {
@@ -51,7 +52,8 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({ current
                 {viewedProducts.map(product => (
                     <Link key={product.id} to={`/product/${product.id}`} className="flex items-start gap-3 group">
                         <img 
-                            src={product.imageUrls?.[0] || ''}
+                            // FIX: Use 'images' property which exists on the Product type, instead of 'imageUrls'.
+                            src={product.images?.[0] || ''}
                             alt={product.name}
                             className="w-16 h-16 object-contain rounded-md border border-borderDefault flex-shrink-0"
                         />

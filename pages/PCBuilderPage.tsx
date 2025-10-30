@@ -142,20 +142,16 @@ const PCBuilderPage: React.FC = () => {
     }
     descriptionString += `Tổng cộng: ${totalCost.toLocaleString('vi-VN')}₫`;
 
+    // FIX: Corrected object to match CustomPCBuildCartItem type. Removed invalid properties and used 'images' array.
     const customBuildItem: CustomPCBuildCartItem = {
         id: `custom-pc-${Date.now()}`,
         name: `PC Xây Dựng Theo Yêu Cầu - ${useCase}`,
         price: totalCost,
         quantity: 1,
-        imageUrl: Constants.GENERIC_PC_BUILD_IMAGE_URL,
-        imageUrls: [Constants.GENERIC_PC_BUILD_IMAGE_URL],
+        images: [Constants.GENERIC_PC_BUILD_IMAGE_URL],
         isCustomBuild: true,
         buildComponents: builtComponents,
         description: descriptionString,
-        mainCategory: "PC Xây Dựng",
-        subCategory: "Theo Yêu Cầu",
-        category: "PC Xây Dựng",
-        tags: ['PC Xây Dựng', 'Theo Yêu Cầu', useCase],
     };
 
     addToCart(customBuildItem as any);

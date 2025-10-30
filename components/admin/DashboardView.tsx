@@ -2,22 +2,31 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getOrders, getProducts } from '../../services/localDataService';
 import Card from '../ui/Card';
-import { Order, OrderStatus } from '../../types';
+import { Order, OrderStatus, OrderStatusAdmin } from '../../types';
 import Button from '../ui/Button';
 
 interface DashboardViewProps {
   setActiveView: (view: string) => void;
 }
 
+// FIX: Change status cases to align with OrderStatus type
 const getStatusColor = (status: OrderStatus) => {
     switch (status) {
-        case 'Chờ xử lý': return 'bg-yellow-100 text-yellow-800';
-        case 'Đang chuẩn bị': return 'bg-blue-100 text-blue-800';
-        case 'Đang giao': return 'bg-indigo-100 text-indigo-800';
-        case 'Hoàn thành': return 'bg-green-100 text-green-800';
-        case 'Đã hủy': return 'bg-red-100 text-red-800';
+        case 'pending': return 'bg-yellow-100 text-yellow-800';
+        case 'processing': return 'bg-blue-100 text-blue-800';
+        case 'shipped': return 'bg-indigo-100 text-indigo-800';
+        case 'delivered': return 'bg-green-100 text-green-800';
+        case 'cancelled': return 'bg-red-100 text-red-800';
         default: return 'bg-gray-100 text-gray-800';
     }
+};
+
+const STATUS_MAP: Record<OrderStatus, OrderStatusAdmin> = {
+    pending: 'Chờ xử lý',
+    processing: 'Đang chuẩn bị',
+    shipped: 'Đang giao',
+    delivered: 'Hoàn thành',
+    cancelled: 'Đã hủy',
 };
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: string; color: string; onClick?: () => void }> = ({ title, value, icon, color, onClick }) => (
@@ -174,10 +183,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                         <tbody>
                             {recentOrders.length > 0 ? recentOrders.map(order => (
                                 <tr key={order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setActiveView('orders')}>
-                                    <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{order.id.slice(-6)}</span></td>
+                                    {/* FIX: Convert numeric ID to string for slice method. */}
+                                    <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{String(order.id).slice(-6)}</span></td>
                                     <td>{order.customerInfo.fullName}</td>
                                     <td className="font-semibold">{order.totalAmount.toLocaleString('vi-VN')}₫</td>
-                                    <td><span className={`status-badge ${getStatusColor(order.status)}`}>{order.status}</span></td>
+                                    <td><span className={`status-badge ${getStatusColor(order.status)}`}>{STATUS_MAP[order.status] || order.status}</span></td>
                                 </tr>
                             )) : (
                                 <tr>

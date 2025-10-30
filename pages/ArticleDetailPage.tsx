@@ -87,7 +87,7 @@ Hình ảnh minh họa (nếu có):
 
 ![Ảnh minh họa công nghệ](https://picsum.photos/seed/techDetail${article.id}/800/400)
 
-Kết luận, ${article.summary.toLowerCase()}
+Kết luận, ${article.summary ? article.summary.toLowerCase() : ''}
   `;
 
 
@@ -105,7 +105,8 @@ Kết luận, ${article.summary.toLowerCase()}
           <p className="text-primary font-semibold mb-2">{article.category}</p>
           <h1 className="text-3xl md:text-4xl font-bold text-textBase mb-3">{article.title}</h1>
           <div className="text-sm text-textMuted">
-            <span>Đăng bởi: {article.author}</span> | <span>Ngày: {new Date(article.date).toLocaleDateString('vi-VN')}</span>
+            {/* FIX: Property 'date' does not exist on type 'Article'. Use 'publishedAt' or 'createdAt' instead. */}
+            <span>Đăng bởi: {article.author}</span> | <span>Ngày: {new Date(article.publishedAt || article.createdAt).toLocaleDateString('vi-VN')}</span>
           </div>
         </header>
 

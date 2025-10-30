@@ -1,4 +1,4 @@
-import { Product, Order, Article, MediaItem, OrderStatus, FaqItem, DiscountCode, SiteSettings } from '../types';
+import { Product, Order, Article, MediaItem, OrderStatus, FaqItem, DiscountCode, SiteSettings, ProductCategory } from '../types';
 import * as Constants from '../constants';
 
 // --- API Helper ---
@@ -15,6 +15,12 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     }
     return response.json();
 };
+
+// --- Category Service ---
+export const getProductCategories = async (): Promise<ProductCategory[]> => {
+    return apiFetch('/api/product_categories');
+};
+
 
 // --- Product Service ---
 export const getProducts = async (): Promise<Product[]> => {
@@ -40,22 +46,21 @@ export const getProduct = async (id: string): Promise<Product | null> => {
     return apiFetch(`/api/products/${id}`);
 };
 
-export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
-    const newProduct = { ...product, id: `prod-${Date.now()}` };
+export const addProduct = async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> => {
     return apiFetch('/api/products', {
         method: 'POST',
-        body: JSON.stringify(newProduct),
+        body: JSON.stringify(product),
     });
 };
 
-export const updateProduct = async (id: string, productUpdate: Partial<Product>): Promise<Product> => {
+export const updateProduct = async (id: number | string, productUpdate: Partial<Product>): Promise<Product> => {
     return apiFetch(`/api/products/${id}`, {
         method: 'PUT',
         body: JSON.stringify(productUpdate),
     });
 };
 
-export const deleteProduct = async (id: string): Promise<void> => {
+export const deleteProduct = async (id: number | string): Promise<void> => {
     await apiFetch(`/api/products/${id}`, { method: 'DELETE' });
 };
 
@@ -68,78 +73,100 @@ export const getOrders = async (): Promise<Order[]> => {
     return apiFetch('/api/orders');
 };
 
-export const addOrder = async (order: Order): Promise<Order> => {
+export const addOrder = async (orderData: any): Promise<Order> => {
     return apiFetch('/api/orders', {
         method: 'POST',
-        body: JSON.stringify(order),
+        body: JSON.stringify(orderData),
     });
 };
 
-export const updateOrderStatus = async (id: string, status: OrderStatus): Promise<void> => {
-    await apiFetch(`/api/orders/${id}/status`, {
+export const updateOrderStatus = async (id: number | string, status: OrderStatus): Promise<void> => {
+    // FIX: Convert id to string for API endpoint.
+    await apiFetch(`/api/orders/${String(id)}/status`, {
         method: 'PUT',
         body: JSON.stringify({ status }),
     });
 };
 
-// --- Article Service ---
+// --- Article Service (Local) ---
 export const getArticles = async (): Promise<Article[]> => {
-    return apiFetch('/api/articles');
+    const stored = localStorage.getItem('adminArticles_v1_local');
+    // Ensure all articles have createdAt for sorting robustness
+    const articles: Article[] = stored ? JSON.parse(stored) : [];
+    return articles.map(a => ({ ...a, createdAt: a.createdAt || new Date(0).toISOString() }));
 };
 
 export const getArticle = async (id: string): Promise<Article | null> => {
-    try {
-        return await apiFetch(`/api/articles/${id}`);
-    } catch (e) { return null; }
+    const articles = await getArticles();
+    // FIX: Compare IDs as strings to avoid type mismatch (number vs string).
+    return articles.find(a => String(a.id) === String(id)) || null;
 };
 
 export const addArticle = async (article: Omit<Article, 'id'>): Promise<Article> => {
-    return apiFetch('/api/articles', { method: 'POST', body: JSON.stringify(article) });
+    const articles = await getArticles();
+    const newArticle = { ...article, id: Date.now() }; // Use number for consistency
+    localStorage.setItem('adminArticles_v1_local', JSON.stringify([newArticle, ...articles]));
+    window.dispatchEvent(new Event('articlesUpdated'));
+    return newArticle as Article;
 };
 
-export const updateArticle = async (id: string, articleUpdate: Partial<Article>): Promise<void> => {
-    await apiFetch(`/api/articles/${id}`, { method: 'PUT', body: JSON.stringify(articleUpdate) });
+export const updateArticle = async (id: number | string, articleUpdate: Partial<Article>): Promise<void> => {
+    const articles = await getArticles();
+    // FIX: Compare IDs as strings.
+    const updatedArticles = articles.map(a => String(a.id) === String(id) ? { ...a, ...articleUpdate } : a);
+    localStorage.setItem('adminArticles_v1_local', JSON.stringify(updatedArticles));
+    window.dispatchEvent(new Event('articlesUpdated'));
 };
 
-export const deleteArticle = async (id: string): Promise<void> => {
-    await apiFetch(`/api/articles/${id}`, { method: 'DELETE' });
+export const deleteArticle = async (id: number | string): Promise<void> => {
+    const articles = await getArticles();
+    // FIX: Compare IDs as strings.
+    const updatedArticles = articles.filter(a => String(a.id) !== String(id));
+    localStorage.setItem('adminArticles_v1_local', JSON.stringify(updatedArticles));
+    window.dispatchEvent(new Event('articlesUpdated'));
 };
 
-// --- Media Library Service ---
-export const getMediaItems = async (): Promise<MediaItem[]> => {
-    return apiFetch('/api/media_library');
-};
 
-export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaItem> => {
-    return apiFetch('/api/media_library', { method: 'POST', body: JSON.stringify(item) });
-};
-
-export const deleteMediaItem = async (id: string): Promise<void> => {
-    await apiFetch(`/api/media_library/${id}`, { method: 'DELETE' });
-};
-
-// --- Settings, FAQs, Discounts (Full update model) ---
-const createSettingsService = <T,>(key: string, endpoint: string) => ({
-    get: (): Promise<T[]> => apiFetch(endpoint),
-    updateAll: (data: T[]): Promise<void> => apiFetch(endpoint, {
-        method: 'POST', // Using POST to replace the whole collection
-        body: JSON.stringify(data),
-    }),
+// --- Local Storage Services ---
+const createLocalSettingsService = <T,>(key: string, initialData: T[]) => ({
+    get: async (): Promise<T[]> => {
+        const stored = localStorage.getItem(key);
+        return stored ? JSON.parse(stored) : initialData;
+    },
+    updateAll: async (data: T[]): Promise<void> => {
+        localStorage.setItem(key, JSON.stringify(data));
+        window.dispatchEvent(new CustomEvent(`${key}Updated`));
+    },
 });
 
-export const faqService = createSettingsService<FaqItem>('faqs', '/api/faqs');
-export const discountService = createSettingsService<DiscountCode>('discounts', '/api/discount_codes');
+export const faqService = createLocalSettingsService<FaqItem>(Constants.FAQ_STORAGE_KEY, Constants.INITIAL_FAQS);
+export const discountService = createLocalSettingsService<DiscountCode>(Constants.DISCOUNTS_STORAGE_KEY, Constants.INITIAL_DISCOUNT_CODES);
 
-// Site Settings Service (Special case)
 export const getSiteSettings = async (): Promise<SiteSettings> => {
-    const settings = await apiFetch('/api/settings');
-    // Merge with initial settings to ensure all keys exist
-    return { ...Constants.INITIAL_SITE_SETTINGS, ...settings };
+    const settings = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
+    return settings ? JSON.parse(settings) : Constants.INITIAL_SITE_SETTINGS;
 };
 
 export const saveSiteSettings = async (settings: SiteSettings): Promise<void> => {
-    await apiFetch('/api/settings', {
-        method: 'POST',
-        body: JSON.stringify(settings)
-    });
+    localStorage.setItem(Constants.SITE_CONFIG_STORAGE_KEY, JSON.stringify(settings));
+    window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
+};
+
+export const getMediaItems = async (): Promise<MediaItem[]> => {
+  const settings = await getSiteSettings();
+  return settings.siteMediaLibrary || [];
+};
+
+export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaItem> => {
+    const settings = await getSiteSettings();
+    const newItem = { ...item, id: `media-${Date.now()}` };
+    const newSettings = { ...settings, siteMediaLibrary: [newItem, ...(settings.siteMediaLibrary || [])] };
+    await saveSiteSettings(newSettings);
+    return newItem;
+};
+
+export const deleteMediaItem = async (id: string): Promise<void> => {
+    const settings = await getSiteSettings();
+    const newSettings = { ...settings, siteMediaLibrary: (settings.siteMediaLibrary || []).filter(item => item.id !== id) };
+    await saveSiteSettings(newSettings);
 };

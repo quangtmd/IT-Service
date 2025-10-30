@@ -46,17 +46,24 @@ const BlogPage: React.FC = () => {
         setAiError(null);
         try {
           const newAiArticlesData = await geminiService.fetchLatestTechNews();
+          // FIX: Populate missing required properties for the Article type. Use a numeric ID and remove the 'date' property.
           const newAiArticles: Article[] = newAiArticlesData.map((art, index) => ({
-            id: `ai-${Date.now()}-${index}`,
+            id: Date.now() + index, // Use a numeric ID
             title: art.title || "Không có tiêu đề",
+            slug: `ai-${Date.now()}-${index}`,
             summary: art.summary || "Không có tóm tắt",
             content: art.content || "Nội dung đang được cập nhật.",
             category: art.category || "Tin tức công nghệ",
             imageSearchQuery: art.imageSearchQuery || "technology",
-            imageUrl: '', // Will be generated from query
+            imageUrl: null, // Will be generated from query
             author: "AI News Bot",
-            date: new Date().toISOString(),
             isAIGenerated: true,
+            authorId: 'ai-bot',
+            categoryId: null,
+            status: 'published',
+            publishedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           }));
           
           localStorage.setItem(AI_ARTICLES_KEY, JSON.stringify(newAiArticles));
@@ -86,10 +93,11 @@ const BlogPage: React.FC = () => {
     return allArticles
       .filter(article =>
         article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        article.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (article.summary && article.summary.toLowerCase().includes(searchTerm.toLowerCase())) ||
         article.category.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      // FIX: Property 'date' does not exist on type 'Article'. Sort by 'publishedAt' or 'createdAt' instead.
+      .sort((a, b) => new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime());
   }, [allArticles, searchTerm]);
 
   const renderStatus = () => {

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 // FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -48,6 +49,7 @@ const HeaderSearchBar: React.FC = () => {
                     aria-label="Chọn danh mục"
                 >
                     <option value="all">Tất cả danh mục</option>
+                    {/* FIX: Correctly reference PRODUCT_CATEGORIES_HIERARCHY from Constants. */}
                     {Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.slug !== 'pc_xay_dung').map(cat => (
                         <option key={cat.slug} value={cat.slug}>{cat.name}</option>
                     ))}

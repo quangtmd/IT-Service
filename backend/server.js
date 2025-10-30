@@ -3,19 +3,10 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 10000; // Use Render's port, fallback to 10000
+const PORT = process.env.PORT || 10000;
 
-// Cấu hình CORS để cho phép tất cả các origin (sử dụng cho chẩn đoán)
-// Đây là một biện pháp tạm thời để xác định xem lỗi có phải do CORS hay không.
 app.use(cors());
-
-app.use(express.json({ limit: '50mb' })); // Tăng giới hạn payload cho media
-
-/*
--- HƯỚNG DẪN CÀI ĐẶT DATABASE MYSQL --
-Vui lòng xem file `SETUP_DATABASE.sql` trong cùng thư mục này để biết hướng dẫn chi tiết.
-*/
-
+app.use(express.json({ limit: '50mb' }));
 
 const dbConfig = {
   host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
@@ -25,7 +16,8 @@ const dbConfig = {
   port: process.env.MYSQLPORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  dateStrings: true 
 };
 
 let pool;
@@ -37,292 +29,241 @@ try {
     process.exit(1);
 }
 
-// --- HELPERS FOR JSON FIELDS ---
-const parseJsonFields = (obj, fields) => {
-    if (!obj) return obj;
-    for (const field of fields) {
-        try {
-            if (obj[field] && typeof obj[field] === 'string') {
-                obj[field] = JSON.parse(obj[field]);
+
+// --- API: Product Categories ---
+app.get('/api/product_categories', async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT * FROM `product categories` ORDER BY name");
+        res.json(rows);
+    } catch (err) {
+        console.error("Error fetching product categories:", err.message);
+        res.status(500).json({ error: 'Lỗi server khi lấy danh mục sản phẩm.' });
+    }
+});
+
+// --- API: Products ---
+app.get('/api/products', async (req, res) => {
+    try {
+        const { q, categoryId, brand, page = 1, limit = 12 } = req.query;
+        let whereClauses = [];
+        const params = [];
+
+        if (q) {
+            whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ?)");
+            const searchTerm = `%${q}%`;
+            params.push(searchTerm, searchTerm, searchTerm);
+        }
+        if (categoryId) {
+            whereClauses.push("categoryId = ?");
+            params.push(categoryId);
+        }
+        if (brand) {
+            whereClauses.push("brand = ?");
+            params.push(brand);
+        }
+        
+        const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+        const countQuery = `SELECT COUNT(*) as total FROM products ${whereString}`;
+        const [countRows] = await pool.query(countQuery, params);
+        const totalProducts = countRows[0].total;
+
+        const pageNum = parseInt(page, 10);
+        const limitNum = parseInt(limit, 10);
+        const offset = (pageNum - 1) * limitNum;
+        
+        const dataQuery = `SELECT * FROM products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
+        const [rows] = await pool.query(dataQuery, [...params, limitNum, offset]);
+        
+        res.json({ products: rows, totalProducts });
+    } catch (err) {
+        console.error("Error fetching products:", err.message);
+        res.status(500).json({ error: `Lỗi server khi lấy sản phẩm: ${err.message}` });
+    }
+});
+
+app.get('/api/products/featured', async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT * FROM products ORDER BY createdAt DESC LIMIT 8");
+        res.json(rows);
+    } catch (err) {
+        console.error("Error fetching featured products:", err.message);
+        res.status(500).json({ error: `Lỗi server khi lấy sản phẩm nổi bật: ${err.message}` });
+    }
+});
+
+
+app.get('/api/products/:id', async (req, res) => {
+    try {
+        const query = `
+            SELECT p.*, c.name as categoryName 
+            FROM products p 
+            LEFT JOIN \`product categories\` c ON p.categoryId = c.id
+            WHERE p.id = ?
+        `;
+        const [rows] = await pool.query(query, [req.params.id]);
+        if (rows.length > 0) {
+            // Parse JSON fields before sending
+            const product = rows[0];
+            if (product.images && typeof product.images === 'string') {
+                product.images = JSON.parse(product.images);
             }
-        } catch (e) {
-            console.error(`Lỗi khi phân tích JSON cho trường ${field} của ID ${obj.id}:`, e);
-            obj[field] = Array.isArray(obj[field]) ? [] : {};
+            if (product.specs && typeof product.specs === 'string') {
+                product.specs = JSON.parse(product.specs);
+            }
+            res.json(product);
+        } else {
+            res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
         }
+    } catch (err) {
+        console.error("Error fetching product by ID:", err.message);
+        res.status(500).json({ error: `Lỗi server: ${err.message}` });
     }
-    return obj;
-};
-
-const prepareForDb = (obj, fields) => {
-    const dbObj = { ...obj };
-    for (const field of fields) {
-        if (typeof dbObj[field] === 'object' && dbObj[field] !== null) {
-            dbObj[field] = JSON.stringify(dbObj[field]);
-        }
-    }
-    return dbObj;
-};
-
-// Generic CRUD handlers
-const createApiEndpoints = (tableName, jsonFields = []) => {
-    app.get(`/api/${tableName}`, async (req, res) => {
-        try {
-            const [rows] = await pool.query(`SELECT * FROM ${tableName}`);
-            res.json(rows.map(row => parseJsonFields(row, jsonFields)));
-        } catch (err) {
-            res.status(500).json({ error: `Lỗi server khi lấy dữ liệu ${tableName}.` });
-        }
-    });
-
-    app.post(`/api/${tableName}`, async (req, res) => {
-        const newItem = req.body;
-        if (!newItem.id) newItem.id = `${tableName.slice(0, 4)}-${Date.now()}`;
-        try {
-            await pool.query(`INSERT INTO ${tableName} SET ?`, [prepareForDb(newItem, jsonFields)]);
-            res.status(201).json(newItem);
-        } catch (err) {
-             res.status(500).json({ error: `Lỗi server khi tạo ${tableName}: ${err.message}` });
-        }
-    });
-
-    app.put(`/api/${tableName}/:id`, async (req, res) => {
-        const { id } = req.params;
-        const updates = req.body;
-        delete updates.id;
-        try {
-            const [result] = await pool.query(`UPDATE ${tableName} SET ? WHERE id = ?`, [prepareForDb(updates, jsonFields), id]);
-            if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đối tượng để cập nhật.' });
-            res.json({ id, ...updates });
-        } catch (err) {
-            res.status(500).json({ error: `Lỗi server khi cập nhật ${tableName}: ${err.message}` });
-        }
-    });
-
-    app.delete(`/api/${tableName}/:id`, async (req, res) => {
-        const { id } = req.params;
-        try {
-            const [result] = await pool.query(`DELETE FROM ${tableName} WHERE id = ?`, [id]);
-            if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đối tượng để xóa.' });
-            res.status(200).json({ message: 'Đã xóa thành công.' });
-        } catch (err) {
-            res.status(500).json({ error: `Lỗi server khi xóa ${tableName}.` });
-        }
-    });
-};
+});
 
 app.post('/api/products', async (req, res) => {
-    // This custom handler addresses the "Unknown column 'id'" error by excluding 'id' from the insert query.
-    // This assumes the 'products' table has an auto-incrementing primary key.
-    const { id, ...productData } = req.body;
+    const { name, description, price, stock, images, categoryId, brand, specs } = req.body;
     try {
-        const dbReadyData = prepareForDb(productData, ['imageUrls', 'specifications', 'tags']);
-        const [result] = await pool.query('INSERT INTO products SET ?', [dbReadyData]);
-        const insertedId = result.insertId;
-        // Respond with the full product object, now including the new database-generated ID.
-        res.status(201).json({ ...req.body, id: insertedId });
+        const query = `INSERT INTO products (name, description, price, stock, images, categoryId, brand, specs) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+        const [result] = await pool.query(query, [name, description, price, stock, JSON.stringify(images || []), categoryId, brand, JSON.stringify(specs || {})]);
+        res.status(201).json({ id: result.insertId, ...req.body });
     } catch (err) {
-        res.status(500).json({ error: `Lỗi server khi tạo products: ${err.message}` });
+        console.error("Error creating product:", err.message);
+        res.status(500).json({ error: `Lỗi server khi tạo sản phẩm: ${err.message}` });
     }
 });
 
 app.put('/api/products/:id', async (req, res) => {
     const { id } = req.params;
-    const updates = req.body;
-    delete updates.id;
+    const { name, description, price, stock, images, categoryId, brand, specs } = req.body;
     try {
-        const [result] = await pool.query('UPDATE products SET ? WHERE id = ?', [prepareForDb(updates, ['imageUrls', 'specifications', 'tags']), id]);
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đối tượng để cập nhật.' });
-        res.json({ id, ...updates });
+        const query = `UPDATE products SET name=?, description=?, price=?, stock=?, images=?, categoryId=?, brand=?, specs=? WHERE id=?`;
+        await pool.query(query, [name, description, price, stock, JSON.stringify(images || []), categoryId, brand, JSON.stringify(specs || {}), id]);
+        res.json({ id, ...req.body });
     } catch (err) {
-        res.status(500).json({ error: `Lỗi server khi cập nhật products: ${err.message}` });
+        console.error("Error updating product:", err.message);
+        res.status(500).json({ error: `Lỗi server khi cập nhật sản phẩm: ${err.message}` });
     }
 });
 
 app.delete('/api/products/:id', async (req, res) => {
-    const { id } = req.params;
     try {
-        const [result] = await pool.query('DELETE FROM products WHERE id = ?', [id]);
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đối tượng để xóa.' });
-        res.status(200).json({ message: 'Đã xóa thành công.' });
+        await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
+        res.status(204).send();
     } catch (err) {
-        res.status(500).json({ error: `Lỗi server khi xóa products: ${err.message}` });
+        console.error("Error deleting product:", err.message);
+        res.status(500).json({ error: `Lỗi server khi xóa sản phẩm: ${err.message}` });
     }
 });
 
 
-// --- PRODUCTS API (Custom implementation for filtering) ---
-
-app.get('/api/products', async (req, res) => {
-  try {
-    const { q, mainCategory, subCategory, brand, status, tags, page = 1, limit = 12 } = req.query;
-    let whereClauses = ["isVisible = TRUE"];
-    const params = [];
-
-    if (q) {
-        whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR tags LIKE ?)");
-        const searchTerm = `%${q}%`;
-        // Note the escaped quotes to match the string within the JSON array `["tag1", "tag2"]`
-        params.push(searchTerm, searchTerm, searchTerm, `%\"${q}\"%`);
-    }
-    if (mainCategory) {
-        whereClauses.push("mainCategory = ?");
-        params.push(mainCategory);
-    }
-    if (subCategory) {
-        whereClauses.push("subCategory = ?");
-        params.push(subCategory);
-    }
-    if (brand) {
-        whereClauses.push("brand = ?");
-        params.push(brand);
-    }
-    if (status) {
-        whereClauses.push("status = ?");
-        params.push(status);
-    }
-    if (tags) {
-      whereClauses.push("tags LIKE ?");
-      params.push(`%\"${tags}\"%`);
-    }
-
-    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-    const countQuery = `SELECT COUNT(*) as total FROM products ${whereString}`;
-    const [countRows] = await pool.query(countQuery, params);
-    const totalProducts = countRows[0].total;
-
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const offset = (pageNum - 1) * limitNum;
-    
-    const dataQuery = `SELECT * FROM products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
-    const dataParams = [...params, limitNum, offset];
-
-    const [rows] = await pool.query(dataQuery, dataParams);
-    const products = rows.map(p => parseJsonFields(p, ['imageUrls', 'specifications', 'tags']));
-    res.json({ products, totalProducts });
-
-  } catch (err) {
-    res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu sản phẩm.' });
-  }
-});
-
-app.get('/api/products/featured', async (req, res) => {
+// --- API: Orders ---
+app.get('/api/orders', async (req, res) => {
     try {
-        const query = `SELECT * FROM products WHERE isVisible = TRUE AND tags LIKE '%"Bán chạy"%' LIMIT 8`;
-        const [rows] = await pool.query(query);
-        res.json(rows.map(p => parseJsonFields(p, ['imageUrls', 'specifications', 'tags'])));
+        const query = `
+            SELECT o.*, 
+                   (SELECT JSON_ARRAYAGG(
+                       JSON_OBJECT(
+                           'id', oi.id, 
+                           'orderId', oi.orderId, 
+                           'productId', oi.productId,
+                           'quantity', oi.quantity,
+                           'priceAtPurchase', oi.priceAtPurchase,
+                           'productName', oi.productName
+                        )
+                   ) 
+                   FROM \`order items\` oi 
+                   WHERE oi.orderId = o.id) as items
+            FROM orders o
+            ORDER BY o.createdAt DESC
+        `;
+        const [orders] = await pool.query(query);
+        res.json(orders);
     } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi lấy sản phẩm nổi bật.' });
+        console.error("Error fetching orders:", err.message);
+        res.status(500).json({ error: `Lỗi server khi lấy đơn hàng: ${err.message}` });
     }
 });
 
-app.get('/api/products/:id', async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [req.params.id]);
-        if (rows.length > 0) {
-            res.json(parseJsonFields(rows[0], ['imageUrls', 'specifications', 'tags']));
-        } else {
-            res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
-        }
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server.' });
-    }
-});
-
-
-// --- ORDERS API (Custom implementation) ---
-createApiEndpoints('orders', ['customerInfo', 'items', 'shippingInfo', 'paymentInfo']);
-app.put('/api/orders/:id/status', async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-    if (!status) return res.status(400).json({ error: 'Trạng thái mới là bắt buộc.' });
-    try {
-        await pool.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
-        res.json({ message: 'Cập nhật trạng thái thành công.' });
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái.' });
-    }
-});
-
-// --- Generic CRUD for other tables ---
-createApiEndpoints('articles');
-createApiEndpoints('media_library');
-createApiEndpoints('faqs');
-createApiEndpoints('discount_codes');
-
-// --- Site Settings API (Special case) ---
-app.get('/api/settings', async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT * FROM site_settings");
-        const settings = rows.reduce((acc, row) => {
-            acc[row.settingKey] = parseJsonFields(row, ['settingValue']).settingValue;
-            return acc;
-        }, {});
-        res.json(settings);
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi lấy cài đặt.' });
-    }
-});
-
-app.post('/api/settings', async (req, res) => {
-    const settings = req.body;
+app.post('/api/orders', async (req, res) => {
+    const { userId, totalAmount, customerInfo, shippingAddress, paymentDetails, items } = req.body;
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
-        for (const [key, value] of Object.entries(settings)) {
-            const query = `INSERT INTO site_settings (settingKey, settingValue) VALUES (?, ?) ON DUPLICATE KEY UPDATE settingValue = ?`;
-            const stringValue = JSON.stringify(value);
-            await connection.query(query, [key, stringValue, stringValue]);
+        
+        const orderQuery = `INSERT INTO orders (userId, totalAmount, status, customerInfo, shippingAddress, paymentDetails) VALUES (?, ?, ?, ?, ?, ?)`;
+        const [orderResult] = await connection.query(orderQuery, [
+            userId || null, 
+            totalAmount, 
+            'pending',
+            JSON.stringify(customerInfo),
+            JSON.stringify(shippingAddress || customerInfo),
+            JSON.stringify(paymentDetails)
+        ]);
+        const orderId = orderResult.insertId;
+
+        if (items && items.length > 0) {
+            const itemPromises = items.map((item) => {
+                const itemQuery = "INSERT INTO `order items` (orderId, productId, quantity, priceAtPurchase, productName) VALUES (?, ?, ?, ?, ?)";
+                return connection.query(itemQuery, [orderId, item.productId, item.quantity, item.priceAtPurchase, item.productName]);
+            });
+            await Promise.all(itemPromises);
         }
+        
         await connection.commit();
-        res.json({ message: 'Cài đặt đã được lưu.' });
+        res.status(201).json({ id: orderId, ...req.body });
     } catch (err) {
         await connection.rollback();
-        res.status(500).json({ error: `Lỗi server khi lưu cài đặt: ${err.message}` });
+        console.error("Error creating order:", err.message);
+        res.status(500).json({ error: `Lỗi server khi tạo đơn hàng: ${err.message}` });
     } finally {
         connection.release();
     }
 });
 
-// Nâng cấp route gốc thành health check toàn diện
+app.put('/api/orders/:id/status', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    try {
+        await pool.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
+        res.json({ message: 'Cập nhật trạng thái thành công.' });
+    } catch (err) {
+        console.error("Error updating order status:", err.message);
+        res.status(500).json({ error: `Lỗi server khi cập nhật trạng thái: ${err.message}` });
+    }
+});
+
+
+// Health check endpoint
 app.get('/', async (req, res) => {
     try {
-        // Cố gắng lấy một kết nối từ pool để kiểm tra
         const connection = await pool.getConnection();
-        // Ping database để xác nhận kết nối hoạt động
         await connection.ping();
-        // Trả lại kết nối cho pool
         connection.release();
-        
-        // Trả về trang thái thành công
         res.status(200).send(`
             <div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">
                 <h1 style="color: #28a745;">✅ Backend server is running OK!</h1>
                 <p style="color: #17a2b8; font-weight: bold;">✔️ Kết nối đến cơ sở dữ liệu MySQL đã thành công.</p>
-                <p>Điều này có nghĩa là các biến môi trường (DB_HOST, DB_USER, etc.) đã chính xác và IP của máy chủ Render đã được whitelist trên Hostinger.</p>
+                <p>Server đang lắng nghe trên cổng: ${PORT}</p>
             </div>
         `);
     } catch (error) {
-        // Nếu có lỗi, trả về trang thái thất bại với thông tin chi tiết
-        console.error("Lỗi kiểm tra sức khỏe - Kết nối CSDL thất bại:", error);
+        console.error('Lỗi kiểm tra sức khỏe:', error);
         res.status(500).send(`
             <div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">
-                <h1 style="color: #dc3545;">❌ Backend server is running, BUT...</h1>
-                <p style="color: #ffc107; font-weight: bold;">⚠️ Không thể kết nối đến cơ sở dữ liệu MySQL.</p>
-                <p><strong>Vui lòng kiểm tra lại các mục sau:</strong></p>
-                <ul style="padding-left: 20px;">
-                    <li><strong>Biến môi trường trên Render:</strong> Đảm bảo các biến <code>DB_HOST</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_NAME</code> đã được thiết lập chính xác.</li>
-                    <li><strong>Cấu hình Remote MySQL trên Hostinger:</strong> Đảm bảo địa chỉ IP của dịch vụ Render đã được thêm vào danh sách "Access host".</li>
-                    <li><strong>Tường lửa hoặc vấn đề mạng:</strong> Đảm bảo không có cấu hình nào khác đang chặn kết nối.</li>
+                <h1 style="color: #dc3545;">❌ Backend server is running, but DB connection FAILED!</h1>
+                <p style="color: #ffc107;">Lỗi kết nối đến cơ sở dữ liệu MySQL. Vui lòng kiểm tra lại:</p>
+                <ul style="list-style-type: square; margin-left: 20px;">
+                    <li><strong>Biến môi trường:</strong> DB_HOST, DB_USER, DB_PASSWORD, DB_NAME.</li>
+                    <li><strong>Quyền truy cập:</strong> Đảm bảo IP của máy chủ Render đã được thêm vào "Remote MySQL" trên Hostinger.</li>
+                    <li><strong>Thông tin chi tiết lỗi:</strong></li>
                 </ul>
-                <p><strong>Thông tin lỗi chi tiết:</strong></p>
-                <pre style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px; margin-top: 10px; white-space: pre-wrap; word-wrap: break-word;">${error.message}</pre>
+                <pre style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word;">${error.message}</pre>
             </div>
         `);
     }
 });
 
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
 });

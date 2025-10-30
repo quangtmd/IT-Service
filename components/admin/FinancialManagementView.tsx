@@ -170,7 +170,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onUpdate
     );
 };
 
-// Fix: Add missing ReportsTab component placeholder.
+// FIX: Add placeholder ReportsTab component to resolve error.
 const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
     return (
         <div>
@@ -180,7 +180,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-// Fix: Add missing PayrollTab component placeholder.
+// FIX: Add placeholder PayrollTab component to resolve error.
 const PayrollTab: React.FC<{ 
     payrollRecords: PayrollRecord[], 
     onUpdatePayroll: (updated: PayrollRecord[]) => void,

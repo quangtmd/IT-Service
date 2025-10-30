@@ -7,7 +7,8 @@ import Button from '../../ui/Button'; // Import Button
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const BlogItemCard: React.FC<{article: Article, index: number}> = ({article, index}) => {
-    const placeholderImg = article.imageUrl || `https://picsum.photos/seed/modernTechBlog${article.id.replace(/\D/g,'') || index}/400/260`;
+    // FIX: Ensure article.id is treated as a string for the replace method.
+    const placeholderImg = article.imageUrl || `https://picsum.photos/seed/modernTechBlog${String(article.id).replace(/\D/g,'') || index}/400/260`;
 
     return (
         <div
@@ -26,7 +27,8 @@ const BlogItemCard: React.FC<{article: Article, index: number}> = ({article, ind
                     <Link to={`/article/${article.id}`} className="line-clamp-2">{article.title}</Link>
                 </h3>
                  <p className="text-xs text-textSubtle mb-3">
-                    By {article.author} on {new Date(article.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {/* FIX: Property 'date' does not exist on type 'Article'. Use 'publishedAt' or 'createdAt' instead. */}
+                    By {article.author} on {new Date(article.publishedAt || article.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
                 <p className="text-sm text-textMuted mb-4 line-clamp-3 flex-grow">{article.summary}</p>
                 <Link to={`/article/${article.id}`} className="modern-card-link mt-auto self-start">
@@ -71,7 +73,8 @@ const HomeBlogPreviewIts: React.FC<HomeBlogPreviewItsProps> = ({ categoryFilter,
 
       if (displayIds.length > 0) {
         articlesToDisplay = displayIds
-          .map(id => allArticles.find(article => article.id === id)) // Search in allArticles
+          // FIX: Compare IDs as strings to avoid type mismatch.
+          .map(id => allArticles.find(article => String(article.id) === String(id))) // Search in allArticles
           .filter(Boolean) as Article[];
       } else {
         articlesToDisplay = allArticles.slice(0, maxArticlesProp || DEFAULT_MAX_ARTICLES);
