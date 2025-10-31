@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 // FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
 // FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
@@ -189,7 +188,7 @@ const Header: React.FC = () => {
             <span className={`text-xs font-semibold ${isMobile ? '' : 'hidden md:inline'}`}>{currentUser.username}</span>
             <i className="fas fa-chevron-down text-xs transition-transform duration-200 group-hover:rotate-180"></i>
           </button>
-          <div className={`absolute top-full ${isMobile ? 'bottom-full top-auto' : 'right-0 mt-2'} w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto`}>
+          <div className={`absolute top-full ${isMobile ? 'bottom-full top-auto' : 'right-0'} w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto`}>
             <div className="px-3 py-2 border-b border-gray-200">
                 <p className="text-sm font-semibold text-textBase">{currentUser.username}</p>
                 <p className="text-xs text-textMuted truncate">{currentUser.email}</p>
