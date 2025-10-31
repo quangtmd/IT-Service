@@ -665,7 +665,6 @@ export interface SiteSettings {
   paymentGateways: PaymentGatewaySettings;
   siteMediaLibrary: MediaItem[];
   
-  // FIX: Add missing optional properties for FAQs and Discount Codes to support centralized site configuration.
   faqs?: FaqItem[];
   discountCodes?: DiscountCode[];
 }
@@ -696,4 +695,10 @@ export interface PayrollRecord {
   finalSalary: number;
   notes: string;
   status: 'Chưa thanh toán' | 'Đã thanh toán';
+}
+
+// --- NEW SERVER INFO TYPE ---
+export interface ServerInfo {
+  outboundIp: string;
+  port: number;
 }

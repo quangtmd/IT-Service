@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getOrders, getProducts } from '../../services/localDataService';
+import { getOrders, getProducts, getServerInfo } from '../../services/localDataService';
 import Card from '../ui/Card';
-import { Order, OrderStatus, OrderStatusAdmin } from '../../types';
+import { Order, OrderStatus, OrderStatusAdmin, ServerInfo } from '../../types';
 import Button from '../ui/Button';
 
 interface DashboardViewProps {
   setActiveView: (view: string) => void;
 }
 
-// FIX: Change status cases to align with OrderStatus type
 const getStatusColor = (status: OrderStatus) => {
     switch (status) {
         case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -99,10 +98,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
     const [productCount, setProductCount] = useState(0);
     const [recentOrders, setRecentOrders] = useState<Order[]>([]);
     const [revenueData, setRevenueData] = useState<{ day: string; revenue: number }[]>([]);
+    const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null);
+    const [isServerInfoLoading, setIsServerInfoLoading] = useState(true);
+    const [ipCopied, setIpCopied] = useState(false);
 
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchDashboardData = async () => {
             try {
                 const orders = await getOrders();
                 const products = await getProducts();
@@ -113,7 +115,20 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                 console.error("Failed to fetch dashboard data:", error);
             }
         };
-        fetchData();
+        const fetchServerInfo = async () => {
+            setIsServerInfoLoading(true);
+            try {
+                const info = await getServerInfo();
+                setServerInfo(info);
+            } catch (err) {
+                 console.error("Failed to fetch server info", err);
+            } finally {
+                setIsServerInfoLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+        fetchServerInfo();
 
         const generateMockData = () => {
             const data = [];
@@ -134,6 +149,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
         generateMockData();
     }, []);
 
+    const handleCopyIp = () => {
+        if (serverInfo?.outboundIp) {
+            navigator.clipboard.writeText(serverInfo.outboundIp);
+            setIpCopied(true);
+            setTimeout(() => setIpCopied(false), 2000);
+        }
+    };
+
     const customerCount = users.filter(u => u.role === 'customer').length;
     const unreadNotifications = adminNotifications.filter(n => !n.isRead).length;
 
@@ -147,6 +170,29 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                 <StatCard title="Thông Báo Mới" value={unreadNotifications} icon="fa-bell" color="bg-yellow-500" onClick={() => setActiveView('notifications_panel')} />
             </div>
             
+             {/* System Info Card */}
+            <Card className="!p-4">
+                <h4 className="font-semibold text-lg mb-3">Thông tin Hệ thống</h4>
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    {isServerInfoLoading ? (
+                        <p className="text-sm text-slate-500">Đang tải thông tin máy chủ...</p>
+                    ) : serverInfo?.outboundIp ? (
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm text-slate-600">
+                                <strong>IP công khai của Server:</strong>
+                                <span className="ml-2 font-mono bg-slate-200 text-slate-800 py-1 px-2 rounded">{serverInfo.outboundIp}</span>
+                            </p>
+                            <Button size="sm" variant="outline" onClick={handleCopyIp} leftIcon={ipCopied ? <i className="fas fa-check"></i> : <i className="fas fa-copy"></i>}>
+                                {ipCopied ? 'Đã sao chép!' : 'Sao chép'}
+                            </Button>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-red-500">Không thể lấy được IP của máy chủ.</p>
+                    )}
+                     <p className="text-xs text-slate-400 mt-2">Sử dụng địa chỉ IP này để cho phép (whitelist) kết nối tới cơ sở dữ liệu của bạn trên Hostinger.</p>
+                </div>
+            </Card>
+
             {/* Revenue Chart */}
             <Card className="!p-4">
                 <h4 className="font-semibold text-lg mb-3 px-2">Doanh thu 30 ngày qua</h4>
@@ -183,7 +229,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                         <tbody>
                             {recentOrders.length > 0 ? recentOrders.map(order => (
                                 <tr key={order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setActiveView('orders')}>
-                                    {/* FIX: Convert numeric ID to string for slice method. */}
                                     <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{String(order.id).slice(-6)}</span></td>
                                     <td>{order.customerInfo.fullName}</td>
                                     <td className="font-semibold">{order.totalAmount.toLocaleString('vi-VN')}₫</td>

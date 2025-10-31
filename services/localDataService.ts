@@ -1,4 +1,4 @@
-import { Product, Order, Article, MediaItem, OrderStatus, FaqItem, DiscountCode, SiteSettings, ProductCategory, ServiceTicket, Warehouse, Inventory, Supplier, Bill, User } from '../types';
+import { Product, Order, Article, MediaItem, OrderStatus, FaqItem, DiscountCode, SiteSettings, ProductCategory, ServiceTicket, Warehouse, Inventory, Supplier, Bill, User, ServerInfo } from '../types';
 import * as Constants from '../constants';
 
 // --- API HELPER ---
@@ -20,6 +20,11 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
         console.error(`Network or fetch error for ${endpoint}:`, error);
         throw error;
     }
+};
+
+// --- SERVER INFO ---
+export const getServerInfo = async (): Promise<ServerInfo> => {
+    return apiFetch('/api/server-info');
 };
 
 // --- USER & AUTH ---

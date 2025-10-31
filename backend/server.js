@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+const fetch = require('node-fetch'); // Mặc dù Node 18+ có sẵn, thêm để đảm bảo tương thích
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -11,10 +12,10 @@ app.use(express.json({ limit: '50mb' }));
 
 // --- DATABASE CONFIGURATION ---
 const dbConfig = {
-  host: process.env.MYSQLHOST || 'srv1319.hstgr.io',
+  host: process.env.MYSQLHOST || '194.59.164.14',
   user: process.env.MYSQLUSER || 'u573621538_ltservice',
-  password: process.env.MYSQLPASSWORD || 'A@a0908225224',
-  database: process.env.MYSQLDATABASE || 'u573621538_Itservice',
+  password: process.env.MYSQLPASSWORD || 'Aa0908225224',
+  database: process.env.MYSQLDATABASE || 'u573621538_ltservice',
   port: process.env.MYSQLPORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
@@ -36,24 +37,20 @@ const ensureAdminUserExists = async () => {
         if (userRows.length === 0) {
             console.log('Người dùng admin không tồn tại. Đang tạo...');
             
-            // Hash the password
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(adminPassword, saltRounds);
 
             await connection.beginTransaction();
 
-            // Insert user
             const [userResult] = await connection.query(
                 'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
                 ['Quang Admin', adminEmail, hashedPassword]
             );
             const newUserId = userResult.insertId;
 
-            // Find Admin role ID
             const [roleRows] = await connection.query('SELECT id FROM roles WHERE name = ?', ['Admin']);
             if (roleRows.length > 0) {
                 const adminRoleId = roleRows[0].id;
-                // Assign role to user
                 await connection.query('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)', [newUserId, adminRoleId]);
                 console.log('Đã tạo thành công người dùng admin và gán vai trò.');
             } else {
@@ -84,6 +81,19 @@ const handleQuery = async (res, query, params = []) => {
     }
 };
 
+// --- NEW SERVER INFO API ---
+app.get('/api/server-info', async (req, res) => {
+    try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        const outboundIp = ipData.ip;
+        res.json({ outboundIp: outboundIp, port: PORT });
+    } catch (error) {
+        console.error('Could not fetch outbound IP:', error);
+        res.status(500).json({ error: 'Không thể lấy địa chỉ IP của máy chủ.', details: error.message });
+    }
+});
+
 
 // --- AUTH & USER API ---
 app.post('/api/login', async (req, res) => {
@@ -105,7 +115,6 @@ app.post('/api/login', async (req, res) => {
 
         const user = userRows[0];
         
-        // Securely compare password with hashed password
         const passwordMatches = await bcrypt.compare(password, user.password_hash);
         if (!passwordMatches) {
              return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng.' });
@@ -162,7 +171,6 @@ app.get('/api/products/:id', async (req, res) => {
     try {
         const [results] = await pool.query('SELECT p.*, c.name as categoryName FROM products p LEFT JOIN product_categories c ON p.category_id = c.id WHERE p.id = ?', [req.params.id]);
         if (results.length > 0) {
-            // Specs are stored as JSON strings, parse them for the client
             try {
                 if(results[0].specs && typeof results[0].specs === 'string') {
                     results[0].specs = JSON.parse(results[0].specs);
@@ -172,7 +180,6 @@ app.get('/api/products/:id', async (req, res) => {
                 }
             } catch (e) {
                 console.error(`Could not parse JSON for product ${results[0].id}`);
-                // Leave as string if parsing fails
             }
             res.json(results[0]);
         } else {
@@ -233,7 +240,6 @@ app.post('/api/orders', async (req, res) => {
         await connection.commit();
         const [newOrderRow] = await connection.query('SELECT * FROM orders WHERE id = ?', [orderId]);
         const newOrder = newOrderRow[0];
-        // Parse JSON fields before sending back
         try {
             newOrder.customer_info = JSON.parse(newOrder.customer_info);
             newOrder.shipping_address = JSON.parse(newOrder.shipping_address);
@@ -331,7 +337,13 @@ async function startServer() {
 
     } catch (error) {
         console.error('Không thể kết nối tới MySQL:', error);
-        process.exit(1);
+        // Don't exit on connection error, allow server to run for info endpoint.
+        // process.exit(1);
+        
+        // Instead, just start the server to serve the info endpoint
+        app.listen(PORT, () => {
+            console.log(`Backend server đang chạy trên cổng ${PORT} (CHẾ ĐỘ HẠN CHẾ do lỗi CSDL).`);
+        });
     }
 }
 
