@@ -13,9 +13,9 @@ app.use(express.json({ limit: '50mb' }));
 // --- DATABASE CONFIGURATION ---
 const dbConfig = {
   host: process.env.MYSQLHOST || '194.59.164.14',
-  user: process.env.MYSQLUSER || 'u573621538_ltservice',
+  user: process.env.MYSQLUSER || 'u573621538_IT', // SỬA LẠI USER CHO ĐÚNG
   password: process.env.MYSQLPASSWORD || 'Aa0908225224',
-  database: (process.env.MYSQLDATABASE || 'u573621538_ltservice').toLowerCase(),
+  database: (process.env.MYSQLDATABASE || 'u573621538_ltservice').toLowerCase(), // Đảm bảo DB name là chữ thường
   port: process.env.MYSQLPORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
