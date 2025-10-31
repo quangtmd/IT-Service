@@ -15,7 +15,7 @@ const dbConfig = {
   host: process.env.MYSQLHOST || '194.59.164.14',
   user: process.env.MYSQLUSER || 'u573621538_ltservice',
   password: process.env.MYSQLPASSWORD || 'Aa0908225224',
-  database: process.env.MYSQLDATABASE || 'u573621538_ltservice',
+  database: (process.env.MYSQLDATABASE || 'u573621538_ltservice').toLowerCase(),
   port: process.env.MYSQLPORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
