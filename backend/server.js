@@ -1,4 +1,3 @@
-
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
@@ -15,11 +14,11 @@ app.use(express.json({ limit: '50mb' }));
 // IMPORTANT: Rely on environment variables from the hosting provider (e.g., Render).
 // The user MUST set these environment variables correctly in their Render service.
 const dbConfig = {
-  host: process.env.MYSQLHOST,
-  user: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: process.env.MYSQLDATABASE, // Use the exact name from env
-  port: process.env.MYSQLPORT || 3306,
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -167,14 +166,14 @@ app.get('/api/users', (req, res) => handleQuery(res, 'SELECT id, username, email
 
 
 // --- PRODUCTS & CATEGORIES API ---
-app.get('/api/product_categories', (req, res) => handleQuery(res, 'SELECT id, name, slug, description, parent_category_id as parentCategoryId FROM product_categories'));
+app.get('/api/product_categories', (req, res) => handleQuery(res, 'SELECT id, name, slug, description, parentCategoryId FROM product_categories'));
 
 app.get('/api/products', async (req, res) => {
     const { q, categoryId, brand, featured, page = 1, limit = 1000 } = req.query;
     
     let whereClauses = [];
     let params = [];
-    let joinClause = 'LEFT JOIN product_categories c ON p.category_id = c.id';
+    let joinClause = 'LEFT JOIN product_categories c ON p.categoryId = c.id';
 
     if (q) {
         whereClauses.push('(p.name LIKE ? OR p.sku LIKE ? OR p.brand LIKE ?)');
@@ -182,7 +181,7 @@ app.get('/api/products', async (req, res) => {
         params.push(searchTerm, searchTerm, searchTerm);
     }
     if (categoryId) {
-        whereClauses.push('p.category_id = ?');
+        whereClauses.push('p.categoryId = ?');
         params.push(categoryId);
     }
     if (brand) {
@@ -229,11 +228,11 @@ app.get('/api/products', async (req, res) => {
 });
 
 
-app.get('/api/products/featured', (req, res) => handleQuery(res, 'SELECT p.*, c.name as categoryName FROM products p LEFT JOIN product_categories c ON p.category_id = c.id WHERE p.is_featured = 1 LIMIT 4'));
+app.get('/api/products/featured', (req, res) => handleQuery(res, 'SELECT p.*, c.name as categoryName FROM products p LEFT JOIN product_categories c ON p.categoryId = c.id WHERE p.is_featured = 1 LIMIT 4'));
 
 app.get('/api/products/:id', async (req, res) => {
     try {
-        const [results] = await pool.query('SELECT p.*, c.name as categoryName FROM products p LEFT JOIN product_categories c ON p.category_id = c.id WHERE p.id = ?', [req.params.id]);
+        const [results] = await pool.query('SELECT p.*, c.name as categoryName FROM products p LEFT JOIN product_categories c ON p.categoryId = c.id WHERE p.id = ?', [req.params.id]);
         if (results.length > 0) {
             try {
                 if(results[0].specs && typeof results[0].specs === 'string') {
@@ -258,14 +257,14 @@ app.get('/api/products/:id', async (req, res) => {
 
 // --- ARTICLES & CATEGORIES API ---
 app.get('/api/article_categories', (req, res) => handleQuery(res, 'SELECT * FROM article_categories'));
-app.get('/api/articles', (req, res) => handleQuery(res, 'SELECT a.*, u.username as author, ac.name as category FROM articles a LEFT JOIN users u ON a.author_id = u.id LEFT JOIN article_categories ac ON a.category_id = ac.id ORDER BY a.created_at DESC'));
+app.get('/api/articles', (req, res) => handleQuery(res, 'SELECT a.*, u.username as author, ac.name as category FROM articles a LEFT JOIN users u ON a.authorId = u.id LEFT JOIN article_categories ac ON a.categoryId = ac.id ORDER BY a.created_at DESC'));
 
 // --- ORDERS API ---
 app.get('/api/orders', async (req, res) => {
     try {
         const [orders] = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
         for (let order of orders) {
-            const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
+            const [items] = await pool.query('SELECT * FROM order_items WHERE orderId = ?', [order.id]);
             order.items = items;
              try {
                 order.customer_info = JSON.parse(order.customer_info);
@@ -288,7 +287,7 @@ app.post('/api/orders', async (req, res) => {
         await connection.beginTransaction();
 
         const [orderResult] = await connection.query(
-            'INSERT INTO orders (user_id, total_amount, customer_info, shipping_address, payment_details, status) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO orders (userId, total_amount, customer_info, shipping_address, payment_details, status) VALUES (?, ?, ?, ?, ?, ?)',
             [userId, totalAmount, JSON.stringify(customerInfo), JSON.stringify(shippingAddress), JSON.stringify(paymentDetails), 'pending']
         );
         const orderId = orderResult.insertId;
@@ -296,7 +295,7 @@ app.post('/api/orders', async (req, res) => {
         if (items && items.length > 0) {
             const itemValues = items.map(item => [orderId, item.productId, item.quantity, item.priceAtPurchase, item.productName]);
             await connection.query(
-                'INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase, product_name) VALUES ?',
+                'INSERT INTO order_items (orderId, productId, quantity, price_at_purchase, product_name) VALUES ?',
                 [itemValues]
             );
         }
@@ -393,7 +392,7 @@ app.get('/api/employee_profiles', (req, res) => handleQuery(res, 'SELECT * FROM 
 async function startServer() {
     // Check for required environment variables
     if (!dbConfig.host || !dbConfig.user || !dbConfig.password || !dbConfig.database) {
-        console.error('CRITICAL: Missing database environment variables (MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE).');
+        console.error('CRITICAL: Missing database environment variables (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME).');
         process.exit(1);
     }
 
