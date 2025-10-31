@@ -1,8 +1,9 @@
+
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
-const fetch = require('node-fetch'); // Mặc dù Node 18+ có sẵn, thêm để đảm bảo tương thích
+// fetch is globally available in modern Node.js environments like Render's default.
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -11,11 +12,13 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // --- DATABASE CONFIGURATION ---
+// IMPORTANT: Rely on environment variables from the hosting provider (e.g., Render).
+// The user MUST set these environment variables correctly in their Render service.
 const dbConfig = {
-  host: process.env.MYSQLHOST || '194.59.164.14',
-  user: process.env.MYSQLUSER || 'u573621538_IT',
-  password: process.env.MYSQLPASSWORD || 'Aa0908225224',
-  database: (process.env.MYSQLDATABASE || 'u573621538_ltservice').toLowerCase(), // Đảm bảo DB name là chữ thường
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE, // Use the exact name from env
   port: process.env.MYSQLPORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
@@ -51,7 +54,7 @@ const ensureAdminUserExists = async () => {
             const [roleRows] = await connection.query('SELECT id FROM roles WHERE name = ?', ['Admin']);
             if (roleRows.length > 0) {
                 const adminRoleId = roleRows[0].id;
-                await connection.query('INSERT INTO userroles (user_id, role_id) VALUES (?, ?)', [newUserId, adminRoleId]);
+                await connection.query('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)', [newUserId, adminRoleId]);
                 console.log('Đã tạo thành công người dùng admin và gán vai trò.');
             } else {
                 console.error('Không tìm thấy vai trò "Admin". Bỏ qua việc gán vai trò.');
@@ -127,7 +130,7 @@ app.post('/api/login', async (req, res) => {
         const [roleRows] = await pool.query(
             `SELECT r.name 
              FROM roles r
-             JOIN userroles ur ON r.id = ur.role_id
+             JOIN user_roles ur ON r.id = ur.role_id
              WHERE ur.user_id = ?`, [user.id]
         );
         const roles = roleRows.map(r => r.name);
@@ -136,9 +139,9 @@ app.post('/api/login', async (req, res) => {
         const [permissionRows] = await pool.query(
             `SELECT p.name
              FROM permissions p
-             JOIN rolepermissions rp ON p.id = rp.permission_id
+             JOIN role_permissions rp ON p.id = rp.permission_id
              JOIN roles r ON rp.role_id = r.id
-             JOIN userroles ur ON r.id = ur.role_id
+             JOIN user_roles ur ON r.id = ur.role_id
              WHERE ur.user_id = ?`, [user.id]
         );
         const permissions = permissionRows.map(p => p.name);
@@ -164,14 +167,14 @@ app.get('/api/users', (req, res) => handleQuery(res, 'SELECT id, username, email
 
 
 // --- PRODUCTS & CATEGORIES API ---
-app.get('/api/product_categories', (req, res) => handleQuery(res, 'SELECT id, name, slug, description, parent_category_id as parentCategoryId FROM productcategories'));
+app.get('/api/product_categories', (req, res) => handleQuery(res, 'SELECT id, name, slug, description, parent_category_id as parentCategoryId FROM product_categories'));
 
 app.get('/api/products', async (req, res) => {
     const { q, categoryId, brand, featured, page = 1, limit = 1000 } = req.query;
     
     let whereClauses = [];
     let params = [];
-    let joinClause = 'LEFT JOIN productcategories c ON p.category_id = c.id';
+    let joinClause = 'LEFT JOIN product_categories c ON p.category_id = c.id';
 
     if (q) {
         whereClauses.push('(p.name LIKE ? OR p.sku LIKE ? OR p.brand LIKE ?)');
@@ -226,11 +229,11 @@ app.get('/api/products', async (req, res) => {
 });
 
 
-app.get('/api/products/featured', (req, res) => handleQuery(res, 'SELECT p.*, c.name as categoryName FROM products p LEFT JOIN productcategories c ON p.category_id = c.id WHERE p.is_featured = 1 LIMIT 4'));
+app.get('/api/products/featured', (req, res) => handleQuery(res, 'SELECT p.*, c.name as categoryName FROM products p LEFT JOIN product_categories c ON p.category_id = c.id WHERE p.is_featured = 1 LIMIT 4'));
 
 app.get('/api/products/:id', async (req, res) => {
     try {
-        const [results] = await pool.query('SELECT p.*, c.name as categoryName FROM products p LEFT JOIN productcategories c ON p.category_id = c.id WHERE p.id = ?', [req.params.id]);
+        const [results] = await pool.query('SELECT p.*, c.name as categoryName FROM products p LEFT JOIN product_categories c ON p.category_id = c.id WHERE p.id = ?', [req.params.id]);
         if (results.length > 0) {
             try {
                 if(results[0].specs && typeof results[0].specs === 'string') {
@@ -254,15 +257,15 @@ app.get('/api/products/:id', async (req, res) => {
 
 
 // --- ARTICLES & CATEGORIES API ---
-app.get('/api/article_categories', (req, res) => handleQuery(res, 'SELECT * FROM articlecategories'));
-app.get('/api/articles', (req, res) => handleQuery(res, 'SELECT a.*, u.username as author, ac.name as category FROM articles a LEFT JOIN users u ON a.author_id = u.id LEFT JOIN articlecategories ac ON a.category_id = ac.id ORDER BY a.created_at DESC'));
+app.get('/api/article_categories', (req, res) => handleQuery(res, 'SELECT * FROM article_categories'));
+app.get('/api/articles', (req, res) => handleQuery(res, 'SELECT a.*, u.username as author, ac.name as category FROM articles a LEFT JOIN users u ON a.author_id = u.id LEFT JOIN article_categories ac ON a.category_id = ac.id ORDER BY a.created_at DESC'));
 
 // --- ORDERS API ---
 app.get('/api/orders', async (req, res) => {
     try {
         const [orders] = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
         for (let order of orders) {
-            const [items] = await pool.query('SELECT * FROM orderitems WHERE order_id = ?', [order.id]);
+            const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
             order.items = items;
              try {
                 order.customer_info = JSON.parse(order.customer_info);
@@ -293,7 +296,7 @@ app.post('/api/orders', async (req, res) => {
         if (items && items.length > 0) {
             const itemValues = items.map(item => [orderId, item.productId, item.quantity, item.priceAtPurchase, item.productName]);
             await connection.query(
-                'INSERT INTO orderitems (order_id, product_id, quantity, price_at_purchase, product_name) VALUES ?',
+                'INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase, product_name) VALUES ?',
                 [itemValues]
             );
         }
@@ -332,7 +335,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
 // --- DEDICATED SITE SETTINGS HELPERS & API ---
 const getSetting = async (key, defaultValue = null) => {
     try {
-        const [rows] = await pool.query('SELECT setting_value FROM sitesettings WHERE setting_key = ?', [key]);
+        const [rows] = await pool.query('SELECT setting_value FROM site_settings WHERE setting_key = ?', [key]);
         if (rows.length === 0) return defaultValue;
         const value = rows[0].setting_value;
         try {
@@ -349,13 +352,13 @@ const getSetting = async (key, defaultValue = null) => {
 const saveSetting = async (key, value) => {
     const finalValue = (typeof value === 'object') ? JSON.stringify(value) : value;
     await pool.query(
-        'INSERT INTO sitesettings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
+        'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
         [key, finalValue, finalValue]
     );
 };
 
 // Main settings endpoint (for general info)
-app.get('/api/settings', async (req, res) => handleQuery(res, 'SELECT * FROM sitesettings'));
+app.get('/api/settings', async (req, res) => handleQuery(res, 'SELECT * FROM site_settings'));
 app.post('/api/settings', async (req, res) => { /* ... existing implementation ... */ });
 
 // Dedicated endpoints for sub-data
@@ -379,18 +382,28 @@ app.post('/api/media-library', async (req, res) => {
 
 
 // --- OTHER MODULES API ---
-app.get('/api/service_tickets', (req, res) => handleQuery(res, 'SELECT * FROM servicetickets ORDER BY created_at DESC'));
+app.get('/api/service_tickets', (req, res) => handleQuery(res, 'SELECT * FROM service_tickets ORDER BY created_at DESC'));
 app.get('/api/inventory', (req, res) => handleQuery(res, 'SELECT i.*, p.name as product_name, w.name as warehouse_name FROM inventory i JOIN products p ON i.product_id = p.id JOIN warehouses w ON i.warehouse_id = w.id'));
 app.get('/api/suppliers', (req, res) => handleQuery(res, 'SELECT * FROM suppliers ORDER BY name ASC'));
 app.get('/api/bills', (req, res) => handleQuery(res, 'SELECT b.*, s.name as supplier_name FROM bills b JOIN suppliers s ON b.supplier_id = s.id ORDER BY b.bill_date DESC'));
-app.get('/api/employee_profiles', (req, res) => handleQuery(res, 'SELECT * FROM employeeprofiles'));
+app.get('/api/employee_profiles', (req, res) => handleQuery(res, 'SELECT * FROM employee_profiles'));
 
 
 // --- Server Start ---
 async function startServer() {
+    // Check for required environment variables
+    if (!dbConfig.host || !dbConfig.user || !dbConfig.password || !dbConfig.database) {
+        console.error('CRITICAL: Missing database environment variables (MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE).');
+        process.exit(1);
+    }
+
     try {
         pool = mysql.createPool(dbConfig);
-        await pool.query('SELECT 1');
+        // Test connection
+        const connection = await pool.getConnection();
+        await connection.query('SELECT 1');
+        connection.release();
+        
         console.log('Đã kết nối thành công tới MySQL.');
 
         await ensureAdminUserExists();
@@ -404,11 +417,9 @@ async function startServer() {
         });
 
     } catch (error) {
-        console.error('Không thể kết nối tới MySQL:', error);
-        
-        app.listen(PORT, () => {
-            console.log(`Backend server đang chạy trên cổng ${PORT} (CHẾ ĐỘ HẠN CHẾ do lỗi CSDL).`);
-        });
+        console.error('CRITICAL: Không thể khởi động server do lỗi kết nối CSDL. Vui lòng kiểm tra lại thông tin kết nối và quyền truy cập từ xa.');
+        console.error(error);
+        process.exit(1); // Exit with error code to signal a failed deployment
     }
 }
 
