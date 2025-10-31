@@ -50,7 +50,9 @@ export const getProductCategories = async (): Promise<ProductCategory[]> => {
 };
 
 export const getProducts = async (): Promise<Product[]> => {
-    return apiFetch('/api/products');
+    // This now returns a wrapper object from the backend
+    const response = await apiFetch('/api/products?limit=1000'); // Fetch all for general purpose
+    return response.products;
 };
 
 export const getFilteredProducts = async (
@@ -58,29 +60,18 @@ export const getFilteredProducts = async (
     page: number,
     limit: number
 ): Promise<{ products: Product[], totalProducts: number }> => {
-    // This is a simplified client-side implementation. A real backend would handle this.
-    const allProducts = await getProducts();
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
 
-    const filtered = allProducts.filter(p => {
-        let match = true;
-        if (filters.q && typeof filters.q === 'string') {
-            match = match && p.name.toLowerCase().includes(filters.q.toLowerCase());
+    for (const key in filters) {
+        const value = filters[key];
+        if (value) {
+            params.append(key, String(value));
         }
-        if (filters.categoryId) {
-            match = match && String(p.category_id) === String(filters.categoryId);
-        }
-        if (filters.brand) {
-            match = match && p.brand === filters.brand;
-        }
-        // Add more filters here as needed
-        return match;
-    });
-
-    const totalProducts = filtered.length;
-    const startIndex = (page - 1) * limit;
-    const products = filtered.slice(startIndex, startIndex + limit);
-
-    return { products, totalProducts };
+    }
+    // Now calling the backend with query params for server-side filtering and pagination
+    return apiFetch(`/api/products?${params.toString()}`);
 };
 
 export const getProduct = async (id: string): Promise<Product | null> => {
@@ -148,7 +139,6 @@ export const deleteArticle = async (id: number | string): Promise<void> => {
 };
 
 // --- SITE SETTINGS & OTHER LOCALSTORAGE MIGRATIONS ---
-// This single function replaces multiple localStorage getters.
 export const getSiteSettings = async (): Promise<SiteSettings> => {
     try {
         const settingsFromApi = await apiFetch('/api/settings');
@@ -160,56 +150,56 @@ export const getSiteSettings = async (): Promise<SiteSettings> => {
     }
 };
 
-// This single function replaces multiple localStorage setters.
 export const saveSiteSettings = async (settings: Partial<SiteSettings>): Promise<void> => {
     await apiFetch('/api/settings', {
         method: 'POST',
         body: JSON.stringify(settings)
     });
-    // Dispatch event to notify components of the update
     window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
 };
 
 // --- DYNAMIC DATA MIGRATIONS (FAQs, Discounts, etc.) ---
-// These now read from the SiteSettings object from the DB
-
+// These now use dedicated, efficient endpoints
 export const getFaqs = async (): Promise<FaqItem[]> => {
-    const settings = await getSiteSettings();
-    return settings.faqs || Constants.INITIAL_FAQS;
+    return apiFetch('/api/faqs');
 };
 
 export const saveFaqs = async (faqs: FaqItem[]): Promise<void> => {
-    await saveSiteSettings({ faqs });
+    await apiFetch('/api/faqs', {
+        method: 'POST',
+        body: JSON.stringify(faqs)
+    });
     window.dispatchEvent(new CustomEvent('faqsUpdated'));
 };
 
 export const getDiscounts = async (): Promise<DiscountCode[]> => {
-    const settings = await getSiteSettings();
-    return settings.discountCodes || Constants.INITIAL_DISCOUNT_CODES;
+    return apiFetch('/api/discounts');
 };
 
 export const saveDiscounts = async (discounts: DiscountCode[]): Promise<void> => {
-    await saveSiteSettings({ discountCodes: discounts });
+    await apiFetch('/api/discounts', {
+        method: 'POST',
+        body: JSON.stringify(discounts)
+    });
 };
 
-// --- MEDIA LIBRARY (now part of Site Settings) ---
+// --- MEDIA LIBRARY (now with dedicated endpoints) ---
 export const getMediaItems = async (): Promise<MediaItem[]> => {
-  const settings = await getSiteSettings();
-  return settings.siteMediaLibrary || [];
+  return apiFetch('/api/media-library');
 };
 
 export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaItem> => {
-    const settings = await getSiteSettings();
+    const currentItems = await getMediaItems();
     const newItem = { ...item, id: `media-${Date.now()}` };
-    const newLibrary = [newItem, ...(settings.siteMediaLibrary || [])];
-    await saveSiteSettings({ siteMediaLibrary: newLibrary });
+    const newLibrary = [newItem, ...currentItems];
+    await apiFetch('/api/media-library', { method: 'POST', body: JSON.stringify(newLibrary) });
     return newItem;
 };
 
 export const deleteMediaItem = async (id: string): Promise<void> => {
-    const settings = await getSiteSettings();
-    const newLibrary = (settings.siteMediaLibrary || []).filter((item: MediaItem) => item.id !== id);
-    await saveSiteSettings({ siteMediaLibrary: newLibrary });
+    const currentItems = await getMediaItems();
+    const newLibrary = currentItems.filter((item: MediaItem) => item.id !== id);
+    await apiFetch('/api/media-library', { method: 'POST', body: JSON.stringify(newLibrary) });
 };
 
 // --- OTHER ADMIN MODULES ---

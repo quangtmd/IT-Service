@@ -37,6 +37,7 @@ const ProductManagementView: React.FC = () => {
     const filteredProducts = useMemo(() =>
         allProducts.filter(p =>
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (p.sku && p.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (p.categoryName && p.categoryName.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
         ), [allProducts, searchTerm]);
@@ -106,7 +107,7 @@ const ProductManagementView: React.FC = () => {
                         <img src={(product.images && product.images[0]) || `https://picsum.photos/seed/${product.id}/40/40`} alt={product.name} className="w-10 h-10 rounded-md mr-3 object-cover" />
                         <div>
                             <p className="font-semibold text-textBase">{product.name}</p>
-                            <p className="text-xs text-textMuted">{product.brand || 'N/A'}</p>
+                            <p className="text-xs text-textMuted">SKU: {product.sku || 'N/A'}</p>
                         </div>
                     </div>
                 </td>
@@ -136,7 +137,7 @@ const ProductManagementView: React.FC = () => {
             <div className="admin-card-body">
                 <input
                     type="text"
-                    placeholder="Tìm sản phẩm theo tên, danh mục, hãng..."
+                    placeholder="Tìm sản phẩm theo tên, SKU, danh mục, hãng..."
                     value={searchTerm}
                     onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                     className="admin-form-group w-full max-w-md mb-4"
@@ -225,8 +226,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                         <div className="admin-form-subsection-title">Thông tin cơ bản</div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="admin-form-group md:col-span-2"><label>Tên sản phẩm *</label><input type="text" name="name" value={formData.name || ''} onChange={handleChange} required /></div>
-                            <div className="admin-form-group"><label>Danh mục *</label>
-                                {/* FIX: Property 'categoryId' does not exist on type 'Partial<Product>'. Did you mean 'category_id'? */}
+                            
+                            <div className="admin-form-group"><label>Mã sản phẩm (SKU)</label><input type="text" name="sku" value={formData.sku || ''} onChange={handleChange} /></div>
+                            <div className="admin-form-group"><label>Hãng sản xuất</label><input type="text" name="brand" value={formData.brand || ''} onChange={handleChange} /></div>
+                            
+                            <div className="admin-form-group md:col-span-2"><label>Danh mục *</label>
                                 <select name="category_id" value={formData.category_id || ''} onChange={handleChange} required>
                                     <option value="">-- Chọn danh mục --</option>
                                     {categories.filter(c => c.parentCategoryId === null).map(mainCat => (
@@ -239,7 +243,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                                 </select>
                                 {categoryError && <p className="form-input-description text-danger-text">{categoryError}</p>}
                             </div>
-                            <div className="admin-form-group"><label>Hãng sản xuất</label><input type="text" name="brand" value={formData.brand || ''} onChange={handleChange} /></div>
                         </div>
                         <div className="admin-form-group"><label>Mô tả chi tiết</label><textarea name="description" rows={5} value={formData.description || ''} onChange={handleChange}></textarea></div>
                         
