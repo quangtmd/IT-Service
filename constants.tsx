@@ -239,6 +239,17 @@ const INITIAL_PAYMENT_GATEWAYS: PaymentGatewaySettings = {
 };
 const INITIAL_MEDIA_LIBRARY: MediaItem[] = [];
 
+// FIX: Add missing faqs and discountCodes properties to conform to the updated SiteSettings type.
+export const INITIAL_FAQS: FaqItem[] = [
+  { id: 'faq_g1', question: 'Thời gian bảo hành sản phẩm là bao lâu?', answer: 'Thời gian bảo hành tùy thuộc vào từng loại sản phẩm và nhà sản xuất, thường từ 12 đến 36 tháng. Thông tin chi tiết được ghi rõ trên phiếu bảo hành và mô tả sản phẩm.', category: 'Chính sách', isVisible: true },
+  { id: 'faq_s1', question: 'IQ Technology có hỗ trợ lắp đặt tận nơi không?', answer: 'Có, chúng tôi cung cấp dịch vụ lắp đặt PC, hệ thống mạng, camera tận nơi tại Đà Nẵng và các khu vực lân cận. Vui lòng liên hệ để biết thêm chi tiết.', category: 'Dịch vụ', isVisible: true },
+  { id: 'faq_s2', question: 'Làm thế nào để yêu cầu dịch vụ sửa chữa?', answer: 'Bạn có thể gọi hotline, gửi email, chat trực tiếp trên website hoặc mang máy trực tiếp đến cửa hàng của chúng tôi để được hỗ trợ.', category: 'Dịch vụ', isVisible: true },
+];
+
+export const INITIAL_DISCOUNT_CODES: DiscountCode[] = [
+  { id: 'dc_welcome', code: 'WELCOME10', type: 'percentage', value: 10, description: 'Giảm 10% cho đơn hàng đầu tiên của khách hàng mới.', expiryDate: '2024-12-31', isActive: true, minSpend: 500000, usageLimit: 1, timesUsed: 0 },
+  { id: 'dc_freeship', code: 'FREESHIP500K', type: 'fixed_amount', value: 30000, description: 'Miễn phí vận chuyển (tối đa 30k) cho đơn hàng từ 500k.', isActive: true, minSpend: 500000, timesUsed: 0 },
+];
 
 export const INITIAL_SITE_SETTINGS: SiteSettings = {
   companyName: "IQ Technology",
@@ -296,6 +307,8 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
   smtpSettings: INITIAL_SMTP_SETTINGS,
   paymentGateways: INITIAL_PAYMENT_GATEWAYS,
   siteMediaLibrary: INITIAL_MEDIA_LIBRARY,
+  faqs: INITIAL_FAQS,
+  discountCodes: INITIAL_DISCOUNT_CODES,
 };
 
 export const COMPANY_NAME = INITIAL_SITE_SETTINGS.companyName;
@@ -303,17 +316,6 @@ export const COMPANY_SLOGAN = INITIAL_SITE_SETTINGS.companySlogan;
 export const COMPANY_PHONE = INITIAL_SITE_SETTINGS.companyPhone;
 export const COMPANY_EMAIL = INITIAL_SITE_SETTINGS.companyEmail; 
 export const COMPANY_ADDRESS = INITIAL_SITE_SETTINGS.companyAddress;
-
-export const INITIAL_FAQS: FaqItem[] = [
-  { id: 'faq_g1', question: 'Thời gian bảo hành sản phẩm là bao lâu?', answer: 'Thời gian bảo hành tùy thuộc vào từng loại sản phẩm và nhà sản xuất, thường từ 12 đến 36 tháng. Thông tin chi tiết được ghi rõ trên phiếu bảo hành và mô tả sản phẩm.', category: 'Chính sách', isVisible: true },
-  { id: 'faq_s1', question: 'IQ Technology có hỗ trợ lắp đặt tận nơi không?', answer: 'Có, chúng tôi cung cấp dịch vụ lắp đặt PC, hệ thống mạng, camera tận nơi tại Đà Nẵng và các khu vực lân cận. Vui lòng liên hệ để biết thêm chi tiết.', category: 'Dịch vụ', isVisible: true },
-  { id: 'faq_s2', question: 'Làm thế nào để yêu cầu dịch vụ sửa chữa?', answer: 'Bạn có thể gọi hotline, gửi email, chat trực tiếp trên website hoặc mang máy trực tiếp đến cửa hàng của chúng tôi để được hỗ trợ.', category: 'Dịch vụ', isVisible: true },
-];
-
-export const INITIAL_DISCOUNT_CODES: DiscountCode[] = [
-  { id: 'dc_welcome', code: 'WELCOME10', type: 'percentage', value: 10, description: 'Giảm 10% cho đơn hàng đầu tiên của khách hàng mới.', expiryDate: '2024-12-31', isActive: true, minSpend: 500000, usageLimit: 1, timesUsed: 0 },
-  { id: 'dc_freeship', code: 'FREESHIP500K', type: 'fixed_amount', value: 30000, description: 'Miễn phí vận chuyển (tối đa 30k) cho đơn hàng từ 500k.', isActive: true, minSpend: 500000, timesUsed: 0 },
-];
 
 export const INITIAL_THEME_SETTINGS: SiteThemeSettings = {
   primaryColorDefault: '#ef4444', 

@@ -3,6 +3,7 @@ import { Product, ProductCategory } from '../../types';
 import Button from '../ui/Button';
 import { getProducts, addProduct, updateProduct, deleteProduct, getProductCategories } from '../../services/localDataService';
 import MediaLibraryView from './MediaLibraryView';
+// FIX: Corrected import for ImageUploadPreview component.
 import ImageUploadPreview from '../ui/ImageUploadPreview';
 
 const PRODUCTS_PER_PAGE = 10;
@@ -73,7 +74,7 @@ const ProductManagementView: React.FC = () => {
                 await updateProduct(productData.id, productData);
             } else { // Create
                 const { id, ...newProductData } = productData;
-                await addProduct(newProductData as Omit<Product, 'id'|'created_at'|'updated_at'>);
+                await addProduct(newProductData as Omit<Product, 'id'|'created_at'|'updated_at'|'categoryName'>);
             }
             loadProducts();
             closeModal();

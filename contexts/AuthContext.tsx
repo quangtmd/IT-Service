@@ -60,7 +60,7 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
-const CURRENT_USER_SESSION_KEY = 'currentUserSession_v1_api';
+const CURRENT_USER_SESSION_KEY = 'currentUserSession_v2_api';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try {
@@ -99,11 +99,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const initializeAuth = async () => {
         setIsLoading(true);
-        await fetchUsers();
         const sessionUser = getSessionStorageItem<User | null>(CURRENT_USER_SESSION_KEY, null);
         if (sessionUser) {
             setCurrentUser(sessionUser);
             setIsAuthenticated(true);
+            // Don't fetch all users on load unless necessary
+            if (sessionUser.role === 'admin' || sessionUser.role === 'staff') {
+                await fetchUsers();
+            }
         }
         setIsLoading(false);
     };
@@ -114,9 +117,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
         const user = await apiLoginUser(credentials);
         if (user) {
-            setCurrentUser(user);
+            setCurrentUser(user as User);
             setIsAuthenticated(true);
             sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(user));
+            if (user.role === 'admin' || user.role === 'staff') {
+                await fetchUsers(); 
+            }
         } else {
             throw new Error('Không nhận được thông tin người dùng từ server.');
         }
@@ -126,15 +132,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const register = async (details: { username: string; email: string; password?: string, role?: UserRole }): Promise<User | null> => {
-     // This would call a backend register endpoint
      console.log("Registering user (API call needed):", details);
-     // Simulate for now
-     const newUser: User = { id: `user-${Date.now()}`, role: 'customer', ...details };
-     setUsers(prev => [...prev, newUser]);
-     setCurrentUser(newUser);
-     setIsAuthenticated(true);
-     sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(newUser));
-     return newUser;
+     alert("Chức năng đăng ký đang được phát triển.");
+     return null;
   };
 
   const logout = async () => {
@@ -144,23 +144,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
   
   const addUser = async (userDto: Omit<User, 'id'>): Promise<User | null> => {
-    // API call to add user
     console.log("Adding user (API call needed):", userDto);
-    await fetchUsers(); // refetch
+    await fetchUsers();
     return null;
   };
 
   const updateUser = async (userId: string, updates: Partial<User>): Promise<boolean> => {
-    // API call to update user
     console.log("Updating user (API call needed):", userId, updates);
-    await fetchUsers(); // refetch
+    await fetchUsers();
     return true;
   };
 
   const deleteUser = async (userId: string): Promise<boolean> => {
-     // API call to delete user
     console.log("Deleting user (API call needed):", userId);
-     await fetchUsers(); // refetch
+     await fetchUsers();
      return true;
   };
   
@@ -190,44 +187,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
    const hasPermission = (requiredPermissions: Array<AdminPermission>): boolean => {
     if (!isAuthenticated || !currentUser) return false;
     
+    // Admins have all permissions implicitly
     if (currentUser.role === 'admin') return true; 
 
+    // For staff, check against the permissions array fetched during login
     if (currentUser.role === 'staff') {
-        const currentStaffRoleCleaned = currentUser.staffRole?.trim() as StaffRole;
-        
-        const allPermissions: AdminPermission[] = [
-          'viewDashboard', 'viewNotifications', 'viewContent', 'manageProducts', 'viewProducts', 
-          'manageArticles', 'viewArticles', 'manageFaqs', 'viewUsers', 'manageStaff', 'viewCustomers', 
-          'viewSales', 'manageOrders', 'viewOrders', 'manageDiscounts', 'viewAppearance', 
-          'manageTheme', 'manageMenu', 'manageSiteSettings', 'viewHrm', 'manageEmployees', 
-          'managePayroll', 'viewAccounting', 'manageInvoices', 'viewReports', 'viewAnalytics'
-        ];
-        
-        const staffPermissionsMap: Record<StaffRole, AdminPermission[]> = {
-            'Quản lý Bán hàng': ['viewDashboard', 'viewSales', 'viewOrders', 'manageOrders', 'manageDiscounts', 'viewNotifications', 'viewProducts', 'viewCustomers', 'viewContent'],
-            'Biên tập Nội dung': ['viewDashboard', 'viewContent', 'viewArticles', 'manageArticles', 'manageFaqs', 'viewNotifications', 'manageSiteSettings'],
-            'Trưởng nhóm Kỹ thuật': ['viewDashboard', 'viewContent', 'viewProducts', 'manageProducts', 'viewNotifications', 'viewOrders'], 
-            'Chuyên viên Hỗ trợ': ['viewDashboard', 'viewSales', 'viewOrders', 'viewNotifications', 'viewCustomers', 'manageFaqs'], 
-            'Nhân viên Toàn quyền': allPermissions
-        };
-        const userStaffPermissions = staffPermissionsMap[currentStaffRoleCleaned] || [];
-        return requiredPermissions.every(rp => userStaffPermissions.includes(rp));
+        // The currentUser object from the backend should now contain a 'permissions' array
+        const userPermissions = (currentUser as any).permissions || [];
+        if (requiredPermissions.length === 0) return true;
+        return requiredPermissions.every(rp => userPermissions.includes(rp));
     }
+
     return false; // Customers have no admin permissions
   };
 
+  const value: AuthContextType = {
+    isAuthenticated,
+    currentUser,
+    login,
+    logout,
+    register,
+    isLoading,
+    users,
+    addUser,
+    updateUser,
+    deleteUser,
+    adminNotifications,
+    addAdminNotification,
+    markAdminNotificationRead,
+    clearAdminNotifications,
+    hasPermission
+  };
 
-  return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, currentUser, login, logout, register, isLoading, users, addUser, updateUser, deleteUser,
-      adminNotifications, addAdminNotification, markAdminNotificationRead, clearAdminNotifications, hasPermission
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

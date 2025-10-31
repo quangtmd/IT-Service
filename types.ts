@@ -664,6 +664,10 @@ export interface SiteSettings {
   smtpSettings: SMTPSettings;
   paymentGateways: PaymentGatewaySettings;
   siteMediaLibrary: MediaItem[];
+  
+  // FIX: Add missing optional properties for FAQs and Discount Codes to support centralized site configuration.
+  faqs?: FaqItem[];
+  discountCodes?: DiscountCode[];
 }
 
 // --- NEW FINANCIAL TYPES ---

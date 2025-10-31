@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -8,11 +9,12 @@ const PORT = process.env.PORT || 10000;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// --- DATABASE CONFIGURATION ---
 const dbConfig = {
-  host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
-  user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
-  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
-  database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'iq_technology_db',
+  host: process.env.MYSQLHOST || 'srv1319.hstgr.io',
+  user: process.env.MYSQLUSER || 'u573621538_ltservice',
+  password: process.env.MYSQLPASSWORD || 'A@a0908225224',
+  database: process.env.MYSQLDATABASE || 'u573621538_Itservice',
   port: process.env.MYSQLPORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
@@ -21,309 +23,190 @@ const dbConfig = {
 };
 
 let pool;
-try {
-    pool = mysql.createPool(dbConfig);
-    console.log('Đã tạo kết nối MySQL pool thành công.');
-} catch (error) {
-    console.error('Lỗi khi tạo kết nối MySQL pool:', error);
-    process.exit(1);
-}
 
-// --- UTILITY FUNCTIONS ---
-const parseJsonFields = (item, fields) => {
-    if (!item) return item;
-    const newItem = { ...item };
-    for (const field of fields) {
-        if (newItem[field] && typeof newItem[field] === 'string') {
-            try {
-                newItem[field] = JSON.parse(newItem[field]);
-            } catch (e) {
-                console.error(`Error parsing JSON field "${field}" for item:`, item, e);
-                // Assign a default based on expected type (array for images, object for others)
-                newItem[field] = field === 'images' ? [] : {};
+// --- DATABASE SEEDING ---
+const ensureAdminUserExists = async () => {
+    const adminEmail = 'quangtmdit@gmail.com';
+    const adminPassword = 'A@a0908225224';
+    const connection = await pool.getConnection();
+    try {
+        console.log('Kiểm tra sự tồn tại của người dùng admin...');
+        const [userRows] = await connection.query('SELECT id FROM users WHERE email = ?', [adminEmail]);
+
+        if (userRows.length === 0) {
+            console.log('Người dùng admin không tồn tại. Đang tạo...');
+            
+            // Hash the password
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(adminPassword, saltRounds);
+
+            await connection.beginTransaction();
+
+            // Insert user
+            const [userResult] = await connection.query(
+                'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+                ['Quang Admin', adminEmail, hashedPassword]
+            );
+            const newUserId = userResult.insertId;
+
+            // Find Admin role ID
+            const [roleRows] = await connection.query('SELECT id FROM roles WHERE name = ?', ['Admin']);
+            if (roleRows.length > 0) {
+                const adminRoleId = roleRows[0].id;
+                // Assign role to user
+                await connection.query('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)', [newUserId, adminRoleId]);
+                console.log('Đã tạo thành công người dùng admin và gán vai trò.');
+            } else {
+                console.error('Không tìm thấy vai trò "Admin". Bỏ qua việc gán vai trò.');
             }
+            
+            await connection.commit();
+        } else {
+            console.log('Người dùng admin đã tồn tại.');
         }
+    } catch (error) {
+        await connection.rollback();
+        console.error('Lỗi khi khởi tạo người dùng admin:', error);
+    } finally {
+        connection.release();
     }
-    return newItem;
 };
 
-// --- API: HEALTH CHECK ---
-app.get('/', async (req, res) => {
+
+// --- API HELPER ---
+const handleQuery = async (res, query, params = []) => {
     try {
-        const connection = await pool.getConnection();
-        await connection.ping();
-        connection.release();
-        res.status(200).send(`
-            <div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">
-                <h1 style="color: #28a745;">✅ Backend server is running OK!</h1>
-                <p style="color: #17a2b8; font-weight: bold;">✔️ Kết nối đến cơ sở dữ liệu MySQL đã thành công.</p>
-                <p>Server đang lắng nghe trên cổng: ${PORT}</p>
-            </div>
-        `);
+        const [results] = await pool.query(query, params);
+        return res.json(results);
     } catch (error) {
-        console.error('Lỗi kiểm tra sức khỏe:', error);
-        res.status(500).send(`
-            <div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">
-                <h1 style="color: #dc3545;">❌ Backend server is running, but DB connection FAILED!</h1>
-                <pre style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word;">${error.message}</pre>
-            </div>
-        `);
+        console.error('SQL Error:', error.message);
+        return res.status(500).json({ error: 'Database query failed', details: error.message });
     }
-});
+};
 
 
-// --- API: AUTH & USERS ---
+// --- AUTH & USER API ---
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email và mật khẩu là bắt buộc.' });
+    }
     try {
-        // NOTE: In a real app, passwords should be hashed and compared with bcrypt.
-        const [userRows] = await pool.query("SELECT id, username, email, image_url as imageUrl, is_locked as isLocked FROM users WHERE email = ? AND password_hash = ?", [email, password]);
+        const [userRows] = await pool.query(
+            `SELECT u.id, u.email, u.username, u.image_url as imageUrl, u.password_hash, u.is_locked
+             FROM users u 
+             WHERE u.email = ?`,
+            [email]
+        );
+
+        if (userRows.length === 0) {
+            return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng.' });
+        }
+
+        const user = userRows[0];
         
-        if (userRows.length > 0) {
-            const user = userRows[0];
-            if (user.isLocked) {
-                return res.status(403).json({ error: 'Tài khoản đã bị khóa.' });
-            }
-
-            // Fetch user role
-            const [roleRows] = await pool.query(
-                `SELECT r.name as roleName 
-                 FROM roles r 
-                 JOIN userroles ur ON r.id = ur.role_id 
-                 WHERE ur.user_id = ?`, 
-                [user.id]
-            );
-
-            // Fetch staff-specific details if the user is a staff/admin
-            let staffDetails = {};
-            const userRole = roleRows.length > 0 ? roleRows[0].roleName : 'customer';
-
-            if (userRole === 'admin' || userRole === 'staff') {
-                 const [contractRows] = await pool.query(
-                    `SELECT job_title FROM contracts WHERE employee_id = ? AND is_active = TRUE`,
-                    [user.id]
-                 );
-                 if (contractRows.length > 0) {
-                    staffDetails = {
-                        staffRole: contractRows[0].job_title,
-                        position: contractRows[0].job_title
-                    }
-                 }
-            }
-
-            const fullUserPayload = {
-                ...user,
-                role: userRole,
-                ...staffDetails
-            };
-
-            res.json(fullUserPayload);
-        } else {
-            res.status(401).json({ error: 'Email hoặc mật khẩu không đúng.' });
-        }
-    } catch (err) {
-        console.error('Login error:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.get('/api/users', async (req, res) => {
-    try {
-        const query = `
-            SELECT 
-                u.id, u.username, u.email, u.image_url as imageUrl, u.is_locked as isLocked,
-                ep.full_name as fullName, ep.date_of_birth as dateOfBirth,
-                ep.join_date as joinDate, ep.status,
-                c.job_title as position,
-                (SELECT r.name FROM roles r JOIN userroles ur ON r.id = ur.role_id WHERE ur.user_id = u.id LIMIT 1) as role,
-                c.job_title as staffRole 
-            FROM users u
-            LEFT JOIN employeeprofiles ep ON u.id = ep.user_id
-            LEFT JOIN contracts c ON u.id = c.employee_id AND c.is_active = TRUE
-        `;
-        const [users] = await pool.query(query);
-        res.json(users);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-
-// --- API: PRODUCT CATEGORIES ---
-app.get('/api/product_categories', async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT id, name, slug, description, parent_category_id as parentCategoryId FROM productcategories ORDER BY name");
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// --- API: PRODUCTS ---
-app.get('/api/products', async (req, res) => {
-    try {
-        const { q, categoryId, brand, page = 1, limit = 12 } = req.query;
-        let whereClauses = ["p.is_published = TRUE"];
-        const params = [];
-
-        if (q) {
-            whereClauses.push("(p.name LIKE ? OR p.brand LIKE ? OR p.description LIKE ?)");
-            const searchTerm = `%${q}%`;
-            params.push(searchTerm, searchTerm, searchTerm);
-        }
-        if (categoryId) {
-            whereClauses.push("p.category_id = ?");
-            params.push(categoryId);
-        }
-        if (brand) {
-            whereClauses.push("p.brand = ?");
-            params.push(brand);
+        // Securely compare password with hashed password
+        const passwordMatches = await bcrypt.compare(password, user.password_hash);
+        if (!passwordMatches) {
+             return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng.' });
         }
         
-        const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-        
-        const countQuery = `SELECT COUNT(*) as total FROM products p ${whereString}`;
-        const [countRows] = await pool.query(countQuery, params);
-        const totalProducts = countRows[0].total;
+        if (user.is_locked) {
+            return res.status(403).json({ error: 'Tài khoản đã bị khóa.' });
+        }
 
-        const pageNum = parseInt(page, 10);
-        const limitNum = parseInt(limit, 10);
-        const offset = (pageNum - 1) * limitNum;
-        
-        const dataQuery = `
-            SELECT p.*, c.name as categoryName,
-                COALESCE((SELECT SUM(i.quantity) FROM inventory i WHERE i.product_id = p.id), 0) as stock,
-                pc.specs
-            FROM products p
-            LEFT JOIN productcategories c ON p.category_id = c.id
-            LEFT JOIN pccomponents pc ON p.id = pc.product_id
-            ${whereString} 
-            ORDER BY p.created_at DESC 
-            LIMIT ? OFFSET ?`;
+        const [roleRows] = await pool.query(
+            `SELECT r.name 
+             FROM roles r
+             JOIN user_roles ur ON r.id = ur.role_id
+             WHERE ur.user_id = ?`, [user.id]
+        );
+        const roles = roleRows.map(r => r.name);
+        const userRole = roles.includes('Admin') ? 'admin' : roles.includes('Staff') ? 'staff' : 'customer';
 
-        const [rows] = await pool.query(dataQuery, [...params, limitNum, offset]);
-        const parsedRows = rows.map(p => parseJsonFields(p, ['images', 'specs']));
+        const [permissionRows] = await pool.query(
+            `SELECT p.name
+             FROM permissions p
+             JOIN role_permissions rp ON p.id = rp.permission_id
+             JOIN roles r ON rp.role_id = r.id
+             JOIN user_roles ur ON r.id = ur.role_id
+             WHERE ur.user_id = ?`, [user.id]
+        );
+        const permissions = permissionRows.map(p => p.name);
 
-        res.json({ products: parsedRows, totalProducts });
-    } catch (err) {
-        res.status(500).json({ error: `Lỗi server khi lấy sản phẩm: ${err.message}` });
+        const responsePayload = {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            imageUrl: user.imageUrl,
+            role: userRole,
+            roles: roles,
+            permissions: permissions
+        };
+
+        res.json(responsePayload);
+    } catch (error) {
+        console.error('Login Error:', error);
+        res.status(500).json({ error: 'Lỗi server khi đăng nhập.' });
     }
 });
 
-app.get('/api/products/featured', async (req, res) => {
-    try {
-        const query = `
-            SELECT p.*, c.name as categoryName,
-                COALESCE((SELECT SUM(i.quantity) FROM inventory i WHERE i.product_id = p.id), 0) as stock,
-                pc.specs
-            FROM products p
-            LEFT JOIN productcategories c ON p.category_id = c.id
-            LEFT JOIN pccomponents pc ON p.id = pc.product_id
-            WHERE p.is_published = TRUE
-            ORDER BY p.created_at DESC 
-            LIMIT 8`;
-        const [rows] = await pool.query(query);
-        const parsedRows = rows.map(p => parseJsonFields(p, ['images', 'specs']));
-        res.json(parsedRows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+app.get('/api/users', (req, res) => handleQuery(res, 'SELECT id, username, email, image_url as imageUrl, is_locked as isLocked, created_at as createdAt, updated_at as updatedAt FROM users'));
 
 
+// --- PRODUCTS & CATEGORIES API ---
+app.get('/api/product_categories', (req, res) => handleQuery(res, 'SELECT id, name, slug, description, parent_category_id as parentCategoryId FROM product_categories'));
+app.get('/api/products', (req, res) => handleQuery(res, 'SELECT p.*, c.name as categoryName FROM products p LEFT JOIN product_categories c ON p.category_id = c.id ORDER BY p.created_at DESC'));
+app.get('/api/products/featured', (req, res) => handleQuery(res, 'SELECT p.*, c.name as categoryName FROM products p LEFT JOIN product_categories c ON p.category_id = c.id WHERE p.is_featured = 1 LIMIT 4'));
 app.get('/api/products/:id', async (req, res) => {
     try {
-        const query = `
-            SELECT p.*, c.name as categoryName,
-                COALESCE((SELECT SUM(i.quantity) FROM inventory i WHERE i.product_id = p.id), 0) as stock,
-                pc.specs
-            FROM products p 
-            LEFT JOIN productcategories c ON p.category_id = c.id
-            LEFT JOIN pccomponents pc ON p.id = pc.product_id
-            WHERE p.id = ?
-        `;
-        const [rows] = await pool.query(query, [req.params.id]);
-        if (rows.length > 0) {
-            const product = parseJsonFields(rows[0], ['images', 'specs']);
-            res.json(product);
+        const [results] = await pool.query('SELECT p.*, c.name as categoryName FROM products p LEFT JOIN product_categories c ON p.category_id = c.id WHERE p.id = ?', [req.params.id]);
+        if (results.length > 0) {
+            // Specs are stored as JSON strings, parse them for the client
+            try {
+                if(results[0].specs && typeof results[0].specs === 'string') {
+                    results[0].specs = JSON.parse(results[0].specs);
+                }
+                 if(results[0].images && typeof results[0].images === 'string') {
+                    results[0].images = JSON.parse(results[0].images);
+                }
+            } catch (e) {
+                console.error(`Could not parse JSON for product ${results[0].id}`);
+                // Leave as string if parsing fails
+            }
+            res.json(results[0]);
         } else {
-            res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
+            res.status(404).json({ error: 'Product not found' });
         }
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/products', async (req, res) => {
-    const { name, slug, sku, description, price, images, category_id, brand, is_published, specs } = req.body;
-    try {
-        // This is a simplified version. A real app would handle specs and inventory separately.
-        const query = `INSERT INTO products (name, slug, sku, description, price, images, category_id, brand, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        const [result] = await pool.query(query, [name, slug, sku, description, price, JSON.stringify(images || []), category_id, brand, is_published]);
-        res.status(201).json({ id: result.insertId, ...req.body });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/products/:id', async (req, res) => {
-    const { id } = req.params;
-    const { name, slug, sku, description, price, images, category_id, brand, is_published, specs } = req.body;
-    try {
-        // This is a simplified version. A real app would handle specs and inventory separately.
-        const query = `UPDATE products SET name=?, slug=?, sku=?, description=?, price=?, images=?, category_id=?, brand=?, is_published=? WHERE id=?`;
-        await pool.query(query, [name, slug, sku, description, price, JSON.stringify(images || []), category_id, brand, is_published, id]);
-        res.json({ id, ...req.body });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/products/:id', async (req, res) => {
-    try {
-        // In a real app with foreign keys, you might need to delete from child tables first or set ON DELETE CASCADE
-        await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
-        res.status(204).send();
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    } catch (error) {
+        console.error('SQL Error:', error.message);
+        res.status(500).json({ error: 'Database query failed', details: error.message });
     }
 });
 
 
-// --- API: Orders ---
+// --- ARTICLES & CATEGORIES API ---
+app.get('/api/article_categories', (req, res) => handleQuery(res, 'SELECT * FROM article_categories'));
+app.get('/api/articles', (req, res) => handleQuery(res, 'SELECT a.*, u.username as author, ac.name as category FROM articles a LEFT JOIN users u ON a.author_id = u.id LEFT JOIN article_categories ac ON a.category_id = ac.id ORDER BY a.created_at DESC'));
+
+// --- ORDERS API ---
 app.get('/api/orders', async (req, res) => {
     try {
-        const query = `
-            SELECT o.id, o.user_id, o.status, o.total_amount, o.customer_info, o.shipping_address, o.payment_details, o.created_at, o.updated_at,
-                   (SELECT JSON_ARRAYAGG(
-                       JSON_OBJECT(
-                           'id', oi.id, 
-                           'order_id', oi.order_id, 
-                           'product_id', oi.product_id,
-                           'quantity', oi.quantity,
-                           'price_at_purchase', oi.price_at_purchase,
-                           'product_name', oi.product_name
-                        )
-                   ) 
-                   FROM orderitems oi
-                   WHERE oi.order_id = o.id) as items
-            FROM orders o
-            ORDER BY o.created_at DESC
-        `;
-        const [orders] = await pool.query(query);
-        // Massage data for frontend compatibility
-        const massagedOrders = orders.map(o => ({
-            ...o,
-            customerInfo: o.customer_info,
-            totalAmount: o.total_amount,
-            createdAt: o.created_at,
-            updatedAt: o.updated_at,
-            paymentDetails: o.payment_details
-        }));
-        const parsedOrders = massagedOrders.map(o => parseJsonFields(o, ['items', 'customerInfo', 'shipping_address', 'paymentDetails']));
-        res.json(parsedOrders);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        const [orders] = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
+        for (let order of orders) {
+            const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
+            order.items = items;
+             try {
+                order.customer_info = JSON.parse(order.customer_info);
+                order.shipping_address = JSON.parse(order.shipping_address);
+                order.payment_details = JSON.parse(order.payment_details);
+            } catch (e) {
+                console.error(`Could not parse JSON for order ${order.id}`);
+            }
+        }
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -332,31 +215,37 @@ app.post('/api/orders', async (req, res) => {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
-        
-        const orderQuery = `INSERT INTO orders (user_id, total_amount, status, customer_info, shipping_address, payment_details) VALUES (?, ?, ?, ?, ?, ?)`;
-        const [orderResult] = await connection.query(orderQuery, [
-            userId || null, 
-            totalAmount, 
-            'pending',
-            JSON.stringify(customerInfo),
-            JSON.stringify(shippingAddress || customerInfo),
-            JSON.stringify(paymentDetails)
-        ]);
+
+        const [orderResult] = await connection.query(
+            'INSERT INTO orders (user_id, total_amount, customer_info, shipping_address, payment_details, status) VALUES (?, ?, ?, ?, ?, ?)',
+            [userId, totalAmount, JSON.stringify(customerInfo), JSON.stringify(shippingAddress), JSON.stringify(paymentDetails), 'pending']
+        );
         const orderId = orderResult.insertId;
 
         if (items && items.length > 0) {
-            const itemPromises = items.map((item) => {
-                const itemQuery = "INSERT INTO orderitems (order_id, product_id, quantity, price_at_purchase, product_name) VALUES (?, ?, ?, ?, ?)";
-                return connection.query(itemQuery, [orderId, item.productId, item.quantity, item.priceAtPurchase, item.productName]);
-            });
-            await Promise.all(itemPromises);
+            const itemValues = items.map(item => [orderId, item.productId, item.quantity, item.priceAtPurchase, item.productName]);
+            await connection.query(
+                'INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase, product_name) VALUES ?',
+                [itemValues]
+            );
         }
-        
+
         await connection.commit();
-        res.status(201).json({ id: orderId, ...req.body, order_id: orderId });
-    } catch (err) {
+        const [newOrderRow] = await connection.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+        const newOrder = newOrderRow[0];
+        // Parse JSON fields before sending back
+        try {
+            newOrder.customer_info = JSON.parse(newOrder.customer_info);
+            newOrder.shipping_address = JSON.parse(newOrder.shipping_address);
+            newOrder.payment_details = JSON.parse(newOrder.payment_details);
+        } catch(e) { /* ignore */ }
+        
+        res.status(201).json(newOrder);
+
+    } catch (error) {
         await connection.rollback();
-        res.status(500).json({ error: err.message });
+        console.error('Failed to create order:', error);
+        res.status(500).json({ error: 'Failed to create order', details: error.message });
     } finally {
         connection.release();
     }
@@ -366,124 +255,84 @@ app.put('/api/orders/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     try {
-        await pool.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
-        res.json({ message: 'Cập nhật trạng thái thành công.' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// --- API: ARTICLES (from DB) ---
-app.get('/api/articles', async (req, res) => {
-    try {
-        const [rows] = await pool.query(`
-            SELECT a.*, u.username as author, ac.name as category
-            FROM articles a
-            LEFT JOIN users u ON a.author_id = u.id
-            LEFT JOIN articlecategories ac ON a.category_id = ac.id
-            ORDER BY a.published_at DESC
-        `);
-        // Massage data for frontend compatibility
-        const massagedData = rows.map(a => ({
-            ...a,
-            imageUrl: a.image_url,
-            createdAt: a.created_at,
-            updatedAt: a.updated_at,
-        }))
-        res.json(massagedData);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// --- API: Service Tickets ---
-app.get('/api/service_tickets', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM servicetickets ORDER BY created_at DESC');
-        res.json(rows.map(row => parseJsonFields(row, ['customer_info'])));
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        await pool.query('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
 
-// --- API: Inventory ---
-app.get('/api/inventory', async (req, res) => {
+// --- SITE SETTINGS API (Key-Value Store) ---
+app.get('/api/settings', async (req, res) => {
     try {
-        const query = `
-            SELECT i.product_id, p.name as product_name, i.warehouse_id, w.name as warehouse_name, i.quantity
-            FROM inventory i
-            JOIN products p ON i.product_id = p.id
-            JOIN warehouses w ON i.warehouse_id = w.id
-            ORDER BY p.name, w.name
-        `;
-        const [rows] = await pool.query(query);
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-
-// --- API: Financials (Suppliers & Bills) ---
-app.get('/api/suppliers', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM suppliers ORDER BY name');
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.get('/api/bills', async (req, res) => {
-    try {
-        const query = `
-            SELECT b.*, s.name as supplier_name
-            FROM bills b
-            LEFT JOIN suppliers s ON b.supplier_id = s.id
-            ORDER BY b.bill_date DESC
-        `;
-        const [rows] = await pool.query(query);
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// --- API: SITE SETTINGS ---
-app.get('/api/site_settings', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM sitesettings');
+        const [rows] = await pool.query('SELECT * FROM site_settings');
         const settings = rows.reduce((acc, row) => {
-            acc[row.setting_key] = parseJsonFields(row, ['setting_value']).setting_value;
+            try {
+                if (row.setting_value && (row.setting_value.startsWith('{') || row.setting_value.startsWith('['))) {
+                    acc[row.setting_key] = JSON.parse(row.setting_value);
+                } else {
+                    acc[row.setting_key] = row.setting_value;
+                }
+            } catch (e) {
+                acc[row.setting_key] = row.setting_value;
+            }
             return acc;
         }, {});
         res.json(settings);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
-app.post('/api/site_settings', async (req, res) => {
+app.post('/api/settings', async (req, res) => {
     const settings = req.body;
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
-        const query = `INSERT INTO sitesettings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`;
-        for (const [key, value] of Object.entries(settings)) {
-            await connection.query(query, [key, JSON.stringify(value)]);
+        for (const key in settings) {
+            const value = (typeof settings[key] === 'object') ? JSON.stringify(settings[key]) : settings[key];
+            await connection.query(
+                'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
+                [key, value, value]
+            );
         }
         await connection.commit();
-        res.status(200).json({ message: 'Settings saved successfully' });
-    } catch (err) {
+        res.json({ message: 'Cài đặt đã được lưu.' });
+    } catch (error) {
         await connection.rollback();
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: error.message });
     } finally {
         connection.release();
     }
 });
 
 
-app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
-});
+// --- OTHER MODULES API ---
+app.get('/api/service_tickets', (req, res) => handleQuery(res, 'SELECT * FROM service_tickets ORDER BY created_at DESC'));
+app.get('/api/inventory', (req, res) => handleQuery(res, 'SELECT i.*, p.name as product_name, w.name as warehouse_name FROM inventory i JOIN products p ON i.product_id = p.id JOIN warehouses w ON i.warehouse_id = w.id'));
+app.get('/api/suppliers', (req, res) => handleQuery(res, 'SELECT * FROM suppliers ORDER BY name ASC'));
+app.get('/api/bills', (req, res) => handleQuery(res, 'SELECT b.*, s.name as supplier_name FROM bills b JOIN suppliers s ON b.supplier_id = s.id ORDER BY b.bill_date DESC'));
+app.get('/api/employee_profiles', (req, res) => handleQuery(res, 'SELECT * FROM employee_profiles'));
+
+
+// --- Server Start ---
+async function startServer() {
+    try {
+        pool = mysql.createPool(dbConfig);
+        await pool.query('SELECT 1');
+        console.log('Đã kết nối thành công tới MySQL.');
+
+        await ensureAdminUserExists();
+        
+        app.listen(PORT, () => {
+            console.log(`Backend server đang chạy trên cổng ${PORT}`);
+        });
+
+    } catch (error) {
+        console.error('Không thể kết nối tới MySQL:', error);
+        process.exit(1);
+    }
+}
+
+startServer();
