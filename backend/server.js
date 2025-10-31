@@ -13,7 +13,7 @@ app.use(express.json({ limit: '50mb' }));
 // --- DATABASE CONFIGURATION ---
 const dbConfig = {
   host: process.env.MYSQLHOST || '194.59.164.14',
-  user: process.env.MYSQLUSER || 'u573621538_IT', // SỬA LẠI USER CHO ĐÚNG
+  user: process.env.MYSQLUSER || 'u573621538_IT',
   password: process.env.MYSQLPASSWORD || 'Aa0908225224',
   database: (process.env.MYSQLDATABASE || 'u573621538_ltservice').toLowerCase(), // Đảm bảo DB name là chữ thường
   port: process.env.MYSQLPORT || 3306,
@@ -333,14 +333,15 @@ async function startServer() {
         
         app.listen(PORT, () => {
             console.log(`Backend server đang chạy trên cổng ${PORT}`);
+            console.log(`Your service is live 🚀`);
+            console.log(`//////////////////////////////////////////////////`);
+            console.log(`Available at your primary URL https://it-service-1.onrender.com`);
+            console.log(`//////////////////////////////////////////////////`);
         });
 
     } catch (error) {
         console.error('Không thể kết nối tới MySQL:', error);
-        // Don't exit on connection error, allow server to run for info endpoint.
-        // process.exit(1);
         
-        // Instead, just start the server to serve the info endpoint
         app.listen(PORT, () => {
             console.log(`Backend server đang chạy trên cổng ${PORT} (CHẾ ĐỘ HẠN CHẾ do lỗi CSDL).`);
         });

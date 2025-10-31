@@ -11,8 +11,7 @@ const HRMProfileView: React.FC = () => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
 
     const staffUsers = useMemo(() => 
-        // FIX: This comparison appears to be unintentional because the types 'UserRole' and '"Admin"' have no overlap.
-        users.filter(u => u.role === 'admin' || u.role === 'staff') // Correctly filter for admin and staff roles.
+        users.filter(u => u.role === 'admin' || u.role === 'staff') 
         .filter(u => 
             u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
             u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
