@@ -87,7 +87,7 @@ The application will now be accessible in your browser (usually at `http://local
 
 This project contains two parts (**frontend** and **backend**) in one repository (a "monorepo"). The best way to deploy it is by using the included `render.yaml` blueprint file.
 
-**⚠️ QUAN TRỌNG: KHÔNG sử dụng nút "New Web Service" trên Render cho dự án này.** Việc này sẽ thất bại vì nó không thể xây dựng cả frontend và backend một cách chính xác. Bạn **PHẢI** sử dụng phương pháp "Blueprint" được mô tả dưới đây để khắc phục lỗi bạn đang gặp phải.
+**⚠️ LỖI BẠN ĐANG GẶP ("Missing script: start"):** Lỗi này xảy ra vì bạn đang cố gắng triển khai toàn bộ dự án như một "Web Service" duy nhất. Render đang chạy lệnh `npm start` ở thư mục gốc, nơi không có script này. Để khắc phục, bạn **PHẢI** sử dụng phương pháp **"Blueprint"** bên dưới để Render có thể tự động tạo 2 dịch vụ riêng biệt cho frontend và backend.
 
 ### Hướng Dẫn Triển Khai Chi Tiết:
 
