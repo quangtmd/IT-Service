@@ -1,161 +1,142 @@
-import { Product, Order, Article, MediaItem, OrderStatus } from '../types';
-import { MOCK_PRODUCTS, MOCK_ORDERS, MOCK_ARTICLES } from '../data/mockData';
+import { Product, Order, Article, MediaItem, OrderStatus, ServiceTicket, Inventory, ServerInfo } from '../types';
+import { BACKEND_API_BASE_URL } from '../constants';
 
-const PRODUCTS_KEY = 'siteProducts_v1_local';
-const ORDERS_KEY = 'siteOrders_v1_local';
-const ARTICLES_KEY = 'adminArticles_v1_local';
-const MEDIA_KEY = 'siteMediaLibrary_v1_local';
-
-// --- Generic Helper ---
-const getOrInitLocalStorage = <T extends any[]>(key: string, initialData: T): T => {
-    const seededKey = `${key}_seeded_v2`; // Use a versioned, separate key to track initialization
-    try {
-        const isSeeded = localStorage.getItem(seededKey);
-        
-        // If the data has never been seeded before (or cache was cleared)
-        if (!isSeeded) {
-            // Seed the storage with the initial mock data
-            localStorage.setItem(key, JSON.stringify(initialData));
-            // Set the flag to indicate seeding has been done
-            localStorage.setItem(seededKey, 'true');
-            return initialData;
-        }
-        
-        // If it has been seeded, get whatever is currently in storage.
-        // This respects any changes made by the admin (like deleting all products).
-        const item = localStorage.getItem(key);
-        // Fallback to an empty array if the item is somehow null after being seeded.
-        return item ? JSON.parse(item) : [];
-
-    } catch (error) {
-        console.error(`Error with localStorage key "${key}":`, error);
-        // On any error, fallback to initial data as a safe measure.
-        return initialData;
+const handleResponse = async (res: Response) => {
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Lỗi mạng hoặc server không phản hồi' }));
+        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
+    return res.json();
 };
 
-const setLocalStorage = <T,>(key: string, data: T) => {
-    localStorage.setItem(key, JSON.stringify(data));
+const apiRequest = async <T,>(endpoint: string, options: RequestInit = {}): Promise<T> => {
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    return fetch(`${BACKEND_API_BASE_URL}${endpoint}`, { ...options, headers }).then(handleResponse);
 };
 
 // --- Product Service ---
-export const getProducts = async (): Promise<Product[]> => {
-    return getOrInitLocalStorage(PRODUCTS_KEY, MOCK_PRODUCTS);
-};
-
-export const getProduct = async (id: string): Promise<Product | null> => {
-    const products = await getProducts();
-    return products.find(p => p.id === id) || null;
-};
-
-export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
-    const products = await getProducts();
-    const newProduct = { ...product, id: `prod-${Date.now()}` };
-    setLocalStorage(PRODUCTS_KEY, [newProduct, ...products]);
-    return newProduct;
-};
-
-export const updateProduct = async (id: string, productUpdate: Partial<Product>): Promise<void> => {
-    let products = await getProducts();
-    products = products.map(p => p.id === id ? { ...p, ...productUpdate, id } : p);
-    setLocalStorage(PRODUCTS_KEY, products);
-};
-
-export const deleteProduct = async (id: string): Promise<void> => {
-    const products = await getProducts();
-    setLocalStorage(PRODUCTS_KEY, products.filter(p => p.id !== id));
+export const getProducts = async (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => {
+    // Ensure queryParams starts with '?' if it exists
+    const queryString = queryParams && !queryParams.startsWith('?') ? `?${queryParams}` : queryParams;
+    return apiRequest(`/api/products${queryString}`);
 };
 
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    const allProducts = await getProducts();
-    // 1. Chỉ làm việc với các sản phẩm được phép hiển thị.
-    const visibleProducts = allProducts.filter(p => p.isVisible !== false);
-
-    // 2. Lấy sản phẩm bán chạy một cách an toàn.
-    // Đảm bảo thuộc tính 'tags' tồn tại và là một mảng trước khi dùng 'includes'.
-    const bestselling = visibleProducts.filter(p => Array.isArray(p.tags) && p.tags.includes('Bán chạy'));
-    
-    // 3. Tìm các sản phẩm đang giảm giá.
-    const onSale = visibleProducts.filter(p => p.originalPrice && p.originalPrice > p.price);
-    
-    // 4. Kết hợp và lấy các sản phẩm duy nhất, ưu tiên các mặt hàng bán chạy nhất.
-    const combined = [...bestselling, ...onSale];
-    const unique = Array.from(new Map(combined.map(p => [p.id, p])).values());
-    
-    // 5. Nếu có bất kỳ sản phẩm nổi bật nào, trả về tối đa 4 sản phẩm.
-    if (unique.length > 0) {
-        return unique.slice(0, 4);
-    }
-    
-    // 6. Nếu không tìm thấy sản phẩm nổi bật cụ thể, trả về 4 sản phẩm hiển thị đầu tiên làm phương án dự phòng.
-    return visibleProducts.slice(0, 4);
+    return apiRequest('/api/products/featured');
 };
 
+export const getProduct = async (id: string): Promise<Product | null> => {
+    try {
+        return await apiRequest(`/api/products/${id}`);
+    } catch (e) {
+        if (e instanceof Error && e.message.includes('404')) return null;
+        throw e;
+    }
+};
+
+export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
+    const newProduct = { ...product, id: `prod-${Date.now()}`};
+    return apiRequest('/api/products', { method: 'POST', body: JSON.stringify(newProduct) });
+};
+
+export const updateProduct = async (id: string, productUpdate: Partial<Product>): Promise<void> => {
+    await apiRequest(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(productUpdate) });
+};
+
+export const deleteProduct = async (id: string): Promise<void> => {
+    await apiRequest(`/api/products/${id}`, { method: 'DELETE' });
+};
 
 // --- Order Service ---
 export const getOrders = async (): Promise<Order[]> => {
-    const orders = getOrInitLocalStorage(ORDERS_KEY, MOCK_ORDERS);
-    return orders.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+    return apiRequest('/api/orders');
 };
 
 export const addOrder = async (order: Order): Promise<Order> => {
-    const orders = await getOrders();
-    setLocalStorage(ORDERS_KEY, [order, ...orders]);
-    return order;
+    return apiRequest('/api/orders', { method: 'POST', body: JSON.stringify(order) });
 };
 
 export const updateOrderStatus = async (id: string, status: OrderStatus): Promise<void> => {
-    let orders = await getOrders();
-    orders = orders.map(o => o.id === id ? { ...o, status } : o);
-    setLocalStorage(ORDERS_KEY, orders);
+    await apiRequest(`/api/orders/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
 };
 
 // --- Article Service ---
 export const getArticles = async (): Promise<Article[]> => {
-    const articles = getOrInitLocalStorage(ARTICLES_KEY, MOCK_ARTICLES);
-    return articles.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return apiRequest('/api/articles');
 };
 
 export const getArticle = async (id: string): Promise<Article | null> => {
-    const articles = await getArticles();
-    // Also check AI articles from a different storage
+    // Also check AI articles from local storage as they are not in DB
     const aiArticlesRaw = localStorage.getItem('aiGeneratedArticles_v1');
-    const aiArticles = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
-    return [...articles, ...aiArticles].find(a => a.id === id) || null;
+    const aiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
+    const aiArticle = aiArticles.find(a => a.id === id);
+    if (aiArticle) return aiArticle;
+
+    try {
+        return await apiRequest(`/api/articles/${id}`);
+    } catch (e) {
+        if (e instanceof Error && e.message.includes('404')) return null;
+        throw e;
+    }
 };
 
 export const addArticle = async (article: Omit<Article, 'id'>): Promise<Article> => {
-    const articles = await getArticles();
     const newArticle = { ...article, id: `art-${Date.now()}`, date: new Date().toISOString() };
-    setLocalStorage(ARTICLES_KEY, [newArticle, ...articles]);
-    return newArticle;
+    return apiRequest('/api/articles', { method: 'POST', body: JSON.stringify(newArticle) });
 };
 
 export const updateArticle = async (id: string, articleUpdate: Partial<Article>): Promise<void> => {
-    let articles = await getArticles();
-    articles = articles.map(a => a.id === id ? { ...a, ...articleUpdate, id } : a);
-    setLocalStorage(ARTICLES_KEY, articles);
+    await apiRequest(`/api/articles/${id}`, { method: 'PUT', body: JSON.stringify(articleUpdate) });
 };
 
 export const deleteArticle = async (id: string): Promise<void> => {
-    const articles = await getArticles();
-    setLocalStorage(ARTICLES_KEY, articles.filter(a => a.id !== id));
+    await apiRequest(`/api/articles/${id}`, { method: 'DELETE' });
 };
 
 // --- Media Library Service ---
 export const getMediaItems = async (): Promise<MediaItem[]> => {
-    const items = getOrInitLocalStorage(MEDIA_KEY, []);
-    return items.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+    return apiRequest('/api/media-library');
 };
 
 export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaItem> => {
-    const items = await getMediaItems();
     const newItem = { ...item, id: `media-${Date.now()}` };
-    setLocalStorage(MEDIA_KEY, [newItem, ...items]);
-    return newItem;
+    return apiRequest('/api/media-library', { method: 'POST', body: JSON.stringify(newItem) });
 };
 
 export const deleteMediaItem = async (id: string): Promise<void> => {
-    const items = await getMediaItems();
-    setLocalStorage(MEDIA_KEY, items.filter(i => i.id !== id));
+    await apiRequest(`/api/media-library/${id}`, { method: 'DELETE' });
+};
+// Fix: Add missing functions to satisfy imports in admin components.
+// --- Service Ticket Service ---
+export const getServiceTickets = async (): Promise<ServiceTicket[]> => {
+    // This endpoint doesn't exist in the provided backend/server.js
+    // Returning an empty array to prevent crashes.
+    console.warn('getServiceTickets: Backend endpoint not implemented. Returning empty array.');
+    return Promise.resolve([]);
+    // return apiRequest('/api/service-tickets');
+};
+
+// --- Inventory Service ---
+export const getInventory = async (): Promise<Inventory[]> => {
+    // This endpoint doesn't exist in the provided backend/server.js
+    // Returning an empty array to prevent crashes.
+    console.warn('getInventory: Backend endpoint not implemented. Returning empty array.');
+    return Promise.resolve([]);
+    // return apiRequest('/api/inventory');
+};
+
+// --- Server Info Service ---
+export const getServerInfo = async (): Promise<ServerInfo> => {
+    // This endpoint doesn't exist in the provided backend/server.js
+    // Returning a mock response to prevent crashes.
+    console.warn('getServerInfo: Backend endpoint not implemented. Returning mock data.');
+    // In a real scenario, this might hit an external IP service or a dedicated backend endpoint.
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        if (!response.ok) return { outboundIp: 'N/A' };
+        const data = await response.json();
+        return { outboundIp: data.ip };
+    } catch (e) {
+        return { outboundIp: 'N/A' };
+    }
 };

@@ -10,23 +10,6 @@ import { getProducts } from '../services/localDataService';
 
 const PRODUCTS_PER_PAGE = 12;
 
-// Helper to get category name from slug
-const getCategoryNameFromSlug = (slug: string, type: 'main' | 'sub'): string | null => {
-    if (type === 'main') {
-        const mainCat = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
-        return mainCat ? mainCat.name : null;
-    }
-    if (type === 'sub') {
-        for (const mainCat of Constants.PRODUCT_CATEGORIES_HIERARCHY) {
-            const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
-            if (subCat) return subCat.name;
-        }
-        return null;
-    }
-    return null;
-};
-
-
 const ProductCategoryNav: React.FC<{
   categories: MainCategoryInfo[];
   activeSlug: string | null;
@@ -58,7 +41,6 @@ const ShopPage: React.FC = () => {
   const navigate = useNavigate();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,60 +59,23 @@ const ShopPage: React.FC = () => {
   const currentPage = parseInt(queryParams.get('page') || '1', 10);
 
    useEffect(() => {
-    const loadAndFilterProducts = async () => {
+    const loadProducts = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const productsFromDb = await getProducts();
-        setAllProducts(productsFromDb);
-
-        // Apply filters from queryParams
-        const params = new URLSearchParams(location.search);
-        const q = params.get('q')?.toLowerCase() || '';
-        const mainCategorySlug = params.get('mainCategory');
-        const subCategorySlug = params.get('subCategory');
-        const brand = params.get('brand');
-        const status = params.get('status');
-        const tags = params.get('tags');
-
-        let filtered = productsFromDb.filter(p => p.isVisible !== false);
-
-        if (q) {
-          filtered = filtered.filter(p => 
-            p.name.toLowerCase().includes(q) ||
-            (p.brand && p.brand.toLowerCase().includes(q)) ||
-            p.description.toLowerCase().includes(q) ||
-            (p.tags && p.tags.some(t => t.toLowerCase().includes(q)))
-          );
+        // Pass the entire search string from the URL to the service
+        const searchParams = new URLSearchParams(location.search);
+        if (!searchParams.has('limit')) {
+            searchParams.set('limit', String(PRODUCTS_PER_PAGE));
         }
-        if (mainCategorySlug) {
-            const mainCategoryName = getCategoryNameFromSlug(mainCategorySlug, 'main');
-            if(mainCategoryName) filtered = filtered.filter(p => p.mainCategory === mainCategoryName);
-        }
-        if (subCategorySlug) {
-            const subCategoryName = getCategoryNameFromSlug(subCategorySlug, 'sub');
-            if(subCategoryName) filtered = filtered.filter(p => p.subCategory === subCategoryName);
-        }
-        if (brand) {
-            filtered = filtered.filter(p => p.brand === brand);
-        }
-        if (status) {
-            filtered = filtered.filter(p => p.status === status);
-        }
-        if (tags) {
-            filtered = filtered.filter(p => p.tags && p.tags.includes(tags));
-        }
-
-        setTotalProducts(filtered.length);
-
-        // Apply pagination
-        const page = parseInt(params.get('page') || '1', 10);
-        const startIndex = (page - 1) * PRODUCTS_PER_PAGE;
-        setDisplayedProducts(filtered.slice(startIndex, startIndex + PRODUCTS_PER_PAGE));
+        
+        const { products, totalProducts } = await getProducts(searchParams.toString());
+        setDisplayedProducts(products);
+        setTotalProducts(totalProducts);
         
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
-        console.error("Lỗi khi tải sản phẩm từ Local Storage:", err);
+        console.error("Lỗi khi tải sản phẩm từ API:", err);
         setDisplayedProducts([]);
         setTotalProducts(0);
       } finally {
@@ -138,7 +83,7 @@ const ShopPage: React.FC = () => {
       }
     };
     
-    loadAndFilterProducts();
+    loadProducts();
   }, [location.search]);
 
 

@@ -21,7 +21,8 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({ current
 
             if (idsToFetch.length > 0) {
                 try {
-                    const allProducts = await getProducts();
+                    // Fix: Destructure 'products' array from the response object. Fetch a large number to increase chances of finding products.
+                    const { products: allProducts } = await getProducts('?limit=1000');
                     const products = idsToFetch
                         // FIX: Compare product ID (number) with stored ID (string) correctly.
                         .map(id => allProducts.find(p => String(p.id) === id))
@@ -52,8 +53,8 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({ current
                 {viewedProducts.map(product => (
                     <Link key={product.id} to={`/product/${product.id}`} className="flex items-start gap-3 group">
                         <img 
-                            // FIX: Use 'images' property which exists on the Product type, instead of 'imageUrls'.
-                            src={product.images?.[0] || ''}
+                            // FIX: Use 'imageUrls' property which exists on the Product type, instead of 'images'.
+                            src={product.imageUrls?.[0] || ''}
                             alt={product.name}
                             className="w-16 h-16 object-contain rounded-md border border-borderDefault flex-shrink-0"
                         />

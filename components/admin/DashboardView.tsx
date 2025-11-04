@@ -2,30 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getOrders, getProducts, getServerInfo } from '../../services/localDataService';
 import Card from '../ui/Card';
-import { Order, OrderStatus, OrderStatusAdmin, ServerInfo } from '../../types';
+// Fix: Remove non-existent OrderStatusAdmin import. ServerInfo is now defined.
+import { Order, OrderStatus, ServerInfo } from '../../types';
 import Button from '../ui/Button';
 
 interface DashboardViewProps {
   setActiveView: (view: string) => void;
 }
 
+// Fix: Update status cases to match the Vietnamese values in the OrderStatus type.
 const getStatusColor = (status: OrderStatus) => {
     switch (status) {
-        case 'pending': return 'bg-yellow-100 text-yellow-800';
-        case 'processing': return 'bg-blue-100 text-blue-800';
-        case 'shipped': return 'bg-indigo-100 text-indigo-800';
-        case 'delivered': return 'bg-green-100 text-green-800';
-        case 'cancelled': return 'bg-red-100 text-red-800';
+        case 'Chờ xử lý': return 'bg-yellow-100 text-yellow-800';
+        case 'Đang chuẩn bị': return 'bg-blue-100 text-blue-800';
+        case 'Đang giao': return 'bg-indigo-100 text-indigo-800';
+        case 'Hoàn thành': return 'bg-green-100 text-green-800';
+        case 'Đã hủy': return 'bg-red-100 text-red-800';
         default: return 'bg-gray-100 text-gray-800';
     }
-};
-
-const STATUS_MAP: Record<OrderStatus, OrderStatusAdmin> = {
-    pending: 'Chờ xử lý',
-    processing: 'Đang chuẩn bị',
-    shipped: 'Đang giao',
-    delivered: 'Hoàn thành',
-    cancelled: 'Đã hủy',
 };
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: string; color: string; onClick?: () => void }> = ({ title, value, icon, color, onClick }) => (
@@ -107,9 +101,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
         const fetchDashboardData = async () => {
             try {
                 const orders = await getOrders();
-                const products = await getProducts();
+                // Fix: Correctly get totalProducts from the response object.
+                const { totalProducts } = await getProducts();
                 setOrderCount(orders.length);
-                setProductCount(products.length);
+                setProductCount(totalProducts);
                 setRecentOrders(orders.slice(0, 5));
             } catch (error) {
                 console.error("Failed to fetch dashboard data:", error);
@@ -232,7 +227,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                                     <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{String(order.id).slice(-6)}</span></td>
                                     <td>{order.customerInfo.fullName}</td>
                                     <td className="font-semibold">{order.totalAmount.toLocaleString('vi-VN')}₫</td>
-                                    <td><span className={`status-badge ${getStatusColor(order.status)}`}>{STATUS_MAP[order.status] || order.status}</span></td>
+                                    {/* Fix: Display order status directly as it's already in Vietnamese. */}
+                                    <td><span className={`status-badge ${getStatusColor(order.status)}`}>{order.status}</span></td>
                                 </tr>
                             )) : (
                                 <tr>

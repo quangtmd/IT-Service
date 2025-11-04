@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+// Fix: Import the newly added ServiceTicket type.
 import { ServiceTicket } from '../../types';
 import { getServiceTickets } from '../../services/localDataService';
 import Button from '../ui/Button';
@@ -60,7 +61,7 @@ const ServiceTicketView: React.FC = () => {
                                 <tr><td colSpan={6} className="text-center py-4">Đang tải...</td></tr>
                             ) : error ? (
                                 <tr><td colSpan={6} className="text-center py-4 text-red-500">{error}</td></tr>
-                            ) : tickets.map(ticket => (
+                            ) : tickets.length > 0 ? ( tickets.map(ticket => (
                                 <tr key={ticket.id}>
                                     <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">{ticket.ticket_code}</span></td>
                                     <td>{ticket.customer_info?.fullName || 'Khách lẻ'}</td>
@@ -71,7 +72,10 @@ const ServiceTicketView: React.FC = () => {
                                         <Button onClick={() => setSelectedTicket(ticket)} size="sm" variant="outline">Xem</Button>
                                     </td>
                                 </tr>
-                            ))}
+                            ))
+                            ) : (
+                                <tr><td colSpan={6} className="text-center py-4 text-textMuted">Không có phiếu dịch vụ nào.</td></tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

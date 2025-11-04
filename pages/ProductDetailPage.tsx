@@ -37,15 +37,16 @@ const ProductDetailPage: React.FC = () => {
           setProduct(foundProduct);
           setMainImage(foundProduct.imageUrls?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
           
-          const allProducts = await getProducts();
-          const related = allProducts.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
+          const query = `?subCategory=${foundProduct.subCategory}&limit=4`;
+          const { products: allProducts } = await getProducts(query);
+          const related = allProducts.filter(p => p.id !== foundProduct.id);
           setRelatedProducts(related);
 
         } else {
           setError('Không tìm thấy sản phẩm.');
         }
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu sản phẩm từ Local Storage:", err);
+        console.error("Lỗi khi tải dữ liệu sản phẩm từ API:", err);
         setError("Đã xảy ra lỗi khi tải sản phẩm.");
       } finally {
         setIsLoading(false);

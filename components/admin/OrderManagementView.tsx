@@ -51,7 +51,7 @@ const OrderManagementView: React.FC = () => {
     const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
         try {
             await updateOrderStatus(orderId, newStatus);
-            loadOrders(); // Refresh data from Local Storage
+            loadOrders(); // Refresh data from API
             setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
         } catch (error) {
             alert(error instanceof Error ? error.message : "Đã xảy ra lỗi khi cập nhật trạng thái.");

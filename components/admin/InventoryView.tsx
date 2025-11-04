@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+// Fix: Import the newly added Inventory type.
 import { Inventory } from '../../types';
 import { getInventory } from '../../services/localDataService';
 import Button from '../ui/Button';
@@ -61,7 +62,7 @@ const InventoryView: React.FC = () => {
                                 <tr><td colSpan={4} className="text-center py-4">Đang tải...</td></tr>
                             ) : error ? (
                                 <tr><td colSpan={4} className="text-center py-4 text-red-500">{error}</td></tr>
-                            ) : filteredInventory.map(item => (
+                            ) : filteredInventory.length > 0 ? ( filteredInventory.map(item => (
                                 <tr key={`${item.product_id}-${item.warehouse_id}`}>
                                     <td className="font-semibold">{item.product_name}</td>
                                     <td>{item.warehouse_name}</td>
@@ -70,7 +71,11 @@ const InventoryView: React.FC = () => {
                                         <Button size="sm" variant="outline">Điều chỉnh</Button>
                                     </td>
                                 </tr>
-                            ))}
+                            ))
+                            ) : (
+                                <tr><td colSpan={4} className="text-center py-4 text-textMuted">Không có dữ liệu tồn kho.</td></tr>
+                            )
+                            }
                         </tbody>
                     </table>
                 </div>

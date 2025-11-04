@@ -64,7 +64,9 @@ const AdminPage: React.FC = () => {
 
     const loadDashboardData = useCallback(async () => {
         try {
-            setDashboardProducts(await getProducts());
+            // Fix: Destructure 'products' from the response of getProducts() before setting state.
+            const { products } = await getProducts();
+            setDashboardProducts(products);
             setDashboardOrders(await getOrders());
         } catch (error) {
             console.error("Failed to load dashboard data from Local Storage:", error);

@@ -20,7 +20,8 @@ const ProductManagementView: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const products = await getProducts();
+            // Fetch all products for admin view by setting a high limit
+            const { products } = await getProducts('?limit=10000');
             setAllProducts(products);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');

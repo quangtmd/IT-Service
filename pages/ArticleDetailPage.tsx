@@ -23,8 +23,13 @@ const ArticleDetailPage: React.FC = () => {
           setArticle(foundArticle);
 
           if(foundArticle) {
-              const allArticles = await getArticles();
-              const filteredRelated = allArticles.filter(
+              const allArticles = await getArticles(); // Fetch from backend
+              // Also get AI articles from local storage
+              const aiArticlesRaw = localStorage.getItem('aiGeneratedArticles_v1');
+              const aiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
+              const combinedArticles = [...allArticles, ...aiArticles];
+
+              const filteredRelated = combinedArticles.filter(
                   a => a.id !== foundArticle.id && a.category === foundArticle.category
               ).slice(0, 3);
               setRelatedArticles(filteredRelated);

@@ -22,7 +22,7 @@ const HotProducts: React.FC = () => {
         setHotProducts(featured);
       } catch (err) {
         setError("Không thể tải sản phẩm nổi bật.");
-        console.error("Lỗi khi tải sản phẩm nổi bật từ Local Storage:", err);
+        console.error("Lỗi khi tải sản phẩm nổi bật từ API:", err);
       } finally {
         setIsLoading(false);
       }

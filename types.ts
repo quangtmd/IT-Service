@@ -618,3 +618,28 @@ export interface PayrollRecord {
   notes: string;
   status: 'Chưa thanh toán' | 'Đã thanh toán';
 }
+// Fix: Add missing ServiceTicket, Inventory, and ServerInfo types.
+export interface ServiceTicket {
+  id: string;
+  ticket_code: string;
+  customer_info: {
+    fullName: string;
+    phone: string;
+  } | null;
+  device_name: string;
+  reported_issue: string;
+  created_at: string; // ISO string date
+  status: 'open' | 'in_progress' | 'awaiting_parts' | 'resolved' | 'closed';
+}
+
+export interface Inventory {
+  product_id: string;
+  warehouse_id: string;
+  product_name: string;
+  warehouse_name: string;
+  quantity: number;
+}
+
+export interface ServerInfo {
+  outboundIp: string;
+}

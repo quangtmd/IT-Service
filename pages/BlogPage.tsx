@@ -22,59 +22,65 @@ const BlogPage: React.FC = () => {
     const loadAndFetchArticles = async () => {
       setIsLoading(true);
       
-      // Load manual articles from Local Storage
-      const manualArticles = await getArticles();
+      try {
+        // Load manual articles from the backend API
+        const manualArticles = await getArticles();
 
-      // Load cached AI articles
-      const aiArticlesRaw = localStorage.getItem(AI_ARTICLES_KEY);
-      const cachedAiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
+        // Load cached AI articles from local storage
+        const aiArticlesRaw = localStorage.getItem(AI_ARTICLES_KEY);
+        const cachedAiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
 
-      // Load last fetch time
-      const lastFetchedTimestamp = localStorage.getItem(AI_LAST_FETCHED_KEY);
-      const lastFetchedTime = lastFetchedTimestamp ? parseInt(lastFetchedTimestamp, 10) : null;
-      setLastFetched(lastFetchedTime);
-      
-      setAllArticles([...manualArticles, ...cachedAiArticles]);
-      setIsLoading(false);
+        // Load last fetch time
+        const lastFetchedTimestamp = localStorage.getItem(AI_LAST_FETCHED_KEY);
+        const lastFetchedTime = lastFetchedTimestamp ? parseInt(lastFetchedTimestamp, 10) : null;
+        setLastFetched(lastFetchedTime);
+        
+        setAllArticles([...manualArticles, ...cachedAiArticles]);
+        
+        const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
+        const apiKey = process.env.API_KEY;
 
-      const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
-      const apiKey = process.env.API_KEY;
+        if (apiKey && apiKey !== 'undefined' && isCacheStale) {
+          setIsLoadingAI(true);
+          setAiError(null);
+          try {
+            const newAiArticlesData = await geminiService.fetchLatestTechNews();
+            const newAiArticles: Article[] = newAiArticlesData.map((art, index) => ({
+              id: `ai-${Date.now()}-${index}`,
+              title: art.title || "Không có tiêu đề",
+              summary: art.summary || "Không có tóm tắt",
+              content: art.content || "Nội dung đang được cập nhật.",
+              category: art.category || "Tin tức công nghệ",
+              imageSearchQuery: art.imageSearchQuery || "technology",
+              imageUrl: '', // Will be generated from query
+              author: "AI News Bot",
+              date: new Date().toISOString(),
+              isAIGenerated: true,
+            }));
+            
+            localStorage.setItem(AI_ARTICLES_KEY, JSON.stringify(newAiArticles));
+            const now = Date.now();
+            localStorage.setItem(AI_LAST_FETCHED_KEY, now.toString());
+            setLastFetched(now);
+            setAllArticles([...manualArticles, ...newAiArticles]);
 
-      if (apiKey && apiKey !== 'undefined' && isCacheStale) {
-        setIsLoadingAI(true);
-        setAiError(null);
-        try {
-          const newAiArticlesData = await geminiService.fetchLatestTechNews();
-          const newAiArticles: Article[] = newAiArticlesData.map((art, index) => ({
-            id: `ai-${Date.now()}-${index}`,
-            title: art.title || "Không có tiêu đề",
-            summary: art.summary || "Không có tóm tắt",
-            content: art.content || "Nội dung đang được cập nhật.",
-            category: art.category || "Tin tức công nghệ",
-            imageSearchQuery: art.imageSearchQuery || "technology",
-            imageUrl: '', // Will be generated from query
-            author: "AI News Bot",
-            date: new Date().toISOString(),
-            isAIGenerated: true,
-          }));
-          
-          localStorage.setItem(AI_ARTICLES_KEY, JSON.stringify(newAiArticles));
-          const now = Date.now();
-          localStorage.setItem(AI_LAST_FETCHED_KEY, now.toString());
-          setLastFetched(now);
-          setAllArticles([...manualArticles, ...newAiArticles]);
-
-        } catch (error) {
-          console.error("Failed to fetch AI articles:", error);
-          const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
-          if (errorMessage.includes("API Key chưa được cấu hình")) {
-            setAiError(Constants.API_KEY_ERROR_MESSAGE);
-          } else {
-            setAiError(errorMessage);
+          } catch (error) {
+            console.error("Failed to fetch AI articles:", error);
+            const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
+            if (errorMessage.includes("API Key")) {
+              setAiError(Constants.API_KEY_ERROR_MESSAGE);
+            } else {
+              setAiError(errorMessage);
+            }
+          } finally {
+            setIsLoadingAI(false);
           }
-        } finally {
-          setIsLoadingAI(false);
         }
+      } catch (error) {
+          console.error("Failed to load articles from API:", error);
+          setAiError("Không thể tải danh sách bài viết từ server.");
+      } finally {
+        setIsLoading(false);
       }
     };
     
