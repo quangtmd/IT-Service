@@ -14,8 +14,7 @@ const PCBuildSuggestionsPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // FIX: Use process.env.API_KEY for environment variables per guidelines.
-    const isApiKeyConfigured = !!process.env.API_KEY;
+    const isApiKeyConfigured = process.env.API_KEY && process.env.API_KEY !== 'undefined';
 
     const budgetOptions = [
         { label: 'Dưới 15 triệu', value: '15000000' },

@@ -1,7 +1,6 @@
+
 import React, { useState, useCallback } from 'react';
-// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
-// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
@@ -47,8 +46,7 @@ const PCBuilderPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
   const { addAdminNotification } = useAuth();
-  // FIX: Use useNavigate hook for react-router-dom v6
-  const navigate = ReactRouterDOM.useNavigate();
+  const navigate = useNavigate(); // Changed from useHistory
 
   const handleComponentChange = useCallback((
     type: BuilderSelectorKey,
@@ -58,8 +56,9 @@ const PCBuilderPage: React.FC = () => {
   }, []);
 
   const getAIRecommendation = async () => {
-    // FIX: Use process.env.API_KEY as per the guidelines.
-    if (!process.env.API_KEY) {
+    // This check is now secondary; the primary error handling is in the service.
+    // However, it provides a fast failure path without a service call.
+    if (!process.env.API_KEY || process.env.API_KEY === 'undefined') {
       setError(Constants.API_KEY_ERROR_MESSAGE);
       return;
     }
@@ -85,7 +84,7 @@ const PCBuilderPage: React.FC = () => {
       console.error("Lỗi khi nhận đề xuất từ AI:", err);
       const errorMessage = err instanceof Error ? err.message : "Lỗi không xác định từ AI.";
       // Display the specific, user-friendly API key error if it occurs.
-      if (errorMessage.includes("API Key")) {
+      if (errorMessage.includes("API Key chưa được cấu hình")) {
           setError(Constants.API_KEY_ERROR_MESSAGE);
       } else {
           setError(errorMessage);
@@ -143,22 +142,25 @@ const PCBuilderPage: React.FC = () => {
     }
     descriptionString += `Tổng cộng: ${totalCost.toLocaleString('vi-VN')}₫`;
 
-    // FIX: Corrected object to match CustomPCBuildCartItem type. Removed invalid properties and used 'images' array.
     const customBuildItem: CustomPCBuildCartItem = {
         id: `custom-pc-${Date.now()}`,
         name: `PC Xây Dựng Theo Yêu Cầu - ${useCase}`,
         price: totalCost,
         quantity: 1,
-        images: [Constants.GENERIC_PC_BUILD_IMAGE_URL],
+        imageUrl: Constants.GENERIC_PC_BUILD_IMAGE_URL,
+        imageUrls: [Constants.GENERIC_PC_BUILD_IMAGE_URL],
         isCustomBuild: true,
         buildComponents: builtComponents,
         description: descriptionString,
+        mainCategory: "PC Xây Dựng",
+        subCategory: "Theo Yêu Cầu",
+        category: "PC Xây Dựng",
+        tags: ['PC Xây Dựng', 'Theo Yêu Cầu', useCase],
     };
 
     addToCart(customBuildItem as any);
     addAdminNotification(`Yêu cầu xây dựng PC mới (Ngân sách: ${parseInt(budget).toLocaleString('vi-VN')}₫, Nhu cầu: ${useCase}) đã được thêm vào giỏ hàng.`, 'info');
-    // FIX: Use navigate for navigation in v6
-    navigate('/cart');
+    navigate('/cart'); // Changed from history.push
   };
 
   const renderRecommendation = (componentAiKey: keyof Omit<AIBuildResponse, 'error'>) => {
@@ -176,9 +178,6 @@ const PCBuilderPage: React.FC = () => {
     }
     return null;
   };
-
-  // FIX: Use process.env.API_KEY as per the guidelines.
-  const isApiKeyConfigured = !!process.env.API_KEY;
 
   try {
     return (
@@ -216,12 +215,12 @@ const PCBuilderPage: React.FC = () => {
                 step="1000000"
               />
             </div>
-            <Button onClick={getAIRecommendation} isLoading={isLoading} className="w-full" size="lg" disabled={!isApiKeyConfigured}>
+            <Button onClick={getAIRecommendation} isLoading={isLoading} className="w-full" size="lg" disabled={!process.env.API_KEY}>
               <i className="fas fa-robot mr-2"></i> AI Đề Xuất Cấu Hình
             </Button>
             {error && <p className="text-sm text-danger-text mt-2">{error}</p>}
             {aiRecommendation?.error && !error && <p className="text-sm text-warning-text mt-2">{aiRecommendation.error}</p>}
-            {!isApiKeyConfigured && <p className="text-xs text-warning-text mt-1">{Constants.API_KEY_ERROR_MESSAGE}</p>}
+            {(!process.env.API_KEY || process.env.API_KEY === 'undefined') && <p className="text-xs text-warning-text mt-1">API_KEY chưa được cấu hình. Tính năng AI sẽ không hoạt động.</p>}
           </Card>
 
           <div className="lg:col-span-2 space-y-6">

@@ -1,8 +1,5 @@
-
-
-
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'; // Updated imports for v6/v7
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
@@ -32,14 +29,13 @@ import CheckoutPage from './pages/CheckoutPage';
 const App: React.FC = () => {
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <ScrollToTop />
       <div className="flex flex-col min-h-screen bg-bgCanvas">
         <Header />
         <main className="flex-grow pt-[168px]">
-          <Routes>
+          <Routes> {/* Replaced Switch with Routes */}
             <Route path="/" element={<Navigate to="/home" replace />} />
-            
             <Route path="/home" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/product/:productId" element={<ProductDetailPage />} />
@@ -52,16 +48,16 @@ const App: React.FC = () => {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/pc-builder" element={<PCBuilderPage />} />
-            <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} />
+            <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} /> {/* Add new route */}
 
             {/* Auth Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
 
-            {/* Protected Admin Route */}
+            {/* Protected Admin Route - Updated for v6/v7 */}
             <Route
-              path="/admin/*"
+              path="/admin/*" // Add /* to allow nested routes within AdminPage if any
               element={
                 <ProtectedRoute>
                   <AdminPage />
@@ -75,7 +71,7 @@ const App: React.FC = () => {
         <Footer />
         <FloatingActionButtons />
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 

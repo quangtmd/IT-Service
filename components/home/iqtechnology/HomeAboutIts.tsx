@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageAboutFeature } from '../../../types';
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const HomeAboutIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
+  const [sectionRef, isSectionVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
+
   const aboutConfig = settings.homepageAbout;
 
   const loadSettings = useCallback(() => {
@@ -31,12 +32,12 @@ const HomeAboutIts: React.FC = () => {
   if (!aboutConfig.enabled) return null;
 
   return (
-    <section ref={ref} className={`bg-bgBase animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
+    <section ref={sectionRef} className={`home-section bg-bgBase animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           {/* Image Column */}
           <div className="lg:w-1/2">
-            <div className="relative">
+            <div className={`relative animate-on-scroll ${isSectionVisible ? 'slide-in-left is-visible' : 'slide-in-left'}`} style={{animationDelay:'0.1s'}}>
               <img
                 src={aboutConfig.imageUrl || "https://picsum.photos/seed/professionalOfficeV2/600/520"}
                 alt={aboutConfig.imageAltText || "Our Professional Team"}
@@ -53,7 +54,7 @@ const HomeAboutIts: React.FC = () => {
           </div>
           {/* Text Content Column */}
           <div className="lg:w-1/2">
-            <div>
+            <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay:'0.2s'}}>
                 {aboutConfig.preTitle && (
                   <span className="home-section-pretitle">
                     <img src={settings.siteLogoUrl || ''} onError={(e) => (e.currentTarget.style.display = 'none')} alt={`${settings.companyName} logo`} className="inline h-6 mr-2 object-contain" />
@@ -69,8 +70,8 @@ const HomeAboutIts: React.FC = () => {
 
                 {aboutConfig.features && aboutConfig.features.length > 0 && (
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
-                        {aboutConfig.features.map((item: HomepageAboutFeature) => (
-                        <li key={item.id} className="flex items-start">
+                        {aboutConfig.features.map((item: HomepageAboutFeature, index) => (
+                        <li key={item.id || index} className={`flex items-start animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay: `${0.3 + index * 0.1}s`}}>
                             <div className="flex-shrink-0 modern-card-icon-wrapper !w-12 !h-12 !p-3 !mr-4 bg-primary/10">
                                 <i className={`${item.icon || 'fas fa-star'} text-primary !text-xl`}></i>
                             </div>
@@ -84,12 +85,12 @@ const HomeAboutIts: React.FC = () => {
                 )}
                 
                 {aboutConfig.buttonLink && aboutConfig.buttonText && (
-                    <div>
-                        <ReactRouterDOM.Link to={aboutConfig.buttonLink}>
+                    <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{ animationDelay: '0.5s' }}>
+                        <Link to={aboutConfig.buttonLink}>
                         <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-md hover:shadow-primary/30">
                             {aboutConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                         </Button>
-                        </ReactRouterDOM.Link>
+                        </Link>
                     </div>
                 )}
             </div>

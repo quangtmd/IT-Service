@@ -1,8 +1,6 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
-// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import * as Constants from '../../constants.tsx'; 
 import { SiteSettings } from '../../types';
 
@@ -60,7 +58,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               {Constants.NAVIGATION_LINKS_BASE.slice(0, 6).map(link => (
                  <li key={link.path}>
-                   <ReactRouterDOM.Link to={link.path} className="hover:text-primary transition-colors text-sm text-gray-400">{link.label}</ReactRouterDOM.Link>
+                   <Link to={link.path} className="hover:text-primary transition-colors text-sm text-gray-400">{link.label}</Link>
                  </li>
               ))}
             </ul>
@@ -69,11 +67,11 @@ const Footer: React.FC = () => {
            <div>
             <h3 className="text-xl font-semibold text-gray-100 mb-4">Dịch vụ chính</h3>
             <ul className="space-y-2 text-sm">
-              <li><ReactRouterDOM.Link to="/services" className="hover:text-primary transition-colors text-gray-400">Sửa PC, Laptop</ReactRouterDOM.Link></li>
-              <li><ReactRouterDOM.Link to="/services" className="hover:text-primary transition-colors text-gray-400">Nâng cấp máy tính</ReactRouterDOM.Link></li>
-              <li><ReactRouterDOM.Link to="/services" className="hover:text-primary transition-colors text-gray-400">Bảo trì hệ thống doanh nghiệp</ReactRouterDOM.Link></li>
-              <li><ReactRouterDOM.Link to="/pc-builder" className="hover:text-primary transition-colors text-gray-400">Xây dựng cấu hình PC</ReactRouterDOM.Link></li>
-              <li><ReactRouterDOM.Link to="/projects" className="hover:text-primary transition-colors text-gray-400">Giải pháp Camera, Mạng</ReactRouterDOM.Link></li>
+              <li><Link to="/services" className="hover:text-primary transition-colors text-gray-400">Sửa PC, Laptop</Link></li>
+              <li><Link to="/services" className="hover:text-primary transition-colors text-gray-400">Nâng cấp máy tính</Link></li>
+              <li><Link to="/services" className="hover:text-primary transition-colors text-gray-400">Bảo trì hệ thống doanh nghiệp</Link></li>
+              <li><Link to="/pc-builder" className="hover:text-primary transition-colors text-gray-400">Xây dựng cấu hình PC</Link></li>
+              <li><Link to="/projects" className="hover:text-primary transition-colors text-gray-400">Giải pháp Camera, Mạng</Link></li>
             </ul>
           </div>
 

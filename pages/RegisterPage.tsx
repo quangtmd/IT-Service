@@ -1,9 +1,5 @@
-
-
 import React, { useState, useEffect } from 'react';
-// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
-// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants.tsx';
@@ -15,13 +11,11 @@ const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();
-  // FIX: Use useNavigate hook for react-router-dom v6
-  const navigate = ReactRouterDOM.useNavigate();
+  const navigate = useNavigate(); // Changed from useHistory
 
   useEffect(() => {
     if (isAuthenticated) {
-      // FIX: Use navigate for navigation in v6
-      navigate('/home');
+      navigate('/home'); // Changed from history.push
     }
   }, [isAuthenticated, navigate]);
 
@@ -45,7 +39,6 @@ const RegisterPage: React.FC = () => {
     try {
         const user = await register({ username, email, password });
         if (user) {
-          // FIX: Use navigate for navigation in v6
           navigate('/home');
         } else {
           setError('Đăng ký không thành công. Vui lòng thử lại.');
@@ -60,17 +53,17 @@ const RegisterPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-bgCanvas py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-bgBase p-10 rounded-xl shadow-xl border border-borderDefault">
         <div>
-          <ReactRouterDOM.Link to="/home" className="flex justify-center">
+          <Link to="/home" className="flex justify-center">
              <span className="text-3xl font-bold text-primary">{Constants.COMPANY_NAME}</span>
-          </ReactRouterDOM.Link>
+          </Link>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-textBase">
             Tạo tài khoản mới
           </h2>
           <p className="mt-2 text-center text-sm text-textMuted">
             Hoặc{' '}
-            <ReactRouterDOM.Link to="/login" className="font-medium text-primary hover:text-primary-dark">
+            <Link to="/login" className="font-medium text-primary hover:text-primary-dark">
               đăng nhập nếu bạn đã có tài khoản
-            </ReactRouterDOM.Link>
+            </Link>
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

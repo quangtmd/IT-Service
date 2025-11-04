@@ -1,16 +1,10 @@
-
-
-
 import React, { useState, useEffect } from 'react';
-// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
-// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import * as Constants from '../../constants';
 
 const HeaderSearchBar: React.FC = () => {
-    // FIX: Use useNavigate hook for react-router-dom v6
-    const navigate = ReactRouterDOM.useNavigate();
-    const location = ReactRouterDOM.useLocation();
+    const navigate = useNavigate();
+    const location = useLocation();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -37,7 +31,6 @@ const HeaderSearchBar: React.FC = () => {
         if (selectedCategory !== 'all') {
             params.set('mainCategory', selectedCategory);
         }
-        // FIX: Use navigate for navigation in v6
         navigate(`/shop?${params.toString()}`);
     };
 
@@ -51,7 +44,6 @@ const HeaderSearchBar: React.FC = () => {
                     aria-label="Chọn danh mục"
                 >
                     <option value="all">Tất cả danh mục</option>
-                    {/* FIX: Correctly reference PRODUCT_CATEGORIES_HIERARCHY from Constants. */}
                     {Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.slug !== 'pc_xay_dung').map(cat => (
                         <option key={cat.slug} value={cat.slug}>{cat.name}</option>
                     ))}

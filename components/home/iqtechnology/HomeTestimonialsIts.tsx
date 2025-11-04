@@ -1,7 +1,9 @@
+
+
 import React, { useState, useEffect, useCallback } from 'react';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageTestimonialItem } from '../../../types';
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 interface TestimonialCardProps {
   testimonial: HomepageTestimonialItem;
@@ -9,9 +11,12 @@ interface TestimonialCardProps {
 }
 
 const TestimonialCardIts: React.FC<TestimonialCardProps> = ({ testimonial, index }) => {
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
   return (
     <div 
-        className="testimonial-card-its p-6 md:p-8 flex flex-col"
+        ref={ref} 
+        className={`testimonial-card-its p-6 md:p-8 animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col`}
+        style={{ animationDelay: `${index * 150}ms` }}
     >
         <i className="fas fa-quote-right quote-icon"></i>
         <div className="flex items-center mb-4">
@@ -35,7 +40,8 @@ const TestimonialCardIts: React.FC<TestimonialCardProps> = ({ testimonial, index
 
 const HomeTestimonialsIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
+  const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
+  
   const testimonialsConfig = settings.homepageTestimonials;
 
   const loadSettings = useCallback(() => {
@@ -60,9 +66,9 @@ const HomeTestimonialsIts: React.FC = () => {
   const sortedTestimonials = [...testimonialsConfig.testimonials].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section ref={ref} className={`bg-bgCanvas animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
+    <section className="home-section bg-bgCanvas">
       <div className="container mx-auto px-4">
-        <div className="home-section-title-area">
+        <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
           {testimonialsConfig.preTitle && (
             <span className="home-section-pretitle">
               {testimonialsConfig.sectionTitleIconUrl && <img src={testimonialsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}

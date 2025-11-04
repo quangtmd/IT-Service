@@ -38,33 +38,23 @@ const BlogPage: React.FC = () => {
       setIsLoading(false);
 
       const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
-      // FIX: Use process.env.API_KEY as per the guidelines.
       const apiKey = process.env.API_KEY;
 
-      if (apiKey && isCacheStale) {
+      if (apiKey && apiKey !== 'undefined' && isCacheStale) {
         setIsLoadingAI(true);
         setAiError(null);
         try {
           const newAiArticlesData = await geminiService.fetchLatestTechNews();
-          // FIX: Populate missing required properties for the Article type. Use a numeric ID and remove the 'date' property.
-          // FIX: Correct property names to match the Article type.
           const newAiArticles: Article[] = newAiArticlesData.map((art, index) => ({
-            id: Date.now() + index, // Use a numeric ID
+            id: `ai-${Date.now()}-${index}`,
             title: art.title || "Không có tiêu đề",
-            slug: `ai-${Date.now()}-${index}`,
             summary: art.summary || "Không có tóm tắt",
             content: art.content || "Nội dung đang được cập nhật.",
-            image_url: null, // Will be generated from query
-            author_id: 'ai-bot',
-            category_id: null,
-            status: 'published',
-            published_at: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            // Frontend convenience fields
             category: art.category || "Tin tức công nghệ",
             imageSearchQuery: art.imageSearchQuery || "technology",
+            imageUrl: '', // Will be generated from query
             author: "AI News Bot",
+            date: new Date().toISOString(),
             isAIGenerated: true,
           }));
           
@@ -77,7 +67,7 @@ const BlogPage: React.FC = () => {
         } catch (error) {
           console.error("Failed to fetch AI articles:", error);
           const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
-          if (errorMessage.includes("API Key")) {
+          if (errorMessage.includes("API Key chưa được cấu hình")) {
             setAiError(Constants.API_KEY_ERROR_MESSAGE);
           } else {
             setAiError(errorMessage);
@@ -95,12 +85,10 @@ const BlogPage: React.FC = () => {
     return allArticles
       .filter(article =>
         article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (article.summary && article.summary.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        article.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
         article.category.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      // FIX: Property 'date' does not exist on type 'Article'. Sort by 'publishedAt' or 'createdAt' instead.
-      // FIX: Property 'publishedAt' does not exist on type 'Article'. Did you mean 'published_at'?
-      .sort((a, b) => new Date(b.published_at || b.createdAt).getTime() - new Date(a.published_at || a.createdAt).getTime());
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [allArticles, searchTerm]);
 
   const renderStatus = () => {

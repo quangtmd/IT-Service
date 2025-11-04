@@ -4,7 +4,6 @@ import { GoogleGenAI, Chat, GenerateContentResponse, GenerateContentParameters, 
 import * as Constants from '../constants.tsx';
 import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; // Added SiteSettings, Article, Product
 import { MOCK_SERVICES } from '../data/mockData';
-// FIX: Import PRODUCT_CATEGORIES_HIERARCHY from constants.
 import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
 
 
@@ -16,12 +15,11 @@ let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
 
 const getAiClient = (): GoogleGenAI | null => {
-  // FIX: Use process.env.API_KEY as per the guidelines.
   const apiKey = process.env.API_KEY;
-  if (!apiKey) {
+  // This robust check handles both missing keys and the 'undefined' string issue from some build tools.
+  if (!apiKey || apiKey === 'undefined') {
     if (!aiInstance) { // Log this warning only once to avoid spamming the console
-        // FIX: Updated warning message to refer to API_KEY.
-        console.warn("Gemini Service: API_KEY is not configured in your environment variables. AI features will be disabled.");
+        console.warn("Gemini Service: API_KEY is not configured. AI features will be disabled.");
     }
     return null;
   }

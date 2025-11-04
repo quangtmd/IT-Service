@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageWhyChooseUsFeature } from '../../../types';
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 
 const HomeWhyChooseUsIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-  const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
+  const [sectionRef, isSectionVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
+
   const whyChooseUsConfig = settings.homepageWhyChooseUs;
 
   const loadSettings = useCallback(() => {
@@ -31,11 +32,11 @@ const HomeWhyChooseUsIts: React.FC = () => {
   if (!whyChooseUsConfig.enabled) return null;
 
   return (
-    <section ref={ref} className={`bg-bgBase animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
+    <section ref={sectionRef} className={`home-section bg-bgBase animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           <div className="lg:w-1/2 order-2 lg:order-1">
-            <div>
+            <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay:'0.2s'}}>
               {whyChooseUsConfig.preTitle && (
                 <span className="home-section-pretitle">
                    {whyChooseUsConfig.sectionTitleIconUrl && <img src={whyChooseUsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
@@ -51,8 +52,8 @@ const HomeWhyChooseUsIts: React.FC = () => {
 
               {whyChooseUsConfig.features && whyChooseUsConfig.features.length > 0 && (
                 <ul className="space-y-6 mb-10">
-                  {whyChooseUsConfig.features.map((item: HomepageWhyChooseUsFeature) => (
-                    <li key={item.id} className="flex items-start">
+                  {whyChooseUsConfig.features.map((item: HomepageWhyChooseUsFeature, index) => (
+                    <li key={item.id || index} className={`flex items-start animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay: `${0.3 + index * 0.1}s`}}>
                       <div className="flex-shrink-0 modern-card-icon-wrapper !w-12 !h-12 !p-3 !mr-4 bg-primary/10">
                         <i className={`${item.iconClass || 'fas fa-star'} text-primary !text-xl`}></i>
                       </div>
@@ -66,18 +67,18 @@ const HomeWhyChooseUsIts: React.FC = () => {
               )}
 
               {whyChooseUsConfig.contactButtonLink && whyChooseUsConfig.contactButtonText && (
-                 <div>
-                  <ReactRouterDOM.Link to={whyChooseUsConfig.contactButtonLink}>
+                 <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay:'0.5s'}}>
+                  <Link to={whyChooseUsConfig.contactButtonLink}>
                     <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-md hover:shadow-primary/30">
                         {whyChooseUsConfig.contactButtonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                     </Button>
-                  </ReactRouterDOM.Link>
+                  </Link>
                 </div>
               )}
             </div>
           </div>
           <div className="lg:w-1/2 order-1 lg:order-2">
-            <div className="relative">
+            <div className={`relative animate-on-scroll ${isSectionVisible ? 'slide-in-right is-visible' : 'slide-in-right'}`} style={{animationDelay:'0.1s'}}>
               <img
                 src={whyChooseUsConfig.mainImageUrl || "https://picsum.photos/seed/itProfessionalsV2/600/720"}
                 alt="Why Choose Our IT Professionals"

@@ -1,59 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MainCategoryInfo, ProductCategory } from '../../types';
-import { getProductCategories } from '../../services/localDataService';
-
-const categoryIcons: Record<string, string> = {
-    'Linh Kiện Máy Tính': 'fas fa-microchip',
-    'Máy Tính Xách Tay': 'fas fa-laptop',
-    'Máy Tính Để Bàn, All-in-one, Server': 'fas fa-desktop',
-    'Màn Hình Máy Tính': 'fas fa-tv',
-    'Máy In, Scan, Vật Tư Máy In': 'fas fa-print',
-    'Phím Chuột, Gaming Gear': 'fas fa-keyboard',
-    'Loa, Tai nghe, Webcam, Hội nghị': 'fas fa-headphones-alt',
-    'Phụ Kiện Công Nghệ, Phần mềm': 'fas fa-plug',
-    'Thiết Bị Mạng, Bộ Lưu Điện (UPS)': 'fas fa-network-wired',
-    'Máy Chiếu, Camera, TBVP': 'fas fa-video',
-    'Apple Center': 'fab fa-apple',
-    'Thiết bị ngoại vi': 'fas fa-keyboard',
-    'PC Xây Dựng': 'fas fa-tools',
-};
-
+import * as Constants from '../../constants';
+import { MainCategoryInfo } from '../../types';
 
 const MegaMenu: React.FC = () => {
-  const [categories, setCategories] = useState<MainCategoryInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<MainCategoryInfo | null>(null);
+  const categories = Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.slug !== 'pc_xay_dung');
+  // Set the first category as active by default to avoid a blank panel on initial hover
+  const [activeCategory, setActiveCategory] = useState<MainCategoryInfo | null>(categories[0] || null);
   const location = useLocation();
   const isActive = location.pathname.startsWith('/shop') || location.pathname.startsWith('/product');
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setIsLoading(true);
-        const allCats: ProductCategory[] = await getProductCategories();
-        // Process hierarchical data
-        const mainCats: MainCategoryInfo[] = allCats
-          .filter(c => c.parentCategoryId === null)
-          .map(mc => ({
-            ...mc,
-            icon: categoryIcons[mc.name] || 'fas fa-tag',
-            subCategories: allCats.filter(sc => sc.parentCategoryId === mc.id)
-          }));
-        setCategories(mainCats);
-        if (mainCats.length > 0) {
-          setActiveCategory(mainCats[0]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch product categories:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCategories();
-  }, []);
-  
-  if (isLoading || categories.length === 0) {
+  if (categories.length === 0) {
     return (
        <Link
         to="/shop"
@@ -86,7 +43,7 @@ const MegaMenu: React.FC = () => {
               {categories.map(category => (
                 <li key={category.slug}>
                   <Link
-                    to={`/shop?categoryId=${category.id}`}
+                    to={`/shop?mainCategory=${category.slug}`}
                     className={`flex items-center w-full text-left p-3 rounded-md text-sm font-medium transition-colors ${activeCategory?.slug === category.slug ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-200/50'}`}
                     onMouseEnter={() => setActiveCategory(category)}
                   >
@@ -110,7 +67,7 @@ const MegaMenu: React.FC = () => {
                   {activeCategory.subCategories.map(subCategory => (
                     <li key={subCategory.slug}>
                       <Link
-                        to={`/shop?categoryId=${subCategory.id}`}
+                        to={`/shop?mainCategory=${activeCategory.slug}&subCategory=${subCategory.slug}`}
                         className="text-sm text-textMuted hover:text-primary transition-colors block p-1"
                       >
                         {subCategory.name}

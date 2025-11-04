@@ -1,9 +1,5 @@
-
-
 import React, { useState, useEffect } from 'react';
-// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
-// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants';
@@ -13,9 +9,8 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState<string | null>(null);
   const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
-  // FIX: Use useNavigate hook for react-router-dom v6
-  const navigate = ReactRouterDOM.useNavigate();
-  const location = ReactRouterDOM.useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/home";
 
   useEffect(() => {
@@ -23,12 +18,10 @@ const LoginPage: React.FC = () => {
     if (isAuthenticated && currentUser) {
       if (currentUser.role === 'admin' || currentUser.role === 'staff') {
         // For admin/staff, always go to the admin page.
-        // FIX: Use navigate for navigation in v6
         navigate('/admin', { replace: true });
       } else {
         // For regular customers, go back to the page they were on, or to the homepage.
         // Avoids a redirect loop if 'from' is the login page itself.
-        // FIX: Use navigate for navigation in v6
         navigate(from === '/login' ? '/home' : from, { replace: true });
       }
     }
@@ -62,9 +55,9 @@ const LoginPage: React.FC = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-primary">
             Hoặc{' '}
-            <ReactRouterDOM.Link to="/register" className="font-medium hover:text-primary-dark">
+            <Link to="/register" className="font-medium hover:text-primary-dark">
               đăng ký nếu bạn chưa có tài khoản
-            </ReactRouterDOM.Link>
+            </Link>
           </p>
         </div>
         

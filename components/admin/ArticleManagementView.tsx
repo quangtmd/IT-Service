@@ -31,28 +31,20 @@ const ArticleManagementView: React.FC = () => {
     const filteredArticles = useMemo(() =>
         articles.filter(a =>
             a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (a.author || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (a.category || '').toLowerCase().includes(searchTerm.toLowerCase())
+            a.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            a.category.toLowerCase().includes(searchTerm.toLowerCase())
         ), [articles, searchTerm]);
 
     const openModalForNew = () => {
-        // FIX: Initialize with a numeric ID (0) to indicate a new article and remove the non-existent 'date' property.
-        // FIX: Object literal may only specify known properties, and 'authorId' does not exist in type 'SetStateAction<Article>'.
         setEditingArticle({
-            id: 0,
+            id: '',
             title: '',
-            slug: '',
             summary: '',
-            image_url: '',
+            imageUrl: '',
             author: 'Admin',
-            author_id: null,
+            date: new Date().toISOString(),
             category: Constants.ARTICLE_CATEGORIES[0],
-            category_id: null,
-            content: '',
-            status: 'published',
-            published_at: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            content: ''
         });
         setIsModalOpen(true);
     };
@@ -71,9 +63,7 @@ const ArticleManagementView: React.FC = () => {
         if (articleData.id) {
             await updateArticle(articleData.id, articleData);
         } else {
-            // FIX: Destructure the temporary ID before passing to addArticle.
-            const { id, ...newArticleData } = articleData;
-            await addArticle(newArticleData);
+            await addArticle(articleData);
         }
         loadArticles();
         closeModal();
@@ -127,14 +117,11 @@ const ArticleManagementView: React.FC = () => {
                                         </td>
                                         <td>{article.author}</td>
                                         <td>{article.category}</td>
-                                        {/* FIX: Use 'publishedAt' or 'createdAt' as 'date' does not exist. */}
-                                        {/* FIX: Property 'publishedAt' does not exist on type 'Article'. Did you mean 'published_at'? */}
-                                        <td>{new Date(article.published_at || article.createdAt).toLocaleDateString('vi-VN')}</td>
+                                        <td>{new Date(article.date).toLocaleDateString('vi-VN')}</td>
                                         <td>
                                             <div className="flex gap-2">
                                                 <Button onClick={() => openModalForEdit(article)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
-                                                {/* FIX: Convert numeric ID to string for handleDelete function. */}
-                                                <Button onClick={() => handleDelete(String(article.id))} size="sm" variant="ghost" className="text-red-500 hover:bg-red-50"><i className="fas fa-trash"></i></Button>
+                                                <Button onClick={() => handleDelete(article.id)} size="sm" variant="ghost" className="text-red-500 hover:bg-red-50"><i className="fas fa-trash"></i></Button>
                                             </div>
                                         </td>
                                     </tr>
@@ -157,7 +144,7 @@ interface ArticleFormModalProps {
     onSave: (article: Article) => void;
 }
 const ArticleFormModal: React.FC<ArticleFormModalProps> = ({ article, onClose, onSave }) => {
-    const [formData, setFormData] = useState<Partial<Article>>(article || {} as Partial<Article>);
+    const [formData, setFormData] = useState<Article>(article || {} as Article);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -165,13 +152,13 @@ const ArticleFormModal: React.FC<ArticleFormModalProps> = ({ article, onClose, o
     
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave(formData as Article);
+        onSave(formData);
     };
 
     return (
         <div className="admin-modal-overlay">
             <div className="admin-modal-panel">
-                <form onSubmit={handleSubmit} className="contents">
+                <form onSubmit={handleSubmit} className="flex flex-col h-full">
                     <div className="admin-modal-header">
                         <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Bài viết' : 'Thêm Bài viết Mới'}</h4>
                         <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
@@ -195,7 +182,7 @@ const ArticleFormModal: React.FC<ArticleFormModalProps> = ({ article, onClose, o
                         </div>
                         <ImageUploadInput
                             label="URL Ảnh đại diện"
-                            value={formData.imageUrl || ''}
+                            value={formData.imageUrl}
                             onChange={value => setFormData(p => ({ ...p, imageUrl: value }))}
                         />
                         <div className="admin-form-group">

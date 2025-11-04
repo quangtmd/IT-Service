@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
+import * as Constants from './constants';
 
 interface Props {
   children: ReactNode;
@@ -10,25 +11,28 @@ interface State {
   errorMessage: string;
 }
 
-class ErrorBoundary extends Component<Props, State> {
-  // FIX: Switched from constructor to class property for state initialization.
-  // This is a more modern syntax that can resolve linter confusion about 'this' context,
-  // which was causing errors on `this.state` and `this.props`.
-  public state: State = {
-    hasError: false,
-    errorMessage: '',
-  };
+class ErrorBoundary extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      errorMessage: '',
+    };
+  }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
+    // Update state so the next render will show the fallback UI.
+    // We only store the safe, serializable message string.
     const safeErrorMessage = `${error.name}: ${error.message}`;
     return { hasError: true, errorMessage: safeErrorMessage };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // You can also log the error to an error reporting service
     console.error("ErrorBoundary caught an error:", error, errorInfo.componentStack);
   }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 

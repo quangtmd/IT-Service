@@ -8,6 +8,7 @@ import HomeFeaturedProjectsIts from '../components/home/iqtechnology/HomeFeature
 import HomeTestimonialsIts from '../components/home/iqtechnology/HomeTestimonialsIts';
 import HomeBrandLogosIts from '../components/home/iqtechnology/HomeBrandLogosIts';
 import HomeProcessIts from '../components/home/iqtechnology/HomeProcessIts';
+import HotProducts from '../components/home/HotProducts';
 import HomeBlogPreviewIts from '../components/home/iqtechnology/HomeBlogPreviewIts';
 import HomeCallToActionIts from '../components/home/iqtechnology/HomeCallToActionIts';
 import HomeContactIts from '../components/home/iqtechnology/HomeContactIts';
@@ -15,44 +16,47 @@ import HomePricingPlansIts from '../components/home/iqtechnology/HomePricingPlan
 
 const HomePage: React.FC = () => {
   return (
-    <div className="flex flex-col gap-8 md:gap-12">
-      {/* 1. Banner slideshow */}
+    <div>
+      {/* 1. Banner slideshow (khuyến mãi, dịch vụ IT, sản phẩm mới) */}
       <HomeBannerIts />
 
       {/* 2. Giới thiệu nhanh: IQ Technology là ai, dịch vụ chính */}
       <HomeAboutIts />
-      
-      {/* 3. Danh mục dịch vụ IT nổi bật */}
+
+      {/* 4. Danh mục dịch vụ IT nổi bật */}
       <HomeServicesBenefitsIts />
       
-      {/* 4. Tại sao chọn chúng tôi */}
+      {/* Additional: Why Choose Us - Logically follows services */}
       <HomeWhyChooseUsIts />
 
-      {/* 5. Bảng giá dịch vụ IT */}
+      {/* New: Pricing Plans Section */}
       <HomePricingPlansIts />
-      
-      {/* 6. Dự án đã thực hiện */}
+
+      {/* 3. Danh mục sản phẩm nổi bật */}
+      <HotProducts />
+
+      {/* 5. Dự án đã thực hiện (gắn link chi tiết) */}
       <HomeFeaturedProjectsIts />
       
-      {/* 7. Quy trình làm việc */}
+      {/* Additional: Process - How we work */}
       <HomeProcessIts />
       
-      {/* 8. Thống kê */}
+      {/* Additional: Stats Counter - Showcases scale/achievements */}
       <HomeStatsCounterIts />
       
-      {/* 9. Đánh giá khách hàng */}
+      {/* 7. Đánh giá khách hàng */}
       <HomeTestimonialsIts />
 
-      {/* 10. Tin tức & Blog */}
+      {/* 6. Tin tức & Blog */}
       <HomeBlogPreviewIts />
       
-      {/* 11. Đối tác */}
+      {/* Additional: Brand Logos - Social proof */}
       <HomeBrandLogosIts />
       
-      {/* 12. Kêu gọi hành động */}
+      {/* Additional: Call To Action - Engage user before contact */}
       <HomeCallToActionIts />
       
-      {/* 13. Liên hệ */}
+      {/* 8. Liên hệ nhanh + Chatbot AI hỗ trợ (Chatbot is in App.tsx) */}
       <HomeContactIts />
     </div>
   );

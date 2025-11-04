@@ -1,9 +1,5 @@
-
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-// FIX: Update react-router-dom from v5 to v6. Replaced useHistory with useNavigate.
-// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import * as Constants from '../../constants.tsx';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../contexts/AuthContext';
@@ -14,7 +10,7 @@ import MegaMenu from './MegaMenu'; // Import the new MegaMenu component
 
 // New component for right-side action links, styled as per the image
 const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badgeCount?: number }> = ({ to, icon, label, badgeCount }) => (
-    <ReactRouterDOM.Link to={to} className="hidden lg:flex flex-col items-center text-white hover:text-primary transition-colors text-xs font-medium space-y-1 w-[70px] text-center">
+    <Link to={to} className="hidden lg:flex flex-col items-center text-white hover:text-primary transition-colors text-xs font-medium space-y-1 w-[70px] text-center">
         <div className="relative">
             <i className={`fas ${icon} text-2xl`}></i>
             {badgeCount && badgeCount > 0 ? (
@@ -24,109 +20,14 @@ const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badg
             ) : null}
         </div>
         <span>{label}</span>
-    </ReactRouterDOM.Link>
+    </Link>
 );
-
-const AnalogClock: React.FC = () => {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    const timerId = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timerId);
-  }, []);
-
-  const seconds = time.getSeconds();
-  const minutes = time.getMinutes();
-  const hours = time.getHours();
-
-  const secondHandRotation = seconds * 6;
-  const minuteHandRotation = minutes * 6 + seconds * 0.1;
-  const hourHandRotation = (hours % 12) * 30 + minutes * 0.5;
-
-  const clockSize = 72; // Increased size
-
-  return (
-    <div
-      className="hidden md:flex relative rounded-full items-center justify-center bg-gray-800 shadow-lg"
-      style={{ width: `${clockSize}px`, height: `${clockSize}px`, border: '4px solid #4A5568' }}
-      title={time.toLocaleTimeString()}
-      aria-label={`Current time: ${time.toLocaleTimeString()}`}
-    >
-      {/* Clock Markers */}
-      {Array.from({ length: 12 }).map((_, i) => {
-        const isMajor = (i + 1) % 3 === 0;
-        return (
-          <div
-            key={i}
-            className="absolute w-full h-full"
-            style={{ transform: `rotate(${(i + 1) * 30}deg)` }}
-          >
-            <div
-              className={`absolute bg-gray-400 ${isMajor ? 'w-1 h-3 top-1' : 'w-0.5 h-2 top-1'}`}
-              style={{ left: '50%', transform: 'translateX(-50%)' }}
-            ></div>
-          </div>
-        );
-      })}
-
-      {/* Hour Hand */}
-      <div
-        className="absolute bg-white rounded-t-full shadow-md"
-        style={{
-          width: '4px',
-          height: `${clockSize * 0.25}px`,
-          transform: `rotate(${hourHandRotation}deg)`,
-          transformOrigin: 'bottom',
-          bottom: '50%',
-          zIndex: 10,
-        }}
-      ></div>
-      {/* Minute Hand */}
-      <div
-        className="absolute bg-white rounded-t-full shadow-md"
-        style={{
-          width: '3px',
-          height: `${clockSize * 0.35}px`,
-          transform: `rotate(${minuteHandRotation}deg)`,
-          transformOrigin: 'bottom',
-          bottom: '50%',
-          zIndex: 10,
-        }}
-      ></div>
-      
-      {/* Center Logo */}
-      <div 
-        className="absolute w-8 h-8 rounded-full bg-primary flex items-center justify-center z-20 shadow-inner"
-        style={{ fontFamily: 'Impact, sans-serif' }}
-      >
-        <span className="text-white text-sm font-bold">IQ</span>
-      </div>
-
-      {/* Second Hand */}
-      <div
-        className="absolute bg-primary rounded-full shadow-md"
-        style={{
-          width: '2px',
-          height: `${clockSize * 0.4}px`,
-          transform: `rotate(${secondHandRotation}deg)`,
-          transformOrigin: 'bottom',
-          bottom: '50%',
-          zIndex: 30, // On top of everything
-        }}
-      ></div>
-      
-      {/* Center Pivot for Second Hand */}
-      <div className="absolute w-2 h-2 bg-white rounded-full z-40 border border-gray-500"></div>
-    </div>
-  );
-};
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cart } = useCart();
   const { isAuthenticated, currentUser, logout, isLoading } = useAuth();
-  // FIX: Use useNavigate hook for react-router-dom v6
-  const navigate = ReactRouterDOM.useNavigate();
+  const navigate = useNavigate();
   const totalItemsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
@@ -170,7 +71,6 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     logout();
     setIsMobileMenuOpen(false);
-    // FIX: Use navigate for navigation in v6
     navigate('/home');
   };
 
@@ -188,13 +88,13 @@ const Header: React.FC = () => {
             <span className={`text-xs font-semibold ${isMobile ? '' : 'hidden md:inline'}`}>{currentUser.username}</span>
             <i className="fas fa-chevron-down text-xs transition-transform duration-200 group-hover:rotate-180"></i>
           </button>
-          <div className={`absolute top-full ${isMobile ? 'bottom-full top-auto' : 'right-0'} w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto`}>
+          <div className={`absolute top-full ${isMobile ? 'bottom-full top-auto' : 'right-0 mt-2'} w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto`}>
             <div className="px-3 py-2 border-b border-gray-200">
                 <p className="text-sm font-semibold text-textBase">{currentUser.username}</p>
                 <p className="text-xs text-textMuted truncate">{currentUser.email}</p>
             </div>
             {(currentUser.role === 'admin' || currentUser.role === 'staff') && (
-                <ReactRouterDOM.Link to="/admin" className="flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted"><i className="fas fa-user-shield w-6"></i>Quản trị</ReactRouterDOM.Link>
+                <Link to="/admin" className="flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted"><i className="fas fa-user-shield w-6"></i>Quản trị</Link>
             )}
             <button onClick={handleLogout} className="w-full flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted">
                 <i className="fas fa-sign-out-alt w-6"></i>Đăng xuất
@@ -206,12 +106,12 @@ const Header: React.FC = () => {
 
     return (
       <div className={`flex items-center gap-3 ${isMobile ? 'flex-col w-full' : ''}`}>
-        <ReactRouterDOM.Link to="/login" className={`${isMobile ? 'w-full' : ''}`}>
+        <Link to="/login" className={`${isMobile ? 'w-full' : ''}`}>
           <Button variant={isMobile ? 'outline' : 'ghost'} size='sm' className={`w-full ${isMobile ? 'border-gray-500 text-gray-200' : 'text-white hover:bg-white/20'}`}>Đăng nhập</Button>
-        </ReactRouterDOM.Link>
-        <ReactRouterDOM.Link to="/register" className={`${isMobile ? 'w-full' : ''}`}>
+        </Link>
+        <Link to="/register" className={`${isMobile ? 'w-full' : ''}`}>
           <Button variant='secondary' size='sm' className="w-full">Đăng ký</Button>
-        </ReactRouterDOM.Link>
+        </Link>
       </div>
     );
   };
@@ -235,17 +135,14 @@ const Header: React.FC = () => {
         {/* MAIN HEADER */}
         <div className="bg-black text-white">
           <div className="container mx-auto px-4 flex items-center justify-between gap-4 h-20">
-             <div className="flex items-center gap-6">
-                <AnalogClock />
-                <ReactRouterDOM.Link to="/home" className="flex-shrink-0">
-                  <svg width="125" height="45" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg">
-                      <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: var(--color-primary-default); font-style: italic; } .logo-main-white { font-family: Impact, sans-serif; font-size: 36px; fill: #ffffff; font-style: italic; } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #ffffff; letter-spacing: 2px; }`}</style>
-                      <text x="0" y="30" className="logo-main-red">IQ</text>
-                      <text x="38" y="30" className="logo-main-white">TECH</text>
-                      <text x="38" y="42" className="logo-sub">TECHNOLOGY</text>
-                  </svg>
-                </ReactRouterDOM.Link>
-            </div>
+            <Link to="/home" className="flex-shrink-0">
+              <svg width="125" height="45" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg">
+                  <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: var(--color-primary-default); font-style: italic; } .logo-main-white { font-family: Impact, sans-serif; font-size: 36px; fill: #ffffff; font-style: italic; } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #ffffff; letter-spacing: 2px; }`}</style>
+                  <text x="0" y="30" className="logo-main-red">IQ</text>
+                  <text x="38" y="30" className="logo-main-white">TECH</text>
+                  <text x="38" y="42" className="logo-sub">TECHNOLOGY</text>
+              </svg>
+            </Link>
             
             <div className="flex-grow max-w-2xl hidden lg:block">
               <HeaderSearchBar />
@@ -271,7 +168,7 @@ const Header: React.FC = () => {
                 return <MegaMenu key={link.path} />;
               }
               return (
-                <ReactRouterDOM.NavLink
+                <NavLink
                   key={link.path}
                   to={link.path}
                   className={({ isActive }) => `nav-link-item ${isActive ? 'active' : ''}`}
@@ -279,7 +176,7 @@ const Header: React.FC = () => {
                 >
                   {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} mr-2`}></i>}
                   <span>{link.label}</span>
-                </ReactRouterDOM.NavLink>
+                </NavLink>
               );
             })}
           </div>
@@ -307,10 +204,10 @@ const Header: React.FC = () => {
 
           <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
             {mainNavLinks.map((link) => (
-              <ReactRouterDOM.NavLink key={link.path} to={link.path} onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `flex items-center text-lg py-3 px-4 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'text-gray-200 hover:bg-white/10'}`} end={link.path === "/home"}>
+              <NavLink key={link.path} to={link.path} onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `flex items-center text-lg py-3 px-4 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'text-gray-200 hover:bg-white/10'}`} end={link.path === "/home"}>
                 {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} mr-4 w-5 text-center`}></i>}
                 {link.label}
-              </ReactRouterDOM.NavLink>
+              </NavLink>
             ))}
           </nav>
 

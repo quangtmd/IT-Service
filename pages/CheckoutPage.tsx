@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +10,7 @@ import { addOrder } from '../services/localDataService';
 const CheckoutPage: React.FC = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
   const { currentUser, isAuthenticated, addAdminNotification } = useAuth();
-  const navigate = ReactRouterDOM.useNavigate();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState<CheckoutFormData>({
     fullName: '', phone: '', address: '', email: '', notes: '',
@@ -55,47 +54,35 @@ const CheckoutPage: React.FC = () => {
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+
     setIsSubmitting(true);
     
     try {
         const total = getTotalPrice();
-        let paymentDetails: any; // Using 'any' for flexibility with new schema
-
+        const newOrderId = `order-${Date.now()}`;
+        
+        let paymentInfo: PaymentInfo;
         if (paymentMethod === 'transfer') {
             const isDeposit = transferOption === 'deposit';
-            paymentDetails = {
+            paymentInfo = {
                 method: 'Chuyển khoản ngân hàng',
                 status: 'Chưa thanh toán',
                 amountToPay: isDeposit ? total * Constants.DEPOSIT_PERCENTAGE : total,
             };
         } else {
-            paymentDetails = { method: 'Thanh toán khi nhận hàng (COD)', status: 'Chưa thanh toán' };
+            paymentInfo = { method: 'Thanh toán khi nhận hàng (COD)', status: 'Chưa thanh toán' };
         }
         
-        // New payload for the backend
-        const newOrderPayload = {
-            userId: currentUser?.id || null,
-            totalAmount: total,
-            customerInfo: formData,
-            shippingAddress: { address: formData.address }, // Simplified for now
-            paymentDetails: paymentDetails,
-            items: cart.map(item => ({ 
-                productId: item.id, 
-                productName: item.name, 
-                quantity: item.quantity, 
-                priceAtPurchase: item.price 
-            })),
+        const newOrder: Order = {
+            id: newOrderId, customerInfo: formData,
+            items: cart.map(item => ({ productId: item.id, productName: item.name, quantity: item.quantity, price: item.price })),
+            totalAmount: total, orderDate: new Date().toISOString(), status: 'Chờ xử lý', paymentInfo: paymentInfo,
         };
 
-        const createdOrder = await addOrder(newOrderPayload);
+        await addOrder(newOrder);
 
-        addAdminNotification(`Đơn hàng mới #${createdOrder.id} từ ${formData.fullName} đã được tạo.`, 'success');
-        setSubmittedOrder({
-            ...createdOrder,
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        } as Order);
+        addAdminNotification(`Đơn hàng mới #${newOrder.id.slice(-6)} từ ${formData.fullName} đã được tạo.`, 'success');
+        setSubmittedOrder(newOrder);
 
         if (paymentMethod === 'cod') {
             clearCart();
@@ -104,7 +91,7 @@ const CheckoutPage: React.FC = () => {
             setCheckoutStep('payment_details');
         }
     } catch (error) {
-        console.error("Lỗi khi tạo đơn hàng:", error);
+        console.error("Lỗi khi lưu đơn hàng vào Local Storage:", error);
         alert('Đã xảy ra lỗi không mong muốn khi tạo đơn hàng.');
     } finally {
         setIsSubmitting(false);
@@ -122,13 +109,13 @@ const CheckoutPage: React.FC = () => {
         <i className="fas fa-shopping-cart text-6xl text-textSubtle mb-6"></i>
         <h1 className="text-3xl font-semibold text-textBase mb-4">Giỏ hàng của bạn trống</h1>
         <p className="text-textMuted mb-6">Không có gì để thanh toán. Hãy thêm sản phẩm vào giỏ!</p>
-        <ReactRouterDOM.Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></ReactRouterDOM.Link>
+        <Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></Link>
       </div>
     );
   }
 
   if (checkoutStep === 'success' && submittedOrder) {
-    const isCOD = (submittedOrder.paymentDetails as PaymentInfo).method === 'Thanh toán khi nhận hàng (COD)';
+    const isCOD = submittedOrder.paymentInfo.method === 'Thanh toán khi nhận hàng (COD)';
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <div className="max-w-lg mx-auto bg-bgBase p-8 rounded-lg shadow-xl border border-borderDefault">
@@ -136,7 +123,7 @@ const CheckoutPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-textBase mb-4">Đặt Hàng Thành Công!</h1>
           <p className="text-textMuted mb-6">
             Cảm ơn {submittedOrder.customerInfo.fullName} đã đặt hàng tại {Constants.COMPANY_NAME}.
-            Mã đơn hàng của bạn là <strong className="text-textBase">#{submittedOrder.id}</strong>.
+            Mã đơn hàng của bạn là <strong className="text-textBase">#{submittedOrder.id.slice(-6)}</strong>.
           </p>
           <p className="text-textMuted mb-8">
             {isCOD 
@@ -145,8 +132,8 @@ const CheckoutPage: React.FC = () => {
             }
           </p>
           <div className="space-y-3 sm:space-y-0 sm:space-x-3">
-            <ReactRouterDOM.Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></ReactRouterDOM.Link>
-            <ReactRouterDOM.Link to="/home"><Button variant="outline" size="lg">Về trang chủ</Button></ReactRouterDOM.Link>
+            <Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></Link>
+            <Link to="/home"><Button variant="outline" size="lg">Về trang chủ</Button></Link>
           </div>
         </div>
       </div>
@@ -154,9 +141,8 @@ const CheckoutPage: React.FC = () => {
   }
   
   if (checkoutStep === 'payment_details' && submittedOrder) {
-    const paymentInfo = submittedOrder.paymentDetails as PaymentInfo;
-    const amountToPay = paymentInfo.amountToPay || submittedOrder.totalAmount;
-    const qrDescription = `TT DON HANG ${submittedOrder.id}`;
+    const amountToPay = submittedOrder.paymentInfo.amountToPay || submittedOrder.totalAmount;
+    const qrDescription = `TT DON HANG ${submittedOrder.id.slice(-8)}`;
     const qrUrl = `https://img.vietqr.io/image/${Constants.VIETCOMBANK_ID}-${Constants.BANK_ACCOUNT_NUMBER}-print.png?amount=${amountToPay}&addInfo=${encodeURIComponent(qrDescription)}&accountName=${encodeURIComponent(Constants.BANK_ACCOUNT_NAME)}`;
 
     return (

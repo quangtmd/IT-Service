@@ -1,8 +1,7 @@
 import React from 'react';
 import { PricingPlan } from '../../types';
 import Button from '../ui/Button';
-// FIX: Using wildcard import for react-router-dom to handle potential module resolution issues.
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 interface PricingPlanCardItsProps {
   plan: PricingPlan;
@@ -29,4 +28,45 @@ const PricingPlanCardIts: React.FC<PricingPlanCardItsProps> = ({ plan }) => {
       <div className="text-center mb-6 h-6 flex items-center justify-center">
         {plan.saveText && (
           <div className="flex items-center justify-center space-x-2">
-            {plan.originalPrice && <span className="text-gray-400 line
+            {plan.originalPrice && <span className="text-gray-400 line-through text-sm"> {plan.originalPrice} </span>}
+            <span className="bg-pricing-blue-bg text-pricing-blue-dark font-semibold text-xs px-3 py-1 rounded-full">
+              {plan.saveText}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="text-center mb-8">
+        <span className="text-5xl font-extrabold text-gray-800 tracking-tight">
+          {plan.price}
+        </span>
+        <span className="text-gray-500 font-medium">
+          {plan.period}
+        </span>
+      </div>
+
+      <ul className="space-y-3 text-sm flex-grow mb-8">
+        {plan.features.map((feature, idx) => (
+          <li key={idx} className="flex items-center text-gray-700">
+            <i className="fas fa-check text-pricing-blue-light mr-3"></i>
+            <span>{feature}</span>
+            <i className="fas fa-question-circle text-gray-300 ml-auto cursor-pointer hover:text-pricing-blue-DEFAULT" title="Thông tin chi tiết"></i>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-auto">
+        <Link to={plan.buttonLink || '/contact'} className="block">
+          <Button
+            size="lg"
+            className={`w-full py-3 font-bold group rounded-lg transition-all duration-300 ${buttonColorClass}`}
+          >
+            {plan.buttonText || 'Đăng Ký Ngay'} <i className="fas fa-arrow-right text-xs ml-2 transition-transform group-hover:translate-x-1"></i>
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+export default PricingPlanCardIts;
