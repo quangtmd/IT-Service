@@ -1,20 +1,33 @@
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
-    server: {
-        port: 3000,
-        host: '0.0.0.0',
-    },
-    plugins: [react()],
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, '.'),
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, process.cwd(), '');
+
+    return {
+        server: {
+            port: 3000,
+            host: '0.0.0.0',
+            proxy: {
+                '/api': {
+                    target: 'http://localhost:3001',
+                    changeOrigin: true,
+                },
+            },
+        },
+        plugins: [react()],
+        resolve: {
+            alias: {
+                '@': path.resolve(__dirname, '.'),
+            }
+        },
+        define: {
+            'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+            // Use an empty string for dev (relying on proxy) and the env var for prod
+            'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(
+                mode === 'production' ? env.VITE_BACKEND_API_BASE_URL : ''
+            )
         }
-    },
-    define: {
-        'process.env.API_KEY': JSON.stringify(process.env.VITE_GEMINI_API_KEY),
-        'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(process.env.VITE_BACKEND_API_BASE_URL)
     }
 });

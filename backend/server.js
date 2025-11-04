@@ -1,18 +1,17 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+require('dotenv').config(); // Tải các biến môi trường từ file .env
 
 const app = express();
-// Railway hoặc Hostinger sẽ cung cấp biến PORT. Nếu không có, dùng cổng 3001 cho local.
 const port = process.env.PORT || 3001; 
 
-// Kích hoạt CORS để React App (chạy ở cổng khác) có thể gọi API
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Increase limit for potential base64 images
+app.use(express.json({ limit: '10mb' }));
 
 /*
 -- HƯỚNG DẪN CÀI ĐẶT DATABASE MYSQL --
-1. Hãy chắc chắn rằng bạn đã cài đặt MySQL Server.
+1. Hãy chắc chắn rằng bạn đã cài đặt MySQL Server trên máy tính của bạn (dùng XAMPP, MAMP, WAMP, etc.).
 2. Tạo một database mới, ví dụ: CREATE DATABASE iq_technology_db;
 3. Chạy các câu lệnh SQL dưới đây để tạo bảng cần thiết:
 
@@ -77,13 +76,17 @@ CREATE TABLE MediaItems (
 
 
 // --- CẤU HÌNH KẾT NỐI MYSQL ---
-// Đọc thông tin kết nối từ các biến môi trường (ưu tiên) hoặc dùng giá trị fallback.
-// Các biến môi trường này cần được thiết lập trên server hosting của bạn (ví dụ: Hostinger, Railway).
+// QUAN TRỌNG: Để phát triển ở máy local, bạn nên dùng một database MySQL trên chính máy của mình.
+// Kết nối tới database từ xa (remote) khi đang code ở local thường sẽ thất bại do IP của bạn không được cho phép (whitelisted).
+
+// Tạo một file tên là `.env` trong thư mục `backend` và điền thông tin database local của bạn vào đó.
+// Xem file `.env.example` để biết cấu trúc.
+
 const dbConfig = {
-  host: process.env.DB_HOST || '194.59.164.14',
-  user: process.env.DB_USER || 'u573621538_IT',
-  password: process.env.DB_PASSWORD || 'Aaa0908225224',
-  database: process.env.DB_NAME || 'u573621538_Itservice',
+  host: process.env.DB_HOST || 'localhost',      // Mặc định là localhost cho local dev
+  user: process.env.DB_USER || 'root',           // User mặc định của MySQL local
+  password: process.env.DB_PASSWORD || '',       // Mật khẩu mặc định thường là rỗng
+  database: process.env.DB_NAME || 'iq_technology_db', // Tên DB bạn đã tạo ở local
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
@@ -94,10 +97,19 @@ const dbConfig = {
 let pool;
 try {
     pool = mysql.createPool(dbConfig);
-    console.log('Đã tạo kết nối MySQL pool thành công.');
+    // Thêm một lần kiểm tra kết nối để đảm bảo thông tin đăng nhập đúng
+    pool.getConnection()
+        .then(connection => {
+            console.log('Kết nối tới database MySQL thành công!');
+            connection.release();
+        })
+        .catch(err => {
+            console.error('LỖI KẾT NỐI DATABASE:', err.message);
+            console.error('Vui lòng kiểm tra lại thông tin trong file `backend/.env` hoặc đảm bảo server MySQL của bạn đang chạy.');
+        });
 } catch (error) {
     console.error('Lỗi khi tạo kết nối MySQL pool:', error);
-    process.exit(1); // Thoát ứng dụng nếu không thể tạo pool
+    process.exit(1);
 }
 
 // --- JSON PARSING HELPERS ---
