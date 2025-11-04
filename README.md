@@ -70,7 +70,7 @@ In a **new, separate terminal window**, set up and run the React frontend.
     npm install
     ```
 3.  **Set your Environment Variables:**
-    Create a file named `.env` in the project root (if it doesn't exist) and add your Gemini API key. The backend URL is handled automatically by the proxy.
+    Create a file named `.env` in the project root (if it doesn't exist) and add your Gemini API key. The backend URL for local development is handled automatically by the proxy.
     ```
     # .env file in the project's root directory
     VITE_GEMINI_API_KEY=YOUR_API_KEY_HERE
@@ -83,12 +83,38 @@ The application will now be accessible in your browser (usually at `http://local
 
 ---
 
-## 2. Deploy to Render (Recommended)
+## 2. Deploy to Render (Recommended Method)
 
-This project includes a `render.yaml` blueprint file, which allows you to deploy both the frontend and backend services with a single click, preventing common configuration errors.
+This project contains two parts (**frontend** and **backend**) in one repository (a "monorepo"). The best way to deploy it is by using the included `render.yaml` blueprint file.
 
-1.  **Fork this repository** to your own GitHub account.
-2.  Go to the [**Render Blueprint Dashboard**](https://dashboard.render.com/blueprints) and click **New Blueprint Instance**.
-3.  Connect the repository you just forked. Render will automatically detect the `render.yaml` file.
-4.  Render will prompt you to provide values for the secret environment variables (`DB_HOST`, `DB_USER`, etc., and `VITE_GEMINI_API_KEY`). Enter your credentials for your **remote/hosted** MySQL database and your Gemini API key.
-5.  Click **Apply**. Render will build and deploy both the frontend and backend, automatically linking them together.
+**⚠️ QUAN TRỌNG: KHÔNG sử dụng nút "New Web Service" trên Render cho dự án này.** Việc này sẽ thất bại vì nó không thể xây dựng cả frontend và backend một cách chính xác. Bạn **PHẢI** sử dụng phương pháp "Blueprint" được mô tả dưới đây để khắc phục lỗi bạn đang gặp phải.
+
+### Hướng Dẫn Triển Khai Chi Tiết:
+
+1.  **Fork repository này** về tài khoản GitHub của bạn.
+
+2.  Vào trang [**Blueprints** trên Render Dashboard](https://dashboard.render.com/blueprints).
+
+3.  Nhấp vào nút **"New Blueprint Instance"**.
+
+    <img width="1011" alt="Render-New-Blueprint" src="https://github.com/user-attachments/assets/81c4e7fa-9b93-4e4f-b648-5254d3cd2c05">
+
+4.  **Kết nối tài khoản GitHub của bạn** và chọn repository `IT-Service` bạn vừa fork. Render sẽ tự động phát hiện và đọc tệp `render.yaml`.
+
+5.  **Đặt tên cho nhóm dịch vụ của bạn** (ví dụ: `it-service-app`) và nhấp vào **"Update Existing Resources"** hoặc **"Apply"**.
+
+    <img width="1011" alt="Render-Apply-Blueprint" src="https://github.com/user-attachments/assets/d16715f2-9594-4d1a-be29-d655f41441a1">
+
+6.  **Cấu hình Biến Môi trường:** Render sẽ yêu cầu bạn nhập các khóa bí mật.
+    *   Đi đến tab **"Environment"** của Blueprint.
+    *   Tạo một **"Environment Group"** mới hoặc thêm các biến trực tiếp.
+    *   Thêm các khóa sau với giá trị tương ứng:
+        *   `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: Nhập thông tin kết nối đến cơ sở dữ liệu **REMOTE** của bạn (ví dụ: từ Hostinger, Aiven, v.v.).
+        *   `VITE_GEMINI_API_KEY`: Nhập khóa API Google Gemini của bạn.
+
+    <img width="1011" alt="Render-Env-Vars" src="https://github.com/user-attachments/assets/94b41982-f673-455b-b9f0-2f643e1d1628">
+
+
+7.  Sau khi thêm các biến môi trường, nhấp vào **"Manual Deploy" > "Deploy latest commit"** ở góc trên cùng bên phải để bắt đầu quá trình triển khai.
+
+Render sẽ tạo hai dịch vụ (`it-service-backend` và `it-service-frontend`), xây dựng và triển khai chúng. Frontend sẽ được tự động cấu hình để giao tiếp với backend. Quá trình này sẽ giải quyết hoàn toàn lỗi bạn đang gặp phải.
