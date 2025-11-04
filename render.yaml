@@ -1,0 +1,41 @@
+# render.yaml blueprint
+# Defines the services for deploying the IT-Service application on Render.
+# Use this with a "New Blueprint Instance" on the Render dashboard.
+
+services:
+  # Backend Node.js service
+  - type: web
+    name: it-service-backend  # A unique name for the backend service
+    env: node
+    plan: free                # Use Render's free instance type
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      # These are secrets and must be configured in a Render Environment Group.
+      - key: DB_HOST
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+
+  # Frontend React static site
+  - type: static
+    name: it-service-frontend # A unique name for the frontend service
+    plan: free                 # Use Render's free instance type
+    rootDir: .
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      # Secret for the Gemini API, configure in Render Environment Group.
+      - key: VITE_GEMINI_API_KEY
+        sync: false
+      # Automatically links the live URL of the backend to the frontend.
+      - key: VITE_BACKEND_API_BASE_URL
+        fromService:
+          type: web
+          name: it-service-backend # This MUST match the backend service name above
+          property: url

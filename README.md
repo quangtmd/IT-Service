@@ -4,11 +4,11 @@
 
 # Run and deploy your AI Studio app
 
-This contains everything you need to run your app locally.
+This contains everything you need to run your app locally and deploy it to the web.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1NczgJ-ti9VqQ8LwMkqhxBrhnvi-qRD0E
 
-## Run Locally
+## 1. Run Locally
 
 This project consists of two main parts: a **Frontend** (React app) and a **Backend** (Node.js API server). You'll need to run both simultaneously for the application to work correctly.
 
@@ -16,7 +16,7 @@ This project consists of two main parts: a **Frontend** (React app) and a **Back
 - Node.js
 - A running MySQL database instance. The required `CREATE TABLE` statements are included in `backend/server.js`.
 
-### 1. Backend Setup
+### Backend Setup
 
 The backend server connects to your MySQL database and provides APIs for the frontend.
 
@@ -31,7 +31,7 @@ The backend server connects to your MySQL database and provides APIs for the fro
     ```
 
 3.  **Configure Database (Optional):**
-    The database credentials are pre-configured in `backend/server.js` with fallback values. If you need to use different credentials (e.g., for your local database), you can set the following environment variables: `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
+    The database credentials are pre-configured in `backend/server.js`. To use different credentials, you can set the following environment variables: `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
 
 4.  **Start the backend server:**
     ```bash
@@ -39,7 +39,7 @@ The backend server connects to your MySQL database and provides APIs for the fro
     ```
     The server will start, usually on `http://localhost:3001`.
 
-### 2. Frontend Setup
+### Frontend Setup
 
 In a **new terminal window**, set up and run the React frontend.
 
@@ -50,9 +50,9 @@ In a **new terminal window**, set up and run the React frontend.
     npm install
     ```
 3.  **Set your Environment Variables:**
-    Create a file named `.env.local` in the project root and add your Gemini API key and the backend URL:
+    Create a file named `.env` in the project root and add your Gemini API key and the backend URL using the `VITE_` prefix:
     ```
-    GEMINI_API_KEY=YOUR_API_KEY_HERE
+    VITE_GEMINI_API_KEY=YOUR_API_KEY_HERE
     VITE_BACKEND_API_BASE_URL=http://localhost:3001
     ```
 4.  **Run the frontend app:**
@@ -60,3 +60,15 @@ In a **new terminal window**, set up and run the React frontend.
     npm run dev
     ```
 The application will be accessible in your browser, usually at `http://localhost:3000`.
+
+---
+
+## 2. Deploy to Render (Recommended)
+
+This project includes a `render.yaml` blueprint file, which allows you to deploy both the frontend and backend services with a single click, preventing common configuration errors.
+
+1.  **Fork this repository** to your own GitHub account.
+2.  Go to the [**Render Blueprint Dashboard**](https://dashboard.render.com/blueprints) and click **New Blueprint Instance**.
+3.  Connect the repository you just forked. Render will automatically detect the `render.yaml` file.
+4.  Render will prompt you to provide values for the secret environment variables (`DB_HOST`, `DB_USER`, etc., and `VITE_GEMINI_API_KEY`). Enter your credentials for your deployed MySQL database and your Gemini API key.
+5.  Click **Apply**. Render will build and deploy both the frontend and backend, automatically linking them together.

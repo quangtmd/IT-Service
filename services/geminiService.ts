@@ -15,10 +15,12 @@ let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
 
 const getAiClient = (): GoogleGenAI | null => {
+  // Fix: Use process.env.API_KEY as per guidelines to resolve TypeScript error.
   const apiKey = process.env.API_KEY;
   // This robust check handles both missing keys and the 'undefined' string issue from some build tools.
   if (!apiKey || apiKey === 'undefined') {
     if (!aiInstance) { // Log this warning only once to avoid spamming the console
+        // Fix: Update warning message to reflect the correct environment variable.
         console.warn("Gemini Service: API_KEY is not configured. AI features will be disabled.");
     }
     return null;

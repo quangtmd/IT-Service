@@ -95,16 +95,16 @@ export const deleteArticle = async (id: string): Promise<void> => {
 
 // --- Media Library Service ---
 export const getMediaItems = async (): Promise<MediaItem[]> => {
-    return apiRequest('/api/media-library');
+    return apiRequest('/api/media-items');
 };
 
 export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaItem> => {
     const newItem = { ...item, id: `media-${Date.now()}` };
-    return apiRequest('/api/media-library', { method: 'POST', body: JSON.stringify(newItem) });
+    return apiRequest('/api/media-items', { method: 'POST', body: JSON.stringify(newItem) });
 };
 
 export const deleteMediaItem = async (id: string): Promise<void> => {
-    await apiRequest(`/api/media-library/${id}`, { method: 'DELETE' });
+    await apiRequest(`/api/media-items/${id}`, { method: 'DELETE' });
 };
 // Fix: Add missing functions to satisfy imports in admin components.
 // --- Service Ticket Service ---

@@ -16,7 +16,7 @@ app.use(express.json({ limit: '10mb' })); // Increase limit for potential base64
 2. Tạo một database mới, ví dụ: CREATE DATABASE iq_technology_db;
 3. Chạy các câu lệnh SQL dưới đây để tạo bảng cần thiết:
 
-CREATE TABLE products (
+CREATE TABLE Products (
     id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     mainCategory VARCHAR(255),
@@ -41,7 +41,7 @@ CREATE TABLE products (
     slug VARCHAR(255) UNIQUE
 );
 
-CREATE TABLE orders (
+CREATE TABLE Orders (
     id VARCHAR(255) PRIMARY KEY,
     customerInfo JSON NOT NULL,
     items JSON NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE orders (
     paymentInfo JSON NOT NULL
 );
 
-CREATE TABLE articles (
+CREATE TABLE Articles (
     id VARCHAR(255) PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     summary TEXT,
@@ -65,7 +65,7 @@ CREATE TABLE articles (
     imageSearchQuery VARCHAR(255)
 );
 
-CREATE TABLE mediaLibrary (
+CREATE TABLE MediaItems (
     id VARCHAR(255) PRIMARY KEY,
     url LONGTEXT NOT NULL,
     name VARCHAR(255),
@@ -205,7 +205,7 @@ app.get('/api/products', async (req, res) => {
 
     const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    const countQuery = `SELECT COUNT(*) as total FROM products ${whereString}`;
+    const countQuery = `SELECT COUNT(*) as total FROM Products ${whereString}`;
     const [countRows] = await pool.query(countQuery, params);
     const totalProducts = countRows[0].total;
 
@@ -213,7 +213,7 @@ app.get('/api/products', async (req, res) => {
     const limitNum = parseInt(limit, 10);
     const offset = (pageNum - 1) * limitNum;
     
-    const dataQuery = `SELECT * FROM products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
+    const dataQuery = `SELECT * FROM Products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
     const dataParams = [...params, limitNum, offset];
 
     const [rows] = await pool.query(dataQuery, dataParams);
@@ -229,9 +229,9 @@ app.get('/api/products', async (req, res) => {
 app.get('/api/products/featured', async (req, res) => {
     try {
         const [rows] = await pool.query(`
-            (SELECT * FROM products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, '["Bán chạy"]'))
+            (SELECT * FROM Products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, '["Bán chạy"]'))
             UNION
-            (SELECT * FROM products WHERE isVisible = TRUE AND originalPrice IS NOT NULL AND id NOT IN (SELECT id FROM products WHERE JSON_CONTAINS(tags, '["Bán chạy"]')))
+            (SELECT * FROM Products WHERE isVisible = TRUE AND originalPrice IS NOT NULL AND id NOT IN (SELECT id FROM Products WHERE JSON_CONTAINS(tags, '["Bán chạy"]')))
             LIMIT 4
         `);
         const products = rows.map(p => parseJsonFields(p, PRODUCT_JSON_FIELDS));
@@ -244,7 +244,7 @@ app.get('/api/products/featured', async (req, res) => {
 
 app.get('/api/products/:id', async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [req.params.id]);
+        const [rows] = await pool.query("SELECT * FROM Products WHERE id = ?", [req.params.id]);
         if (rows.length > 0) {
             res.json(parseJsonFields(rows[0], PRODUCT_JSON_FIELDS));
         } else {
@@ -257,8 +257,8 @@ app.get('/api/products/:id', async (req, res) => {
 
 app.post('/api/products', async (req, res) => {
     try {
-        await pool.query("INSERT INTO products SET ?", [prepareJsonFieldsForDb(req.body, PRODUCT_JSON_FIELDS)]);
-        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [req.body.id]);
+        await pool.query("INSERT INTO Products SET ?", [prepareJsonFieldsForDb(req.body, PRODUCT_JSON_FIELDS)]);
+        const [rows] = await pool.query("SELECT * FROM Products WHERE id = ?", [req.body.id]);
         res.status(201).json(parseJsonFields(rows[0], PRODUCT_JSON_FIELDS));
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server khi tạo sản phẩm.' });
@@ -269,9 +269,9 @@ app.put('/api/products/:id', async (req, res) => {
     try {
         const productForDb = prepareJsonFieldsForDb(req.body, PRODUCT_JSON_FIELDS);
         delete productForDb.id;
-        const [result] = await pool.query("UPDATE products SET ? WHERE id = ?", [productForDb, req.params.id]);
+        const [result] = await pool.query("UPDATE Products SET ? WHERE id = ?", [productForDb, req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
-        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [req.params.id]);
+        const [rows] = await pool.query("SELECT * FROM Products WHERE id = ?", [req.params.id]);
         res.json(parseJsonFields(rows[0], PRODUCT_JSON_FIELDS));
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm.' });
@@ -280,7 +280,7 @@ app.put('/api/products/:id', async (req, res) => {
 
 app.delete('/api/products/:id', async (req, res) => {
     try {
-        const [result] = await pool.query("DELETE FROM products WHERE id = ?", [req.params.id]);
+        const [result] = await pool.query("DELETE FROM Products WHERE id = ?", [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
         res.status(200).json({ message: 'Sản phẩm đã được xóa.' });
     } catch (err) {
@@ -293,7 +293,7 @@ app.delete('/api/products/:id', async (req, res) => {
 
 app.get('/api/orders', async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM orders ORDER BY orderDate DESC");
+        const [rows] = await pool.query("SELECT * FROM Orders ORDER BY orderDate DESC");
         res.json(rows.map(o => parseJsonFields(o, ORDER_JSON_FIELDS)));
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server khi lấy đơn hàng.' });
@@ -303,7 +303,7 @@ app.get('/api/orders', async (req, res) => {
 app.post('/api/orders', async (req, res) => {
     try {
         const newOrder = { ...req.body, orderDate: new Date(req.body.orderDate) };
-        await pool.query("INSERT INTO orders SET ?", [prepareJsonFieldsForDb(newOrder, ORDER_JSON_FIELDS)]);
+        await pool.query("INSERT INTO Orders SET ?", [prepareJsonFieldsForDb(newOrder, ORDER_JSON_FIELDS)]);
         res.status(201).json(newOrder);
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng.' });
@@ -312,7 +312,7 @@ app.post('/api/orders', async (req, res) => {
 
 app.put('/api/orders/:id/status', async (req, res) => {
     try {
-        const [result] = await pool.query("UPDATE orders SET status = ? WHERE id = ?", [req.body.status, req.params.id]);
+        const [result] = await pool.query("UPDATE Orders SET status = ? WHERE id = ?", [req.body.status, req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đơn hàng.' });
         res.json({ message: 'Cập nhật trạng thái thành công.' });
     } catch (err) {
@@ -325,7 +325,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
 
 app.get('/api/articles', async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM articles ORDER BY date DESC");
+        const [rows] = await pool.query("SELECT * FROM Articles ORDER BY date DESC");
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server khi lấy bài viết.' });
@@ -334,7 +334,7 @@ app.get('/api/articles', async (req, res) => {
 
 app.get('/api/articles/:id', async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM articles WHERE id = ?", [req.params.id]);
+        const [rows] = await pool.query("SELECT * FROM Articles WHERE id = ?", [req.params.id]);
         if (rows.length > 0) res.json(rows[0]);
         else res.status(404).json({ error: 'Không tìm thấy bài viết.' });
     } catch (err) {
@@ -345,7 +345,7 @@ app.get('/api/articles/:id', async (req, res) => {
 app.post('/api/articles', async (req, res) => {
     try {
         const newArticle = { ...req.body, date: new Date(req.body.date) };
-        await pool.query("INSERT INTO articles SET ?", [newArticle]);
+        await pool.query("INSERT INTO Articles SET ?", [newArticle]);
         res.status(201).json(newArticle);
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server khi tạo bài viết.' });
@@ -356,7 +356,7 @@ app.put('/api/articles/:id', async (req, res) => {
     try {
         const articleData = { ...req.body };
         delete articleData.id;
-        const [result] = await pool.query("UPDATE articles SET ? WHERE id = ?", [articleData, req.params.id]);
+        const [result] = await pool.query("UPDATE Articles SET ? WHERE id = ?", [articleData, req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy bài viết.' });
         res.json({ id: req.params.id, ...articleData });
     } catch (err) {
@@ -366,7 +366,7 @@ app.put('/api/articles/:id', async (req, res) => {
 
 app.delete('/api/articles/:id', async (req, res) => {
     try {
-        const [result] = await pool.query("DELETE FROM articles WHERE id = ?", [req.params.id]);
+        const [result] = await pool.query("DELETE FROM Articles WHERE id = ?", [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy bài viết.' });
         res.status(200).json({ message: 'Bài viết đã được xóa.' });
     } catch (err) {
@@ -374,30 +374,30 @@ app.delete('/api/articles/:id', async (req, res) => {
     }
 });
 
-// --- MEDIA LIBRARY API ENDPOINTS ---
+// --- MEDIA ITEMS API ENDPOINTS ---
 
-app.get('/api/media-library', async (req, res) => {
+app.get('/api/media-items', async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM mediaLibrary ORDER BY uploadedAt DESC");
+        const [rows] = await pool.query("SELECT * FROM MediaItems ORDER BY uploadedAt DESC");
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server khi lấy media.' });
     }
 });
 
-app.post('/api/media-library', async (req, res) => {
+app.post('/api/media-items', async (req, res) => {
     try {
         const newItem = { ...req.body, uploadedAt: new Date(req.body.uploadedAt) };
-        await pool.query("INSERT INTO mediaLibrary SET ?", [newItem]);
+        await pool.query("INSERT INTO MediaItems SET ?", [newItem]);
         res.status(201).json(newItem);
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server khi thêm media.' });
     }
 });
 
-app.delete('/api/media-library/:id', async (req, res) => {
+app.delete('/api/media-items/:id', async (req, res) => {
     try {
-        const [result] = await pool.query("DELETE FROM mediaLibrary WHERE id = ?", [req.params.id]);
+        const [result] = await pool.query("DELETE FROM MediaItems WHERE id = ?", [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy media.' });
         res.status(200).json({ message: 'Media đã được xóa.' });
     } catch (err) {
