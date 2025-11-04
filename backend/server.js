@@ -4,7 +4,7 @@ const cors = require('cors');
 require('dotenv').config(); // Tải các biến môi trường từ file .env
 
 const app = express();
-const port = process.env.PORT || 3001; 
+const port = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -76,41 +76,16 @@ CREATE TABLE MediaItems (
 
 
 // --- CẤU HÌNH KẾT NỐI MYSQL ---
-// QUAN TRỌNG: Để phát triển ở máy local, bạn nên dùng một database MySQL trên chính máy của mình.
-// Kết nối tới database từ xa (remote) khi đang code ở local thường sẽ thất bại do IP của bạn không được cho phép (whitelisted).
-
-// Tạo một file tên là `.env` trong thư mục `backend` và điền thông tin database local của bạn vào đó.
-// Xem file `.env.example` để biết cấu trúc.
-
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',      // Mặc định là localhost cho local dev
-  user: process.env.DB_USER || 'root',           // User mặc định của MySQL local
-  password: process.env.DB_PASSWORD || '',       // Mật khẩu mặc định thường là rỗng
-  database: process.env.DB_NAME || 'iq_technology_db', // Tên DB bạn đã tạo ở local
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'iq_technology_db',
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 };
-
-
-let pool;
-try {
-    pool = mysql.createPool(dbConfig);
-    // Thêm một lần kiểm tra kết nối để đảm bảo thông tin đăng nhập đúng
-    pool.getConnection()
-        .then(connection => {
-            console.log('Kết nối tới database MySQL thành công!');
-            connection.release();
-        })
-        .catch(err => {
-            console.error('LỖI KẾT NỐI DATABASE:', err.message);
-            console.error('Vui lòng kiểm tra lại thông tin trong file `backend/.env` hoặc đảm bảo server MySQL của bạn đang chạy.');
-        });
-} catch (error) {
-    console.error('Lỗi khi tạo kết nối MySQL pool:', error);
-    process.exit(1);
-}
 
 // --- JSON PARSING HELPERS ---
 const parseJsonFields = (item, fields) => {
@@ -159,266 +134,290 @@ const PRODUCT_CATEGORIES_HIERARCHY = [
 ];
 
 
-// --- PRODUCTS API ENDPOINTS ---
+// --- SERVER STARTUP LOGIC ---
+const startServer = async () => {
+    let pool;
+    try {
+        pool = mysql.createPool(dbConfig);
+        // Attempt to get a connection to validate credentials.
+        const connection = await pool.getConnection();
+        console.log('✅ Kết nối tới database MySQL thành công!');
+        connection.release();
+    } catch (error) {
+        console.error('❌ LỖI KẾT NỐI DATABASE:', error.message);
+        console.error('------------------------------------------------------------------');
+        console.error('👉 Vui lòng kiểm tra lại các mục sau:');
+        console.error('   1. Server MySQL của bạn (local hoặc remote) đang chạy.');
+        console.error('   2. Thông tin trong file `backend/.env` (nếu chạy local) là chính xác.');
+        console.error('   3. Các biến môi trường (DB_HOST, DB_USER, etc.) trên Render đã được cài đặt đúng.');
+        console.error('   4. Địa chỉ IP của server (local hoặc Render) đã được cho phép (whitelisted) để kết nối tới database.');
+        console.error('------------------------------------------------------------------');
+        process.exit(1); // Exit the process if DB connection fails
+    }
 
-app.get('/api/products', async (req, res) => {
-  try {
-    const getCategoryNameFromSlug_Backend = (slug, type) => {
-        if (type === 'main') {
-            const mainCat = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
-            return mainCat ? mainCat.name : null;
-        }
-        if (type === 'sub') {
-            for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
-                const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
-                if (subCat) return subCat.name;
+    // --- PRODUCTS API ENDPOINTS ---
+
+    app.get('/api/products', async (req, res) => {
+      try {
+        const getCategoryNameFromSlug_Backend = (slug, type) => {
+            if (type === 'main') {
+                const mainCat = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
+                return mainCat ? mainCat.name : null;
+            }
+            if (type === 'sub') {
+                for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
+                    const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
+                    if (subCat) return subCat.name;
+                }
+                return null;
             }
             return null;
+        };
+
+        const { q, mainCategory, subCategory, brand, status, tags, page = 1, limit = 12 } = req.query;
+
+        let whereClauses = ["isVisible = TRUE"];
+        const params = [];
+
+        if (q) {
+            whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR JSON_SEARCH(tags, 'one', ?) IS NOT NULL)");
+            const searchTerm = `%${q}%`;
+            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
         }
-        return null;
-    };
-
-    const { q, mainCategory, subCategory, brand, status, tags, page = 1, limit = 12 } = req.query;
-
-    let whereClauses = ["isVisible = TRUE"];
-    const params = [];
-
-    if (q) {
-        whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR JSON_SEARCH(tags, 'one', ?) IS NOT NULL)");
-        const searchTerm = `%${q}%`;
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-    }
-    if (mainCategory) {
-        const mainCategoryName = getCategoryNameFromSlug_Backend(mainCategory, 'main');
-        if (mainCategoryName) {
-            whereClauses.push("mainCategory = ?");
-            params.push(mainCategoryName);
+        if (mainCategory) {
+            const mainCategoryName = getCategoryNameFromSlug_Backend(mainCategory, 'main');
+            if (mainCategoryName) {
+                whereClauses.push("mainCategory = ?");
+                params.push(mainCategoryName);
+            }
         }
-    }
-    if (subCategory) {
-        const subCategoryName = getCategoryNameFromSlug_Backend(subCategory, 'sub');
-        if (subCategoryName) {
-            whereClauses.push("subCategory = ?");
-            params.push(subCategoryName);
+        if (subCategory) {
+            const subCategoryName = getCategoryNameFromSlug_Backend(subCategory, 'sub');
+            if (subCategoryName) {
+                whereClauses.push("subCategory = ?");
+                params.push(subCategoryName);
+            }
         }
-    }
-    if (brand) {
-        whereClauses.push("brand = ?");
-        params.push(brand);
-    }
-    if (status) {
-        whereClauses.push("status = ?");
-        params.push(status);
-    }
-    if (tags) {
-      whereClauses.push("JSON_CONTAINS(tags, JSON_QUOTE(?))");
-      params.push(tags);
-    }
+        if (brand) {
+            whereClauses.push("brand = ?");
+            params.push(brand);
+        }
+        if (status) {
+            whereClauses.push("status = ?");
+            params.push(status);
+        }
+        if (tags) {
+          whereClauses.push("JSON_CONTAINS(tags, JSON_QUOTE(?))");
+          params.push(tags);
+        }
 
-    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+        const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    const countQuery = `SELECT COUNT(*) as total FROM Products ${whereString}`;
-    const [countRows] = await pool.query(countQuery, params);
-    const totalProducts = countRows[0].total;
+        const countQuery = `SELECT COUNT(*) as total FROM Products ${whereString}`;
+        const [countRows] = await pool.query(countQuery, params);
+        const totalProducts = countRows[0].total;
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const offset = (pageNum - 1) * limitNum;
-    
-    const dataQuery = `SELECT * FROM Products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
-    const dataParams = [...params, limitNum, offset];
+        const pageNum = parseInt(page, 10);
+        const limitNum = parseInt(limit, 10);
+        const offset = (pageNum - 1) * limitNum;
+        
+        const dataQuery = `SELECT * FROM Products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
+        const dataParams = [...params, limitNum, offset];
 
-    const [rows] = await pool.query(dataQuery, dataParams);
-    const products = rows.map(p => parseJsonFields(p, PRODUCT_JSON_FIELDS));
-
-    res.json({ products, totalProducts });
-  } catch (err) {
-    console.error("Lỗi khi truy vấn sản phẩm:", err);
-    res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu sản phẩm.' });
-  }
-});
-
-app.get('/api/products/featured', async (req, res) => {
-    try {
-        const [rows] = await pool.query(`
-            (SELECT * FROM Products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, '["Bán chạy"]'))
-            UNION
-            (SELECT * FROM Products WHERE isVisible = TRUE AND originalPrice IS NOT NULL AND id NOT IN (SELECT id FROM Products WHERE JSON_CONTAINS(tags, '["Bán chạy"]')))
-            LIMIT 4
-        `);
+        const [rows] = await pool.query(dataQuery, dataParams);
         const products = rows.map(p => parseJsonFields(p, PRODUCT_JSON_FIELDS));
-        res.json(products);
-    } catch (err) {
-        console.error("Lỗi khi truy vấn sản phẩm nổi bật:", err);
-        res.status(500).json({ error: 'Lỗi server.' });
-    }
-});
 
-app.get('/api/products/:id', async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT * FROM Products WHERE id = ?", [req.params.id]);
-        if (rows.length > 0) {
-            res.json(parseJsonFields(rows[0], PRODUCT_JSON_FIELDS));
-        } else {
-            res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
+        res.json({ products, totalProducts });
+      } catch (err) {
+        console.error("Lỗi khi truy vấn sản phẩm:", err);
+        res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu sản phẩm.' });
+      }
+    });
+
+    app.get('/api/products/featured', async (req, res) => {
+        try {
+            const [rows] = await pool.query(`
+                (SELECT * FROM Products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, '["Bán chạy"]'))
+                UNION
+                (SELECT * FROM Products WHERE isVisible = TRUE AND originalPrice IS NOT NULL AND id NOT IN (SELECT id FROM Products WHERE JSON_CONTAINS(tags, '["Bán chạy"]')))
+                LIMIT 4
+            `);
+            const products = rows.map(p => parseJsonFields(p, PRODUCT_JSON_FIELDS));
+            res.json(products);
+        } catch (err) {
+            console.error("Lỗi khi truy vấn sản phẩm nổi bật:", err);
+            res.status(500).json({ error: 'Lỗi server.' });
         }
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server.' });
-    }
-});
+    });
 
-app.post('/api/products', async (req, res) => {
-    try {
-        await pool.query("INSERT INTO Products SET ?", [prepareJsonFieldsForDb(req.body, PRODUCT_JSON_FIELDS)]);
-        const [rows] = await pool.query("SELECT * FROM Products WHERE id = ?", [req.body.id]);
-        res.status(201).json(parseJsonFields(rows[0], PRODUCT_JSON_FIELDS));
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi tạo sản phẩm.' });
-    }
-});
+    app.get('/api/products/:id', async (req, res) => {
+        try {
+            const [rows] = await pool.query("SELECT * FROM Products WHERE id = ?", [req.params.id]);
+            if (rows.length > 0) {
+                res.json(parseJsonFields(rows[0], PRODUCT_JSON_FIELDS));
+            } else {
+                res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
+            }
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server.' });
+        }
+    });
 
-app.put('/api/products/:id', async (req, res) => {
-    try {
-        const productForDb = prepareJsonFieldsForDb(req.body, PRODUCT_JSON_FIELDS);
-        delete productForDb.id;
-        const [result] = await pool.query("UPDATE Products SET ? WHERE id = ?", [productForDb, req.params.id]);
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
-        const [rows] = await pool.query("SELECT * FROM Products WHERE id = ?", [req.params.id]);
-        res.json(parseJsonFields(rows[0], PRODUCT_JSON_FIELDS));
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm.' });
-    }
-});
+    app.post('/api/products', async (req, res) => {
+        try {
+            await pool.query("INSERT INTO Products SET ?", [prepareJsonFieldsForDb(req.body, PRODUCT_JSON_FIELDS)]);
+            const [rows] = await pool.query("SELECT * FROM Products WHERE id = ?", [req.body.id]);
+            res.status(201).json(parseJsonFields(rows[0], PRODUCT_JSON_FIELDS));
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi tạo sản phẩm.' });
+        }
+    });
 
-app.delete('/api/products/:id', async (req, res) => {
-    try {
-        const [result] = await pool.query("DELETE FROM Products WHERE id = ?", [req.params.id]);
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
-        res.status(200).json({ message: 'Sản phẩm đã được xóa.' });
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm.' });
-    }
-});
+    app.put('/api/products/:id', async (req, res) => {
+        try {
+            const productForDb = prepareJsonFieldsForDb(req.body, PRODUCT_JSON_FIELDS);
+            delete productForDb.id;
+            const [result] = await pool.query("UPDATE Products SET ? WHERE id = ?", [productForDb, req.params.id]);
+            if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
+            const [rows] = await pool.query("SELECT * FROM Products WHERE id = ?", [req.params.id]);
+            res.json(parseJsonFields(rows[0], PRODUCT_JSON_FIELDS));
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm.' });
+        }
+    });
 
-
-// --- ORDERS API ENDPOINTS ---
-
-app.get('/api/orders', async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT * FROM Orders ORDER BY orderDate DESC");
-        res.json(rows.map(o => parseJsonFields(o, ORDER_JSON_FIELDS)));
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi lấy đơn hàng.' });
-    }
-});
-
-app.post('/api/orders', async (req, res) => {
-    try {
-        const newOrder = { ...req.body, orderDate: new Date(req.body.orderDate) };
-        await pool.query("INSERT INTO Orders SET ?", [prepareJsonFieldsForDb(newOrder, ORDER_JSON_FIELDS)]);
-        res.status(201).json(newOrder);
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng.' });
-    }
-});
-
-app.put('/api/orders/:id/status', async (req, res) => {
-    try {
-        const [result] = await pool.query("UPDATE Orders SET status = ? WHERE id = ?", [req.body.status, req.params.id]);
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đơn hàng.' });
-        res.json({ message: 'Cập nhật trạng thái thành công.' });
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái.' });
-    }
-});
+    app.delete('/api/products/:id', async (req, res) => {
+        try {
+            const [result] = await pool.query("DELETE FROM Products WHERE id = ?", [req.params.id]);
+            if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
+            res.status(200).json({ message: 'Sản phẩm đã được xóa.' });
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm.' });
+        }
+    });
 
 
-// --- ARTICLES API ENDPOINTS ---
+    // --- ORDERS API ENDPOINTS ---
 
-app.get('/api/articles', async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT * FROM Articles ORDER BY date DESC");
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi lấy bài viết.' });
-    }
-});
+    app.get('/api/orders', async (req, res) => {
+        try {
+            const [rows] = await pool.query("SELECT * FROM Orders ORDER BY orderDate DESC");
+            res.json(rows.map(o => parseJsonFields(o, ORDER_JSON_FIELDS)));
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi lấy đơn hàng.' });
+        }
+    });
 
-app.get('/api/articles/:id', async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT * FROM Articles WHERE id = ?", [req.params.id]);
-        if (rows.length > 0) res.json(rows[0]);
-        else res.status(404).json({ error: 'Không tìm thấy bài viết.' });
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server.' });
-    }
-});
+    app.post('/api/orders', async (req, res) => {
+        try {
+            const newOrder = { ...req.body, orderDate: new Date(req.body.orderDate) };
+            await pool.query("INSERT INTO Orders SET ?", [prepareJsonFieldsForDb(newOrder, ORDER_JSON_FIELDS)]);
+            res.status(201).json(newOrder);
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng.' });
+        }
+    });
 
-app.post('/api/articles', async (req, res) => {
-    try {
-        const newArticle = { ...req.body, date: new Date(req.body.date) };
-        await pool.query("INSERT INTO Articles SET ?", [newArticle]);
-        res.status(201).json(newArticle);
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi tạo bài viết.' });
-    }
-});
-
-app.put('/api/articles/:id', async (req, res) => {
-    try {
-        const articleData = { ...req.body };
-        delete articleData.id;
-        const [result] = await pool.query("UPDATE Articles SET ? WHERE id = ?", [articleData, req.params.id]);
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy bài viết.' });
-        res.json({ id: req.params.id, ...articleData });
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi cập nhật bài viết.' });
-    }
-});
-
-app.delete('/api/articles/:id', async (req, res) => {
-    try {
-        const [result] = await pool.query("DELETE FROM Articles WHERE id = ?", [req.params.id]);
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy bài viết.' });
-        res.status(200).json({ message: 'Bài viết đã được xóa.' });
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi xóa bài viết.' });
-    }
-});
-
-// --- MEDIA ITEMS API ENDPOINTS ---
-
-app.get('/api/media-items', async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT * FROM MediaItems ORDER BY uploadedAt DESC");
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi lấy media.' });
-    }
-});
-
-app.post('/api/media-items', async (req, res) => {
-    try {
-        const newItem = { ...req.body, uploadedAt: new Date(req.body.uploadedAt) };
-        await pool.query("INSERT INTO MediaItems SET ?", [newItem]);
-        res.status(201).json(newItem);
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi thêm media.' });
-    }
-});
-
-app.delete('/api/media-items/:id', async (req, res) => {
-    try {
-        const [result] = await pool.query("DELETE FROM MediaItems WHERE id = ?", [req.params.id]);
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy media.' });
-        res.status(200).json({ message: 'Media đã được xóa.' });
-    } catch (err) {
-        res.status(500).json({ error: 'Lỗi server khi xóa media.' });
-    }
-});
+    app.put('/api/orders/:id/status', async (req, res) => {
+        try {
+            const [result] = await pool.query("UPDATE Orders SET status = ? WHERE id = ?", [req.body.status, req.params.id]);
+            if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đơn hàng.' });
+            res.json({ message: 'Cập nhật trạng thái thành công.' });
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái.' });
+        }
+    });
 
 
-// Khởi động server
-app.listen(port, () => {
-  console.log(`Backend server đang chạy tại http://localhost:${port}`);
-});
+    // --- ARTICLES API ENDPOINTS ---
+
+    app.get('/api/articles', async (req, res) => {
+        try {
+            const [rows] = await pool.query("SELECT * FROM Articles ORDER BY date DESC");
+            res.json(rows);
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi lấy bài viết.' });
+        }
+    });
+
+    app.get('/api/articles/:id', async (req, res) => {
+        try {
+            const [rows] = await pool.query("SELECT * FROM Articles WHERE id = ?", [req.params.id]);
+            if (rows.length > 0) res.json(rows[0]);
+            else res.status(404).json({ error: 'Không tìm thấy bài viết.' });
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server.' });
+        }
+    });
+
+    app.post('/api/articles', async (req, res) => {
+        try {
+            const newArticle = { ...req.body, date: new Date(req.body.date) };
+            await pool.query("INSERT INTO Articles SET ?", [newArticle]);
+            res.status(201).json(newArticle);
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi tạo bài viết.' });
+        }
+    });
+
+    app.put('/api/articles/:id', async (req, res) => {
+        try {
+            const articleData = { ...req.body };
+            delete articleData.id;
+            const [result] = await pool.query("UPDATE Articles SET ? WHERE id = ?", [articleData, req.params.id]);
+            if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy bài viết.' });
+            res.json({ id: req.params.id, ...articleData });
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi cập nhật bài viết.' });
+        }
+    });
+
+    app.delete('/api/articles/:id', async (req, res) => {
+        try {
+            const [result] = await pool.query("DELETE FROM Articles WHERE id = ?", [req.params.id]);
+            if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy bài viết.' });
+            res.status(200).json({ message: 'Bài viết đã được xóa.' });
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi xóa bài viết.' });
+        }
+    });
+
+    // --- MEDIA ITEMS API ENDPOINTS ---
+
+    app.get('/api/media-items', async (req, res) => {
+        try {
+            const [rows] = await pool.query("SELECT * FROM MediaItems ORDER BY uploadedAt DESC");
+            res.json(rows);
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi lấy media.' });
+        }
+    });
+
+    app.post('/api/media-items', async (req, res) => {
+        try {
+            const newItem = { ...req.body, uploadedAt: new Date(req.body.uploadedAt) };
+            await pool.query("INSERT INTO MediaItems SET ?", [newItem]);
+            res.status(201).json(newItem);
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi thêm media.' });
+        }
+    });
+
+    app.delete('/api/media-items/:id', async (req, res) => {
+        try {
+            const [result] = await pool.query("DELETE FROM MediaItems WHERE id = ?", [req.params.id]);
+            if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy media.' });
+            res.status(200).json({ message: 'Media đã được xóa.' });
+        } catch (err) {
+            res.status(500).json({ error: 'Lỗi server khi xóa media.' });
+        }
+    });
+
+    // Khởi động server
+    app.listen(port, () => {
+      console.log(`🚀 Backend server đang chạy tại http://localhost:${port}`);
+    });
+};
+
+// Run the server
+startServer();

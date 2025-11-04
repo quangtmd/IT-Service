@@ -55,7 +55,7 @@ The backend server connects to your local MySQL database and provides APIs for t
     ```bash
     npm start
     ```
-    The server will start on `http://localhost:3001`. **Keep this terminal window open.** If it connects to the database successfully, you will see a confirmation message.
+    The server will start on `http://localhost:3001`. **Keep this terminal window open.** If it connects to the database successfully, you will see a `✅ Kết nối tới database MySQL thành công!` message. If it fails, it will print a detailed error and stop.
 
 ---
 
@@ -87,8 +87,6 @@ The application will now be accessible in your browser (usually at `http://local
 
 This project contains two parts (**frontend** and **backend**) in one repository (a "monorepo"). The best way to deploy it is by using the included `render.yaml` blueprint file.
 
-**⚠️ LỖI BẠN ĐANG GẶP ("Missing script: start"):** Lỗi này xảy ra vì bạn đang cố gắng triển khai toàn bộ dự án như một "Web Service" duy nhất. Render đang chạy lệnh `npm start` ở thư mục gốc, nơi không có script này. Để khắc phục, bạn **PHẢI** sử dụng phương pháp **"Blueprint"** bên dưới để Render có thể tự động tạo 2 dịch vụ riêng biệt cho frontend và backend.
-
 ### Hướng Dẫn Triển Khai Chi Tiết:
 
 1.  **Fork repository này** về tài khoản GitHub của bạn.
@@ -105,10 +103,10 @@ This project contains two parts (**frontend** and **backend**) in one repository
 
     <img width="1011" alt="Render-Apply-Blueprint" src="https://github.com/user-attachments/assets/d16715f2-9594-4d1a-be29-d655f41441a1">
 
-6.  **Cấu hình Biến Môi trường:** Render sẽ yêu cầu bạn nhập các khóa bí mật.
+6.  **Cấu hình Biến Môi trường (QUAN TRỌNG):** Render sẽ yêu cầu bạn nhập các khóa bí mật. Đây là bước quan trọng nhất.
     *   Đi đến tab **"Environment"** của Blueprint.
     *   Tạo một **"Environment Group"** mới hoặc thêm các biến trực tiếp.
-    *   Thêm các khóa sau với giá trị tương ứng:
+    *   **BẮT BUỘC** phải thêm các khóa sau với giá trị tương ứng:
         *   `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: Nhập thông tin kết nối đến cơ sở dữ liệu **REMOTE** của bạn (ví dụ: từ Hostinger, Aiven, v.v.).
         *   `VITE_GEMINI_API_KEY`: Nhập khóa API Google Gemini của bạn.
 
@@ -117,4 +115,20 @@ This project contains two parts (**frontend** and **backend**) in one repository
 
 7.  Sau khi thêm các biến môi trường, nhấp vào **"Manual Deploy" > "Deploy latest commit"** ở góc trên cùng bên phải để bắt đầu quá trình triển khai.
 
-Render sẽ tạo hai dịch vụ (`it-service-backend` và `it-service-frontend`), xây dựng và triển khai chúng. Frontend sẽ được tự động cấu hình để giao tiếp với backend. Quá trình này sẽ giải quyết hoàn toàn lỗi bạn đang gặp phải.
+---
+
+## 3. Troubleshooting (Xử lý sự cố)
+
+#### Lỗi: "Lỗi mạng hoặc server không phản hồi" trên website
+
+Lỗi này xảy ra khi frontend không thể kết nối với backend. Đây là cách khắc phục:
+
+**Nếu chạy ở máy local:**
+1.  **Backend server có đang chạy không?** Đảm bảo bạn có một cửa sổ terminal đang mở trong thư mục `backend` và đã chạy lệnh `npm start`.
+2.  **Backend đã kết nối database thành công chưa?** Kiểm tra terminal của backend. Nếu bạn thấy lỗi `❌ LỖI KẾT NỐI DATABASE`, điều đó có nghĩa là thông tin trong file `backend/.env` của bạn không chính xác hoặc server MySQL local của bạn chưa chạy. Hãy kiểm tra lại **Bước 1 và 2** của phần cài đặt local.
+
+**Nếu đã triển khai trên Render:**
+1.  **Kiểm tra Logs của Backend Service.** Truy cập Render Dashboard, tìm service có tên `it-service-backend` (hoặc tên tương tự) và nhấp vào tab "Logs".
+2.  Tìm lỗi `❌ LỖI KẾT NỐI DATABASE` ở phần đầu của logs. Nếu bạn thấy lỗi này, có nghĩa là các **Biến Môi trường (Environment Variables) trên Render của bạn đã bị cài đặt sai hoặc thiếu.**
+3.  **CÁCH SỬA:** Quay lại phần "Environment" của Blueprint trên Render. **Xác minh lại rằng bạn đã thêm ĐẦY ĐỦ và CHÍNH XÁC** tất cả các biến `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`. Giá trị phải khớp hoàn toàn với thông tin database từ nhà cung cấp của bạn (ví dụ: Hostinger).
+4.  Sau khi cập nhật biến môi trường, hãy triển khai lại bằng cách nhấp vào "Manual Deploy" > "Deploy latest commit".
