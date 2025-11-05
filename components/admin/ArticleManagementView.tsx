@@ -171,49 +171,47 @@ const ArticleFormModal: React.FC<ArticleFormModalProps> = ({ article, onClose, o
 
     return (
         <div className="admin-modal-overlay">
-            <div className="admin-modal-panel">
-                <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                    <div className="admin-modal-header">
-                        <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Bài viết' : 'Thêm Bài viết Mới'}</h4>
-                        <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+            <form onSubmit={handleSubmit} className="admin-modal-panel">
+                <div className="admin-modal-header">
+                    <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Bài viết' : 'Thêm Bài viết Mới'}</h4>
+                    <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <div className="admin-modal-body">
+                     <div className="admin-form-group">
+                        <label htmlFor="title">Tiêu đề *</label>
+                        <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required />
                     </div>
-                    <div className="admin-modal-body">
-                         <div className="admin-form-group">
-                            <label htmlFor="title">Tiêu đề *</label>
-                            <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="admin-form-group">
-                                <label htmlFor="author">Tác giả</label>
-                                <input type="text" name="author" id="author" value={formData.author} onChange={handleChange} />
-                            </div>
-                            <div className="admin-form-group">
-                                <label htmlFor="category">Danh mục</label>
-                                <select name="category" id="category" value={formData.category} onChange={handleChange}>
-                                    {Constants.ARTICLE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                        <ImageUploadInput
-                            label="URL Ảnh đại diện"
-                            value={formData.imageUrl}
-                            onChange={value => setFormData(p => ({ ...p, imageUrl: value }))}
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="admin-form-group">
-                            <label htmlFor="summary">Tóm tắt *</label>
-                            <textarea name="summary" id="summary" rows={3} value={formData.summary} onChange={handleChange} required></textarea>
+                            <label htmlFor="author">Tác giả</label>
+                            <input type="text" name="author" id="author" value={formData.author} onChange={handleChange} />
                         </div>
                         <div className="admin-form-group">
-                            <label htmlFor="content">Nội dung (hỗ trợ Markdown)</label>
-                            <textarea name="content" id="content" rows={10} value={formData.content || ''} onChange={handleChange}></textarea>
+                            <label htmlFor="category">Danh mục</label>
+                            <select name="category" id="category" value={formData.category} onChange={handleChange}>
+                                {Constants.ARTICLE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                            </select>
                         </div>
                     </div>
-                    <div className="admin-modal-footer">
-                        <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
-                        <Button type="submit" variant="primary">Lưu Bài viết</Button>
+                    <ImageUploadInput
+                        label="URL Ảnh đại diện"
+                        value={formData.imageUrl}
+                        onChange={value => setFormData(p => ({ ...p, imageUrl: value }))}
+                    />
+                    <div className="admin-form-group">
+                        <label htmlFor="summary">Tóm tắt *</label>
+                        <textarea name="summary" id="summary" rows={3} value={formData.summary} onChange={handleChange} required></textarea>
                     </div>
-                </form>
-            </div>
+                    <div className="admin-form-group">
+                        <label htmlFor="content">Nội dung (hỗ trợ Markdown)</label>
+                        <textarea name="content" id="content" rows={10} value={formData.content || ''} onChange={handleChange}></textarea>
+                    </div>
+                </div>
+                <div className="admin-modal-footer">
+                    <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
+                    <Button type="submit" variant="primary">Lưu Bài viết</Button>
+                </div>
+            </form>
         </div>
     );
 };

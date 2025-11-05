@@ -12,7 +12,6 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  // Fix: Initialize state as a class property to resolve typing issues with 'this.state' in the constructor.
   state: State = {
     hasError: false,
     errorMessage: '',
@@ -31,10 +30,8 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
-    // Fix: Access props and state directly from 'this' to resolve TypeScript errors.
     if (this.state.hasError) {
-      // FIX: In a class component, props must be accessed via `this.props`.
-      // [FIX] Correctly access props via `this.props` in a class component.
+      // Fix: Correctly access props via `this.props` in a class component.
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
@@ -69,7 +66,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // [FIX] Correctly access props via `this.props` in a class component.
+    // Fix: Correctly access props via `this.props` in a class component.
     return this.props.children;
   }
 }

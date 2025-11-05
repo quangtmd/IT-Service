@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../ui/Button';
@@ -65,7 +64,7 @@ const ConsultationRequestModal: React.FC<ConsultationRequestModalProps> = ({ isO
 
     return (
         <div className="admin-modal-overlay" onClick={handleClose}>
-            <div className="admin-modal-panel max-w-lg" onClick={e => e.stopPropagation()}>
+            <form onSubmit={handleSubmit} className="admin-modal-panel max-w-lg" onClick={e => e.stopPropagation()}>
                 <div className="admin-modal-header">
                     <h4 className="admin-modal-title">Yêu Cầu Tư Vấn Dịch Vụ</h4>
                     <button type="button" onClick={handleClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
@@ -77,7 +76,7 @@ const ConsultationRequestModal: React.FC<ConsultationRequestModalProps> = ({ isO
                         <p className="text-textMuted mt-2">Cảm ơn bạn! Chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.</p>
                     </div>
                 ) : (
-                    <form onSubmit={handleSubmit}>
+                    <>
                         <div className="admin-modal-body">
                             <p className="text-center mb-4 text-textMuted">Bạn đang yêu cầu tư vấn cho gói: <strong className="text-primary">{planName}</strong></p>
                             {error && <p className="text-sm text-danger-text bg-danger-bg p-3 rounded-md mb-4">{error}</p>}
@@ -106,11 +105,10 @@ const ConsultationRequestModal: React.FC<ConsultationRequestModalProps> = ({ isO
                             <Button type="button" variant="outline" onClick={handleClose}>Hủy</Button>
                             <Button type="submit">Gửi Yêu Cầu</Button>
                         </div>
-                    </form>
+                    </>
                 )}
-            </div>
+            </form>
         </div>
     );
 };
 export default ConsultationRequestModal;
-      

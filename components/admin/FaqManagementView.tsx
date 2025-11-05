@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FaqItem } from '../../types';
 import * as Constants from '../../constants';
@@ -107,18 +106,22 @@ const FaqFormModal: React.FC<FaqFormModalProps> = ({ faq, onClose, onSave }) => 
     
     return (
          <div className="admin-modal-overlay">
-            <div className="admin-modal-panel">
-                <form onSubmit={handleSubmit}>
-                    <div className="admin-modal-header"><h4 className="admin-modal-title">{formData.id ? 'Sửa FAQ' : 'Thêm FAQ'}</h4><button type="button" onClick={onClose}>&times;</button></div>
-                    <div className="admin-modal-body">
-                        <div className="admin-form-group"><label>Câu hỏi *</label><input type="text" name="question" value={formData.question || ''} onChange={handleChange} required /></div>
-                        <div className="admin-form-group"><label>Câu trả lời (hỗ trợ Markdown) *</label><textarea name="answer" value={formData.answer || ''} onChange={handleChange} required rows={6}></textarea></div>
-                        <div className="admin-form-group"><label>Danh mục</label><input type="text" name="category" value={formData.category || ''} onChange={handleChange} /></div>
-                        <div className="admin-form-group-checkbox items-center"><input type="checkbox" name="isVisible" id="isVisible" checked={formData.isVisible} onChange={handleChange} className="w-4 h-4" /><label htmlFor="isVisible" className="!mb-0 !ml-2">Hiển thị trên trang web</label></div>
-                    </div>
-                    <div className="admin-modal-footer"><Button type="button" variant="outline" onClick={onClose}>Hủy</Button><Button type="submit">Lưu</Button></div>
-                </form>
-            </div>
+            <form onSubmit={handleSubmit} className="admin-modal-panel">
+                <div className="admin-modal-header">
+                    <h4 className="admin-modal-title">{formData.id ? 'Sửa FAQ' : 'Thêm FAQ'}</h4>
+                    <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <div className="admin-modal-body">
+                    <div className="admin-form-group"><label>Câu hỏi *</label><input type="text" name="question" value={formData.question || ''} onChange={handleChange} required /></div>
+                    <div className="admin-form-group"><label>Câu trả lời (hỗ trợ Markdown) *</label><textarea name="answer" value={formData.answer || ''} onChange={handleChange} required rows={6}></textarea></div>
+                    <div className="admin-form-group"><label>Danh mục</label><input type="text" name="category" value={formData.category || ''} onChange={handleChange} /></div>
+                    <div className="admin-form-group-checkbox items-center"><input type="checkbox" name="isVisible" id="isVisible" checked={formData.isVisible} onChange={handleChange} className="w-4 h-4" /><label htmlFor="isVisible" className="!mb-0 !ml-2">Hiển thị trên trang web</label></div>
+                </div>
+                <div className="admin-modal-footer">
+                    <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
+                    <Button type="submit">Lưu</Button>
+                </div>
+            </form>
         </div>
     );
 }

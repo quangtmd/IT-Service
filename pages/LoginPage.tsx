@@ -5,8 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState(Constants.ADMIN_EMAIL);
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();

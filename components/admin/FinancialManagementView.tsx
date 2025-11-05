@@ -343,10 +343,10 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                {/* [FIX] The onClick handler must be a function reference. Wrapping the call in an arrow function. */}
+                {/* Fix: The onClick handler should be a function reference or an arrow function. */}
                 <Button onClick={() => savePayrollRecords(localPayroll)} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* [FIX] The onClick handler was being called on render. It's now wrapped in an arrow function to be called on click. */}
-                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                {/* Fix: The onClick handler should be a function reference, not a function call. */}
+                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">
@@ -407,26 +407,30 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClos
 
     return (
          <div className="admin-modal-overlay">
-            <div className="admin-modal-panel max-w-lg">
-                <form onSubmit={handleSubmit}>
-                    <div className="admin-modal-header"><h4 className="admin-modal-title">{formData.id ? 'Sửa Giao dịch' : 'Thêm Giao dịch'}</h4><button type="button" onClick={onClose}>&times;</button></div>
-                    <div className="admin-modal-body grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="admin-form-group"><label>Ngày *</label><input type="date" name="date" value={formData.date ? formData.date.split('T')[0] : ''} onChange={handleChange} required/></div>
-                        <div className="admin-form-group"><label>Loại *</label><select name="type" value={type} onChange={handleChange}><option value="income">Thu</option><option value="expense">Chi</option></select></div>
-                        <div className="admin-form-group sm:col-span-2"><label>Danh mục *</label>
-                            <select name="category" value={formData.category || ''} onChange={handleChange} required>
-                                <option value="">-- Chọn --</option>
-                                {TRANSACTION_CATEGORIES[type].map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
-                        </div>
-                        <div className="admin-form-group sm:col-span-2"><label>Số tiền (VNĐ) *</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required/></div>
-                        <div className="admin-form-group sm:col-span-2"><label>Mô tả *</label><textarea name="description" value={formData.description || ''} onChange={handleChange} required rows={3}></textarea></div>
-                        <div className="admin-form-group"><label>Đối tượng liên quan</label><input type="text" name="relatedEntity" value={formData.relatedEntity || ''} onChange={handleChange} /></div>
-                        <div className="admin-form-group"><label>Mã hóa đơn</label><input type="text" name="invoiceNumber" value={formData.invoiceNumber || ''} onChange={handleChange} /></div>
+            <form onSubmit={handleSubmit} className="admin-modal-panel max-w-lg">
+                <div className="admin-modal-header">
+                    <h4 className="admin-modal-title">{formData.id ? 'Sửa Giao dịch' : 'Thêm Giao dịch'}</h4>
+                    <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <div className="admin-modal-body grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="admin-form-group"><label>Ngày *</label><input type="date" name="date" value={formData.date ? formData.date.split('T')[0] : ''} onChange={handleChange} required/></div>
+                    <div className="admin-form-group"><label>Loại *</label><select name="type" value={type} onChange={handleChange}><option value="income">Thu</option><option value="expense">Chi</option></select></div>
+                    <div className="admin-form-group sm:col-span-2"><label>Danh mục *</label>
+                        <select name="category" value={formData.category || ''} onChange={handleChange} required>
+                            <option value="">-- Chọn --</option>
+                            {TRANSACTION_CATEGORIES[type].map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
                     </div>
-                    <div className="admin-modal-footer"><Button type="button" variant="outline" onClick={onClose}>Hủy</Button><Button type="submit">Lưu</Button></div>
-                </form>
-            </div>
+                    <div className="admin-form-group sm:col-span-2"><label>Số tiền (VNĐ) *</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required/></div>
+                    <div className="admin-form-group sm:col-span-2"><label>Mô tả *</label><textarea name="description" value={formData.description || ''} onChange={handleChange} required rows={3}></textarea></div>
+                    <div className="admin-form-group"><label>Đối tượng liên quan</label><input type="text" name="relatedEntity" value={formData.relatedEntity || ''} onChange={handleChange} /></div>
+                    <div className="admin-form-group"><label>Mã hóa đơn</label><input type="text" name="invoiceNumber" value={formData.invoiceNumber || ''} onChange={handleChange} /></div>
+                </div>
+                <div className="admin-modal-footer">
+                    <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
+                    <Button type="submit">Lưu</Button>
+                </div>
+            </form>
         </div>
     );
 };
