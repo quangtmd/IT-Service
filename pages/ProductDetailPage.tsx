@@ -86,16 +86,10 @@ const ProductDetailPage: React.FC = () => {
   }
 
   if (error) {
-    if (error.includes('Lỗi mạng hoặc server không phản hồi')) {
-        return <div className="container mx-auto px-4 py-8"><BackendConnectionError /></div>;
-    }
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-semibold text-textBase">{error}</h2>
-        <Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
-          Quay lại cửa hàng
-        </Link>
-      </div>
+        <div className="container mx-auto px-4 py-8">
+            <BackendConnectionError error={error} />
+        </div>
     );
   }
   

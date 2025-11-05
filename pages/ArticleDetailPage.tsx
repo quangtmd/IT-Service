@@ -62,7 +62,7 @@ const ArticleDetailPage: React.FC = () => {
   
   if (error) {
     if (error.includes('Lỗi mạng hoặc server không phản hồi')) {
-        return <div className="container mx-auto px-4 py-8"><BackendConnectionError /></div>;
+        return <div className="container mx-auto px-4 py-8"><BackendConnectionError error={error} /></div>;
     }
     return (
       <div className="container mx-auto px-4 py-8 text-center">

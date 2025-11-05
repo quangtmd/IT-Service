@@ -1,75 +1,3 @@
-// File: backend/server.js
-// --- DATABASE SCHEMA DOCUMENTATION ---
-/*
-  This backend requires the following MySQL table structure.
-  Please execute these commands in your MySQL database.
-
-  CREATE TABLE ProductCategories (
-      id INT PRIMARY KEY AUTO_INCREMENT,
-      name VARCHAR(255) NOT NULL,
-      slug VARCHAR(255) UNIQUE NOT NULL,
-      parent_category_id INT NULL
-  );
-
-  CREATE TABLE Products (
-      id VARCHAR(255) PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      category_id INT,
-      price DECIMAL(12, 0) NOT NULL,
-      originalPrice DECIMAL(12, 0),
-      imageUrls JSON,
-      description TEXT,
-      shortDescription TEXT,
-      specifications JSON,
-      stock INT NOT NULL,
-      status VARCHAR(50),
-      rating FLOAT,
-      reviews INT,
-      brand VARCHAR(255),
-      tags JSON,
-      brandLogoUrl VARCHAR(255),
-      is_published BOOLEAN DEFAULT TRUE,
-      is_featured BOOLEAN DEFAULT FALSE,
-      seoMetaTitle VARCHAR(255),
-      seoMetaDescription TEXT,
-      slug VARCHAR(255) UNIQUE,
-      FOREIGN KEY (category_id) REFERENCES ProductCategories(id)
-  );
-
-  CREATE TABLE Orders (
-      id VARCHAR(255) PRIMARY KEY,
-      customerInfo JSON NOT NULL,
-      items JSON NOT NULL,
-      totalAmount DECIMAL(12, 0) NOT NULL,
-      orderDate DATETIME NOT NULL,
-      status VARCHAR(50) NOT NULL,
-      shippingInfo JSON,
-      paymentInfo JSON NOT NULL
-  );
-
-  CREATE TABLE Articles (
-      id VARCHAR(255) PRIMARY KEY,
-      title VARCHAR(255) NOT NULL,
-      summary TEXT,
-      imageUrl TEXT,
-      author VARCHAR(255),
-      date DATETIME NOT NULL,
-      category VARCHAR(255),
-      content TEXT,
-      isAIGenerated BOOLEAN DEFAULT FALSE,
-      imageSearchQuery VARCHAR(255)
-  );
-
-  CREATE TABLE MediaItems (
-      id VARCHAR(255) PRIMARY KEY,
-      url LONGTEXT NOT NULL,
-      name VARCHAR(255),
-      type VARCHAR(100),
-      uploadedAt DATETIME NOT NULL
-  );
-*/
-// --- END SCHEMA ---
-
 import express from 'express';
 import cors from 'cors';
 import mysql from 'mysql2/promise';
@@ -176,26 +104,29 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
+// GET FEATURED PRODUCTS - Dedicated endpoint
+app.get('/api/products/featured', async (req, res) => {
+    try {
+        const query = `
+            SELECT * FROM Products
+            WHERE is_published = TRUE AND is_featured = TRUE
+            ORDER BY RAND()
+            LIMIT 4;
+        `;
+        const [products] = await pool.query(query);
+        res.json(products); // Return the array directly
+    } catch (error) {
+        console.error("Lỗi khi truy vấn sản phẩm nổi bật:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy sản phẩm nổi bật", error: error.sqlMessage || error.message });
+    }
+});
+
 
 // GET ALL PRODUCTS (with filtering and pagination)
 app.get('/api/products', async (req, res) => {
     try {
-        const { mainCategory, subCategory, brand, status, tags, q, limit = 12, page = 1, featured } = req.query;
+        const { mainCategory, subCategory, brand, status, tags, q, limit = 12, page = 1 } = req.query;
 
-        // Handle request for featured products
-        if (featured === 'true') {
-            const query = `
-                SELECT * FROM Products
-                WHERE is_published = TRUE AND is_featured = TRUE
-                ORDER BY RAND()
-                LIMIT 4;
-            `;
-            const [products] = await pool.query(query);
-            res.json({ products, totalProducts: products.length });
-            return;
-        }
-
-        // Continue with regular product fetching
         let baseQuery = `
             SELECT p.*, c.name as categoryName, c.slug as categorySlug, mc.name as mainCategoryName, mc.slug as mainCategorySlug
             FROM Products p

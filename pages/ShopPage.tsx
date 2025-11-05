@@ -172,14 +172,7 @@ const ShopPage: React.FC = () => {
       );
     }
     if (error) {
-        if (error.includes('Lỗi mạng hoặc server không phản hồi')) {
-            return <BackendConnectionError />;
-        }
-      return (
-        <div className="text-center py-20 w-full flex-grow text-red-500 bg-red-50 p-4 rounded-lg">
-          <strong>Lỗi:</strong> {error}
-        </div>
-      );
+        return <BackendConnectionError error={error} />;
     }
     
     return (

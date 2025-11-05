@@ -43,21 +43,12 @@ const HotProducts: React.FC = () => {
   }
   
   if (error) {
-     if (error.includes('Lỗi mạng hoặc server không phản hồi')) {
-        return (
-            <section className="home-section bg-bgMuted">
-                <div className="container mx-auto px-4">
-                    <BackendConnectionError />
-                </div>
-            </section>
-        );
-      }
-     return (
-      <section className="home-section bg-bgMuted">
-        <div className="container mx-auto px-4 text-center text-red-600">
-           <p>{error}</p>
-        </div>
-      </section>
+    return (
+        <section className="home-section bg-bgMuted">
+            <div className="container mx-auto px-4">
+                <BackendConnectionError error={error} />
+            </div>
+        </section>
     );
   }
 

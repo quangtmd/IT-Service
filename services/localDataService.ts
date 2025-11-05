@@ -68,8 +68,7 @@ export const deleteProduct = async (id: string): Promise<void> => {
 };
 
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    const response = await fetchFromApi<{ products: Product[], totalProducts: number }>('/api/products?featured=true');
-    return response.products;
+    return fetchFromApi<Product[]>('/api/products/featured');
 };
 
 

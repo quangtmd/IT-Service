@@ -101,7 +101,7 @@ const BlogPage: React.FC = () => {
   const renderStatusAndErrors = () => {
      if (pageError) {
         if (pageError.includes('Lỗi mạng hoặc server không phản hồi') || pageError.includes('Không thể tải danh sách bài viết')) {
-            return <BackendConnectionError />;
+            return <BackendConnectionError error={pageError} />;
         }
         return (
             <div className="text-sm text-danger-text bg-danger-bg p-3 rounded-lg border border-danger-border">
@@ -152,8 +152,8 @@ const BlogPage: React.FC = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-textMuted">Đang tải bài viết...</p>
          </div>
-      ) : pageError && allArticles.length === 0 ? (
-        null // The error is already displayed by renderStatusAndErrors
+      ) : pageError && allArticles.length === 0 && (pageError.includes('Lỗi mạng') || pageError.includes('Không thể tải')) ? (
+        null // The error is already displayed by renderStatusAndErrors in its own component
       ) : filteredArticles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredArticles.map(article => (
