@@ -16,12 +16,18 @@ app.use(express.json({ limit: '10mb' }));
 2. Tạo một database mới, ví dụ: CREATE DATABASE iq_technology_db;
 3. Chạy các câu lệnh SQL dưới đây để tạo bảng cần thiết:
 
+CREATE TABLE ProductCategories (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    parent_id INT,
+    FOREIGN KEY (parent_id) REFERENCES ProductCategories(id)
+);
+
 CREATE TABLE Products (
     id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    mainCategory VARCHAR(255),
-    subCategory VARCHAR(255),
-    category VARCHAR(255),
+    category_id INT,
     price DECIMAL(12, 0) NOT NULL,
     originalPrice DECIMAL(12, 0),
     imageUrls JSON,
@@ -35,10 +41,11 @@ CREATE TABLE Products (
     brand VARCHAR(255),
     tags JSON,
     brandLogoUrl VARCHAR(255),
-    isVisible BOOLEAN DEFAULT TRUE,
+    is_published BOOLEAN DEFAULT TRUE,
     seoMetaTitle VARCHAR(255),
     seoMetaDescription TEXT,
-    slug VARCHAR(255) UNIQUE
+    slug VARCHAR(255) UNIQUE,
+    FOREIGN KEY (category_id) REFERENCES ProductCategories(id)
 );
 
 CREATE TABLE Orders (
@@ -164,61 +171,59 @@ const startServer = async () => {
 
     app.get('/api/products', async (req, res) => {
       try {
-        const getCategoryNameFromSlug_Backend = (slug, type) => {
-            if (type === 'main') {
-                const mainCat = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
-                return mainCat ? mainCat.name : null;
-            }
-            if (type === 'sub') {
-                for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
-                    const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
-                    if (subCat) return subCat.name;
-                }
-                return null;
-            }
-            return null;
-        };
-
         const { q, mainCategory, subCategory, brand, status, tags, page = 1, limit = 12 } = req.query;
+        
+        // Pre-fetch category IDs if mainCategory is provided for robust filtering
+        let categoryIds = [];
+        if (mainCategory) {
+            const [mainCatRows] = await pool.query("SELECT id FROM ProductCategories WHERE slug = ? AND parent_id IS NULL", [mainCategory]);
+            if (mainCatRows.length > 0) {
+                const mainCatId = mainCatRows[0].id;
+                const [subCatRows] = await pool.query("SELECT id FROM ProductCategories WHERE parent_id = ?", [mainCatId]);
+                // Filter by products in the main category itself OR any of its sub-categories
+                categoryIds = [mainCatId, ...subCatRows.map(row => row.id)];
+            }
+        }
 
-        let whereClauses = ["isVisible = TRUE"];
+        let selectClause = "SELECT p.*, c.name as categoryName, mc.name as mainCategoryName";
+        let countSelectClause = "SELECT COUNT(p.id) as total";
+        let fromClause = "FROM Products p LEFT JOIN ProductCategories c ON p.category_id = c.id LEFT JOIN ProductCategories mc ON c.parent_id = mc.id";
+        let whereClauses = ["p.is_published = TRUE"];
         const params = [];
 
-        if (q) {
-            whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR JSON_SEARCH(tags, 'one', ?) IS NOT NULL)");
-            const searchTerm = `%${q}%`;
-            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-        }
-        if (mainCategory) {
-            const mainCategoryName = getCategoryNameFromSlug_Backend(mainCategory, 'main');
-            if (mainCategoryName) {
-                whereClauses.push("mainCategory = ?");
-                params.push(mainCategoryName);
-            }
-        }
+        // Handle category filtering
         if (subCategory) {
-            const subCategoryName = getCategoryNameFromSlug_Backend(subCategory, 'sub');
-            if (subCategoryName) {
-                whereClauses.push("subCategory = ?");
-                params.push(subCategoryName);
-            }
+            // If a specific subCategory is given, it takes precedence
+            whereClauses.push("c.slug = ?");
+            params.push(subCategory);
+        } else if (categoryIds.length > 0) {
+            // If mainCategory was provided and we found its sub-category IDs
+            whereClauses.push("p.category_id IN (?)");
+            params.push(categoryIds);
         }
+
+        if (q) {
+            whereClauses.push("(p.name LIKE ? OR p.brand LIKE ? OR p.description LIKE ?)");
+            const searchTerm = `%${q}%`;
+            params.push(searchTerm, searchTerm, searchTerm);
+        }
+       
         if (brand) {
-            whereClauses.push("brand = ?");
+            whereClauses.push("p.brand = ?");
             params.push(brand);
         }
         if (status) {
-            whereClauses.push("status = ?");
+            whereClauses.push("p.status = ?");
             params.push(status);
         }
         if (tags) {
-          whereClauses.push("JSON_CONTAINS(tags, JSON_QUOTE(?))");
+          whereClauses.push("JSON_CONTAINS(p.tags, JSON_QUOTE(?))");
           params.push(tags);
         }
 
         const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-        const countQuery = `SELECT COUNT(*) as total FROM Products ${whereString}`;
+        const countQuery = `${countSelectClause} ${fromClause} ${whereString}`;
         const [countRows] = await pool.query(countQuery, params);
         const totalProducts = countRows[0].total;
 
@@ -226,11 +231,31 @@ const startServer = async () => {
         const limitNum = parseInt(limit, 10);
         const offset = (pageNum - 1) * limitNum;
         
-        const dataQuery = `SELECT * FROM Products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
+        const dataQuery = `${selectClause} ${fromClause} ${whereString} ORDER BY p.id DESC LIMIT ? OFFSET ?`;
         const dataParams = [...params, limitNum, offset];
 
         const [rows] = await pool.query(dataQuery, dataParams);
-        const products = rows.map(p => parseJsonFields(p, PRODUCT_JSON_FIELDS));
+
+        // Map category names back to the product object for frontend compatibility
+        const products = rows.map(p => {
+            const parsed = parseJsonFields(p, PRODUCT_JSON_FIELDS);
+            if (p.mainCategoryName) {
+                // Product is in a sub-category
+                parsed.mainCategory = p.mainCategoryName;
+                parsed.subCategory = p.categoryName;
+            } else {
+                // Product is likely in a main category
+                parsed.mainCategory = p.categoryName;
+                // If mainCategoryName is null, it means categoryName IS the main category.
+                // We can set subCategory to be the same for consistency or a specific value.
+                parsed.subCategory = p.categoryName;
+            }
+            parsed.category = p.categoryName || 'N/A';
+            
+            delete parsed.mainCategoryName;
+            delete parsed.categoryName;
+            return parsed;
+        });
 
         res.json({ products, totalProducts });
       } catch (err) {
@@ -242,9 +267,9 @@ const startServer = async () => {
     app.get('/api/products/featured', async (req, res) => {
         try {
             const [rows] = await pool.query(`
-                (SELECT * FROM Products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, '["Bán chạy"]'))
+                (SELECT * FROM Products WHERE is_published = TRUE AND JSON_SEARCH(tags, 'one', 'Bán chạy') IS NOT NULL)
                 UNION
-                (SELECT * FROM Products WHERE isVisible = TRUE AND originalPrice IS NOT NULL AND id NOT IN (SELECT id FROM Products WHERE JSON_CONTAINS(tags, '["Bán chạy"]')))
+                (SELECT * FROM Products WHERE is_published = TRUE AND originalPrice IS NOT NULL AND id NOT IN (SELECT id FROM Products WHERE JSON_SEARCH(tags, 'one', 'Bán chạy') IS NOT NULL))
                 LIMIT 4
             `);
             const products = rows.map(p => parseJsonFields(p, PRODUCT_JSON_FIELDS));

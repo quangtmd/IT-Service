@@ -27,7 +27,57 @@ For local development, using a local database is strongly recommended to avoid n
     ```sql
     CREATE DATABASE iq_technology_db;
     ```
-3.  **Import the tables.** Use the `CREATE TABLE` SQL statements found in the comments at the top of the `backend/server.js` file to create the necessary tables (`Products`, `Orders`, `Articles`, `MediaItems`) inside your new database.
+3.  **Create the tables.** Run the following SQL commands in your newly created database to set up the necessary structure.
+    ```sql
+    CREATE TABLE ProductCategories (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(255) NOT NULL,
+        slug VARCHAR(255) UNIQUE NOT NULL,
+        parent_id INT,
+        FOREIGN KEY (parent_id) REFERENCES ProductCategories(id)
+    );
+    
+    CREATE TABLE Products (
+        id VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        category_id INT,
+        price DECIMAL(12, 0) NOT NULL,
+        originalPrice DECIMAL(12, 0),
+        imageUrls JSON,
+        description TEXT,
+        shortDescription TEXT,
+        specifications JSON,
+        stock INT NOT NULL,
+        status VARCHAR(50),
+        rating FLOAT,
+        reviews INT,
+        brand VARCHAR(255),
+        tags JSON,
+        brandLogoUrl VARCHAR(255),
+        is_published BOOLEAN DEFAULT TRUE,
+        seoMetaTitle VARCHAR(255),
+        seoMetaDescription TEXT,
+        slug VARCHAR(255) UNIQUE,
+        FOREIGN KEY (category_id) REFERENCES ProductCategories(id)
+    );
+
+    CREATE TABLE Orders (
+        id VARCHAR(255) PRIMARY KEY, customerInfo JSON NOT NULL, items JSON NOT NULL,
+        totalAmount DECIMAL(12, 0) NOT NULL, orderDate DATETIME NOT NULL,
+        status VARCHAR(50) NOT NULL, shippingInfo JSON, paymentInfo JSON NOT NULL
+    );
+
+    CREATE TABLE Articles (
+        id VARCHAR(255) PRIMARY KEY, title VARCHAR(255) NOT NULL, summary TEXT,
+        imageUrl TEXT, author VARCHAR(255), date DATETIME NOT NULL, category VARCHAR(255),
+        content TEXT, isAIGenerated BOOLEAN DEFAULT FALSE, imageSearchQuery VARCHAR(255)
+    );
+
+    CREATE TABLE MediaItems (
+        id VARCHAR(255) PRIMARY KEY, url LONGTEXT NOT NULL, name VARCHAR(255),
+        type VARCHAR(100), uploadedAt DATETIME NOT NULL
+    );
+    ```
 
 ---
 
@@ -91,44 +141,54 @@ This project contains two parts (**frontend** and **backend**) in one repository
 
 1.  **Fork repository này** về tài khoản GitHub của bạn.
 
-2.  Vào trang [**Blueprints** trên Render Dashboard](https://dashboard.render.com/blueprints).
+2.  **Chuẩn bị Database từ xa (Remote Database).**
+    *   Tạo một database MySQL trên một nhà cung cấp dịch vụ cloud (ví dụ: Hostinger, Aiven, PlanetScale).
+    *   **QUAN TRỌNG:** Truy cập vào công cụ quản lý database của bạn (ví dụ: phpMyAdmin trên Hostinger), vào tab "SQL", và **chạy các câu lệnh `CREATE TABLE`** được cung cấp trong phần **"Step 1: Database Setup"** ở trên. Bước này là bắt buộc để ứng dụng hoạt động.
 
-3.  Nhấp vào nút **"New Blueprint Instance"**.
+3.  Vào trang [**Blueprints** trên Render Dashboard](https://dashboard.render.com/blueprints).
+
+4.  Nhấp vào nút **"New Blueprint Instance"**.
 
     <img width="1011" alt="Render-New-Blueprint" src="https://github.com/user-attachments/assets/81c4e7fa-9b93-4e4f-b648-5254d3cd2c05">
 
-4.  **Kết nối tài khoản GitHub của bạn** và chọn repository `IT-Service` bạn vừa fork. Render sẽ tự động phát hiện và đọc tệp `render.yaml`.
+5.  **Kết nối tài khoản GitHub của bạn** và chọn repository `IT-Service` bạn vừa fork. Render sẽ tự động phát hiện và đọc tệp `render.yaml`.
 
-5.  **Đặt tên cho nhóm dịch vụ của bạn** (ví dụ: `it-service-app`) và nhấp vào **"Update Existing Resources"** hoặc **"Apply"**.
+6.  **Đặt tên cho nhóm dịch vụ của bạn** (ví dụ: `it-service-app`) và nhấp vào **"Update Existing Resources"** hoặc **"Apply"**.
 
     <img width="1011" alt="Render-Apply-Blueprint" src="https://github.com/user-attachments/assets/d16715f2-9594-4d1a-be29-d655f41441a1">
 
-6.  **Cấu hình Biến Môi trường (QUAN TRỌNG):** Render sẽ yêu cầu bạn nhập các khóa bí mật. Đây là bước quan trọng nhất.
+7.  **Cấu hình Biến Môi trường (QUAN TRỌNG):** Render sẽ yêu cầu bạn nhập các khóa bí mật. Đây là bước quan trọng nhất.
     *   Đi đến tab **"Environment"** của Blueprint.
     *   Tạo một **"Environment Group"** mới hoặc thêm các biến trực tiếp.
     *   **BẮT BUỘC** phải thêm các khóa sau với giá trị tương ứng:
-        *   `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: Nhập thông tin kết nối đến cơ sở dữ liệu **REMOTE** của bạn (ví dụ: từ Hostinger, Aiven, v.v.).
+        *   `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: Nhập thông tin kết nối đến cơ sở dữ liệu **REMOTE** của bạn (đã tạo ở bước 2).
         *   `VITE_GEMINI_API_KEY`: Nhập khóa API Google Gemini của bạn.
 
     <img width="1011" alt="Render-Env-Vars" src="https://github.com/user-attachments/assets/94b41982-f673-455b-b9f0-2f643e1d1628">
 
 
-7.  Sau khi thêm các biến môi trường, nhấp vào **"Manual Deploy" > "Deploy latest commit"** ở góc trên cùng bên phải để bắt đầu quá trình triển khai.
+8.  Sau khi thêm các biến môi trường, nhấp vào **"Manual Deploy" > "Deploy latest commit"** ở góc trên cùng bên phải để bắt đầu quá trình triển khai.
 
 ---
 
 ## 3. Troubleshooting (Xử lý sự cố)
 
+#### Lỗi: "Lỗi server khi lấy dữ liệu sản phẩm" trên website
+
+Lỗi này có nghĩa là frontend đã kết nối được với backend, nhưng backend gặp lỗi khi truy vấn database.
+
+1.  **Kiểm tra Logs của Backend Service.** Truy cập Render Dashboard, tìm service có tên `it-service-backend` và vào tab "Logs".
+2.  Bạn sẽ thấy một lỗi SQL, thường là `Table 'your_db_name.Products' doesn't exist` hoặc `Unknown column 'some_column' in 'where clause'`.
+3.  **CÁCH SỬA:** Lỗi này xảy ra vì bạn chưa tạo các bảng trong database từ xa, hoặc cấu trúc bảng (schema) không khớp với code. Hãy thực hiện lại **Bước 2 của phần Hướng Dẫn Triển Khai** ở trên (chạy các câu lệnh `CREATE TABLE` trên database của Hostinger/nhà cung cấp khác) để đảm bảo schema là mới nhất.
+4.  Sau khi đã tạo/cập nhật bảng, hãy triển khai lại backend service trên Render.
+
 #### Lỗi: "Lỗi mạng hoặc server không phản hồi" trên website
 
-Lỗi này xảy ra khi frontend không thể kết nối với backend. Đây là cách khắc phục:
+Lỗi này xảy ra khi frontend không thể kết nối với backend.
 
-**Nếu chạy ở máy local:**
-1.  **Backend server có đang chạy không?** Đảm bảo bạn có một cửa sổ terminal đang mở trong thư mục `backend` và đã chạy lệnh `npm start`.
-2.  **Backend đã kết nối database thành công chưa?** Kiểm tra terminal của backend. Nếu bạn thấy lỗi `❌ LỖI KẾT NỐI DATABASE`, điều đó có nghĩa là thông tin trong file `backend/.env` của bạn không chính xác hoặc server MySQL local của bạn chưa chạy. Hãy kiểm tra lại **Bước 1 và 2** của phần cài đặt local.
-
-**Nếu đã triển khai trên Render:**
-1.  **Kiểm tra Logs của Backend Service.** Truy cập Render Dashboard, tìm service có tên `it-service-backend` (hoặc tên tương tự) và nhấp vào tab "Logs".
-2.  Tìm lỗi `❌ LỖI KẾT NỐI DATABASE` ở phần đầu của logs. Nếu bạn thấy lỗi này, có nghĩa là các **Biến Môi trường (Environment Variables) trên Render của bạn đã bị cài đặt sai hoặc thiếu.**
-3.  **CÁCH SỬA:** Quay lại phần "Environment" của Blueprint trên Render. **Xác minh lại rằng bạn đã thêm ĐẦY ĐỦ và CHÍNH XÁC** tất cả các biến `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`. Giá trị phải khớp hoàn toàn với thông tin database từ nhà cung cấp của bạn (ví dụ: Hostinger).
-4.  Sau khi cập nhật biến môi trường, hãy triển khai lại bằng cách nhấp vào "Manual Deploy" > "Deploy latest commit".
+1.  **Kiểm tra Logs của Backend Service.** Truy cập Render Dashboard, tìm service `it-service-backend` và vào "Logs".
+2.  Tìm lỗi `❌ LỖI KẾT NỐI DATABASE` ở phần đầu của logs.
+3.  **CÁCH SỬA:**
+    *   **Kiểm tra biến môi trường:** Vào phần "Environment" trên Render và đảm bảo các biến `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` hoàn toàn chính xác.
+    *   **Kiểm tra IP Whitelisting:** Đảm bảo rằng nhà cung cấp database của bạn đã cho phép (whitelisted) các địa chỉ IP của Render kết nối vào. Tham khảo [tài liệu IP của Render](https://render.com/docs/static-outbound-ip-addresses). Đối với gói miễn phí, bạn có thể cần cho phép tất cả các IP (`0.0.0.0/0`).
+4.  Sau khi sửa, hãy triển khai lại backend service.
