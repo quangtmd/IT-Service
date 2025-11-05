@@ -26,12 +26,14 @@ const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badg
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cart } = useCart();
-  const { isAuthenticated, currentUser, logout, isLoading } = useAuth();
+  const { isAuthenticated, currentUser, logout, isLoading, adminNotifications } = useAuth();
   const navigate = useNavigate();
   const totalItemsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
   const [currentNavLinks, setCurrentNavLinks] = useState<(CustomMenuLink | NavLinkItem)[]>([]);
+  
+  const unreadNotificationCount = useMemo(() => adminNotifications.filter(n => !n.isRead).length, [adminNotifications]);
 
   const loadData = useCallback(() => {
     const storedSettings = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
@@ -84,7 +86,14 @@ const Header: React.FC = () => {
       return (
         <div className="relative group">
           <button className={`flex items-center gap-2 ${isMobile ? 'text-gray-200' : 'text-white'}`}>
-            <img src={currentUser.imageUrl || `https://ui-avatars.com/api/?name=${currentUser.username.charAt(0)}&background=random`} alt="avatar" className="w-6 h-6 rounded-full" />
+            <div className="relative">
+                <img src={currentUser.imageUrl || `https://ui-avatars.com/api/?name=${currentUser.username.charAt(0)}&background=random`} alt="avatar" className="w-6 h-6 rounded-full" />
+                {unreadNotificationCount > 0 && (
+                     <span className="absolute -top-1 -right-1 bg-secondary text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-primary">
+                        {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                     </span>
+                )}
+            </div>
             <span className={`text-xs font-semibold ${isMobile ? '' : 'hidden md:inline'}`}>{currentUser.username}</span>
             <i className="fas fa-chevron-down text-xs transition-transform duration-200 group-hover:rotate-180"></i>
           </button>
@@ -94,7 +103,12 @@ const Header: React.FC = () => {
                 <p className="text-xs text-textMuted truncate">{currentUser.email}</p>
             </div>
             {(currentUser.role === 'admin' || currentUser.role === 'staff') && (
-                <Link to="/admin" className="flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted"><i className="fas fa-user-shield w-6"></i>Quản trị</Link>
+                <Link to="/admin" className="flex items-center justify-between px-3 py-2 text-sm text-textBase hover:bg-bgMuted">
+                    <span className="flex items-center"><i className="fas fa-user-shield w-6"></i>Quản trị</span>
+                    {unreadNotificationCount > 0 && (
+                        <span className="bg-primary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{unreadNotificationCount}</span>
+                    )}
+                </Link>
             )}
             <button onClick={handleLogout} className="w-full flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted">
                 <i className="fas fa-sign-out-alt w-6"></i>Đăng xuất
@@ -126,7 +140,7 @@ const Header: React.FC = () => {
               {siteSettings.companyPhone && <span><i className="fas fa-phone-alt mr-1"></i> {siteSettings.companyPhone}</span>}
               {siteSettings.companyEmail && <span className="hidden sm:inline"><i className="fas fa-envelope mr-1"></i> {siteSettings.companyEmail}</span>}
             </div>
-            <div className="hidden lg:block">
+            <div className="flex items-center">
               {renderUserAuth()}
             </div>
           </div>

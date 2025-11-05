@@ -8,7 +8,7 @@ import HomeFeaturedProjectsIts from '../components/home/iqtechnology/HomeFeature
 import HomeTestimonialsIts from '../components/home/iqtechnology/HomeTestimonialsIts';
 import HomeBrandLogosIts from '../components/home/iqtechnology/HomeBrandLogosIts';
 import HomeProcessIts from '../components/home/iqtechnology/HomeProcessIts';
-import HotProducts from '../components/home/HotProducts';
+import HotProducts from '../components/home/HotProducts'; // Reverted to HotProducts
 import HomeBlogPreviewIts from '../components/home/iqtechnology/HomeBlogPreviewIts';
 import HomeCallToActionIts from '../components/home/iqtechnology/HomeCallToActionIts';
 import HomeContactIts from '../components/home/iqtechnology/HomeContactIts';
@@ -17,46 +17,22 @@ import HomePricingPlansIts from '../components/home/iqtechnology/HomePricingPlan
 const HomePage: React.FC = () => {
   return (
     <div>
-      {/* 1. Banner slideshow (khuyến mãi, dịch vụ IT, sản phẩm mới) */}
       <HomeBannerIts />
-
-      {/* 2. Giới thiệu nhanh: IQ Technology là ai, dịch vụ chính */}
       <HomeAboutIts />
-
-      {/* 4. Danh mục dịch vụ IT nổi bật */}
       <HomeServicesBenefitsIts />
-      
-      {/* Additional: Why Choose Us - Logically follows services */}
       <HomeWhyChooseUsIts />
-
-      {/* New: Pricing Plans Section */}
       <HomePricingPlansIts />
 
-      {/* 3. Danh mục sản phẩm nổi bật */}
+      {/* Reverted back to the original HotProducts component */}
       <HotProducts />
-
-      {/* 5. Dự án đã thực hiện (gắn link chi tiết) */}
+      
       <HomeFeaturedProjectsIts />
-      
-      {/* Additional: Process - How we work */}
       <HomeProcessIts />
-      
-      {/* Additional: Stats Counter - Showcases scale/achievements */}
       <HomeStatsCounterIts />
-      
-      {/* 7. Đánh giá khách hàng */}
       <HomeTestimonialsIts />
-
-      {/* 6. Tin tức & Blog */}
       <HomeBlogPreviewIts />
-      
-      {/* Additional: Brand Logos - Social proof */}
       <HomeBrandLogosIts />
-      
-      {/* Additional: Call To Action - Engage user before contact */}
       <HomeCallToActionIts />
-      
-      {/* 8. Liên hệ nhanh + Chatbot AI hỗ trợ (Chatbot is in App.tsx) */}
       <HomeContactIts />
     </div>
   );

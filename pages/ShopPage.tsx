@@ -9,6 +9,7 @@ import CategorySidebar from '../components/shop/CategorySidebar';
 import { getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError';
 import SkeletonProductCard from '../components/shop/SkeletonProductCard';
+import ProductCarouselSection from '../components/shop/ProductCarouselSection';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -58,14 +59,21 @@ const ShopPage: React.FC = () => {
     tags: null as string | null,
   });
 
+  const hasFilters = queryParams.has('mainCategory') || queryParams.has('subCategory') || queryParams.has('brand') || queryParams.has('status') || queryParams.has('q') || queryParams.has('tags');
+
   const currentPage = parseInt(queryParams.get('page') || '1', 10);
 
    useEffect(() => {
+    // Only fetch for grid view if filters are active
+    if (!hasFilters) {
+        setIsLoading(false);
+        return;
+    };
+
     const loadProducts = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Pass the entire search string from the URL to the service
         const searchParams = new URLSearchParams(location.search);
         if (!searchParams.has('limit')) {
             searchParams.set('limit', String(PRODUCTS_PER_PAGE));
@@ -86,7 +94,7 @@ const ShopPage: React.FC = () => {
     };
     
     loadProducts();
-  }, [location.search]);
+  }, [location.search, hasFilters]);
 
 
   const handleScroll = useCallback(() => {
@@ -163,7 +171,7 @@ const ShopPage: React.FC = () => {
     return name;
   };
   
-  const renderContent = () => {
+  const renderGridView = () => {
     if (isLoading) {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
@@ -212,27 +220,77 @@ const ShopPage: React.FC = () => {
             )}
         </main>
     )
-  }
+  };
+
+  const renderCarouselView = () => (
+    <div className="space-y-4">
+       <div className="text-center mb-8 pt-4">
+        <h1 className="text-4xl font-bold text-textBase mb-2">Khám Phá Sản Phẩm</h1>
+        <p className="text-textMuted max-w-xl mx-auto">
+          Duyệt qua các danh mục nổi bật hoặc tìm kiếm sản phẩm bạn cần.
+        </p>
+      </div>
+       <div className="mb-8">
+            <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
+      </div>
+      <ProductCarouselSection
+        title="SẢN PHẨM BÁN CHẠY"
+        filterParams={{ tags: 'Bán chạy', limit: 10 }}
+        viewAllLink="/shop?tags=Bán%20chạy"
+      />
+       <ProductCarouselSection
+        title="KHUYẾN MÃI HOT"
+        filterParams={{ tags: 'Khuyến mãi', limit: 10 }}
+        viewAllLink="/shop?tags=Khuyến%20mãi"
+      />
+      <ProductCarouselSection
+        title="MÁY TÍNH XÁCH TAY"
+        filterParams={{ mainCategory: 'laptop', limit: 10 }}
+        viewAllLink="/shop?mainCategory=laptop"
+      />
+      <ProductCarouselSection
+        title="PC GAMING"
+        filterParams={{ subCategory: 'pc_gaming', limit: 10 }}
+        viewAllLink="/shop?mainCategory=may_tinh_de_ban&subCategory=pc_gaming"
+      />
+       <ProductCarouselSection
+        title="LINH KIỆN MÁY TÍNH"
+        filterParams={{ mainCategory: 'linh_kien_may_tinh', limit: 10 }}
+        viewAllLink="/shop?mainCategory=linh_kien_may_tinh"
+      />
+       <ProductCarouselSection
+        title="MÀN HÌNH"
+        filterParams={{ subCategory: 'man_hinh', limit: 10 }}
+        viewAllLink="/shop?mainCategory=thiet_bi_ngoai_vi&subCategory=man_hinh"
+      />
+    </div>
+  );
 
   return (
     <div className="bg-bgCanvas">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-            <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
-        </div>
-        <div className="shop-layout-container">
-          <aside className="shop-sidebar">
-            <CategorySidebar 
-              currentMainCategorySlug={currentFilters.mainCategory}
-              currentSubCategorySlug={currentFilters.subCategory}
-              isCollapsed={isSidebarCollapsed}
-            />
-          </aside>
-          <div className="shop-main-content">
-            {renderContent()}
-          </div>
-        </div>
-      </div>
+        {hasFilters ? (
+            <div className="container mx-auto px-4 py-8">
+                <div className="mb-8">
+                    <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
+                </div>
+                <div className="shop-layout-container">
+                    <aside className="shop-sidebar">
+                        <CategorySidebar 
+                        currentMainCategorySlug={currentFilters.mainCategory}
+                        currentSubCategorySlug={currentFilters.subCategory}
+                        isCollapsed={isSidebarCollapsed}
+                        />
+                    </aside>
+                    <div className="shop-main-content">
+                        {renderGridView()}
+                    </div>
+                </div>
+            </div>
+        ) : (
+            <div className="py-8">
+                {renderCarouselView()}
+            </div>
+        )}
     </div>
   );
 };

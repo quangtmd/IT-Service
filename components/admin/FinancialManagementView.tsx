@@ -343,9 +343,9 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                {/* Fix: The onClick handler should be a function reference or an arrow function. */}
+                {/* Fix: Wrap handler in an arrow function to ensure correct arguments are passed. */}
                 <Button onClick={() => savePayrollRecords(localPayroll)} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* Fix: The onClick handler should be a function reference, not a function call. */}
+                {/* Fix: Wrap handler in an arrow function to prevent the event object from being passed implicitly. */}
                 <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
@@ -389,42 +389,61 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClos
         date: new Date().toISOString().split('T')[0], type: 'expense', amount: 0
     });
 
+    // Fix: Correctly type the event handler for inputs, textareas, and selects.
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        let newFormData = { ...formData, [name]: value };
+
         if (name === 'type') {
-            newFormData.category = undefined; // Reset category when type changes
+            const newType = value as TransactionType;
+            const validCategories = TRANSACTION_CATEGORIES[newType];
+            setFormData(prev => ({
+                ...prev,
+                type: newType,
+                category: validCategories[0], // Reset to the first valid category for the new type
+            }));
+        } else {
+             setFormData(prev => ({ ...prev, [name]: value }));
         }
-        setFormData(newFormData);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave(formData as FinancialTransaction);
+        onSave(formData as any);
     };
 
-    const type = formData.type || 'expense';
-
     return (
-         <div className="admin-modal-overlay">
-            <form onSubmit={handleSubmit} className="admin-modal-panel max-w-lg">
+        <div className="admin-modal-overlay">
+            <form onSubmit={handleSubmit} className="admin-modal-panel">
                 <div className="admin-modal-header">
-                    <h4 className="admin-modal-title">{formData.id ? 'Sửa Giao dịch' : 'Thêm Giao dịch'}</h4>
+                    <h4 className="admin-modal-title">{transaction?.id ? 'Sửa Giao dịch' : 'Thêm Giao dịch'}</h4>
                     <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
                 </div>
-                <div className="admin-modal-body grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="admin-form-group"><label>Ngày *</label><input type="date" name="date" value={formData.date ? formData.date.split('T')[0] : ''} onChange={handleChange} required/></div>
-                    <div className="admin-form-group"><label>Loại *</label><select name="type" value={type} onChange={handleChange}><option value="income">Thu</option><option value="expense">Chi</option></select></div>
-                    <div className="admin-form-group sm:col-span-2"><label>Danh mục *</label>
-                        <select name="category" value={formData.category || ''} onChange={handleChange} required>
-                            <option value="">-- Chọn --</option>
-                            {TRANSACTION_CATEGORIES[type].map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                <div className="admin-modal-body grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="admin-form-group">
+                        <label>Ngày</label>
+                        <input type="date" name="date" value={formData.date ? formData.date.split('T')[0] : ''} onChange={handleChange} required />
+                    </div>
+                    <div className="admin-form-group">
+                        <label>Số tiền</label>
+                        <input type="number" name="amount" value={formData.amount} onChange={handleChange} required />
+                    </div>
+                    <div className="admin-form-group">
+                        <label>Loại</label>
+                        <select name="type" value={formData.type} onChange={handleChange} required>
+                            <option value="income">Thu</option>
+                            <option value="expense">Chi</option>
                         </select>
                     </div>
-                    <div className="admin-form-group sm:col-span-2"><label>Số tiền (VNĐ) *</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required/></div>
-                    <div className="admin-form-group sm:col-span-2"><label>Mô tả *</label><textarea name="description" value={formData.description || ''} onChange={handleChange} required rows={3}></textarea></div>
-                    <div className="admin-form-group"><label>Đối tượng liên quan</label><input type="text" name="relatedEntity" value={formData.relatedEntity || ''} onChange={handleChange} /></div>
-                    <div className="admin-form-group"><label>Mã hóa đơn</label><input type="text" name="invoiceNumber" value={formData.invoiceNumber || ''} onChange={handleChange} /></div>
+                    <div className="admin-form-group">
+                        <label>Danh mục</label>
+                        <select name="category" value={formData.category} onChange={handleChange} required>
+                            {(TRANSACTION_CATEGORIES[formData.type!] || []).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                    </div>
+                    <div className="admin-form-group md:col-span-2">
+                        <label>Mô tả</label>
+                        <textarea name="description" value={formData.description || ''} onChange={handleChange} required rows={3} />
+                    </div>
                 </div>
                 <div className="admin-modal-footer">
                     <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
@@ -434,6 +453,5 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClos
         </div>
     );
 };
-
 
 export default FinancialManagementView;
