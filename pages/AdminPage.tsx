@@ -15,7 +15,8 @@ import MediaLibraryView from '../components/admin/MediaLibraryView';
 import NotificationsView from '../components/admin/NotificationsView';
 import HomepageManagementView from '../components/admin/HomepageManagementView';
 import FinancialManagementView from '../components/admin/FinancialManagementView';
-import DashboardView from '../components/admin/DashboardView'; // Import the new DashboardView
+// Fix: Replace obsolete DashboardView with AccountingDashboard
+import AccountingDashboard from '../components/admin/AccountingDashboard';
 import InventoryView from '../components/admin/InventoryView';
 import ServiceTicketView from '../components/admin/ServiceTicketView';
 import QuotationManagementView from '../components/admin/QuotationManagementView';
@@ -147,7 +148,8 @@ const AdminPage: React.FC = () => {
         }
 
         switch(activeView) {
-            case 'dashboard': return <DashboardView setActiveView={setActiveView} />;
+            // Fix: Replace obsolete DashboardView with AccountingDashboard
+            case 'dashboard': return <AccountingDashboard />;
             case 'products': return <ProductManagementView />;
             case 'articles': return <ArticleManagementView />;
             case 'orders': return <OrderManagementView />;

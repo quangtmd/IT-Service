@@ -178,7 +178,11 @@ export type AdminView =
   | 'notifications_panel'
   | 'homepage_management'
   | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard'
-  | 'inventory' | 'service_tickets';
+  | 'inventory' | 'service_tickets'
+  // New accounting views
+  | 'purchasing' | 'sales' | 'invoice_management' | 'fixed_assets'
+  | 'payroll' | 'tax' | 'reports' | 'financial_analysis';
+
 
 export type UserRole = 'admin' | 'staff' | 'customer';
 export type StaffRole = 'Quản lý Bán hàng' | 'Biên tập Nội dung' | 'Trưởng nhóm Kỹ thuật' | 'Chuyên viên Hỗ trợ' | 'Nhân viên Toàn quyền';
@@ -675,4 +679,40 @@ export interface Quotation {
     expiryDate: string;
     status: QuotationStatus;
     notes?: string;
+}
+
+// New types for the Financial Dashboard
+export interface ChartDataPoint {
+  label: string; // e.g., 'Tháng 1', '15/07'
+  revenue: number;
+  expense: number;
+  profit: number;
+}
+
+export interface CategoryDataPoint {
+  name: string;
+  value: number;
+}
+
+export interface FinancialDashboardData {
+  financialStatus: {
+    totalCash: number;
+    revenue: number;
+    expense: number;
+    profit: number;
+    inventoryValue: number;
+  };
+  receivables: {
+    total: number;
+    overdue: number;
+  };
+  payables: {
+    total: number;
+    overdue: number;
+  };
+  revenueExpenseChart: ChartDataPoint[];
+  cashFlowChart: ChartDataPoint[]; // Reusing for simplicity
+  expensePieChart: CategoryDataPoint[];
+  lowStockItems: number;
+  pendingOrders: number;
 }

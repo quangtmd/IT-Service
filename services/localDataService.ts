@@ -2,7 +2,8 @@
 
 import { 
     Product, Order, Article, OrderStatus, MediaItem, ServerInfo, 
-    ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord, Quotation
+    ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord, Quotation,
+    FinancialDashboardData
 } from '../types';
 import { BACKEND_API_BASE_URL, QUOTATIONS_STORAGE_KEY, SERVICE_TICKETS_STORAGE_KEY } from '../constants';
 
@@ -203,6 +204,12 @@ export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records),
     });
 };
+
+// --- NEW FINANCIAL DASHBOARD SERVICE ---
+export const getFinancialDashboardData = async (period: 'month' | 'year' = 'month'): Promise<FinancialDashboardData> => {
+    return fetchFromApi<FinancialDashboardData>(`/api/financial-dashboard?period=${period}`);
+};
+
 
 // --- Quotation Service (Local Storage) ---
 export const getQuotations = async (): Promise<Quotation[]> => Promise.resolve(getLocal(QUOTATIONS_STORAGE_KEY, []));
