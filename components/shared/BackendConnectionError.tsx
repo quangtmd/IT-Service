@@ -33,7 +33,7 @@ const BackendConnectionError: React.FC = () => {
                   Để xem địa chỉ IP của Render, vào service backend, chọn tab "Networking" và tìm "Static Outbound IP Address". Xem thêm tại <a href="https://render.com/docs/static-outbound-ip-addresses" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">tài liệu của Render</a>.
               </li>
                <li>
-                Sau khi sửa, hãy vào service backend và chọn <strong>Manual Deploy</strong> > <strong>"Deploy latest commit"</strong> để triển khai lại.
+                Sau khi sửa, hãy vào service backend và chọn <strong>Manual Deploy</strong> &gt; <strong>"Deploy latest commit"</strong> để triển khai lại.
               </li>
             </ol>
           </div>
