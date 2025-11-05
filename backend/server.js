@@ -121,6 +121,21 @@ app.get('/api/products/featured', async (req, res) => {
     }
 });
 
+// GET SINGLE PRODUCT - Placed before general /api/products to avoid route conflicts
+app.get('/api/products/:id', async (req, res) => {
+    try {
+        const [product] = await pool.query('SELECT * FROM Products WHERE id = ?', [req.params.id]);
+        if (product.length > 0) {
+            res.json(product[0]);
+        } else {
+            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+        }
+    } catch (error) {
+        console.error(`Lỗi khi truy vấn sản phẩm ID ${req.params.id}:`, error);
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
 
 // GET ALL PRODUCTS (with filtering and pagination)
 app.get('/api/products', async (req, res) => {
@@ -175,21 +190,6 @@ app.get('/api/products', async (req, res) => {
     } catch (error) {
         console.error("Lỗi khi truy vấn sản phẩm:", error);
         res.status(500).json({ message: "Lỗi server khi lấy dữ liệu sản phẩm", error: error.sqlMessage || error.message });
-    }
-});
-
-// GET SINGLE PRODUCT
-app.get('/api/products/:id', async (req, res) => {
-    try {
-        const [product] = await pool.query('SELECT * FROM Products WHERE id = ?', [req.params.id]);
-        if (product.length > 0) {
-            res.json(product[0]);
-        } else {
-            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
-        }
-    } catch (error) {
-        console.error(`Lỗi khi truy vấn sản phẩm ID ${req.params.id}:`, error);
-        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
     }
 });
 
