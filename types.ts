@@ -180,7 +180,7 @@ export type AdminView =
   | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard'
   | 'inventory' | 'service_tickets'
   // New accounting views
-  | 'purchasing' | 'sales' | 'invoice_management' | 'fixed_assets'
+  | 'purchasing' | 'sales' | 'invoice_management' 
   | 'payroll' | 'tax' | 'reports' | 'financial_analysis'
   // New menu items from image
   | 'cash' | 'bank_deposits' | 'warehouse' | 'tools_supplies'
