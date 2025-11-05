@@ -32,6 +32,8 @@ export const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1';
 export const FINANCIAL_TRANSACTIONS_STORAGE_KEY = 'siteFinancialTransactions_v1';
 export const PAYROLL_RECORDS_STORAGE_KEY = 'sitePayrollRecords_v1';
 export const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
+export const QUOTATIONS_STORAGE_KEY = 'siteQuotations_v1'; // New key for quotations
+export const SERVICE_TICKETS_STORAGE_KEY = 'siteServiceTickets_v1'; // New key for service tickets
 
 
 // --- BANKING INFO ---

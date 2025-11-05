@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { ChatLogSession } from '../../types';
 import ChatMessage from '../chatbot/ChatMessage';
-import { getChatLogs } from '../../services/localDataService';
+import { getChatLogs, saveChatLogSession } from '../../services/localDataService';
 
-const ChatLogView: React.FC = () => {
+// Fix: Add props interface for onDataChange
+interface ChatLogViewProps {
+    onDataChange: () => void;
+}
+
+// Fix: Update component to accept onDataChange prop
+const ChatLogView: React.FC<ChatLogViewProps> = ({ onDataChange }) => {
     const [chatLogs, setChatLogs] = useState<ChatLogSession[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string|null>(null);
@@ -27,6 +33,20 @@ const ChatLogView: React.FC = () => {
         };
         loadLogs();
     }, []);
+
+    const handleSelectSession = async (session: ChatLogSession) => {
+        setSelectedSession(session);
+        if (!session.isRead) {
+            try {
+                const updatedSession = { ...session, isRead: true };
+                await saveChatLogSession(updatedSession);
+                setChatLogs(prev => prev.map(log => log.id === session.id ? updatedSession : log));
+                onDataChange();
+            } catch (err) {
+                console.error("Failed to mark chat as read:", err);
+            }
+        }
+    };
     
     return (
         <div className="admin-card">
@@ -47,9 +67,10 @@ const ChatLogView: React.FC = () => {
                                 <div 
                                     key={session.id}
                                     className={`chat-log-list-item ${selectedSession?.id === session.id ? 'active' : ''}`}
-                                    onClick={() => setSelectedSession(session)}
+                                    onClick={() => handleSelectSession(session)}
                                 >
-                                    <p className="font-semibold text-sm text-textBase">{session.userName}</p>
+                                    {!session.isRead && <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-full" title="Chưa đọc"></span>}
+                                    <p className={`font-semibold text-sm ${!session.isRead ? 'text-primary' : 'text-textBase'}`}>{session.userName}</p>
                                     <p className="text-xs text-textMuted">{session.userPhone}</p>
                                     <p className="text-xs text-textSubtle mt-1">{new Date(session.startTime).toLocaleString('vi-VN')}</p>
                                 </div>

@@ -10,6 +10,7 @@ import { getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError';
 import SkeletonProductCard from '../components/shop/SkeletonProductCard';
 import ProductCarouselSection from '../components/shop/ProductCarouselSection';
+import HomeBannerIts from '../components/home/iqtechnology/HomeBannerIts';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -224,15 +225,6 @@ const ShopPage: React.FC = () => {
 
   const renderCarouselView = () => (
     <div className="space-y-4">
-       <div className="text-center mb-8 pt-4">
-        <h1 className="text-4xl font-bold text-textBase mb-2">Khám Phá Sản Phẩm</h1>
-        <p className="text-textMuted max-w-xl mx-auto">
-          Duyệt qua các danh mục nổi bật hoặc tìm kiếm sản phẩm bạn cần.
-        </p>
-      </div>
-       <div className="mb-8">
-            <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
-      </div>
       <ProductCarouselSection
         title="SẢN PHẨM BÁN CHẠY"
         filterParams={{ tags: 'Bán chạy', limit: 10 }}
@@ -288,6 +280,23 @@ const ShopPage: React.FC = () => {
             </div>
         ) : (
             <div className="py-8">
+                <div className="container mx-auto px-4 mb-6">
+                    <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="w-full lg:w-[280px] flex-shrink-0">
+                            <CategorySidebar 
+                                currentMainCategorySlug={null} 
+                                currentSubCategorySlug={null} 
+                                isCollapsed={false} 
+                            />
+                        </div>
+                        <div className="w-full flex-grow rounded-lg overflow-hidden shadow-lg">
+                            <HomeBannerIts />
+                        </div>
+                    </div>
+                     <div className="my-8">
+                        <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
+                    </div>
+                </div>
                 {renderCarouselView()}
             </div>
         )}

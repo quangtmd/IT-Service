@@ -487,12 +487,14 @@ app.get('/api/chatlogs', async (req, res) => {
 app.post('/api/chatlogs', async (req, res) => {
     try {
         const session = req.body;
+        // FIX: Update query to include isRead field for insertion and updates.
         const query = `
-            INSERT INTO ChatLogSessions (id, userName, userPhone, startTime, messages)
-            VALUES (?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE messages = VALUES(messages);
+            INSERT INTO ChatLogSessions (id, userName, userPhone, startTime, messages, isRead)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE messages = VALUES(messages), isRead = VALUES(isRead);
         `;
-        await pool.query(query, [session.id, session.userName, session.userPhone, session.startTime, JSON.stringify(session.messages)]);
+        // FIX: Pass session.isRead to the query, defaulting to false.
+        await pool.query(query, [session.id, session.userName, session.userPhone, session.startTime, JSON.stringify(session.messages), session.isRead || false]);
         res.status(200).json({ message: 'Đã lưu lịch sử chat' });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server khi lưu lịch sử chat', error: error.message });

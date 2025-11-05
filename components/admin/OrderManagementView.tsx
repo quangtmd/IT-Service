@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Order, OrderStatus, FinancialTransaction } from '../../types';
+import { Order, OrderStatus, FinancialTransaction, CheckoutFormData, Product, User, OrderItem } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
-import { getOrders, updateOrderStatus, addFinancialTransaction } from '../../services/localDataService';
+import { getOrders, updateOrderStatus, addFinancialTransaction, addOrder, getProducts } from '../../services/localDataService';
 import BackendConnectionError from '../shared/BackendConnectionError';
+import { useAuth } from '../../contexts/AuthContext';
 
 const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -22,6 +23,7 @@ const OrderManagementView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     const loadOrders = useCallback(async () => {
         setIsLoading(true);
@@ -78,8 +80,11 @@ const OrderManagementView: React.FC = () => {
     
     return (
         <div className="admin-card">
-            <div className="admin-card-header">
+            <div className="admin-card-header flex justify-between items-center">
                 <h3 className="admin-card-title">Quản lý Đơn hàng ({filteredOrders.length})</h3>
+                 <Button onClick={() => setIsCreateModalOpen(true)} size="sm" leftIcon={<i className="fas fa-plus"></i>}>
+                    Tạo Đơn hàng
+                </Button>
             </div>
             <div className="admin-card-body">
                 <input
@@ -131,6 +136,15 @@ const OrderManagementView: React.FC = () => {
                     order={selectedOrder}
                     onClose={() => setSelectedOrder(null)}
                     onUpdateStatus={handleUpdateStatus}
+                />
+            )}
+            {isCreateModalOpen && (
+                <OrderFormModal 
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onSave={() => {
+                        setIsCreateModalOpen(false);
+                        loadOrders();
+                    }}
                 />
             )}
         </div>
@@ -194,5 +208,28 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose, onU
         </div>
     );
 };
+
+// --- Order Form Modal (New) ---
+const OrderFormModal: React.FC<{ onClose: () => void; onSave: () => void; }> = ({ onClose, onSave }) => {
+    // Implementation will go here
+    return (
+         <div className="admin-modal-overlay">
+            <div className="admin-modal-panel max-w-4xl">
+                 <div className="admin-modal-header">
+                    <h4 className="admin-modal-title">Tạo Đơn Hàng Mới</h4>
+                    <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                 <div className="admin-modal-body">
+                    <p className="text-center text-textMuted">Tính năng tạo đơn hàng thủ công đang được phát triển.</p>
+                 </div>
+                 <div className="admin-modal-footer">
+                    <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
+                    <Button type="submit" variant="primary" disabled>Lưu Đơn hàng</Button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 export default OrderManagementView;

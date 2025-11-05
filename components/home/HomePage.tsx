@@ -13,27 +13,19 @@ import HomeBlogPreviewIts from '../components/home/iqtechnology/HomeBlogPreviewI
 import HomeCallToActionIts from '../components/home/iqtechnology/HomeCallToActionIts';
 import HomeContactIts from '../components/home/iqtechnology/HomeContactIts';
 import HomePricingPlansIts from '../components/home/iqtechnology/HomePricingPlansIts';
+import HeroBanner from '../components/home/HeroBanner';
+import FeaturedServices from '../components/home/FeaturedServices';
+import WhyChooseUs from '../components/home/WhyChooseUs';
+import Testimonials from '../components/home/Testimonials';
 
 const HomePage: React.FC = () => {
   return (
     <div>
-      {/* Display the main banner full-width */}
-      <HomeBannerIts />
-
-      {/* Rest of the homepage content */}
-      <HomeAboutIts />
-      <HomeServicesBenefitsIts />
-      <HomeWhyChooseUsIts />
-      <HomePricingPlansIts />
+      <HeroBanner />
+      <FeaturedServices />
       <HotProducts />
-      <HomeFeaturedProjectsIts />
-      <HomeProcessIts />
-      <HomeStatsCounterIts />
-      <HomeTestimonialsIts />
-      <HomeBlogPreviewIts />
-      <HomeBrandLogosIts />
-      <HomeCallToActionIts />
-      <HomeContactIts />
+      <WhyChooseUs />
+      <Testimonials />
     </div>
   );
 };

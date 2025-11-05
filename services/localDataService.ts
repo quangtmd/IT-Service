@@ -2,9 +2,9 @@
 
 import { 
     Product, Order, Article, OrderStatus, MediaItem, ServerInfo, 
-    ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord
+    ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord, Quotation
 } from '../types';
-import { BACKEND_API_BASE_URL } from '../constants';
+import { BACKEND_API_BASE_URL, QUOTATIONS_STORAGE_KEY, SERVICE_TICKETS_STORAGE_KEY } from '../constants';
 
 const API_BASE = BACKEND_API_BASE_URL;
 
@@ -35,6 +35,9 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         throw error;
     }
 }
+
+const getLocal = <T,>(key: string, def: T): T => { try { const i = localStorage.getItem(key); return i ? JSON.parse(i) : def; } catch (e) { return def; }};
+const setLocal = <T,>(key: string, val: T) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.error(e); } };
 
 
 // --- Product Service ---
@@ -201,6 +204,61 @@ export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void
     });
 };
 
+// --- Quotation Service (Local Storage) ---
+export const getQuotations = async (): Promise<Quotation[]> => Promise.resolve(getLocal(QUOTATIONS_STORAGE_KEY, []));
+export const addQuotation = async (quotation: Omit<Quotation, 'id'>): Promise<Quotation> => {
+    const items = getLocal<Quotation[]>(QUOTATIONS_STORAGE_KEY, []);
+    const newItem = { ...quotation, id: `qt-${Date.now()}` };
+    setLocal(QUOTATIONS_STORAGE_KEY, [newItem, ...items]);
+    return Promise.resolve(newItem);
+};
+export const updateQuotation = async (id: string, updates: Partial<Quotation>): Promise<Quotation> => {
+    const items = getLocal<Quotation[]>(QUOTATIONS_STORAGE_KEY, []);
+    let updatedItem: Quotation | undefined;
+    const newItems = items.map(item => {
+        if (item.id === id) {
+            updatedItem = { ...item, ...updates };
+            return updatedItem;
+        }
+        return item;
+    });
+    setLocal(QUOTATIONS_STORAGE_KEY, newItems);
+    if (!updatedItem) throw new Error("Quotation not found");
+    return Promise.resolve(updatedItem);
+};
+export const deleteQuotation = async (id: string): Promise<void> => {
+    const items = getLocal<Quotation[]>(QUOTATIONS_STORAGE_KEY, []);
+    setLocal(QUOTATIONS_STORAGE_KEY, items.filter(item => item.id !== id));
+    return Promise.resolve();
+};
+
+// --- Service Ticket Service (Local Storage) ---
+export const getServiceTickets = async (): Promise<ServiceTicket[]> => Promise.resolve(getLocal(SERVICE_TICKETS_STORAGE_KEY, []));
+export const addServiceTicket = async (ticket: Omit<ServiceTicket, 'id'>): Promise<ServiceTicket> => {
+    const items = getLocal<ServiceTicket[]>(SERVICE_TICKETS_STORAGE_KEY, []);
+    const newItem = { ...ticket, id: `st-${Date.now()}` };
+    setLocal(SERVICE_TICKETS_STORAGE_KEY, [newItem, ...items]);
+    return Promise.resolve(newItem);
+};
+export const updateServiceTicket = async (id: string, updates: Partial<ServiceTicket>): Promise<ServiceTicket> => {
+    const items = getLocal<ServiceTicket[]>(SERVICE_TICKETS_STORAGE_KEY, []);
+    let updatedItem: ServiceTicket | undefined;
+    const newItems = items.map(item => {
+        if (item.id === id) {
+            updatedItem = { ...item, ...updates };
+            return updatedItem;
+        }
+        return item;
+    });
+    setLocal(SERVICE_TICKETS_STORAGE_KEY, newItems);
+    if (!updatedItem) throw new Error("Service ticket not found");
+    return Promise.resolve(updatedItem);
+};
+export const deleteServiceTicket = async (id: string): Promise<void> => {
+    const items = getLocal<ServiceTicket[]>(SERVICE_TICKETS_STORAGE_KEY, []);
+    setLocal(SERVICE_TICKETS_STORAGE_KEY, items.filter(item => item.id !== id));
+    return Promise.resolve();
+};
 
 // --- Misc Services ---
 export const getServerInfo = async (): Promise<ServerInfo> => {
@@ -213,7 +271,4 @@ export const checkBackendHealth = async () => {
     return fetchFromApi<{ status: string; database: string; errorCode?: string; message?: string }>('/api/health');
 };
 
-// These are still local as backend doesn't support them
-export const getServiceTickets = async (): Promise<ServiceTicket[]> => Promise.resolve(getLocal('serviceTickets_v1', []));
 export const getInventory = async (): Promise<Inventory[]> => Promise.resolve(getLocal('inventory_v1', []));
-const getLocal = <T,>(key: string, def: T): T => { try { const i = localStorage.getItem(key); return i ? JSON.parse(i) : def; } catch (e) { return def; }};

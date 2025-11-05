@@ -644,7 +644,7 @@ export interface ServiceTicket {
   };
   reported_issue: string;
   physical_condition: string;
-  accessories: string[];
+  accessories: string; // Changed from array to string for easier form handling
   received_by: string; // staff user id
   created_at: string; // ISO string date
   status: 'Đã tiếp nhận' | 'Đang chẩn đoán' | 'Chờ linh kiện' | 'Đang sửa chữa' | 'Sẵn sàng trả' | 'Đã trả khách';
