@@ -437,19 +437,18 @@ app.get('/api/orders', async (req, res) => {
 app.post('/api/orders', async (req, res) => {
     try {
         const orderData = req.body;
-        const newOrder = {
+        const newOrderForDb = {
             id: orderData.id,
-            customerInfo: orderData.customerInfo, // Pass as object
-            items: orderData.items, // Pass as array
+            customerInfo: JSON.stringify(orderData.customerInfo),
+            items: JSON.stringify(orderData.items),
             totalAmount: orderData.totalAmount,
             orderDate: orderData.orderDate,
             status: orderData.status,
-            paymentInfo: orderData.paymentInfo, // Pass as object
-            shippingInfo: orderData.shippingInfo || {}, // Pass as object
+            paymentInfo: JSON.stringify(orderData.paymentInfo),
+            shippingInfo: JSON.stringify(orderData.shippingInfo || {}),
         };
 
-        // The mysql2 driver will automatically stringify the JSON fields
-        await pool.query('INSERT INTO Orders SET ?', newOrder);
+        await pool.query('INSERT INTO Orders SET ?', newOrderForDb);
         res.status(201).json(orderData);
     } catch (error) {
         console.error("Lỗi khi tạo đơn hàng:", error);
