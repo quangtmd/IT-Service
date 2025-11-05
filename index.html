@@ -607,6 +607,29 @@
             opacity: 0;
         }
     }
+    /* --- Print Styles --- */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printable-area, #printable-area * {
+        visibility: visible;
+      }
+      #printable-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: none;
+        box-shadow: none;
+        background-color: white;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
   </style>
   <script>
     function applyThemeFromLocalStorage() {

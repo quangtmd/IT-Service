@@ -642,6 +642,7 @@ export interface ServiceTicket {
       serialNumber?: string;
       type: 'Laptop' | 'PC' | 'Màn hình' | 'Linh kiện' | 'Khác';
   };
+  service_type: 'Sửa chữa Dịch vụ' | 'Bảo hành Hãng' | 'Bảo hành Cửa hàng';
   reported_issue: string;
   physical_condition: string;
   accessories: string; // Changed from array to string for easier form handling

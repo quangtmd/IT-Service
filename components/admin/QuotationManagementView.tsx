@@ -3,6 +3,7 @@ import { Quotation, QuotationStatus, Product, User, OrderItem, CheckoutFormData 
 import Button from '../ui/Button';
 import { getQuotations, addQuotation, updateQuotation, deleteQuotation, getProducts } from '../../services/localDataService';
 import { useAuth } from '../../contexts/AuthContext';
+import * as Constants from '../../constants';
 
 const getStatusColor = (status: QuotationStatus) => {
     switch (status) {
@@ -19,8 +20,10 @@ const QuotationManagementView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+    const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
+    const [viewingQuotation, setViewingQuotation] = useState<Quotation | null>(null);
+
 
     const loadQuotations = useCallback(async () => {
         setIsLoading(true);
@@ -57,8 +60,8 @@ const QuotationManagementView: React.FC = () => {
         } catch (error) {
             alert("Lỗi khi lưu báo giá.");
         } finally {
-            setIsModalOpen(false);
-            setSelectedQuotation(null);
+            setIsFormModalOpen(false);
+            setEditingQuotation(null);
         }
     };
 
@@ -77,7 +80,7 @@ const QuotationManagementView: React.FC = () => {
         <div className="admin-card">
             <div className="admin-card-header flex justify-between items-center">
                 <h3 className="admin-card-title">Quản lý Báo Giá ({filteredQuotations.length})</h3>
-                <Button onClick={() => { setSelectedQuotation(null); setIsModalOpen(true); }} size="sm" leftIcon={<i className="fas fa-plus"></i>}>
+                <Button onClick={() => { setEditingQuotation(null); setIsFormModalOpen(true); }} size="sm" leftIcon={<i className="fas fa-plus"></i>}>
                     Tạo Báo giá
                 </Button>
             </div>
@@ -98,7 +101,8 @@ const QuotationManagementView: React.FC = () => {
                                     <td><span className={`status-badge ${getStatusColor(q.status)}`}>{q.status}</span></td>
                                     <td>
                                         <div className="flex gap-2">
-                                            <Button onClick={() => { setSelectedQuotation(q); setIsModalOpen(true); }} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
+                                            <Button onClick={() => setViewingQuotation(q)} size="sm" variant="outline"><i className="fas fa-eye"></i></Button>
+                                            <Button onClick={() => { setEditingQuotation(q); setIsFormModalOpen(true); }} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
                                             <Button onClick={() => handleDelete(q.id)} size="sm" variant="ghost" className="text-red-500"><i className="fas fa-trash"></i></Button>
                                         </div>
                                     </td>
@@ -110,7 +114,8 @@ const QuotationManagementView: React.FC = () => {
                     </table>
                 </div>
             </div>
-            {isModalOpen && <QuotationFormModal quotation={selectedQuotation} onSave={handleSave} onClose={() => { setIsModalOpen(false); setSelectedQuotation(null); }} />}
+            {isFormModalOpen && <QuotationFormModal quotation={editingQuotation} onSave={handleSave} onClose={() => { setIsFormModalOpen(false); setEditingQuotation(null); }} />}
+            {viewingQuotation && <QuotationDetailModal quotation={viewingQuotation} onClose={() => setViewingQuotation(null)} />}
         </div>
     );
 };
@@ -158,7 +163,7 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, onSa
     const handleItemChange = (index: number, field: 'quantity' | 'price', value: number) => {
         const newItems = [...(formData.items || [])];
         newItems[index] = { ...newItems[index], [field]: value };
-        setFormData(p => ({ ...p, items: newItems }));
+        setFormData(p => ({ ...p, items: newItems as OrderItem[] }));
     };
 
     const addItem = (product: Product) => {
@@ -169,13 +174,13 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, onSa
         } else {
             newItems.push({ productId: product.id, productName: product.name, quantity: 1, price: product.price });
         }
-        setFormData(p => ({ ...p, items: newItems }));
+        setFormData(p => ({ ...p, items: newItems as OrderItem[] }));
         setProductSearch('');
     };
     
     const removeItem = (index: number) => {
         const newItems = (formData.items || []).filter((_, i) => i !== index);
-        setFormData(p => ({...p, items: newItems}));
+        setFormData(p => ({...p, items: newItems as OrderItem[]}));
     }
 
     useEffect(() => {
@@ -212,7 +217,7 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, onSa
                         <h5 className="admin-form-subsection-title">Thông tin khách hàng</h5>
                          <div className="admin-form-group"><label>Tìm khách hàng cũ</label>
                             <select onChange={e => handleSelectExistingCustomer(e.target.value)} className="mb-2">
-                                <option value="">-- Chọn khách hàng --</option>
+                                <option value="">-- Chọn hoặc tạo mới --</option>
                                 {customerOptions.map(c => <option key={c.id} value={c.email}>{c.username} - {c.email}</option>)}
                             </select>
                         </div>
@@ -245,7 +250,7 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, onSa
                                 </ul>
                             )}
                         </div>
-                        <div className="space-y-2 mt-4">
+                        <div className="space-y-2 mt-4 max-h-60 overflow-y-auto">
                             {(formData.items || []).map((item, index) => (
                                 <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
                                     <span className="flex-grow text-sm">{item.productName}</span>
@@ -263,6 +268,96 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, onSa
                     <Button type="submit">Lưu Báo giá</Button>
                 </div>
             </form>
+        </div>
+    );
+};
+
+
+// --- Detail & Print Modal ---
+interface QuotationDetailModalProps {
+    quotation: Quotation;
+    onClose: () => void;
+}
+const QuotationDetailModal: React.FC<QuotationDetailModalProps> = ({ quotation, onClose }) => {
+    const handlePrint = () => window.print();
+
+    return (
+        <div className="admin-modal-overlay">
+            <div className="admin-modal-panel max-w-4xl" id="printable-area">
+                <div className="admin-modal-header no-print">
+                    <h4 className="admin-modal-title">Chi tiết Báo giá #{quotation.id.slice(-6)}</h4>
+                    <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <div className="admin-modal-body bg-white">
+                    <div className="p-4">
+                        {/* Header */}
+                        <div className="flex justify-between items-start pb-4 border-b">
+                            <div>
+                                <h1 className="text-2xl font-bold text-primary">{Constants.COMPANY_NAME}</h1>
+                                <p className="text-xs">{Constants.COMPANY_ADDRESS}</p>
+                                <p className="text-xs">SĐT: {Constants.COMPANY_PHONE} | Email: {Constants.COMPANY_EMAIL}</p>
+                            </div>
+                            <div className="text-right">
+                                <h2 className="text-3xl font-bold text-gray-700 uppercase">Báo Giá</h2>
+                                <p className="text-sm">Mã số: <span className="font-mono">#{quotation.id.slice(-6)}</span></p>
+                                <p className="text-sm">Ngày: {new Date(quotation.creationDate).toLocaleDateString('vi-VN')}</p>
+                            </div>
+                        </div>
+                        {/* Customer Info */}
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <h5 className="font-semibold text-gray-500 text-sm mb-1">Gửi đến:</h5>
+                                <p className="font-bold text-lg">{quotation.customerInfo.fullName}</p>
+                                <p className="text-sm">{quotation.customerInfo.address}</p>
+                                <p className="text-sm">SĐT: {quotation.customerInfo.phone}</p>
+                                <p className="text-sm">Email: {quotation.customerInfo.email}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm">Trạng thái: <span className={`font-semibold ${getStatusColor(quotation.status)} px-2 py-1 rounded-full text-xs`}>{quotation.status}</span></p>
+                                <p className="text-sm">Hiệu lực đến: {new Date(quotation.expiryDate).toLocaleDateString('vi-VN')}</p>
+                            </div>
+                        </div>
+                        {/* Items Table */}
+                        <div className="mt-6">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-100">
+                                    <tr>
+                                        <th className="p-2 text-sm font-semibold">Sản phẩm</th>
+                                        <th className="p-2 text-sm font-semibold text-right">Đơn giá</th>
+                                        <th className="p-2 text-sm font-semibold text-center">Số lượng</th>
+                                        <th className="p-2 text-sm font-semibold text-right">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {quotation.items.map((item, index) => (
+                                        <tr key={index} className="border-b">
+                                            <td className="p-2">{item.productName}</td>
+                                            <td className="p-2 text-right">{item.price.toLocaleString('vi-VN')}₫</td>
+                                            <td className="p-2 text-center">{item.quantity}</td>
+                                            <td className="p-2 text-right font-medium">{(item.price * item.quantity).toLocaleString('vi-VN')}₫</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        {/* Total */}
+                        <div className="flex justify-end mt-4">
+                            <div className="w-full max-w-xs">
+                                <div className="flex justify-between text-lg font-bold">
+                                    <span>Tổng cộng:</span>
+                                    <span>{quotation.totalAmount.toLocaleString('vi-VN')}₫</span>
+                                </div>
+                            </div>
+                        </div>
+                         {/* Notes */}
+                        {quotation.notes && <div className="mt-6 text-sm text-gray-600 border-t pt-4"><strong>Ghi chú:</strong> {quotation.notes}</div>}
+                    </div>
+                </div>
+                <div className="admin-modal-footer no-print">
+                    <Button type="button" variant="outline" onClick={onClose}>Đóng</Button>
+                    <Button type="button" variant="primary" onClick={handlePrint} leftIcon={<i className="fas fa-print"></i>}>In Báo giá</Button>
+                </div>
+            </div>
         </div>
     );
 };
