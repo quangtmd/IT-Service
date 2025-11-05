@@ -332,7 +332,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 category: 'Chi phí Lương',
                 description: `Thanh toán lương tháng ${payPeriod}`
             });
-            onDataChange(); // Refresh all data
+            onDataChange();
         } catch (error) {
             alert('Lỗi khi chốt lương.');
         }
@@ -344,7 +344,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
                 <Button onClick={() => savePayrollRecords(localPayroll)} size="sm" variant="outline">Lưu Nháp</Button>
-                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                {/* FIX: The onClick handler was passing an implicit event argument. Wrapped it in an arrow function. */}
+                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

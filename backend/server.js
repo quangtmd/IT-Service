@@ -3,8 +3,11 @@ import cors from 'cors';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config({ path: path.resolve(process.cwd(), 'backend', '.env') });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -151,9 +154,9 @@ app.get('/api/products/:id', async (req, res) => {
         const product = rows[0];
         if (product) {
             // Deserialize JSON fields
-            product.imageUrls = JSON.parse(product.imageUrls || '[]');
-            product.specifications = JSON.parse(product.specifications || '{}');
-            product.tags = JSON.parse(product.tags || '[]');
+            product.imageUrls = JSON.parse(product.imageUrls || '[]'),
+            product.specifications = JSON.parse(product.specifications || '{}'),
+            product.tags = JSON.parse(product.tags || '[]'),
             product.isVisible = product.is_published;
             res.json(product);
         } else {
