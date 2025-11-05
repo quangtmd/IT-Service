@@ -93,6 +93,7 @@ export interface ChatMessage {
   text: string;
   sender: 'user' | 'bot' | 'system';
   timestamp: Date;
+  imageUrl?: string;
 }
 
 // New Type for Chat Log Sessions

@@ -8,6 +8,7 @@ import * as Constants from '../constants.tsx';
 import CategorySidebar from '../components/shop/CategorySidebar';
 import { getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError';
+import SkeletonProductCard from '../components/shop/SkeletonProductCard';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -165,9 +166,10 @@ const ShopPage: React.FC = () => {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="text-center py-20 w-full flex-grow">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4">Đang tải sản phẩm...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+          {Array.from({ length: PRODUCTS_PER_PAGE }).map((_, index) => (
+            <SkeletonProductCard key={index} />
+          ))}
         </div>
       );
     }
