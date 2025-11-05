@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { AdminPermission } from './contexts/AuthContext';
 
@@ -23,6 +21,7 @@ export interface Product {
   tags: string[]; // Changed from optional to required, default to []
   brandLogoUrl?: string;
   isVisible?: boolean; // New field for product visibility
+  is_featured?: boolean; // Added for featured products
   seoMetaTitle?: string; // New SEO field
   seoMetaDescription?: string; // New SEO field
   slug?: string; // New field for custom URL slug
@@ -168,6 +167,17 @@ export interface GroundingChunkWeb {
 export interface GroundingChunk {
   web: GroundingChunkWeb;
 }
+
+// Fix: Add AdminView type to be shared across components
+export type AdminView = 
+  | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
+  | 'staff' | 'customers' 
+  | 'orders' | 'discounts' | 'chat_logs' 
+  | 'theme_settings' | 'menu_settings' | 'site_settings'
+  | 'notifications_panel'
+  | 'homepage_management'
+  | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard'
+  | 'inventory' | 'service_tickets';
 
 export type UserRole = 'admin' | 'staff' | 'customer';
 export type StaffRole = 'Quản lý Bán hàng' | 'Biên tập Nội dung' | 'Trưởng nhóm Kỹ thuật' | 'Chuyên viên Hỗ trợ' | 'Nhân viên Toàn quyền';
