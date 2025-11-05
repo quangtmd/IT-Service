@@ -184,6 +184,17 @@ This manual method is more reliable than using a Blueprint. We will create two s
 
 ---
 
+### Step 4: Access Your Application
+
+**QUAN TRỌNG:** Sau khi triển khai xong, bạn sẽ có hai (2) URL: một cho backend và một cho frontend.
+
+-   URL của `it-service-backend`: (ví dụ: `https://it-service-backend-xxxx.onrender.com`) - Đây chỉ là API. Truy cập vào đây sẽ chỉ thấy một trang chào mừng.
+-   URL của `it-service-frontend`: (ví dụ: `https://it-service-frontend.onrender.com`) - **ĐÂY LÀ URL CỦA TRANG WEB CỦA BẠN.**
+
+**Bạn phải sử dụng URL của frontend để xem và sử dụng ứng dụng của mình.**
+
+---
+
 ## 3. Troubleshooting (Xử lý sự cố)
 
 ### Lỗi: "Lỗi Kết Nối Đến Máy Chủ (Backend)" trên website

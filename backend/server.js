@@ -333,6 +333,34 @@ app.post('/api/orders', async (req, res) => {
     }
 });
 
+// Add a catch-all for the root to guide users who land here by mistake
+app.get('/', (req, res) => {
+    res.status(200).send(`
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Backend Server - IQ Technology</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f2f5; color: #333; }
+                .container { text-align: center; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px; margin: 20px; }
+                h1 { color: #ef4444; }
+                p { line-height: 1.6; }
+                code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>👋 Xin chào! Đây là Máy chủ Backend.</h1>
+                <p>Dịch vụ này đang hoạt động và sẵn sàng xử lý các yêu cầu API từ ứng dụng web.</p>
+                <p>Có vẻ như bạn đã truy cập trực tiếp vào địa chỉ URL của backend. Để xem trang web, vui lòng sử dụng địa chỉ URL của dịch vụ <strong>Frontend (Static Site)</strong> trên Render.</p>
+                <p>URL của frontend thường có tên là <code>it-service-frontend</code> hoặc tương tự.</p>
+            </div>
+        </body>
+        </html>
+    `);
+});
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Backend server đang chạy tại http://localhost:${PORT}`);
