@@ -284,7 +284,6 @@ export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
-                responseMimeType: 'application/json'
             }
         });
 
