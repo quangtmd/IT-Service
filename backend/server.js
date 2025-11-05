@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increase limit for media uploads
 
 const dbConfig = {
     host: process.env.DB_HOST,
@@ -471,9 +471,136 @@ app.put('/api/orders/:id/status', async (req, res) => {
     }
 });
 
+// --- CHAT LOGS API ---
+app.get('/api/chatlogs', async (req, res) => {
+    try {
+        const [logs] = await pool.query('SELECT * FROM ChatLogSessions ORDER BY startTime DESC LIMIT 50');
+        const deserialized = logs.map(log => ({ ...log, messages: JSON.parse(log.messages || '[]') }));
+        res.json(deserialized);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server khi lấy lịch sử chat', error: error.message });
+    }
+});
+
+app.post('/api/chatlogs', async (req, res) => {
+    try {
+        const session = req.body;
+        const query = `
+            INSERT INTO ChatLogSessions (id, userName, userPhone, startTime, messages)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE messages = VALUES(messages);
+        `;
+        await pool.query(query, [session.id, session.userName, session.userPhone, session.startTime, JSON.stringify(session.messages)]);
+        res.status(200).json({ message: 'Đã lưu lịch sử chat' });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server khi lưu lịch sử chat', error: error.message });
+    }
+});
+
+// --- MEDIA LIBRARY API ---
+app.get('/api/media', async (req, res) => {
+    try {
+        const [items] = await pool.query('SELECT * FROM MediaItems ORDER BY uploadedAt DESC');
+        res.json(items);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server khi lấy media', error: error.message });
+    }
+});
+
+app.post('/api/media', async (req, res) => {
+    try {
+        const item = { ...req.body, id: `media-${Date.now()}` };
+        await pool.query('INSERT INTO MediaItems SET ?', item);
+        res.status(201).json(item);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server khi thêm media', error: error.message });
+    }
+});
+
+app.delete('/api/media/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM MediaItems WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server khi xóa media', error: error.message });
+    }
+});
+
+// --- FINANCIALS API ---
+app.get('/api/financials/transactions', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM FinancialTransactions ORDER BY date DESC');
+        res.json(rows);
+    } catch (error) { res.status(500).json({ message: 'Lỗi server', error: error.message }); }
+});
+
+app.post('/api/financials/transactions', async (req, res) => {
+    try {
+        const data = { ...req.body, id: `trans-${Date.now()}` };
+        await pool.query('INSERT INTO FinancialTransactions SET ?', data);
+        res.status(201).json(data);
+    } catch (error) { res.status(500).json({ message: 'Lỗi server', error: error.message }); }
+});
+
+app.put('/api/financials/transactions/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const data = req.body;
+        delete data.id;
+        await pool.query('UPDATE FinancialTransactions SET ? WHERE id = ?', [data, id]);
+        res.json({ id, ...data });
+    } catch (error) { res.status(500).json({ message: 'Lỗi server', error: error.message }); }
+});
+
+app.delete('/api/financials/transactions/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM FinancialTransactions WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) { res.status(500).json({ message: 'Lỗi server', error: error.message }); }
+});
+
+// --- PAYROLL API ---
+app.get('/api/financials/payroll', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM PayrollRecords');
+        res.json(rows);
+    } catch (error) { res.status(500).json({ message: 'Lỗi server', error: error.message }); }
+});
+
+app.post('/api/financials/payroll', async (req, res) => {
+    try {
+        const records = req.body;
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        try {
+            for (const record of records) {
+                const query = `
+                    INSERT INTO PayrollRecords (id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, notes, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE baseSalary=VALUES(baseSalary), bonus=VALUES(bonus), deduction=VALUES(deduction), finalSalary=VALUES(finalSalary), notes=VALUES(notes), status=VALUES(status);
+                `;
+                await connection.query(query, [record.id, record.employeeId, record.employeeName, record.payPeriod, record.baseSalary, record.bonus, record.deduction, record.finalSalary, record.notes, record.status]);
+            }
+            await connection.commit();
+            res.status(200).json({ message: "Đã cập nhật bảng lương" });
+        } catch (err) {
+            await connection.rollback();
+            throw err;
+        } finally {
+            connection.release();
+        }
+    } catch (error) { res.status(500).json({ message: 'Lỗi server khi lưu bảng lương', error: error.message }); }
+});
+
 
 // --- CATCH-ALL ROOT ---
 app.get('/', (req, res) => {
+    // Get the host from the request headers
+    const host = req.get('host');
+    // For Render, we should respect the X-Forwarded-Proto header to show https correctly
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const fullUrl = `${protocol}://${host}`;
+
     res.status(200).send(`
         <!DOCTYPE html>
         <html lang="vi">
@@ -482,19 +609,25 @@ app.get('/', (req, res) => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Backend Server - IQ Technology</title>
             <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f2f5; color: #333; }
-                .container { text-align: center; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px; margin: 20px; }
-                h1 { color: #ef4444; }
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f0f2f5; color: #333; }
+                .container { text-align: center; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 700px; margin: 20px; }
+                h1 { color: #16a34a; }
                 p { line-height: 1.6; }
-                code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+                code { background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 1.1em; color: #1e293b; }
+                .success { border: 2px solid #16a34a; }
+                .info-box { text-align: left; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 20px; }
             </style>
         </head>
         <body>
-            <div class="container">
-                <h1>👋 Xin chào! Đây là Máy chủ Backend.</h1>
-                <p>Dịch vụ này đang hoạt động và sẵn sàng xử lý các yêu cầu API từ ứng dụng web.</p>
-                <p>Có vẻ như bạn đã truy cập trực tiếp vào địa chỉ URL của backend. Để xem trang web, vui lòng sử dụng địa chỉ URL của dịch vụ <strong>Frontend (Static Site)</strong> trên Render.</p>
-                <p>URL của frontend thường có tên là <code>it-service-frontend</code> hoặc tương tự.</p>
+            <div class="container success">
+                <h1>✅ Backend Server Đang Hoạt Động!</h1>
+                <p>Dịch vụ này đang chạy và sẵn sàng xử lý các yêu cầu API từ ứng dụng frontend.</p>
+                <div class="info-box">
+                    <p><strong>URL Backend hiện tại của bạn là:</strong></p>
+                    <p><code>${fullUrl}</code></p>
+                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
+                    <p>Đây chính là giá trị bạn cần đặt cho biến môi trường <code>VITE_BACKEND_API_BASE_URL</code> trong dịch vụ <strong>frontend</strong> trên Render.</p>
+                </div>
             </div>
         </body>
         </html>

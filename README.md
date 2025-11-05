@@ -82,6 +82,38 @@ For local development, using a local database is strongly recommended to avoid n
         id VARCHAR(255) PRIMARY KEY, url LONGTEXT NOT NULL, name VARCHAR(255),
         type VARCHAR(100), uploadedAt DATETIME NOT NULL
     );
+
+    CREATE TABLE ChatLogSessions (
+        id VARCHAR(255) PRIMARY KEY,
+        userName VARCHAR(255) NOT NULL,
+        userPhone VARCHAR(255) NOT NULL,
+        startTime DATETIME NOT NULL,
+        messages JSON
+    );
+
+    CREATE TABLE FinancialTransactions (
+        id VARCHAR(255) PRIMARY KEY,
+        date DATE NOT NULL,
+        amount DECIMAL(12, 0) NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        category VARCHAR(255) NOT NULL,
+        description TEXT,
+        relatedEntity VARCHAR(255),
+        invoiceNumber VARCHAR(255)
+    );
+
+    CREATE TABLE PayrollRecords (
+        id VARCHAR(255) PRIMARY KEY,
+        employeeId VARCHAR(255) NOT NULL,
+        employeeName VARCHAR(255) NOT NULL,
+        payPeriod VARCHAR(7) NOT NULL,
+        baseSalary DECIMAL(12, 0) DEFAULT 0,
+        bonus DECIMAL(12, 0) DEFAULT 0,
+        deduction DECIMAL(12, 0) DEFAULT 0,
+        finalSalary DECIMAL(12, 0) NOT NULL,
+        notes TEXT,
+        status VARCHAR(50) NOT NULL
+    );
     ```
 
 ---

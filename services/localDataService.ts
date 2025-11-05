@@ -142,23 +142,63 @@ export const deleteArticle = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/articles/${id}`, { method: 'DELETE' });
 };
 
+// --- Media Library Service ---
+export const getMediaItems = async (): Promise<MediaItem[]> => fetchFromApi('/api/media');
 
-// --- Media Library Service (Still local as backend doesn't support it) ---
-const MEDIA_KEY = 'siteMediaLibrary_v1';
-const getLocal = <T,>(key: string, def: T): T => { try { const i = localStorage.getItem(key); return i ? JSON.parse(i) : def; } catch (e) { return def; }};
-const setLocal = <T,>(key: string, val: T) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}};
-
-export const getMediaItems = async (): Promise<MediaItem[]> => Promise.resolve(getLocal<MediaItem[]>(MEDIA_KEY, []));
 export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaItem> => {
-    const items = getLocal<MediaItem[]>(MEDIA_KEY, []);
-    const newItem = { ...item, id: `media-${Date.now()}`};
-    setLocal(MEDIA_KEY, [newItem, ...items]);
-    return Promise.resolve(newItem);
+    return fetchFromApi<MediaItem>('/api/media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+    });
 };
+
 export const deleteMediaItem = async (id: string): Promise<void> => {
-    const items = getLocal<MediaItem[]>(MEDIA_KEY, []);
-    setLocal(MEDIA_KEY, items.filter(i => i.id !== id));
-    return Promise.resolve();
+    return fetchFromApi(`/api/media/${id}`, { method: 'DELETE' });
+};
+
+// --- Chat Log Service ---
+export const getChatLogs = async (): Promise<ChatLogSession[]> => {
+    return fetchFromApi<ChatLogSession[]>('/api/chatlogs');
+};
+
+export const saveChatLogSession = async (session: ChatLogSession): Promise<void> => {
+    return fetchFromApi<void>('/api/chatlogs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(session),
+    });
+};
+
+// --- Financials Service ---
+export const getFinancialTransactions = async (): Promise<FinancialTransaction[]> => {
+    return fetchFromApi<FinancialTransaction[]>('/api/financials/transactions');
+};
+
+export const addFinancialTransaction = async (transaction: Omit<FinancialTransaction, 'id'>): Promise<FinancialTransaction> => {
+    return fetchFromApi<FinancialTransaction>('/api/financials/transactions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(transaction),
+    });
+};
+
+export const updateFinancialTransaction = async (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => {
+    return fetchFromApi<FinancialTransaction>(`/api/financials/transactions/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates),
+    });
+};
+
+export const deleteFinancialTransaction = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/financials/transactions/${id}`, { method: 'DELETE' });
+};
+
+export const getPayrollRecords = async (): Promise<PayrollRecord[]> => {
+    return fetchFromApi<PayrollRecord[]>('/api/financials/payroll');
+};
+
+export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
+    return fetchFromApi<void>('/api/financials/payroll', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records),
+    });
 };
 
 
@@ -176,3 +216,4 @@ export const checkBackendHealth = async () => {
 // These are still local as backend doesn't support them
 export const getServiceTickets = async (): Promise<ServiceTicket[]> => Promise.resolve(getLocal('serviceTickets_v1', []));
 export const getInventory = async (): Promise<Inventory[]> => Promise.resolve(getLocal('inventory_v1', []));
+const getLocal = <T,>(key: string, def: T): T => { try { const i = localStorage.getItem(key); return i ? JSON.parse(i) : def; } catch (e) { return def; }};

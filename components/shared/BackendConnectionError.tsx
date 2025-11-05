@@ -11,14 +11,14 @@ const BackendConnectionError: React.FC<BackendConnectionErrorProps> = ({ error }
   const render404Guide = () => (
     <div className="bg-orange-50 border-orange-200 text-orange-800 p-4 rounded-md mb-4 text-sm shadow-inner">
       <p className="font-bold mb-2 text-base text-orange-900"><i className="fas fa-link-slash mr-2"></i>Chẩn đoán: Lỗi Giao Tiếp Frontend-Backend (404 Not Found)</p>
-      <p>Frontend đã gửi yêu cầu nhưng Backend không tìm thấy địa chỉ API. Điều này gần như chắc chắn là do biến môi trường <code>VITE_BACKEND_API_BASE_URL</code> trên dịch vụ <strong>frontend (Static Site)</strong> của bạn bị sai hoặc thiếu.</p>
+      <p>Frontend đã gửi yêu cầu nhưng Backend không tìm thấy địa chỉ API. Điều này gần như chắc chắn là do biến môi trường <code>VITE_BACKEND_API_BASE_URL</code> trên dịch vụ <strong>frontend (Static Site)</strong> của bạn bị sai, thiếu, hoặc backend chưa được deploy xong.</p>
       <div className="mt-3 bg-white p-3 rounded border border-orange-200">
         <p className="font-semibold">Hành động khắc phục:</p>
-        <ol className="list-decimal list-inside space-y-1 mt-1">
-          <li>Vào dịch vụ <strong>frontend</strong> (tên là <code>it-service-frontend</code>) trên Render.</li>
-          <li>Chọn tab <strong>"Environment"</strong>.</li>
-          <li>Kiểm tra lại biến <code>VITE_BACKEND_API_BASE_URL</code> và đảm bảo nó là URL chính xác của dịch vụ backend.</li>
-          <li>Sau khi sửa, hãy chọn <strong>"Manual Deploy"</strong> &gt; <strong>"Deploy latest commit"</strong> cho dịch vụ frontend.</li>
+        <ol className="list-decimal list-inside space-y-2 mt-1">
+          <li><strong>Lấy URL Backend chính xác:</strong> Vào dịch vụ <strong>backend</strong> (tên là <code>it-service-backend</code>) trên Render. Copy URL ở trên cùng (ví dụ: <code>https://...onrender.com</code>). <strong>Đảm bảo không có dấu gạch chéo (<code>/</code>) ở cuối.</strong></li>
+          <li><strong>Kiểm tra Frontend Environment:</strong> Vào dịch vụ <strong>frontend</strong> (tên là <code>it-service-frontend</code>).</li>
+          <li>Chọn tab <strong>"Environment"</strong> và dán URL backend vừa copy vào giá trị của biến <code>VITE_BACKEND_API_BASE_URL</code>.</li>
+          <li><strong>Deploy lại Frontend:</strong> Sau khi sửa, hãy chọn <strong>"Manual Deploy"</strong> &gt; <strong>"Deploy latest commit"</strong> cho dịch vụ <strong>frontend</strong> và chờ quá trình hoàn tất.</li>
         </ol>
       </div>
     </div>

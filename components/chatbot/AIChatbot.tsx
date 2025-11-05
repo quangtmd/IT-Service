@@ -6,6 +6,7 @@ import geminiService from '../../services/geminiService';
 import { Chat, GenerateContentResponse } from '@google/genai';
 import * as Constants from '../../constants.tsx'; 
 import { useChatbotContext } from '../../contexts/ChatbotContext'; // Import the context hook
+import { saveChatLogSession } from '../../services/localDataService';
 
 interface AIChatbotProps {
   isOpen: boolean;
@@ -112,13 +113,14 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     }
   }, [isOpen, isUserInfoSubmitted, chatSession, initializeChat]);
 
-  const saveChatLog = useCallback(() => {
+  const saveChatLog = useCallback(async () => {
     if (currentChatLogSession && currentChatLogSession.messages.length > 0) {
-      const existingLogsRaw = localStorage.getItem(Constants.CHAT_LOGS_STORAGE_KEY);
-      const existingLogs: ChatLogSession[] = existingLogsRaw ? JSON.parse(existingLogsRaw) : [];
-      // Add the current session to the beginning, ensuring it's the most recent
-      const updatedLogs = [currentChatLogSession, ...existingLogs.filter(log => log.id !== currentChatLogSession.id)].slice(0, 50);
-      localStorage.setItem(Constants.CHAT_LOGS_STORAGE_KEY, JSON.stringify(updatedLogs));
+      try {
+        await saveChatLogSession(currentChatLogSession);
+      } catch (error) {
+        console.error("Failed to save chat log to backend:", error);
+        // Optionally notify user of save failure, but don't block UI
+      }
     }
   }, [currentChatLogSession]);
 

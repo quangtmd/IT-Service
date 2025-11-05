@@ -1,20 +1,14 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
-import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../ui/Card';
+import { 
+    getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
+    getPayrollRecords, savePayrollRecords
+} from '../../services/localDataService';
 
 // --- HELPER FUNCTIONS ---
-const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
-    try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultValue; } 
-    catch (error) { console.error(`Lỗi đọc localStorage key "${key}":`, error); return defaultValue; }
-};
-const setLocalStorageItem = <T,>(key: string, value: T) => {
-    try { localStorage.setItem(key, JSON.stringify(value)); } 
-    catch (error) { console.error(`Lỗi cài đặt localStorage key "${key}":`, error); }
-};
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
 const getStartOfWeek = (d: Date) => {
     const date = new Date(d);
@@ -28,29 +22,50 @@ type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll';
 // --- MAIN COMPONENT ---
 const FinancialManagementView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<FinancialTab>('overview');
-    const [transactions, setTransactions] = useState<FinancialTransaction[]>(() => getLocalStorageItem(Constants.FINANCIAL_TRANSACTIONS_STORAGE_KEY, []));
-    const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>(() => getLocalStorageItem(Constants.PAYROLL_RECORDS_STORAGE_KEY, []));
+    const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
+    const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleUpdateTransactions = (updated: FinancialTransaction[]) => {
-        setTransactions(updated);
-        setLocalStorageItem(Constants.FINANCIAL_TRANSACTIONS_STORAGE_KEY, updated);
-    };
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [trans, payroll] = await Promise.all([
+                getFinancialTransactions(),
+                getPayrollRecords()
+            ]);
+            setTransactions(trans);
+            setPayrollRecords(payroll);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Không thể tải dữ liệu tài chính.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
-    const handleUpdatePayroll = (updated: PayrollRecord[]) => {
-        setPayrollRecords(updated);
-        setLocalStorageItem(Constants.PAYROLL_RECORDS_STORAGE_KEY, updated);
-    };
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
-    const addTransaction = (newTransaction: Omit<FinancialTransaction, 'id'>) => {
-        const transactionWithId: FinancialTransaction = { ...newTransaction, id: `trans-${Date.now()}` };
-        handleUpdateTransactions([transactionWithId, ...transactions]);
+    const addTransaction = async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
+        try {
+            await addFinancialTransaction(newTransaction);
+            loadData(); // Re-fetch all data to ensure consistency
+        } catch (error) {
+            console.error(error);
+            alert("Lỗi khi thêm giao dịch.");
+        }
     };
     
     const renderTabContent = () => {
+        if (isLoading) return <div className="text-center p-8">Đang tải dữ liệu tài chính...</div>;
+        if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
+
         switch (activeTab) {
-            case 'transactions': return <TransactionsTab transactions={transactions} onUpdate={handleUpdateTransactions} />;
+            case 'transactions': return <TransactionsTab transactions={transactions} onDataChange={loadData} />;
             case 'reports': return <ReportsTab transactions={transactions} />;
-            case 'payroll': return <PayrollTab payrollRecords={payrollRecords} onUpdatePayroll={handleUpdatePayroll} onAddTransaction={addTransaction} />;
+            case 'payroll': return <PayrollTab payrollRecords={payrollRecords} onDataChange={loadData} onAddTransaction={addTransaction} />;
             case 'overview':
             default: return <OverviewTab transactions={transactions} />;
         }
@@ -117,25 +132,35 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
     );
 };
 
-const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onUpdate: (updated: FinancialTransaction[]) => void }> = ({ transactions, onUpdate }) => {
+const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void }> = ({ transactions, onDataChange }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
 
-    const handleSave = (data: FinancialTransaction) => {
-        let updated;
-        if (data.id) {
-            updated = transactions.map(t => t.id === data.id ? data : t);
-        } else {
-            updated = [{...data, id: `trans-${Date.now()}`}, ...transactions];
+    const handleSave = async (data: Omit<FinancialTransaction, 'id'> & { id?: string }) => {
+        try {
+            if (data.id) {
+                const { id, ...updates } = data;
+                await updateFinancialTransaction(id, updates);
+            } else {
+                await addFinancialTransaction(data);
+            }
+            onDataChange();
+        } catch (error) {
+            alert("Lỗi khi lưu giao dịch.");
+        } finally {
+            setIsModalOpen(false);
+            setEditingTransaction(null);
         }
-        onUpdate(updated.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        setIsModalOpen(false);
-        setEditingTransaction(null);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if(window.confirm('Bạn có chắc muốn xóa giao dịch này?')) {
-            onUpdate(transactions.filter(t => t.id !== id));
+            try {
+                await deleteFinancialTransaction(id);
+                onDataChange();
+            } catch (error) {
+                alert("Lỗi khi xóa giao dịch.");
+            }
         }
     };
 
@@ -174,8 +199,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onUpdate
 const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
     const [startDate, setStartDate] = useState<string>(formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
     const [endDate, setEndDate] = useState<string>(formatDate(new Date()));
-    const [filterSource, setFilterSource] = useState<'all' | 'internal' | 'supplier'>('all');
-
+    
     const setDateRange = (period: 'week' | 'month' | 'year') => {
         const today = new Date();
         if (period === 'week') {
@@ -195,20 +219,11 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999); // Include entire end day
         
-        const dateFiltered = transactions.filter(t => {
+        return transactions.filter(t => {
             const tDate = new Date(t.date);
             return tDate >= start && tDate <= end;
         });
-
-        if (filterSource === 'internal') {
-            return dateFiltered.filter(t => t.category === 'Thu nội bộ');
-        }
-        if (filterSource === 'supplier') {
-            return dateFiltered.filter(t => t.category === 'Chi phí Nhà Cung Cấp');
-        }
-        
-        return dateFiltered; // 'all' case
-    }, [transactions, startDate, endDate, filterSource]);
+    }, [transactions, startDate, endDate]);
 
     const summary = useMemo(() => {
         const income = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
@@ -240,12 +255,6 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
                     <span>-</span>
                     <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="admin-form-group" />
                 </div>
-                <div className="flex items-center gap-2 border-l pl-4 ml-4">
-                    <span className="text-sm font-medium text-gray-600">Xem theo:</span>
-                    <Button size="sm" variant={filterSource === 'all' ? 'primary' : 'outline'} onClick={() => setFilterSource('all')}>Tổng hợp</Button>
-                    <Button size="sm" variant={filterSource === 'internal' ? 'primary' : 'outline'} onClick={() => setFilterSource('internal')}>Nội bộ</Button>
-                    <Button size="sm" variant={filterSource === 'supplier' ? 'primary' : 'outline'} onClick={() => setFilterSource('supplier')}>Nhà Cung Cấp</Button>
-                </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -276,63 +285,65 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onUpdatePayroll: (updated: PayrollRecord[]) => void, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => void }> = ({ payrollRecords, onUpdatePayroll, onAddTransaction }) => {
+const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => void, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => void }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
     const { users } = useAuth();
     const staff = users.filter(u => u.role === 'admin' || u.role === 'staff');
     const [payPeriod, setPayPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
 
-    const handlePayrollChange = (employeeId: string, field: 'baseSalary' | 'bonus' | 'deduction' | 'notes', value: string | number) => {
-        const existingRecord = payrollRecords.find(p => p.payPeriod === payPeriod && p.employeeId === employeeId);
-        let updatedRecord: PayrollRecord;
+    const [localPayroll, setLocalPayroll] = useState<PayrollRecord[]>(payrollRecords);
+    useEffect(() => setLocalPayroll(payrollRecords), [payrollRecords]);
 
-        if (existingRecord) {
-            updatedRecord = { ...existingRecord, [field]: value };
-        } else {
-            const employee = staff.find(s => s.id === employeeId)!;
-            updatedRecord = {
-                id: `payroll-${payPeriod}-${employeeId}`, employeeId, employeeName: employee.username, payPeriod,
-                baseSalary: 0, bonus: 0, deduction: 0, finalSalary: 0, notes: '', status: 'Chưa thanh toán',
-                [field]: value
-            };
-        }
-        
-        updatedRecord.finalSalary = Number(updatedRecord.baseSalary) + Number(updatedRecord.bonus) - Number(updatedRecord.deduction);
-        
-        const otherRecords = payrollRecords.filter(p => p.id !== updatedRecord.id);
-        onUpdatePayroll([updatedRecord, ...otherRecords]);
+    const handlePayrollChange = (employeeId: string, field: 'baseSalary' | 'bonus' | 'deduction' | 'notes', value: string | number) => {
+        setLocalPayroll(currentPayroll => {
+             const existingRecord = currentPayroll.find(p => p.payPeriod === payPeriod && p.employeeId === employeeId);
+             let updatedRecord: PayrollRecord;
+            if (existingRecord) {
+                updatedRecord = { ...existingRecord, [field]: value };
+            } else {
+                const employee = staff.find(s => s.id === employeeId)!;
+                updatedRecord = {
+                    id: `payroll-${payPeriod}-${employeeId}`, employeeId, employeeName: employee.username, payPeriod,
+                    baseSalary: 0, bonus: 0, deduction: 0, finalSalary: 0, notes: '', status: 'Chưa thanh toán',
+                    [field]: value
+                };
+            }
+            updatedRecord.finalSalary = Number(updatedRecord.baseSalary) + Number(updatedRecord.bonus) - Number(updatedRecord.deduction);
+            const otherRecords = currentPayroll.filter(p => p.id !== updatedRecord.id);
+            return [updatedRecord, ...otherRecords];
+        });
     };
     
-    const handleSettlePayroll = () => {
-        if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}? Hành động này sẽ tạo một giao dịch chi phí.`)) return;
+    const handleSettlePayroll = async () => {
+        if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
-        let totalSalaryExpense = 0;
-        const updatedRecords = payrollRecords.map(p => {
-            if (p.payPeriod === payPeriod && p.status === 'Chưa thanh toán') {
-                totalSalaryExpense += p.finalSalary;
-                return { ...p, status: 'Đã thanh toán' as const };
-            }
-            return p;
-        });
-
-        if (totalSalaryExpense > 0) {
-            onAddTransaction({
+        const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
+        if (recordsToSettle.length === 0) {
+            alert('Không có lương để thanh toán cho kỳ này.');
+            return;
+        }
+        const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
+        
+        try {
+            await savePayrollRecords(localPayroll);
+            await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
                 type: 'expense',
                 category: 'Chi phí Lương',
                 description: `Thanh toán lương tháng ${payPeriod}`
             });
-            onUpdatePayroll(updatedRecords);
-        } else {
-            alert('Không có lương để thanh toán cho kỳ này.');
+            onDataChange(); // Refresh all data
+        } catch (error) {
+            alert('Lỗi khi chốt lương.');
         }
     };
     
     return (
         <div>
-            <div className="flex items-center gap-4 mb-4">
-                <label htmlFor="payPeriod">Chọn kỳ lương:</label>
-                <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group"/>
+            <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
+                <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
+                <Button onClick={() => savePayrollRecords(localPayroll)} size="sm" variant="outline">Lưu Nháp</Button>
                 <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
@@ -340,7 +351,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onUpdatePayroll: (
                     <thead><tr><th>Nhân viên</th><th>Lương Cơ bản</th><th>Thưởng</th><th>Phạt</th><th>Tổng Lương</th><th>Ghi chú</th><th>Trạng thái</th></tr></thead>
                     <tbody>
                         {staff.map(employee => {
-                            const record = payrollRecords.find(p => p.payPeriod === payPeriod && p.employeeId === employee.id);
+                            const record = localPayroll.find(p => p.payPeriod === payPeriod && p.employeeId === employee.id);
                             return (
                                 <tr key={employee.id}>
                                     <td>{employee.username}</td>
@@ -364,7 +375,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onUpdatePayroll: (
 interface TransactionModalProps {
     transaction: FinancialTransaction | null;
     onClose: () => void;
-    onSave: (data: FinancialTransaction) => void;
+    onSave: (data: Omit<FinancialTransaction, 'id'> & { id?: string }) => void;
 }
 const TRANSACTION_CATEGORIES: Record<TransactionType, TransactionCategory[]> = {
     'income': ['Doanh thu Bán hàng', 'Thu nội bộ'],
@@ -396,10 +407,9 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClos
          <div className="admin-modal-overlay">
             <div className="admin-modal-panel max-w-lg">
                 <form onSubmit={handleSubmit}>
-                    {/* Fix: Wrap onClose call in an arrow function to prevent passing the event argument. */}
-                    <div className="admin-modal-header"><h4 className="admin-modal-title">{formData.id ? 'Sửa Giao dịch' : 'Thêm Giao dịch'}</h4><button type="button" onClick={() => onClose()}>&times;</button></div>
+                    <div className="admin-modal-header"><h4 className="admin-modal-title">{formData.id ? 'Sửa Giao dịch' : 'Thêm Giao dịch'}</h4><button type="button" onClick={onClose}>&times;</button></div>
                     <div className="admin-modal-body grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="admin-form-group"><label>Ngày *</label><input type="date" name="date" value={formData.date} onChange={handleChange} required/></div>
+                        <div className="admin-form-group"><label>Ngày *</label><input type="date" name="date" value={formData.date ? formData.date.split('T')[0] : ''} onChange={handleChange} required/></div>
                         <div className="admin-form-group"><label>Loại *</label><select name="type" value={type} onChange={handleChange}><option value="income">Thu</option><option value="expense">Chi</option></select></div>
                         <div className="admin-form-group sm:col-span-2"><label>Danh mục *</label>
                             <select name="category" value={formData.category || ''} onChange={handleChange} required>
@@ -412,8 +422,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClos
                         <div className="admin-form-group"><label>Đối tượng liên quan</label><input type="text" name="relatedEntity" value={formData.relatedEntity || ''} onChange={handleChange} /></div>
                         <div className="admin-form-group"><label>Mã hóa đơn</label><input type="text" name="invoiceNumber" value={formData.invoiceNumber || ''} onChange={handleChange} /></div>
                     </div>
-                    {/* Fix: Wrap onClose call in an arrow function to prevent passing the event argument. */}
-                    <div className="admin-modal-footer"><Button type="button" variant="outline" onClick={() => onClose()}>Hủy</Button><Button type="submit">Lưu</Button></div>
+                    <div className="admin-modal-footer"><Button type="button" variant="outline" onClick={onClose}>Hủy</Button><Button type="submit">Lưu</Button></div>
                 </form>
             </div>
         </div>
