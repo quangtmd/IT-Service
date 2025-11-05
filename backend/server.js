@@ -19,7 +19,8 @@ app.use(express.json({ limit: '10mb' }));
 CREATE TABLE ProductCategories (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) UNIQUE NOT NULL
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    parent_category_id INT NULL 
 );
 
 CREATE TABLE Products (
@@ -40,6 +41,7 @@ CREATE TABLE Products (
     tags JSON,
     brandLogoUrl VARCHAR(255),
     is_published BOOLEAN DEFAULT TRUE,
+    is_featured BOOLEAN DEFAULT FALSE, -- Thêm cột này
     seoMetaTitle VARCHAR(255),
     seoMetaDescription TEXT,
     slug VARCHAR(255) UNIQUE,
@@ -126,19 +128,6 @@ const prepareJsonFieldsForDb = (item, fields) => {
 const PRODUCT_JSON_FIELDS = ['imageUrls', 'specifications', 'tags'];
 const ORDER_JSON_FIELDS = ['customerInfo', 'items', 'shippingInfo', 'paymentInfo'];
 
-// Share category hierarchy with backend for slug mapping
-const PRODUCT_CATEGORIES_HIERARCHY = [
-  { name: "Máy tính để bàn (PC)", slug: "may_tinh_de_ban", icon: "fas fa-desktop", subCategories: [ { name: "Máy tính văn phòng", slug: "pc_van_phong" }, {name: "Máy tính Gaming", slug: "pc_gaming"}, {name: "Workstation (Máy trạm)", slug:"pc_workstation"}, { name: "Máy đồng bộ", slug: "pc_dong_bo" }, ] },
-  { name: "Laptop", slug: "laptop", icon: "fas fa-laptop", subCategories: [ { name: "Laptop văn phòng", slug: "laptop_van_phong" }, {name: "Laptop Gaming", slug: "laptop_gaming"}, {name: "MacBook", slug:"macbook"}, { name: "Laptop cũ", slug: "laptop_cu" }, ] },
-  { name: "Linh kiện máy tính", slug: "linh_kien_may_tinh", icon: "fas fa-microchip", subCategories: [ { name: "CPU (Vi xử lý Intel, AMD)", slug: "cpu" }, { name: "RAM (DDR4, DDR5…)", slug: "ram" }, { name: "Ổ cứng HDD / SSD (SATA, NVMe)", slug: "storage" }, { name: "VGA (Card màn hình)", slug: "vga" }, { name: "Bo mạch chủ (Mainboard)", slug: "mainboard"}, { name: "Nguồn máy tính (PSU)", slug: "psu"}, { name: "Vỏ máy (Case)", slug: "case"}, { name: "Tản nhiệt (Khí, Nước)", slug: "cooling"} ] },
-  { name: "Thiết bị ngoại vi", slug: "thiet_bi_ngoai_vi", icon: "fas fa-keyboard", subCategories: [ { name: "Màn hình (LCD, LED, 2K, 4K, Gaming…)", slug: "man_hinh" }, { name: "Bàn phím (Cơ, Giả cơ, Thường)", slug: "ban_phim" }, { name: "Chuột (Gaming, Văn phòng)", slug: "chuot" }, { name: "Tai nghe (Có dây, Không dây)", slug: "tai_nghe" } ] },
-  { name: "Camera giám sát", slug: "camera_giam_sat", icon: "fas fa-video", subCategories: [ { name: "Camera IP (WiFi / LAN)", slug: "camera_ip" }, { name: "Đầu ghi hình (DVR, NVR)", slug: "dau_ghi_hinh" } ] },
-  { name: "Thiết bị mạng", slug: "thiet_bi_mang", icon: "fas fa-wifi", subCategories: [ { name: "Router WiFi (TP-Link, Asus, UniFi…)", slug: "router_wifi" }, { name: "Switch mạng (PoE, Thường)", slug: "switch_mang" } ] },
-  { name: "Phần mềm & dịch vụ", slug: "phan_mem_dich_vu", icon: "fas fa-cogs", subCategories: [ { name: "Bản quyền Windows, Office", slug: "ban_quyen_phan_mem" }, { name: "Dịch vụ cài đặt (Tận nơi / Online)", slug: "dich_vu_cai_dat" } ] },
-  { name: "Phụ kiện & thiết bị khác", slug: "phu_kien_khac", icon: "fas fa-plug", subCategories: [ { name: "Cáp chuyển, Hub USB, Docking", slug: "cap_hub_docking" }, { name: "Balo, Túi chống sốc", slug: "balo_tui" } ] },
-  { name: "PC Xây Dựng", slug: "pc_xay_dung", icon: "fas fa-tools", subCategories: [ { name: "Theo Yêu Cầu", slug: "theo_yeu_cau" } ] }
-];
-
 
 // --- SERVER STARTUP LOGIC ---
 const startServer = async () => {
@@ -173,25 +162,31 @@ const startServer = async () => {
         
         let categoryIdsToFilter = [];
         if (mainCategory) {
-            const mainCatInfo = PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.slug === mainCategory);
-            if (mainCatInfo) {
-                const subCategorySlugs = mainCatInfo.subCategories.map(sc => sc.slug);
-                if (subCategorySlugs.length > 0) {
-                    const [catRows] = await pool.query("SELECT id FROM ProductCategories WHERE slug IN (?)", [subCategorySlugs]);
-                    categoryIdsToFilter = catRows.map(row => row.id);
-                }
+            const [mainCatRows] = await pool.query("SELECT id FROM ProductCategories WHERE slug = ? AND parent_category_id IS NULL", [mainCategory]);
+            if (mainCatRows.length > 0) {
+                const mainCatId = mainCatRows[0].id;
+                const [subCatRows] = await pool.query("SELECT id FROM ProductCategories WHERE parent_category_id = ?", [mainCatId]);
+                categoryIdsToFilter = subCatRows.map(row => row.id);
+                 // Also include the main category itself if it can contain products
+                categoryIdsToFilter.push(mainCatId);
             }
         }
         
         let selectClause = "SELECT p.*, c.name as categoryName, c.slug as categorySlug";
         let countSelectClause = "SELECT COUNT(p.id) as total";
-        let fromClause = "FROM Products p LEFT JOIN ProductCategories c ON p.category_id = c.id";
+        let fromClause = `
+          FROM Products p 
+          LEFT JOIN ProductCategories c ON p.category_id = c.id
+        `;
         let whereClauses = ["p.is_published = TRUE"];
         const params = [];
 
         if (subCategory) {
-            whereClauses.push("c.slug = ?");
-            params.push(subCategory);
+            const [subCatRow] = await pool.query("SELECT id FROM ProductCategories WHERE slug = ?", [subCategory]);
+            if(subCatRow.length > 0){
+                whereClauses.push("p.category_id = ?");
+                params.push(subCatRow[0].id);
+            }
         } else if (categoryIdsToFilter.length > 0) {
             whereClauses.push("p.category_id IN (?)");
             params.push(categoryIdsToFilter);
@@ -212,22 +207,22 @@ const startServer = async () => {
             params.push(status);
         }
         if (tags) {
-            // This might still fail if the 'tags' column doesn't exist.
-            // A try-catch block around queries or a schema check would be more robust.
-            try {
+            // Updated to be safer, assumes tags column might not exist.
+             try {
                 const [checkTagsColumn] = await pool.query("SHOW COLUMNS FROM Products LIKE 'tags'");
                 if (checkTagsColumn.length > 0) {
-                    whereClauses.push("JSON_CONTAINS(p.tags, JSON_QUOTE(?))");
+                    whereClauses.push("JSON_SEARCH(p.tags, 'one', ?) IS NOT NULL");
                     params.push(tags);
-                } else {
-                    console.warn("Skipping 'tags' filter: column does not exist.");
                 }
-            } catch (e) {
-                console.warn("Could not check for 'tags' column, skipping filter.", e.message);
-            }
+            } catch (e) { console.warn("Could not check for 'tags' column, skipping filter.") }
         }
 
         const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+        
+        // Add JOIN for mainCategory name
+        fromClause += ' LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id';
+        selectClause += ', mc.name as mainCategoryName';
+
 
         const countQuery = `${countSelectClause} ${fromClause} ${whereString}`;
         const [countRows] = await pool.query(countQuery, params);
@@ -244,29 +239,9 @@ const startServer = async () => {
 
         const products = rows.map(p => {
             const parsed = parseJsonFields(p, PRODUCT_JSON_FIELDS);
+            parsed.mainCategory = p.mainCategoryName || p.categoryName || 'N/A';
+            parsed.subCategory = p.categoryName || 'N/A';
             parsed.category = p.categoryName || 'N/A';
-            let found = false;
-            for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
-                const subCat = mainCat.subCategories.find(sc => sc.slug === p.categorySlug);
-                if (subCat) {
-                    parsed.mainCategory = mainCat.name;
-                    parsed.subCategory = subCat.name;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                 const mainCat = PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.slug === p.categorySlug);
-                 if (mainCat) {
-                    parsed.mainCategory = mainCat.name;
-                    parsed.subCategory = mainCat.name; 
-                 } else {
-                    parsed.mainCategory = 'Chưa phân loại';
-                    parsed.subCategory = 'Chưa phân loại';
-                 }
-            }
-            delete parsed.categoryName;
-            delete parsed.categorySlug;
             return parsed;
         });
 
@@ -279,26 +254,31 @@ const startServer = async () => {
 
     app.get('/api/products/featured', async (req, res) => {
         try {
-            // More robust query: prioritize highest discount, fallback to highly reviewed/rated.
-            // This avoids dependency on the 'tags' column which might not exist.
             const [rows] = await pool.query(`
-                (SELECT *, ((originalPrice - price) / originalPrice) as discount_percent 
-                 FROM Products 
-                 WHERE is_published = TRUE AND originalPrice IS NOT NULL AND originalPrice > price 
-                 ORDER BY discount_percent DESC 
-                 LIMIT 4)
-                UNION
-                (SELECT *, 0 as discount_percent 
-                 FROM Products 
-                 WHERE is_published = TRUE 
-                 ORDER BY reviews DESC, rating DESC 
-                 LIMIT 4)
-                LIMIT 4
+                SELECT * FROM Products 
+                WHERE is_published = TRUE AND is_featured = TRUE 
+                ORDER BY id DESC 
+                LIMIT 8
             `);
             const products = rows.map(p => parseJsonFields(p, PRODUCT_JSON_FIELDS));
             res.json(products);
         } catch (err) {
             console.error("Lỗi khi truy vấn sản phẩm nổi bật:", err);
+            // Fallback for when is_featured column doesn't exist yet
+            if (err.code === 'ER_BAD_FIELD_ERROR') {
+                try {
+                    const [fallbackRows] = await pool.query(`
+                        SELECT * FROM Products 
+                        WHERE is_published = TRUE 
+                        ORDER BY reviews DESC, rating DESC 
+                        LIMIT 4`
+                    );
+                    const fallbackProducts = fallbackRows.map(p => parseJsonFields(p, PRODUCT_JSON_FIELDS));
+                    return res.json(fallbackProducts);
+                } catch (fallbackErr) {
+                     return res.status(500).json({ error: 'Lỗi server.' });
+                }
+            }
             res.status(500).json({ error: 'Lỗi server.' });
         }
     });

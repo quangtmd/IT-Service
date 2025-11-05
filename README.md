@@ -32,7 +32,8 @@ For local development, using a local database is strongly recommended to avoid n
     CREATE TABLE ProductCategories (
         id INT PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(255) NOT NULL,
-        slug VARCHAR(255) UNIQUE NOT NULL
+        slug VARCHAR(255) UNIQUE NOT NULL,
+        parent_category_id INT NULL
     );
     
     CREATE TABLE Products (
@@ -53,6 +54,7 @@ For local development, using a local database is strongly recommended to avoid n
         tags JSON,
         brandLogoUrl VARCHAR(255),
         is_published BOOLEAN DEFAULT TRUE,
+        is_featured BOOLEAN DEFAULT FALSE,
         seoMetaTitle VARCHAR(255),
         seoMetaDescription TEXT,
         slug VARCHAR(255) UNIQUE,
