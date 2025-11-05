@@ -109,13 +109,26 @@ app.get('/api/health', async (req, res) => {
 app.get('/api/products/featured', async (req, res) => {
     try {
         const query = `
-            SELECT * FROM Products
-            WHERE is_published = TRUE AND is_featured = TRUE
+            SELECT 
+                p.*,
+                c.name as subCategory,
+                mc.name as mainCategory
+            FROM Products p
+            LEFT JOIN ProductCategories c ON p.category_id = c.id
+            LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id
+            WHERE p.is_published = TRUE AND p.is_featured = TRUE
             ORDER BY RAND()
             LIMIT 4;
         `;
         const [products] = await pool.query(query);
-        res.json(products);
+         const deserializedProducts = products.map(p => ({
+            ...p,
+            imageUrls: JSON.parse(p.imageUrls || '[]'),
+            specifications: JSON.parse(p.specifications || '{}'),
+            tags: JSON.parse(p.tags || '[]'),
+            isVisible: p.is_published,
+        }));
+        res.json(deserializedProducts);
     } catch (error) {
         console.error("Lỗi khi truy vấn sản phẩm nổi bật:", error);
         res.status(500).json({ message: "Lỗi server khi lấy sản phẩm nổi bật", error: error.sqlMessage || error.message });
@@ -124,13 +137,24 @@ app.get('/api/products/featured', async (req, res) => {
 
 app.get('/api/products/:id', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM Products WHERE id = ?', [req.params.id]);
+        const query = `
+            SELECT 
+                p.*, 
+                c.name as subCategory, 
+                mc.name as mainCategory 
+            FROM Products p
+            LEFT JOIN ProductCategories c ON p.category_id = c.id
+            LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id
+            WHERE p.id = ?
+        `;
+        const [rows] = await pool.query(query, [req.params.id]);
         const product = rows[0];
         if (product) {
             // Deserialize JSON fields
             product.imageUrls = JSON.parse(product.imageUrls || '[]');
             product.specifications = JSON.parse(product.specifications || '{}');
             product.tags = JSON.parse(product.tags || '[]');
+            product.isVisible = product.is_published;
             res.json(product);
         } else {
             res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
@@ -145,16 +169,18 @@ app.get('/api/products', async (req, res) => {
     try {
         const { mainCategory, subCategory, brand, status, tags, q, limit = 12, page = 1 } = req.query;
 
-        let baseQuery = `SELECT p.* FROM Products p`;
+        let baseQuery = `
+            SELECT 
+                p.*, 
+                c.name as subCategory, 
+                mc.name as mainCategory 
+            FROM Products p
+        `;
         let countQuery = `SELECT COUNT(p.id) as total FROM Products p`;
         
         const joins = [];
-        if (mainCategory || subCategory) {
-            joins.push('LEFT JOIN ProductCategories c ON p.category_id = c.id');
-            if (mainCategory) {
-                 joins.push('LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id');
-            }
-        }
+        joins.push('LEFT JOIN ProductCategories c ON p.category_id = c.id');
+        joins.push('LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id');
         
         const joinString = joins.join(' ');
         baseQuery += ` ${joinString}`;
@@ -195,12 +221,12 @@ app.get('/api/products', async (req, res) => {
 
         const [products] = await pool.query(baseQuery, params);
         
-        // Deserialize JSON fields for the list
         const deserializedProducts = products.map(p => ({
             ...p,
             imageUrls: JSON.parse(p.imageUrls || '[]'),
             specifications: JSON.parse(p.specifications || '{}'),
             tags: JSON.parse(p.tags || '[]'),
+            isVisible: p.is_published,
         }));
         
         res.json({ products: deserializedProducts, totalProducts });
@@ -212,16 +238,40 @@ app.get('/api/products', async (req, res) => {
 
 app.post('/api/products', async (req, res) => {
     try {
-        const product = req.body;
-        const newProduct = {
-            ...product,
-            id: product.id || `prod-${Date.now()}`,
-            imageUrls: JSON.stringify(product.imageUrls || []),
-            specifications: JSON.stringify(product.specifications || {}),
-            tags: JSON.stringify(product.tags || []),
+        const { mainCategory, subCategory, isVisible, category, ...productData } = req.body;
+
+        let category_id = null;
+        if (mainCategory && subCategory) {
+            const [mainCatRows] = await pool.query(
+                'SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', 
+                [mainCategory]
+            );
+            if (mainCatRows.length > 0) {
+                const mainCatId = mainCatRows[0].id;
+                const [subCatRows] = await pool.query(
+                    'SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', 
+                    [subCategory, mainCatId]
+                );
+                if (subCatRows.length > 0) {
+                    category_id = subCatRows[0].id;
+                }
+            }
+        }
+        
+        const productToInsert = {
+            ...productData,
+            id: productData.id || `prod-${Date.now()}`,
+            imageUrls: JSON.stringify(productData.imageUrls || []),
+            specifications: JSON.stringify(productData.specifications || {}),
+            tags: JSON.stringify(productData.tags || []),
+            is_published: isVisible,
+            category_id: category_id,
         };
-        await pool.query('INSERT INTO Products SET ?', newProduct);
-        res.status(201).json(newProduct);
+
+        await pool.query('INSERT INTO Products SET ?', productToInsert);
+        
+        const responseProduct = { ...req.body, id: productToInsert.id };
+        res.status(201).json(responseProduct);
     } catch (error) {
         console.error("Lỗi khi tạo sản phẩm:", error);
         res.status(500).json({ message: "Lỗi server", error: error.sqlMessage || error.message });
@@ -231,21 +281,43 @@ app.post('/api/products', async (req, res) => {
 app.put('/api/products/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const product = req.body;
-        const updatedProduct = {
-            ...product,
-            imageUrls: JSON.stringify(product.imageUrls || []),
-            specifications: JSON.stringify(product.specifications || {}),
-            tags: JSON.stringify(product.tags || []),
-        };
-        delete updatedProduct.id; // Don't update the ID
+        const { mainCategory, subCategory, isVisible, category, ...productData } = req.body;
         
-        const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [updatedProduct, id]);
+        const updatedProductFields = {
+            ...productData,
+            imageUrls: JSON.stringify(productData.imageUrls || []),
+            specifications: JSON.stringify(productData.specifications || {}),
+            tags: JSON.stringify(productData.tags || []),
+            is_published: isVisible,
+        };
+        
+        if (mainCategory && subCategory) {
+            let category_id = null;
+            const [mainCatRows] = await pool.query(
+                'SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', 
+                [mainCategory]
+            );
+            if (mainCatRows.length > 0) {
+                const mainCatId = mainCatRows[0].id;
+                const [subCatRows] = await pool.query(
+                    'SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', 
+                    [subCategory, mainCatId]
+                );
+                if (subCatRows.length > 0) {
+                    category_id = subCatRows[0].id;
+                }
+            }
+            updatedProductFields.category_id = category_id;
+        }
+        
+        delete updatedProductFields.id;
+        
+        const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [updatedProductFields, id]);
         
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy sản phẩm để cập nhật' });
         }
-        res.json({ id, ...updatedProduct });
+        res.json({ id, ...req.body });
     } catch (error) {
         console.error("Lỗi khi cập nhật sản phẩm:", error);
         res.status(500).json({ message: "Lỗi server", error: error.sqlMessage || error.message });

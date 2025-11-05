@@ -31,7 +31,7 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
-    // Fix: Destructure props and state to avoid potential 'this' context issues in some environments.
+    // Fix: Destructure props and state from 'this' to correctly access them in a class component.
     const { fallbackMessage, children } = this.props;
     const { hasError, errorMessage } = this.state;
 
