@@ -181,7 +181,12 @@ export type AdminView =
   | 'inventory' | 'service_tickets'
   // New accounting views
   | 'purchasing' | 'sales' | 'invoice_management' | 'fixed_assets'
-  | 'payroll' | 'tax' | 'reports' | 'financial_analysis';
+  | 'payroll' | 'tax' | 'reports' | 'financial_analysis'
+  // New menu items from image
+  | 'cash' | 'bank_deposits' | 'warehouse' | 'tools_supplies'
+  | 'fixed_assets' | 'salary' | 'tax' | 'cost_price' | 'capital_connection'
+  | 'summary' | 'budget' | 'reports' | 'financial_analysis' | 'categories'
+  | 'opening_balance' | 'knowledge_base';
 
 
 export type UserRole = 'admin' | 'staff' | 'customer';
