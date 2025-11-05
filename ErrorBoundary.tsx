@@ -32,9 +32,12 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
+    // Fix: Destructure props and state from 'this' to resolve a TypeScript error where 'this.props' was not being found on the class type.
+    const { props, state } = this;
+
     // Fix: Use this.state and this.props directly to avoid a strange destructuring error on line 35.
-    if (this.state.hasError) {
-      const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
+    if (state.hasError) {
+      const displayMessage = state.errorMessage || props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
         <div style={{
@@ -68,7 +71,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    return props.children;
   }
 }
 

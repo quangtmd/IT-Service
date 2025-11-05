@@ -3,6 +3,7 @@ import { Order, OrderStatus } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import { getOrders, updateOrderStatus } from '../../services/localDataService';
+import BackendConnectionError from '../shared/BackendConnectionError';
 
 const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -71,6 +72,7 @@ const OrderManagementView: React.FC = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="admin-form-group w-full max-w-md mb-4"
                 />
+                {error && <BackendConnectionError error={error} />}
                 <div className="overflow-x-auto">
                     <table className="admin-table">
                         <thead>
@@ -86,12 +88,10 @@ const OrderManagementView: React.FC = () => {
                         <tbody>
                             {isLoading ? (
                                 <tr><td colSpan={6} className="text-center py-4">Đang tải đơn hàng...</td></tr>
-                            ) : error ? (
-                                <tr><td colSpan={6} className="text-center py-4 text-red-500">{error}</td></tr>
-                            ) : filteredOrders.length === 0 ? (
+                            ) : !error && filteredOrders.length === 0 ? (
                                 <tr><td colSpan={6} className="text-center py-4">Không tìm thấy đơn hàng.</td></tr>
                             ) : (
-                                filteredOrders.map(order => (
+                                !error && filteredOrders.map(order => (
                                     <tr key={order.id}>
                                         <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{order.id.slice(-6)}</span></td>
                                         <td>{order.customerInfo.fullName}</td>

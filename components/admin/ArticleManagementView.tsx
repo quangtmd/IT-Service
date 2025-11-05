@@ -4,6 +4,7 @@ import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadInput from '../ui/ImageUploadInput';
 import { getArticles, addArticle, updateArticle, deleteArticle } from '../../services/localDataService';
+import BackendConnectionError from '../shared/BackendConnectionError';
 
 const ArticleManagementView: React.FC = () => {
     const [articles, setArticles] = useState<Article[]>([]);
@@ -102,6 +103,7 @@ const ArticleManagementView: React.FC = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="admin-form-group w-full max-w-md mb-4"
                 />
+                {error && <BackendConnectionError error={error} />}
                 <div className="overflow-x-auto">
                     <table className="admin-table">
                          <thead>
@@ -116,9 +118,7 @@ const ArticleManagementView: React.FC = () => {
                         <tbody>
                             {isLoading ? (
                                 <tr><td colSpan={5} className="text-center py-4">Đang tải...</td></tr>
-                            ) : error ? (
-                                <tr><td colSpan={5} className="text-center py-4 text-red-500">{error}</td></tr>
-                            ) : filteredArticles.length > 0 ? (
+                            ) : !error && filteredArticles.length > 0 ? (
                                 filteredArticles.map(article => (
                                     <tr key={article.id}>
                                         <td>
@@ -139,7 +139,7 @@ const ArticleManagementView: React.FC = () => {
                                     </tr>
                                 ))
                              ) : (
-                                <tr><td colSpan={5} className="text-center py-4 text-textMuted">Không có bài viết nào.</td></tr>
+                                !error && <tr><td colSpan={5} className="text-center py-4 text-textMuted">Không có bài viết nào.</td></tr>
                             )}
                         </tbody>
                     </table>

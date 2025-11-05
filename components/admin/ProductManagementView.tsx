@@ -4,6 +4,7 @@ import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadPreview from '../ui/ImageUploadPreview';
 import { getProducts, addProduct, updateProduct, deleteProduct } from '../../services/localDataService';
+import BackendConnectionError from '../shared/BackendConnectionError';
 
 const PRODUCTS_PER_PAGE = 10;
 
@@ -100,11 +101,8 @@ const ProductManagementView: React.FC = () => {
         if (error) {
             return (
                 <tr>
-                    <td colSpan={6} className="text-center py-8">
-                        <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 max-w-2xl mx-auto">
-                            <h4 className="font-bold text-lg mb-2"><i className="fas fa-exclamation-triangle mr-2"></i>Lỗi Tải Dữ Liệu</h4>
-                            <p className="text-sm">{error}</p>
-                        </div>
+                    <td colSpan={6} className="p-0">
+                        <BackendConnectionError error={error} />
                     </td>
                 </tr>
             );
