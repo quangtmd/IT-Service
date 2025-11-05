@@ -12,15 +12,14 @@ services:
     buildCommand: npm install
     startCommand: npm start
     envVars:
-      # These are secrets and must be configured in a Render Environment Group.
       - key: DB_HOST
-        sync: false
+        value: 194.59.164.14
       - key: DB_USER
-        sync: false
+        value: u573621538_IT
       - key: DB_PASSWORD
-        sync: false
+        value: A@a0908225224
       - key: DB_NAME
-        sync: false
+        value: u573621538_Itservice
 
   # Frontend React static site
   - type: static_site
@@ -34,9 +33,8 @@ services:
         source: "/*"
         destination: "/index.html"
     envVars:
-      # Secret for the Gemini API, configure in Render Environment Group.
       - key: VITE_GEMINI_API_KEY
-        sync: false
+        value: AIzaSyDM-mq8w_BNFY5S43lpZqwkHfVXM2ZKBXs
       # Automatically links the live URL of the backend to the frontend.
       - key: VITE_BACKEND_API_BASE_URL
         fromService:
