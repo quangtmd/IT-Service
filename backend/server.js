@@ -180,6 +180,22 @@ app.get('/api/health', async (req, res) => {
 // GET ALL PRODUCTS (with filtering and pagination)
 app.get('/api/products', async (req, res) => {
     try {
+        const { mainCategory, subCategory, brand, status, tags, q, limit = 12, page = 1, featured } = req.query;
+
+        // Handle request for featured products
+        if (featured === 'true') {
+            const query = `
+                SELECT * FROM Products
+                WHERE is_published = TRUE AND is_featured = TRUE
+                ORDER BY RAND()
+                LIMIT 4;
+            `;
+            const [products] = await pool.query(query);
+            res.json({ products, totalProducts: products.length });
+            return;
+        }
+
+        // Continue with regular product fetching
         let baseQuery = `
             SELECT p.*, c.name as categoryName, c.slug as categorySlug, mc.name as mainCategoryName, mc.slug as mainCategorySlug
             FROM Products p
@@ -195,8 +211,7 @@ app.get('/api/products', async (req, res) => {
         
         const whereClauses = ['p.is_published = TRUE'];
         const params = [];
-        const { mainCategory, subCategory, brand, status, tags, q, limit = 12, page = 1 } = req.query;
-
+        
         if (mainCategory) {
             whereClauses.push('mc.slug = ?');
             params.push(mainCategory);
@@ -205,7 +220,6 @@ app.get('/api/products', async (req, res) => {
             whereClauses.push('c.slug = ?');
             params.push(subCategory);
         }
-        // ... other filters ...
          if (q) {
             whereClauses.push('p.name LIKE ?');
             params.push(`%${q}%`);
@@ -232,24 +246,6 @@ app.get('/api/products', async (req, res) => {
         res.status(500).json({ message: "Lỗi server khi lấy dữ liệu sản phẩm", error: error.sqlMessage || error.message });
     }
 });
-
-// GET FEATURED PRODUCTS
-app.get('/api/products/featured', async (req, res) => {
-    try {
-        const query = `
-            SELECT * FROM Products
-            WHERE is_published = TRUE AND is_featured = TRUE
-            ORDER BY RAND()
-            LIMIT 4;
-        `;
-        const [products] = await pool.query(query);
-        res.json(products);
-    } catch (error) {
-        console.error("Lỗi khi truy vấn sản phẩm nổi bật:", error);
-        res.status(500).json({ message: "Lỗi server khi lấy sản phẩm nổi bật", error: error.sqlMessage || error.message });
-    }
-});
-
 
 // GET SINGLE PRODUCT
 app.get('/api/products/:id', async (req, res) => {
