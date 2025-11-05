@@ -5,6 +5,7 @@ import { Article } from '../types';
 import geminiService from '../services/geminiService';
 import { getArticles } from '../services/localDataService';
 import * as Constants from '../constants';
+import BackendConnectionError from '../components/shared/BackendConnectionError';
 
 const AI_ARTICLES_KEY = 'aiGeneratedArticles_v1';
 const AI_LAST_FETCHED_KEY = 'aiArticlesLastFetched_v1';
@@ -15,12 +16,13 @@ const BlogPage: React.FC = () => {
   const [allArticles, setAllArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<number | null>(null);
 
   useEffect(() => {
     const loadAndFetchArticles = async () => {
       setIsLoading(true);
+      setPageError(null);
       
       try {
         // Load manual articles from the backend API
@@ -42,7 +44,6 @@ const BlogPage: React.FC = () => {
 
         if (apiKey && apiKey !== 'undefined' && isCacheStale) {
           setIsLoadingAI(true);
-          setAiError(null);
           try {
             const newAiArticlesData = await geminiService.fetchLatestTechNews();
             const newAiArticles: Article[] = newAiArticlesData.map((art, index) => ({
@@ -68,9 +69,9 @@ const BlogPage: React.FC = () => {
             console.error("Failed to fetch AI articles:", error);
             const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
             if (errorMessage.includes("API Key")) {
-              setAiError(Constants.API_KEY_ERROR_MESSAGE);
+              setPageError(Constants.API_KEY_ERROR_MESSAGE);
             } else {
-              setAiError(errorMessage);
+              setPageError(errorMessage);
             }
           } finally {
             setIsLoadingAI(false);
@@ -78,7 +79,7 @@ const BlogPage: React.FC = () => {
         }
       } catch (error) {
           console.error("Failed to load articles from API:", error);
-          setAiError("Không thể tải danh sách bài viết từ server.");
+          setPageError(error instanceof Error ? error.message : "Không thể tải danh sách bài viết từ server.");
       } finally {
         setIsLoading(false);
       }
@@ -97,7 +98,18 @@ const BlogPage: React.FC = () => {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [allArticles, searchTerm]);
 
-  const renderStatus = () => {
+  const renderStatusAndErrors = () => {
+     if (pageError) {
+        if (pageError.includes('Lỗi mạng hoặc server không phản hồi') || pageError.includes('Không thể tải danh sách bài viết')) {
+            return <BackendConnectionError />;
+        }
+        return (
+            <div className="text-sm text-danger-text bg-danger-bg p-3 rounded-lg border border-danger-border">
+              <strong>Lỗi:</strong> {pageError}
+            </div>
+        );
+    }
+
     if (isLoadingAI) {
       return (
         <div className="flex items-center justify-center text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
@@ -109,13 +121,7 @@ const BlogPage: React.FC = () => {
         </div>
       );
     }
-    if (aiError) {
-      return (
-        <div className="text-sm text-danger-text bg-danger-bg p-3 rounded-lg border border-danger-border">
-          <strong>Lỗi cập nhật tin tức AI:</strong> {aiError}
-        </div>
-      );
-    }
+   
     if (lastFetched) {
       return (
         <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-200 text-center">
@@ -138,7 +144,7 @@ const BlogPage: React.FC = () => {
 
       <div className="mb-8 max-w-3xl mx-auto space-y-4">
         <SearchBar onSearch={setSearchTerm} placeholder="Tìm kiếm bài viết..."/>
-        {renderStatus()}
+        {renderStatusAndErrors()}
       </div>
 
       {isLoading && allArticles.length === 0 ? (
@@ -146,6 +152,8 @@ const BlogPage: React.FC = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-textMuted">Đang tải bài viết...</p>
          </div>
+      ) : pageError && allArticles.length === 0 ? (
+        null // The error is already displayed by renderStatusAndErrors
       ) : filteredArticles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredArticles.map(article => (

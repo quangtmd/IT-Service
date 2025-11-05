@@ -1,6 +1,8 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+// Fix: Import process to provide types for process.cwd()
+import process from 'process';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
@@ -19,7 +21,8 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                '@': path.resolve(__dirname, '.'),
+                // Fix: Replace __dirname with process.cwd() for ES module compatibility
+                '@': path.resolve(process.cwd(), '.'),
             }
         },
         define: {

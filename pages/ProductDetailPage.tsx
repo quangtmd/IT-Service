@@ -6,6 +6,7 @@ import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
 import { getProduct, getProducts } from '../services/localDataService';
+import BackendConnectionError from '../components/shared/BackendConnectionError';
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -47,7 +48,7 @@ const ProductDetailPage: React.FC = () => {
         }
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu sản phẩm từ API:", err);
-        setError("Đã xảy ra lỗi khi tải sản phẩm.");
+        setError(err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải sản phẩm.");
       } finally {
         setIsLoading(false);
         window.scrollTo(0, 0);
@@ -71,10 +72,24 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  if (error || !product) {
+  if (error) {
+    if (error.includes('Lỗi mạng hoặc server không phản hồi')) {
+        return <div className="container mx-auto px-4 py-8"><BackendConnectionError /></div>;
+    }
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-semibold text-textBase">{error || 'Không tìm thấy sản phẩm'}</h2>
+        <h2 className="text-2xl font-semibold text-textBase">{error}</h2>
+        <Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
+          Quay lại cửa hàng
+        </Link>
+      </div>
+    );
+  }
+  
+  if (!product) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h2 className="text-2xl font-semibold text-textBase">Không tìm thấy sản phẩm</h2>
         <Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
           Quay lại cửa hàng
         </Link>

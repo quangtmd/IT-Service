@@ -5,6 +5,7 @@ import ProductCard from '../shop/ProductCard';
 import Button from '../ui/Button';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 import { getFeaturedProducts } from '../../services/localDataService';
+import BackendConnectionError from '../shared/BackendConnectionError';
 
 const HotProducts: React.FC = () => {
   const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
@@ -21,7 +22,7 @@ const HotProducts: React.FC = () => {
         const featured = await getFeaturedProducts();
         setHotProducts(featured);
       } catch (err) {
-        setError("Không thể tải sản phẩm nổi bật.");
+        setError(err instanceof Error ? err.message : "Không thể tải sản phẩm nổi bật.");
         console.error("Lỗi khi tải sản phẩm nổi bật từ API:", err);
       } finally {
         setIsLoading(false);
@@ -42,6 +43,15 @@ const HotProducts: React.FC = () => {
   }
   
   if (error) {
+     if (error.includes('Lỗi mạng hoặc server không phản hồi')) {
+        return (
+            <section className="home-section bg-bgMuted">
+                <div className="container mx-auto px-4">
+                    <BackendConnectionError />
+                </div>
+            </section>
+        );
+      }
      return (
       <section className="home-section bg-bgMuted">
         <div className="container mx-auto px-4 text-center text-red-600">
