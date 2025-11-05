@@ -10,7 +10,8 @@ import { getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError';
 import SkeletonProductCard from '../components/shop/SkeletonProductCard';
 import ProductCarouselSection from '../components/shop/ProductCarouselSection';
-import HomeBannerIts from '../components/home/iqtechnology/HomeBannerIts';
+import ShopBanner from '../components/shop/ShopBanner';
+import ShopPromotions from '../components/shop/ShopPromotions';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -279,8 +280,8 @@ const ShopPage: React.FC = () => {
                 </div>
             </div>
         ) : (
-            <div className="py-8">
-                <div className="container mx-auto px-4 mb-6">
+            <div className="pb-8">
+                <div className="container mx-auto px-4 pt-8">
                     <div className="flex flex-col lg:flex-row gap-6">
                         <div className="w-full lg:w-[280px] flex-shrink-0">
                             <CategorySidebar 
@@ -290,13 +291,11 @@ const ShopPage: React.FC = () => {
                             />
                         </div>
                         <div className="w-full flex-grow rounded-lg overflow-hidden shadow-lg">
-                            <HomeBannerIts />
+                            <ShopBanner />
                         </div>
                     </div>
-                     <div className="my-8">
-                        <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
-                    </div>
                 </div>
+                <ShopPromotions />
                 {renderCarouselView()}
             </div>
         )}
