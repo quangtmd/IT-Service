@@ -32,9 +32,7 @@ For local development, using a local database is strongly recommended to avoid n
     CREATE TABLE ProductCategories (
         id INT PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(255) NOT NULL,
-        slug VARCHAR(255) UNIQUE NOT NULL,
-        parent_id INT,
-        FOREIGN KEY (parent_id) REFERENCES ProductCategories(id)
+        slug VARCHAR(255) UNIQUE NOT NULL
     );
     
     CREATE TABLE Products (
