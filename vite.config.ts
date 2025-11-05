@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => {
                     changeOrigin: true,
                 },
             },
+            // Allow requests from Render's preview domains to prevent host header errors.
+            allowedHosts: ['.onrender.com'],
         },
         plugins: [react()],
         resolve: {

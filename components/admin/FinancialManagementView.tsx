@@ -181,12 +181,12 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
             setStartDate(formatDate(getStartOfWeek(today)));
             setEndDate(formatDate(today));
         } else if (period === 'month') {
-            // Fix: Corrected function call to be more explicit by including the day parameter for the start of the month.
-            setStartDate(formatDate(new Date(today.getFullYear(), today.getMonth(), 1)));
+            // Fix: Use 2-argument constructor for Date which correctly sets the day to 1, avoiding a potential linter error.
+            setStartDate(formatDate(new Date(today.getFullYear(), today.getMonth())));
             setEndDate(formatDate(today));
         } else if (period === 'year') {
-            // Fix: Corrected function call to properly define the start of the year (January 1st).
-            setStartDate(formatDate(new Date(today.getFullYear(), 0, 1)));
+            // Fix: Use 2-argument constructor for Date which correctly sets the day to 1, avoiding a potential linter error.
+            setStartDate(formatDate(new Date(today.getFullYear(), 0)));
             setEndDate(formatDate(today));
         }
     };
