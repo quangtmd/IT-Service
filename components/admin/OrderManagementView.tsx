@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Order, OrderStatus } from '../../types';
+import { Order, OrderStatus, FinancialTransaction } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
-import { getOrders, updateOrderStatus } from '../../services/localDataService';
+import { getOrders, updateOrderStatus, addFinancialTransaction } from '../../services/localDataService';
 import BackendConnectionError from '../shared/BackendConnectionError';
 
 const getStatusColor = (status: OrderStatus) => {
@@ -51,6 +51,23 @@ const OrderManagementView: React.FC = () => {
 
     const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
         try {
+            // Automatically create a financial transaction when an order is completed
+            if (newStatus === 'Hoàn thành') {
+                const order = orders.find(o => o.id === orderId);
+                if (order && order.status !== 'Hoàn thành') { // Prevent duplicate transactions
+                    const newTransaction: Omit<FinancialTransaction, 'id'> = {
+                        date: new Date().toISOString(),
+                        amount: order.totalAmount,
+                        type: 'income',
+                        category: 'Doanh thu Bán hàng',
+                        description: `Doanh thu từ đơn hàng #${order.id.slice(-6)}`,
+                        relatedEntity: order.customerInfo.fullName,
+                        invoiceNumber: order.id,
+                    };
+                    await addFinancialTransaction(newTransaction);
+                }
+            }
+
             await updateOrderStatus(orderId, newStatus);
             loadOrders(); // Refresh data from API
             setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);

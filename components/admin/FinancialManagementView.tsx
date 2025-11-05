@@ -346,7 +346,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 {/* Fix: Wrap handler in an arrow function to ensure correct arguments are passed. */}
                 <Button onClick={() => savePayrollRecords(localPayroll)} size="sm" variant="outline">Lưu Nháp</Button>
                 {/* Fix: Wrap handler in an arrow function to prevent the event object from being passed implicitly. */}
-                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">
