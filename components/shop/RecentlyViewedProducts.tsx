@@ -24,8 +24,8 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({ current
                     // Fix: Destructure 'products' array from the response object. Fetch a large number to increase chances of finding products.
                     const { products: allProducts } = await getProducts('?limit=1000');
                     const products = idsToFetch
-                        // FIX: Compare product ID (number) with stored ID (string) correctly.
-                        .map(id => allProducts.find(p => String(p.id) === id))
+                        // FIX: Compare product ID with stored ID correctly.
+                        .map(id => allProducts.find(p => p.id === id))
                         .filter((p): p is Product => p !== undefined);
                     setViewedProducts(products);
                 } catch (error) {

@@ -133,54 +133,62 @@ The application will now be accessible in your browser (usually at `http://local
 
 ---
 
-## 2. Deploy to Render (Recommended Method)
+## 2. Deploy to Render (Manual Method)
 
-This project contains two parts (**frontend** and **backend**) in one repository (a "monorepo"). The best way to deploy it is by using the included `render.yaml` blueprint file.
+Since the Blueprint method (`render.yaml`) can sometimes be problematic, this manual method is more reliable. We will create two separate services: a **Web Service** for the backend and a **Static Site** for the frontend.
 
-### Hướng Dẫn Triển Khai Chi Tiết:
+### Step 1: Database Setup on Remote Server
 
-1.  **Fork repository này** về tài khoản GitHub của bạn.
+1.  **Create a remote MySQL database** on a cloud provider (e.g., Hostinger, Aiven, PlanetScale).
+2.  **IMPORTANT:** Access your remote database management tool (like phpMyAdmin) and **run the SQL commands** from the **"Run Locally > Step 1: Database Setup"** section above. This creates the required tables.
+3.  Keep your remote database credentials (Host, User, Password, Database Name) ready.
 
-2.  **Chuẩn bị Database từ xa (Remote Database).**
-    *   Tạo một database MySQL trên một nhà cung cấp dịch vụ cloud (ví dụ: Hostinger, Aiven, PlanetScale).
-    *   **QUAN TRỌNG:** Truy cập vào công cụ quản lý database của bạn (ví dụ: phpMyAdmin trên Hostinger), vào tab "SQL", và **chạy các câu lệnh `CREATE TABLE`** được cung cấp trong phần **"Step 1: Database Setup"** ở trên. Bước này là bắt buộc để ứng dụng hoạt động.
+---
 
-3.  Vào trang [**Blueprints** trên Render Dashboard](https://dashboard.render.com/blueprints).
+### Step 2: Deploy the Backend (Web Service)
 
-4.  Nhấp vào nút **"New Blueprint Instance"**.
+1.  Go to your [Render Dashboard](https://dashboard.render.com/) and click **"New +"** > **"Web Service"**.
+2.  Connect your GitHub account and select your forked `IT-Service` repository.
+3.  Configure the service with the following settings:
+    -   **Name:** `it-service-backend` (use this exact name for consistency)
+    -   **Root Directory:** `backend`
+    -   **Runtime:** `Node`
+    -   **Build Command:** `npm install`
+    -   **Start Command:** `npm start`
+    -   **Plan:** `Free` (or a paid plan if needed)
+4.  Scroll down and click **"Advanced"**. Go to the **"Environment"** tab.
+5.  Add the following **Environment Variables** using your remote database credentials:
+    -   `DB_HOST`
+    -   `DB_USER`
+    -   `DB_PASSWORD`
+    -   `DB_NAME`
+6.  Click **"Create Web Service"**. Render will begin building and deploying.
+7.  Once the deployment is "Live", **copy the URL** of your backend service (e.g., `https://it-service-backend-xxxx.onrender.com`). You will need this for the next step.
 
-    <img width="1011" alt="Render-New-Blueprint" src="https://github.com/user-attachments/assets/81c4e7fa-9b93-4e4f-b648-5254d3cd2c05">
+---
 
-5.  **Kết nối tài khoản GitHub của bạn** và chọn repository `IT-Service` bạn vừa fork. Render sẽ tự động phát hiện và đọc tệp `render.yaml`.
+### Step 3: Deploy the Frontend (Static Site)
 
-6.  **Đặt tên cho nhóm dịch vụ của bạn** (ví dụ: `it-service-app`) và nhấp vào **"Update Existing Resources"** hoặc **"Apply"**.
+1.  Go back to the [Render Dashboard](https://dashboard.render.com/) and click **"New +"** > **"Static Site"**.
+2.  Select the same `IT-Service` GitHub repository.
+3.  Configure the service with the following settings:
+    -   **Name:** `it-service-frontend` (or any name you prefer)
+    -   **Root Directory:** (leave this blank)
+    -   **Build Command:** `npm install && npm run build`
+    -   **Publish Directory:** `dist`
+4.  Scroll down and click **"Advanced"**. Go to the **"Environment"** tab.
+5.  Add the following **Environment Variables**:
+    -   **Key:** `VITE_GEMINI_API_KEY`
+        -   **Value:** (Your Google Gemini API Key)
+    -   **Key:** `VITE_BACKEND_API_BASE_URL`
+        -   **Value:** **Paste the backend URL you copied in Step 2.**
+6.  Click **"Create Static Site"**.
 
-    <img width="1011" alt="Render-Apply-Blueprint" src="https://github.com/user-attachments/assets/d16715f2-9594-4d1a-be29-d655f41441a1">
-
-7.  **Cấu hình Biến Môi trường (QUAN TRỌNG):** Render sẽ yêu cầu bạn nhập các khóa bí mật. Đây là bước quan trọng nhất.
-    *   Đi đến tab **"Environment"** của Blueprint.
-    *   Tạo một **"Environment Group"** mới hoặc thêm các biến trực tiếp.
-    *   **BẮT BUỘC** phải thêm các khóa sau với giá trị tương ứng:
-        *   `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: Nhập thông tin kết nối đến cơ sở dữ liệu **REMOTE** của bạn (đã tạo ở bước 2).
-        *   `VITE_GEMINI_API_KEY`: Nhập khóa API Google Gemini của bạn.
-
-    <img width="1011" alt="Render-Env-Vars" src="https://github.com/user-attachments/assets/94b41982-f673-455b-b9f0-2f643e1d1628">
-
-
-8.  Sau khi thêm các biến môi trường, nhấp vào **"Manual Deploy" > "Deploy latest commit"** ở góc trên cùng bên phải để bắt đầu quá trình triển khai.
+Render will now build and deploy your frontend. Once it's live, your application should be fully functional.
 
 ---
 
 ## 3. Troubleshooting (Xử lý sự cố)
-
-#### Lỗi: "Lỗi server khi lấy dữ liệu sản phẩm" trên website
-
-Lỗi này có nghĩa là frontend đã kết nối được với backend, nhưng backend gặp lỗi khi truy vấn database.
-
-1.  **Kiểm tra Logs của Backend Service.** Truy cập Render Dashboard, tìm service có tên `it-service-backend` và vào tab "Logs".
-2.  Bạn sẽ thấy một lỗi SQL, thường là `Table 'your_db_name.Products' doesn't exist` hoặc `Unknown column 'some_column' in 'where clause'`.
-3.  **CÁCH SỬA:** Lỗi này xảy ra vì bạn chưa tạo các bảng trong database từ xa, hoặc cấu trúc bảng (schema) không khớp với code. Hãy thực hiện lại **Bước 2 của phần Hướng Dẫn Triển Khai** ở trên (chạy các câu lệnh `CREATE TABLE` trên database của Hostinger/nhà cung cấp khác) để đảm bảo schema là mới nhất.
-4.  Sau khi đã tạo/cập nhật bảng, hãy triển khai lại backend service trên Render.
 
 #### Lỗi: "Lỗi mạng hoặc server không phản hồi" trên website
 
@@ -189,6 +197,15 @@ Lỗi này xảy ra khi frontend không thể kết nối với backend.
 1.  **Kiểm tra Logs của Backend Service.** Truy cập Render Dashboard, tìm service `it-service-backend` và vào "Logs".
 2.  Tìm lỗi `❌ LỖI KẾT NỐI DATABASE` ở phần đầu của logs.
 3.  **CÁCH SỬA:**
-    *   **Kiểm tra biến môi trường:** Vào phần "Environment" trên Render và đảm bảo các biến `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` hoàn toàn chính xác.
-    *   **Kiểm tra IP Whitelisting:** Đảm bảo rằng nhà cung cấp database của bạn đã cho phép (whitelisted) các địa chỉ IP của Render kết nối vào. Tham khảo [tài liệu IP của Render](https://render.com/docs/static-outbound-ip-addresses). Đối với gói miễn phí, bạn có thể cần cho phép tất cả các IP (`0.0.0.0/0`).
+    *   **Kiểm tra biến môi trường:** Vào phần "Environment" của backend service trên Render và đảm bảo các biến `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` hoàn toàn chính xác.
+    *   **Kiểm tra IP Whitelisting:** Đảm bảo rằng nhà cung cấp database của bạn đã cho phép (whitelisted) các địa chỉ IP của Render kết nối vào. Tham khảo [tài liệu IP của Render](https://render.com/docs/static-outbound-ip-addresses). Với gói miễn phí, bạn có thể cần cho phép tất cả các IP (`0.0.0.0/0`).
 4.  Sau khi sửa, hãy triển khai lại backend service.
+
+#### Lỗi: "Lỗi server khi lấy dữ liệu sản phẩm" trên website
+
+Lỗi này có nghĩa là frontend đã kết nối được với backend, nhưng backend gặp lỗi khi truy vấn database.
+
+1.  **Kiểm tra Logs của Backend Service.** Truy cập Render Dashboard, tìm service `it-service-backend` và vào tab "Logs".
+2.  Bạn sẽ thấy một lỗi SQL, thường là `Table 'your_db_name.Products' doesn't exist` hoặc `Unknown column 'some_column' in 'where clause'`.
+3.  **CÁCH SỬA:** Lỗi này xảy ra vì bạn chưa tạo các bảng trong database từ xa. Hãy thực hiện lại **Bước 1 của phần Hướng Dẫn Triển Khai** ở trên (chạy các câu lệnh `CREATE TABLE` trên database của Hostinger/nhà cung cấp khác).
+4.  Sau khi đã tạo/cập nhật bảng, hãy triển khai lại backend service trên Render.

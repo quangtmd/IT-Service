@@ -1,8 +1,9 @@
+
 // Fix: Import correct types from @google/genai
-// Fix: Removed invalid non-English import.
-import { GoogleGenAI, Chat, GenerateContentResponse, GenerateContentParameters, Part, Content, Type } from "@google/genai"; // Added Part, Content, Type
+import { GoogleGenAI, Chat, GenerateContentResponse, Part, Content, Type } from "@google/genai"; // Added Part, Content, Type
 import * as Constants from '../constants.tsx';
-import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; // Added SiteSettings, Article, Product
+// Fix: Added SiteSettings, Article, Product
+import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; 
 import { MOCK_SERVICES } from '../data/mockData';
 import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
 
@@ -282,6 +283,7 @@ export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
+                responseMimeType: 'application/json'
             }
         });
 
@@ -352,7 +354,7 @@ export const sendMessageWithImage = async (
 
   try {
     // Fix: Corrected typo from `finalChatToUse` to `chatToUse`.
-    return await chatToUse.sendMessageStream({ message: [textPart, imagePart] });
+    return await chatToUse.sendMessageStream({ parts: [textPart, imagePart] });
   } catch (error) {
     console.error("Error sending message with image to Gemini (stream):", error);
     throw error;
