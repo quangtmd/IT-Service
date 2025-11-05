@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
@@ -87,10 +86,10 @@ const HomeFeaturedProjectsIts: React.FC = () => {
               </span>
             )}
             <h2 className="home-section-title text-4xl md:text-5xl font-extrabold">
-              {projectsConfig.title || "Our Key Services"}
+              {projectsConfig.title || "Các Dịch Vụ Chính Của Chúng Tôi"}
             </h2>
             <p className="home-section-subtitle">
-              Explore our range of expert IT services designed to elevate your business.
+              Khám phá loạt dịch vụ CNTT chuyên nghiệp của chúng tôi được thiết kế để nâng tầm doanh nghiệp của bạn.
             </p>
         </div>
 
@@ -101,7 +100,7 @@ const HomeFeaturedProjectsIts: React.FC = () => {
                 ))}
             </div>
         ) : (
-            <p className="text-center text-textMuted">Featured services are being updated.</p>
+            <p className="text-center text-textMuted">Các dịch vụ nổi bật đang được cập nhật.</p>
         )}
 
         {projectsConfig.buttonLink && projectsConfig.buttonText && featuredItems.length > 0 && (

@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
@@ -23,7 +21,7 @@ const TestimonialCardIts: React.FC<TestimonialCardProps> = ({ testimonial, index
             <img src={testimonial.avatarUrl || `https://picsum.photos/seed/avatarModern${index}/100/100`} alt={testimonial.name} className="w-14 h-14 rounded-full shadow-lg border-2 border-white object-cover" />
             <div className="ml-4 text-left">
                 <h5 className="text-md font-bold text-textBase">{testimonial.name}</h5>
-                <span className="text-xs text-primary font-medium">{testimonial.role || 'Valued Customer'}</span>
+                <span className="text-xs text-primary font-medium">{testimonial.role || 'Khách hàng'}</span>
             </div>
         </div>
       
@@ -76,10 +74,10 @@ const HomeTestimonialsIts: React.FC = () => {
             </span>
           )}
           <h2 className="home-section-title text-4xl md:text-5xl font-extrabold">
-            {testimonialsConfig.title || "What Our Clients Say"}
+            {testimonialsConfig.title || "Khách Hàng Nói Gì Về Chúng Tôi"}
           </h2>
            <p className="home-section-subtitle">
-            Hear directly from those who've experienced our top-notch services and support.
+            Lắng nghe trực tiếp từ những người đã trải nghiệm dịch vụ và sự hỗ trợ hàng đầu của chúng tôi.
           </p>
         </div>
         
@@ -90,7 +88,7 @@ const HomeTestimonialsIts: React.FC = () => {
             ))}
             </div>
         ): (
-            <p className="text-center text-textMuted">Testimonials are being updated.</p>
+            <p className="text-center text-textMuted">Các đánh giá đang được cập nhật.</p>
         )}
       </div>
     </section>
