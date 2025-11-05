@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { CartProvider } from './contexts/CartContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ChatbotProvider } from './contexts/ChatbotContext'; // Import the new provider
 import ErrorBoundary from './ErrorBoundary'; // Import the ErrorBoundary
 
 function renderApp() {
@@ -20,7 +21,9 @@ function renderApp() {
       <ErrorBoundary fallbackMessage="Ứng dụng gặp sự cố. Vui lòng thử tải lại trang hoặc liên hệ hỗ trợ.">
         <AuthProvider>
           <CartProvider>
-            <App />
+            <ChatbotProvider>
+              <App />
+            </ChatbotProvider>
           </CartProvider>
         </AuthProvider>
       </ErrorBoundary>

@@ -5,6 +5,7 @@ import Button from '../ui/Button';
 import geminiService from '../../services/geminiService';
 import { Chat, GenerateContentResponse } from '@google/genai';
 import * as Constants from '../../constants.tsx'; 
+import { useChatbotContext } from '../../contexts/ChatbotContext'; // Import the context hook
 
 interface AIChatbotProps {
   isOpen: boolean;
@@ -27,6 +28,8 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [isUserInfoSubmitted, setIsUserInfoSubmitted] = useState(false);
   const [userInfoError, setUserInfoError] = useState<string | null>(null);
   const [currentChatLogSession, setCurrentChatLogSession] = useState<ChatLogSession | null>(null);
+
+  const { currentContext } = useChatbotContext(); // Get the current viewing context
 
 
   const loadSiteSettings = useCallback(() => {
@@ -144,15 +147,21 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     e?.preventDefault();
     if (!input.trim() || isLoading || !chatSession || !isUserInfoSubmitted) return;
 
-    const userMessageText = input;
+    // The user only sees their raw input in the chat window.
     const userMessage: ChatMessageType = {
       id: `user-${Date.now()}`,
-      text: userMessageText,
+      text: input,
       sender: 'user',
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
     setCurrentChatLogSession(prevLog => prevLog ? {...prevLog, messages: [...prevLog.messages, userMessage]} : null);
+    
+    // Prepend the context to the message sent to the AI, but not displayed to the user.
+    const messageWithContext = currentContext 
+      ? `[Bối cảnh: ${currentContext}]\n\n${input}` 
+      : input;
+      
     setInput('');
     setIsLoading(true);
     setError(null);
@@ -164,7 +173,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     setCurrentChatLogSession(prevLog => prevLog ? {...prevLog, messages: [...prevLog.messages, initialBotMessage]} : null);
     
     try {
-      const stream: AsyncIterable<GenerateContentResponse> = await geminiService.sendMessageToChatStream(userMessageText, chatSession);
+      const stream: AsyncIterable<GenerateContentResponse> = await geminiService.sendMessageToChatStream(messageWithContext, chatSession);
       let currentText = '';
       for await (const chunk of stream) {
         currentText += chunk.text; 

@@ -7,6 +7,7 @@ import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
 import { getProduct, getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError';
+import { useChatbotContext } from '../contexts/ChatbotContext'; // Import the context hook
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -20,6 +21,18 @@ const ProductDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'description' | 'specs'>('description');
   const { addToCart } = useCart();
   const navigate = useNavigate();
+  const { setCurrentContext } = useChatbotContext(); // Get the context setter
+
+  useEffect(() => {
+    // When the product data is loaded, set the chatbot context.
+    if (product) {
+      setCurrentContext(`Khách hàng đang xem sản phẩm: "${product.name}".`);
+    }
+    // Cleanup function to clear the context when the component unmounts.
+    return () => {
+      setCurrentContext(null);
+    };
+  }, [product, setCurrentContext]);
 
   useEffect(() => {
     const loadProductData = async () => {

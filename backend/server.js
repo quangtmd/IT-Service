@@ -160,26 +160,33 @@ const startServer = async () => {
       try {
         const { q, mainCategory, subCategory, brand, status, tags, page = 1, limit = 12 } = req.query;
         
-        let categoryIdsToFilter = [];
+        const whereClauses = ["p.is_published = TRUE"];
+        const params = [];
+
+        // Pre-fetch category IDs if a main category is specified
         if (mainCategory) {
             const [mainCatRows] = await pool.query("SELECT id FROM ProductCategories WHERE slug = ? AND parent_category_id IS NULL", [mainCategory]);
             if (mainCatRows.length > 0) {
                 const mainCatId = mainCatRows[0].id;
                 const [subCatRows] = await pool.query("SELECT id FROM ProductCategories WHERE parent_category_id = ?", [mainCatId]);
-                categoryIdsToFilter = subCatRows.map(row => row.id);
-                 // Also include the main category itself if it can contain products
-                categoryIdsToFilter.push(mainCatId);
+                let categoryIdsToFilter = subCatRows.map(row => row.id);
+                categoryIdsToFilter.push(mainCatId); // Include the main category itself
+                
+                if (categoryIdsToFilter.length > 0) {
+                    whereClauses.push("p.category_id IN (?)");
+                    params.push(categoryIdsToFilter);
+                }
             }
         }
         
-        let selectClause = "SELECT p.*, c.name as categoryName, c.slug as categorySlug";
+        // Build the rest of the query
+        let selectClause = "SELECT p.*, c.name as categoryName, c.slug as categorySlug, mc.name as mainCategoryName";
         let countSelectClause = "SELECT COUNT(p.id) as total";
         let fromClause = `
           FROM Products p 
           LEFT JOIN ProductCategories c ON p.category_id = c.id
+          LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id
         `;
-        let whereClauses = ["p.is_published = TRUE"];
-        const params = [];
 
         if (subCategory) {
             const [subCatRow] = await pool.query("SELECT id FROM ProductCategories WHERE slug = ?", [subCategory]);
@@ -187,9 +194,6 @@ const startServer = async () => {
                 whereClauses.push("p.category_id = ?");
                 params.push(subCatRow[0].id);
             }
-        } else if (categoryIdsToFilter.length > 0) {
-            whereClauses.push("p.category_id IN (?)");
-            params.push(categoryIdsToFilter);
         }
 
         if (q) {
@@ -207,7 +211,6 @@ const startServer = async () => {
             params.push(status);
         }
         if (tags) {
-            // Updated to be safer, assumes tags column might not exist.
              try {
                 const [checkTagsColumn] = await pool.query("SHOW COLUMNS FROM Products LIKE 'tags'");
                 if (checkTagsColumn.length > 0) {
@@ -218,11 +221,6 @@ const startServer = async () => {
         }
 
         const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-        
-        // Add JOIN for mainCategory name
-        fromClause += ' LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id';
-        selectClause += ', mc.name as mainCategoryName';
-
 
         const countQuery = `${countSelectClause} ${fromClause} ${whereString}`;
         const [countRows] = await pool.query(countQuery, params);
@@ -343,10 +341,41 @@ const startServer = async () => {
 
     app.post('/api/orders', async (req, res) => {
         try {
-            const newOrder = { ...req.body, orderDate: new Date(req.body.orderDate) };
+            // Destructure and rebuild the order object for security and correctness
+            const { customerInfo, items, totalAmount, paymentInfo } = req.body;
+    
+            // Explicitly map items to ensure compatibility and correctness
+            const orderItems = items.map((item) => ({
+                productId: item.productId || item.id, // Handle both 'productId' and 'id'
+                productName: item.productName || item.name, // Handle both 'productName' and 'name'
+                quantity: item.quantity,
+                price: item.price,
+            }));
+            
+            // Explicitly include notes to ensure it's saved.
+            const finalCustomerInfo = {
+                fullName: customerInfo.fullName,
+                phone: customerInfo.phone,
+                address: customerInfo.address,
+                email: customerInfo.email,
+                notes: customerInfo.notes || '', // Ensure notes field is present and defaults to empty string
+            };
+    
+            const newOrder = {
+                id: req.body.id || `order-${Date.now()}`,
+                customerInfo: finalCustomerInfo,
+                items: orderItems,
+                totalAmount: totalAmount,
+                orderDate: new Date(), // Use reliable server time
+                status: 'Chờ xử lý',
+                paymentInfo: paymentInfo,
+                shippingInfo: req.body.shippingInfo || null,
+            };
+    
             await pool.query("INSERT INTO Orders SET ?", [prepareJsonFieldsForDb(newOrder, ORDER_JSON_FIELDS)]);
             res.status(201).json(newOrder);
         } catch (err) {
+            console.error("Lỗi khi tạo đơn hàng:", err); // Log the actual error on the server for debugging
             res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng.' });
         }
     });
