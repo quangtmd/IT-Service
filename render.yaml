@@ -23,7 +23,7 @@ services:
         sync: false
 
   # Frontend React static site
-  - type: static
+  - type: static_site
     name: it-service-frontend # A unique name for the frontend service
     plan: free                 # Use Render's free instance type
     rootDir: .
