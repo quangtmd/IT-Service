@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => {
                     changeOrigin: true,
                 },
             },
+        },
+        preview: {
+            host: true, // This is equivalent to --host, allows network access
             // Allow requests from Render's preview domains to prevent host header errors.
             allowedHosts: ['.onrender.com'],
         },
