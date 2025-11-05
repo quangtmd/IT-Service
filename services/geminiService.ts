@@ -1,4 +1,5 @@
 
+
 // Fix: Import correct types from @google/genai
 import { GoogleGenAI, Chat, GenerateContentResponse, Part, Content, Type } from "@google/genai"; // Added Part, Content, Type
 import * as Constants from '../constants.tsx';
@@ -353,8 +354,8 @@ export const sendMessageWithImage = async (
   const textPart: Part = { text: textPrompt };
 
   try {
-    // Fix: Corrected typo from `finalChatToUse` to `chatToUse`.
-    return await chatToUse.sendMessageStream({ parts: [textPart, imagePart] });
+    // Fix: Changed 'parts' to 'message' to match the SendMessageParameters type for chat sessions.
+    return await chatToUse.sendMessageStream({ message: [textPart, imagePart] });
   } catch (error) {
     console.error("Error sending message with image to Gemini (stream):", error);
     throw error;

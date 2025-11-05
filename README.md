@@ -135,7 +135,7 @@ The application will now be accessible in your browser (usually at `http://local
 
 ## 2. Deploy to Render (Manual Method)
 
-Since the Blueprint method (`render.yaml`) can sometimes be problematic, this manual method is more reliable. We will create two separate services: a **Web Service** for the backend and a **Static Site** for the frontend.
+This manual method is more reliable than using a Blueprint. We will create two separate services: a **Web Service** for the backend and a **Static Site** for the frontend.
 
 ### Step 1: Database Setup on Remote Server
 
@@ -148,64 +148,78 @@ Since the Blueprint method (`render.yaml`) can sometimes be problematic, this ma
 ### Step 2: Deploy the Backend (Web Service)
 
 1.  Go to your [Render Dashboard](https://dashboard.render.com/) and click **"New +"** > **"Web Service"**.
-2.  Connect your GitHub account and select your forked `IT-Service` repository.
-3.  Configure the service with the following settings:
+2.  Connect your GitHub account and select your `IT-Service` repository.
+3.  Configure the service:
     -   **Name:** `it-service-backend` (use this exact name for consistency)
     -   **Root Directory:** `backend`
     -   **Runtime:** `Node`
     -   **Build Command:** `npm install`
     -   **Start Command:** `npm start`
     -   **Plan:** `Free` (or a paid plan if needed)
-4.  Scroll down and click **"Advanced"**. Go to the **"Environment"** tab.
+4.  Scroll to **"Advanced"** and go to the **"Environment"** tab.
 5.  Add the following **Environment Variables** using your remote database credentials:
     -   `DB_HOST`
     -   `DB_USER`
     -   `DB_PASSWORD`
     -   `DB_NAME`
-6.  Click **"Create Web Service"**. Render will begin building and deploying.
-7.  Once the deployment is "Live", **copy the URL** of your backend service (e.g., `https://it-service-backend-xxxx.onrender.com`). You will need this for the next step.
+6.  Click **"Create Web Service"**.
+7.  Once deployed, **copy the URL** of your backend service (e.g., `https://it-service-backend-xxxx.onrender.com`).
 
 ---
 
 ### Step 3: Deploy the Frontend (Static Site)
 
 1.  Go back to the [Render Dashboard](https://dashboard.render.com/) and click **"New +"** > **"Static Site"**.
-2.  Select the same `IT-Service` GitHub repository.
-3.  Configure the service with the following settings:
-    -   **Name:** `it-service-frontend` (or any name you prefer)
-    -   **Root Directory:** (leave this blank)
+2.  Select the same GitHub repository.
+3.  Configure the service:
+    -   **Name:** `it-service-frontend`
+    -   **Root Directory:** (leave blank)
     -   **Build Command:** `npm install && npm run build`
     -   **Publish Directory:** `dist`
-4.  Scroll down and click **"Advanced"**. Go to the **"Environment"** tab.
+4.  Go to **"Advanced"** > **"Environment"**.
 5.  Add the following **Environment Variables**:
-    -   **Key:** `VITE_GEMINI_API_KEY`
-        -   **Value:** (Your Google Gemini API Key)
-    -   **Key:** `VITE_BACKEND_API_BASE_URL`
-        -   **Value:** **Paste the backend URL you copied in Step 2.**
+    -   **Key:** `VITE_GEMINI_API_KEY`, **Value:** (Your Google Gemini API Key)
+    -   **Key:** `VITE_BACKEND_API_BASE_URL`, **Value:** **Paste the backend URL you copied.**
 6.  Click **"Create Static Site"**.
-
-Render will now build and deploy your frontend. Once it's live, your application should be fully functional.
 
 ---
 
 ## 3. Troubleshooting (Xử lý sự cố)
 
-#### Lỗi: "Lỗi mạng hoặc server không phản hồi" trên website
+### Lỗi: "Lỗi Kết Nối Đến Máy Chủ (Backend)" trên website
 
-Lỗi này xảy ra khi frontend không thể kết nối với backend.
+This is the most common deployment error. It means the backend service on Render is crashing, usually because it cannot connect to your remote database.
 
-1.  **Kiểm tra Logs của Backend Service.** Truy cập Render Dashboard, tìm service `it-service-backend` và vào "Logs".
-2.  Tìm lỗi `❌ LỖI KẾT NỐI DATABASE` ở phần đầu của logs.
-3.  **CÁCH SỬA:**
-    *   **Kiểm tra biến môi trường:** Vào phần "Environment" của backend service trên Render và đảm bảo các biến `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` hoàn toàn chính xác.
-    *   **Kiểm tra IP Whitelisting:** Đảm bảo rằng nhà cung cấp database của bạn đã cho phép (whitelisted) các địa chỉ IP của Render kết nối vào. Tham khảo [tài liệu IP của Render](https://render.com/docs/static-outbound-ip-addresses). Với gói miễn phí, bạn có thể cần cho phép tất cả các IP (`0.0.0.0/0`).
-4.  Sau khi sửa, hãy triển khai lại backend service.
+1.  **Go to your Render Dashboard**, find the `it-service-backend` service, and click on the **"Logs"** tab.
+2.  Look for a detailed error message in red. The backend is now programmed to tell you the **exact reason** for the failure.
 
-#### Lỗi: "Lỗi server khi lấy dữ liệu sản phẩm" trên website
+#### If the log says `ETIMEDOUT`, `ENOTFOUND`, or mentions IP addresses:
 
-Lỗi này có nghĩa là frontend đã kết nối được với backend, nhưng backend gặp lỗi khi truy vấn database.
+This is an **IP Whitelisting problem**. Your database provider (Hostinger) is blocking Render.
+<br/>
+<img width="900" alt="Hostinger Remote MySQL" src="https://github.com/user-attachments/assets/70ff379d-d6a0-4bd4-a3f2-8959fc9332e1" />
 
-1.  **Kiểm tra Logs của Backend Service.** Truy cập Render Dashboard, tìm service `it-service-backend` và vào tab "Logs".
-2.  Bạn sẽ thấy một lỗi SQL, thường là `Table 'your_db_name.Products' doesn't exist` hoặc `Unknown column 'some_column' in 'where clause'`.
-3.  **CÁCH SỬA:** Lỗi này xảy ra vì bạn chưa tạo các bảng trong database từ xa. Hãy thực hiện lại **Bước 1 của phần Hướng Dẫn Triển Khai** ở trên (chạy các câu lệnh `CREATE TABLE` trên database của Hostinger/nhà cung cấp khác).
-4.  Sau khi đã tạo/cập nhật bảng, hãy triển khai lại backend service trên Render.
+**How to Fix:**
+1.  On Render, go to your `it-service-backend` service and click the **"Networking"** tab.
+2.  Find and copy the **"Static Outbound IP Address"**.
+3.  Log in to your **Hostinger hPanel**.
+4.  Go to **Databases** -> **Remote MySQL**.
+5.  Under **"Host"**, paste the Render IP address you copied.
+6.  Under **"Database"**, select the database you are using.
+7.  Click **"Create"**.
+8.  Go back to your `it-service-backend` service on Render and click **"Manual Deploy"** -> **"Deploy latest commit"**.
+
+#### If the log says `ER_ACCESS_DENIED_ERROR`:
+
+Your `DB_USER` or `DB_PASSWORD` is wrong.
+**How to Fix:** Go to the **"Environment"** tab of your `it-service-backend` service on Render and carefully re-enter your database username and password.
+
+#### If the log says `ER_BAD_DB_ERROR`:
+
+Your `DB_NAME` is wrong.
+**How to Fix:** Go to the **"Environment"** tab of your `it-service-backend` service on Render and correct the database name.
+
+#### If the log says `ER_NO_SUCH_TABLE`:
+
+The backend connected successfully, but you forgot to create the tables.
+**How to Fix:** Go to your remote database (e.g., via phpMyAdmin) and run the SQL commands from **Step 1 of the "Run Locally" guide**.
