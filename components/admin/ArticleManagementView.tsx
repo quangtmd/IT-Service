@@ -8,17 +8,19 @@ import { getArticles, addArticle, updateArticle, deleteArticle } from '../../ser
 const ArticleManagementView: React.FC = () => {
     const [articles, setArticles] = useState<Article[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingArticle, setEditingArticle] = useState<Article | null>(null);
 
     const loadArticles = useCallback(async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const articlesFromDb = await getArticles();
             setArticles(articlesFromDb);
-        } catch (error) {
-            console.error("Failed to load articles:", error);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu bài viết.');
         } finally {
             setIsLoading(false);
         }
@@ -60,19 +62,27 @@ const ArticleManagementView: React.FC = () => {
     };
 
     const handleSave = async (articleData: Article) => {
-        if (articleData.id) {
-            await updateArticle(articleData.id, articleData);
-        } else {
-            await addArticle(articleData);
+        try {
+            if (articleData.id) {
+                await updateArticle(articleData.id, articleData);
+            } else {
+                await addArticle(articleData);
+            }
+            loadArticles();
+            closeModal();
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi lưu bài viết.');
         }
-        loadArticles();
-        closeModal();
     };
 
     const handleDelete = async (articleId: string) => {
         if (window.confirm('Bạn có chắc muốn xóa bài viết này?')) {
-            await deleteArticle(articleId);
-            loadArticles();
+            try {
+                await deleteArticle(articleId);
+                loadArticles();
+            } catch (err) {
+                 alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi xóa bài viết.');
+            }
         }
     };
     
@@ -106,7 +116,9 @@ const ArticleManagementView: React.FC = () => {
                         <tbody>
                             {isLoading ? (
                                 <tr><td colSpan={5} className="text-center py-4">Đang tải...</td></tr>
-                            ) : (
+                            ) : error ? (
+                                <tr><td colSpan={5} className="text-center py-4 text-red-500">{error}</td></tr>
+                            ) : filteredArticles.length > 0 ? (
                                 filteredArticles.map(article => (
                                     <tr key={article.id}>
                                         <td>
@@ -126,6 +138,8 @@ const ArticleManagementView: React.FC = () => {
                                         </td>
                                     </tr>
                                 ))
+                             ) : (
+                                <tr><td colSpan={5} className="text-center py-4 text-textMuted">Không có bài viết nào.</td></tr>
                             )}
                         </tbody>
                     </table>

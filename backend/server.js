@@ -104,7 +104,8 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
-// GET FEATURED PRODUCTS - Dedicated endpoint
+// --- PRODUCTS API ---
+
 app.get('/api/products/featured', async (req, res) => {
     try {
         const query = `
@@ -114,19 +115,23 @@ app.get('/api/products/featured', async (req, res) => {
             LIMIT 4;
         `;
         const [products] = await pool.query(query);
-        res.json(products); // Return the array directly
+        res.json(products);
     } catch (error) {
         console.error("Lỗi khi truy vấn sản phẩm nổi bật:", error);
         res.status(500).json({ message: "Lỗi server khi lấy sản phẩm nổi bật", error: error.sqlMessage || error.message });
     }
 });
 
-// GET SINGLE PRODUCT - Placed before general /api/products to avoid route conflicts
 app.get('/api/products/:id', async (req, res) => {
     try {
-        const [product] = await pool.query('SELECT * FROM Products WHERE id = ?', [req.params.id]);
-        if (product.length > 0) {
-            res.json(product[0]);
+        const [rows] = await pool.query('SELECT * FROM Products WHERE id = ?', [req.params.id]);
+        const product = rows[0];
+        if (product) {
+            // Deserialize JSON fields
+            product.imageUrls = JSON.parse(product.imageUrls || '[]');
+            product.specifications = JSON.parse(product.specifications || '{}');
+            product.tags = JSON.parse(product.tags || '[]');
+            res.json(product);
         } else {
             res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
         }
@@ -136,24 +141,24 @@ app.get('/api/products/:id', async (req, res) => {
     }
 });
 
-
-// GET ALL PRODUCTS (with filtering and pagination)
 app.get('/api/products', async (req, res) => {
     try {
         const { mainCategory, subCategory, brand, status, tags, q, limit = 12, page = 1 } = req.query;
 
-        let baseQuery = `
-            SELECT p.*, c.name as categoryName, c.slug as categorySlug, mc.name as mainCategoryName, mc.slug as mainCategorySlug
-            FROM Products p
-            LEFT JOIN ProductCategories c ON p.category_id = c.id
-            LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id
-        `;
-        let countQuery = `
-            SELECT COUNT(p.id) as total
-            FROM Products p
-            LEFT JOIN ProductCategories c ON p.category_id = c.id
-            LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id
-        `;
+        let baseQuery = `SELECT p.* FROM Products p`;
+        let countQuery = `SELECT COUNT(p.id) as total FROM Products p`;
+        
+        const joins = [];
+        if (mainCategory || subCategory) {
+            joins.push('LEFT JOIN ProductCategories c ON p.category_id = c.id');
+            if (mainCategory) {
+                 joins.push('LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id');
+            }
+        }
+        
+        const joinString = joins.join(' ');
+        baseQuery += ` ${joinString}`;
+        countQuery += ` ${joinString}`;
         
         const whereClauses = ['p.is_published = TRUE'];
         const params = [];
@@ -167,8 +172,12 @@ app.get('/api/products', async (req, res) => {
             params.push(subCategory);
         }
          if (q) {
-            whereClauses.push('p.name LIKE ?');
-            params.push(`%${q}%`);
+            whereClauses.push('(p.name LIKE ? OR p.brand LIKE ?)');
+            params.push(`%${q}%`, `%${q}%`);
+        }
+        if (tags) {
+            whereClauses.push('JSON_CONTAINS(p.tags, ?)');
+            params.push(JSON.stringify(tags));
         }
 
         if (whereClauses.length > 0) {
@@ -181,19 +190,84 @@ app.get('/api/products', async (req, res) => {
         const totalProducts = countRows[0].total;
         
         const offset = (Number(page) - 1) * Number(limit);
-        baseQuery += ` LIMIT ? OFFSET ?`;
+        baseQuery += ` ORDER BY p.id DESC LIMIT ? OFFSET ?`;
         params.push(Number(limit), offset);
 
         const [products] = await pool.query(baseQuery, params);
         
-        res.json({ products, totalProducts });
+        // Deserialize JSON fields for the list
+        const deserializedProducts = products.map(p => ({
+            ...p,
+            imageUrls: JSON.parse(p.imageUrls || '[]'),
+            specifications: JSON.parse(p.specifications || '{}'),
+            tags: JSON.parse(p.tags || '[]'),
+        }));
+        
+        res.json({ products: deserializedProducts, totalProducts });
     } catch (error) {
         console.error("Lỗi khi truy vấn sản phẩm:", error);
         res.status(500).json({ message: "Lỗi server khi lấy dữ liệu sản phẩm", error: error.sqlMessage || error.message });
     }
 });
 
-// GET ALL ARTICLES
+app.post('/api/products', async (req, res) => {
+    try {
+        const product = req.body;
+        const newProduct = {
+            ...product,
+            id: product.id || `prod-${Date.now()}`,
+            imageUrls: JSON.stringify(product.imageUrls || []),
+            specifications: JSON.stringify(product.specifications || {}),
+            tags: JSON.stringify(product.tags || []),
+        };
+        await pool.query('INSERT INTO Products SET ?', newProduct);
+        res.status(201).json(newProduct);
+    } catch (error) {
+        console.error("Lỗi khi tạo sản phẩm:", error);
+        res.status(500).json({ message: "Lỗi server", error: error.sqlMessage || error.message });
+    }
+});
+
+app.put('/api/products/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const product = req.body;
+        const updatedProduct = {
+            ...product,
+            imageUrls: JSON.stringify(product.imageUrls || []),
+            specifications: JSON.stringify(product.specifications || {}),
+            tags: JSON.stringify(product.tags || []),
+        };
+        delete updatedProduct.id; // Don't update the ID
+        
+        const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [updatedProduct, id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy sản phẩm để cập nhật' });
+        }
+        res.json({ id, ...updatedProduct });
+    } catch (error) {
+        console.error("Lỗi khi cập nhật sản phẩm:", error);
+        res.status(500).json({ message: "Lỗi server", error: error.sqlMessage || error.message });
+    }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [result] = await pool.query('DELETE FROM Products WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy sản phẩm để xóa' });
+        }
+        res.status(204).send(); // No content
+    } catch (error) {
+        console.error("Lỗi khi xóa sản phẩm:", error);
+        res.status(500).json({ message: "Lỗi server", error: error.sqlMessage || error.message });
+    }
+});
+
+
+// --- ARTICLES API ---
 app.get('/api/articles', async (req, res) => {
      try {
         const [articles] = await pool.query('SELECT * FROM Articles ORDER BY date DESC');
@@ -204,7 +278,6 @@ app.get('/api/articles', async (req, res) => {
     }
 });
 
-// GET SINGLE ARTICLE
 app.get('/api/articles/:id', async (req, res) => {
     try {
         const [article] = await pool.query('SELECT * FROM Articles WHERE id = ?', [req.params.id]);
@@ -219,39 +292,72 @@ app.get('/api/articles/:id', async (req, res) => {
     }
 });
 
+app.post('/api/articles', async (req, res) => {
+    try {
+        const article = { ...req.body, id: `article-${Date.now()}` };
+        await pool.query('INSERT INTO Articles SET ?', article);
+        res.status(201).json(article);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
 
-// GET ALL ORDERS
+app.put('/api/articles/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const article = req.body;
+        delete article.id;
+        await pool.query('UPDATE Articles SET ? WHERE id = ?', [article, id]);
+        res.json({ id, ...article });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+app.delete('/api/articles/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM Articles WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+
+// --- ORDERS API ---
 app.get('/api/orders', async (req, res) => {
     try {
         const [orders] = await pool.query('SELECT * FROM Orders ORDER BY orderDate DESC');
-        res.json(orders);
+        // Deserialize JSON fields
+        const deserializedOrders = orders.map(o => ({
+            ...o,
+            customerInfo: JSON.parse(o.customerInfo || '{}'),
+            items: JSON.parse(o.items || '[]'),
+            paymentInfo: JSON.parse(o.paymentInfo || '{}'),
+            shippingInfo: JSON.parse(o.shippingInfo || '{}')
+        }));
+        res.json(deserializedOrders);
     } catch (error) {
         console.error("Lỗi khi truy vấn đơn hàng:", error);
         res.status(500).json({ message: "Lỗi server khi lấy đơn hàng", error: error.sqlMessage || error.message });
     }
 });
 
-// CREATE NEW ORDER
 app.post('/api/orders', async (req, res) => {
     try {
         const orderData = req.body;
-        
-        // Reconstruct order object to ensure data integrity
         const newOrder = {
             id: orderData.id,
-            customerInfo: JSON.stringify(orderData.customerInfo),
-            items: JSON.stringify(orderData.items.map(item => ({
-                productId: item.id || item.productId,
-                productName: item.name || item.productName,
-                quantity: item.quantity,
-                price: item.price
-            }))),
+            customerInfo: orderData.customerInfo, // Pass as object
+            items: orderData.items, // Pass as array
             totalAmount: orderData.totalAmount,
             orderDate: orderData.orderDate,
             status: orderData.status,
-            paymentInfo: JSON.stringify(orderData.paymentInfo),
+            paymentInfo: orderData.paymentInfo, // Pass as object
+            shippingInfo: orderData.shippingInfo || {}, // Pass as object
         };
 
+        // The mysql2 driver will automatically stringify the JSON fields
         await pool.query('INSERT INTO Orders SET ?', newOrder);
         res.status(201).json(orderData);
     } catch (error) {
@@ -260,7 +366,25 @@ app.post('/api/orders', async (req, res) => {
     }
 });
 
-// Add a catch-all for the root to guide users who land here by mistake
+app.put('/api/orders/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        if (!status) {
+            return res.status(400).json({ message: 'Trạng thái mới là bắt buộc.' });
+        }
+        const [result] = await pool.query('UPDATE Orders SET status = ? WHERE id = ?', [status, id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng.' });
+        }
+        res.json({ message: 'Cập nhật trạng thái thành công.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+
+// --- CATCH-ALL ROOT ---
 app.get('/', (req, res) => {
     res.status(200).send(`
         <!DOCTYPE html>

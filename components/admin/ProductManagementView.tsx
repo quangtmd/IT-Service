@@ -21,7 +21,7 @@ const ProductManagementView: React.FC = () => {
         setError(null);
         try {
             // Fetch all products for admin view by setting a high limit
-            const { products } = await getProducts('?limit=10000');
+            const { products } = await getProducts('limit=10000');
             setAllProducts(products);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
@@ -37,8 +37,8 @@ const ProductManagementView: React.FC = () => {
     const filteredProducts = useMemo(() =>
         allProducts.filter(p =>
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.mainCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.subCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.mainCategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.subCategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
         ), [allProducts, searchTerm]);
 
@@ -287,7 +287,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                          {/* --- Specifications --- */}
                          <div className="admin-form-subsection-title">Thông số kỹ thuật</div>
                          <div className="space-y-2">
-                            {Object.entries(formData.specifications).map(([key, value], index) => (
+                            {Object.entries(formData.specifications || {}).map(([key, value], index) => (
                                 <div key={index} className="flex gap-2 items-center">
                                     <input type="text" value={key} onChange={(e) => handleSpecChange(index, 'key', e.target.value)} placeholder="Tên thuộc tính" className="w-1/3" />
                                     <input type="text" value={value} onChange={(e) => handleSpecChange(index, 'value', e.target.value)} placeholder="Giá trị" className="flex-grow" />

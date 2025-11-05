@@ -395,7 +395,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClos
          <div className="admin-modal-overlay">
             <div className="admin-modal-panel max-w-lg">
                 <form onSubmit={handleSubmit}>
-                    <div className="admin-modal-header"><h4 className="admin-modal-title">{formData.id ? 'Sửa Giao dịch' : 'Thêm Giao dịch'}</h4><button type="button" onClick={onClose}>&times;</button></div>
+                    {/* Fix: Wrap onClose call in an arrow function to prevent passing the event argument. */}
+                    <div className="admin-modal-header"><h4 className="admin-modal-title">{formData.id ? 'Sửa Giao dịch' : 'Thêm Giao dịch'}</h4><button type="button" onClick={() => onClose()}>&times;</button></div>
                     <div className="admin-modal-body grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="admin-form-group"><label>Ngày *</label><input type="date" name="date" value={formData.date} onChange={handleChange} required/></div>
                         <div className="admin-form-group"><label>Loại *</label><select name="type" value={type} onChange={handleChange}><option value="income">Thu</option><option value="expense">Chi</option></select></div>
@@ -410,7 +411,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClos
                         <div className="admin-form-group"><label>Đối tượng liên quan</label><input type="text" name="relatedEntity" value={formData.relatedEntity || ''} onChange={handleChange} /></div>
                         <div className="admin-form-group"><label>Mã hóa đơn</label><input type="text" name="invoiceNumber" value={formData.invoiceNumber || ''} onChange={handleChange} /></div>
                     </div>
-                    <div className="admin-modal-footer"><Button type="button" variant="outline" onClick={onClose}>Hủy</Button><Button type="submit">Lưu</Button></div>
+                    {/* Fix: Wrap onClose call in an arrow function to prevent passing the event argument. */}
+                    <div className="admin-modal-footer"><Button type="button" variant="outline" onClick={() => onClose()}>Hủy</Button><Button type="submit">Lưu</Button></div>
                 </form>
             </div>
         </div>

@@ -62,9 +62,14 @@ For local development, using a local database is strongly recommended to avoid n
     );
 
     CREATE TABLE Orders (
-        id VARCHAR(255) PRIMARY KEY, customerInfo JSON NOT NULL, items JSON NOT NULL,
-        totalAmount DECIMAL(12, 0) NOT NULL, orderDate DATETIME NOT NULL,
-        status VARCHAR(50) NOT NULL, shippingInfo JSON, paymentInfo JSON NOT NULL
+        id VARCHAR(255) PRIMARY KEY,
+        customerInfo JSON NOT NULL,
+        items JSON NOT NULL,
+        totalAmount DECIMAL(12, 0) NOT NULL,
+        orderDate DATETIME NOT NULL,
+        status VARCHAR(50) NOT NULL,
+        shippingInfo JSON,
+        paymentInfo JSON NOT NULL
     );
 
     CREATE TABLE Articles (

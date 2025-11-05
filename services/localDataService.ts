@@ -1,4 +1,3 @@
-// Renamed to apiService.ts in thought process, but keeping filename for replacement.
 // This service now fetches data from the backend API instead of localStorage.
 
 import { 
@@ -21,6 +20,10 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             } catch (e) {
                  throw new Error(`Lỗi mạng hoặc server không phản hồi (Status: ${response.status})`);
             }
+        }
+        // Handle 204 No Content for delete operations
+        if (response.status === 204) {
+            return {} as T;
         }
         return response.json();
     } catch (error) {
@@ -50,21 +53,23 @@ export const getProduct = async (id: string): Promise<Product | null> => {
 };
 
 export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
-    // This is a placeholder as the backend doesn't have this endpoint yet.
-    // In a real scenario, this would be:
-    // return fetchFromApi<Product>('/api/products', { method: 'POST', body: JSON.stringify(product), headers: {'Content-Type': 'application/json'} });
-    console.warn("Add product functionality is not implemented on the backend.");
-    return Promise.resolve({ ...product, id: `temp-${Date.now()}` });
+    return fetchFromApi<Product>('/api/products', { 
+        method: 'POST', 
+        body: JSON.stringify(product), 
+        headers: {'Content-Type': 'application/json'} 
+    });
 };
 
 export const updateProduct = async (id: string, updates: Partial<Product>): Promise<Product> => {
-    console.warn("Update product functionality is not implemented on the backend.");
-    return Promise.resolve({ id, ...updates } as Product);
+     return fetchFromApi<Product>(`/api/products/${id}`, { 
+        method: 'PUT', 
+        body: JSON.stringify(updates), 
+        headers: {'Content-Type': 'application/json'} 
+    });
 };
 
 export const deleteProduct = async (id: string): Promise<void> => {
-    console.warn("Delete product functionality is not implemented on the backend.");
-    return Promise.resolve();
+    return fetchFromApi<void>(`/api/products/${id}`, { method: 'DELETE' });
 };
 
 export const getFeaturedProducts = async (): Promise<Product[]> => {
@@ -86,9 +91,11 @@ export const addOrder = async (order: Order): Promise<Order> => {
 };
 
 export const updateOrderStatus = async (id: string, status: OrderStatus): Promise<void> => {
-    // Placeholder - backend endpoint not implemented
-    console.warn("Update order status functionality is not implemented on the backend.");
-    return Promise.resolve();
+    return fetchFromApi<void>(`/api/orders/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+    });
 };
 
 
@@ -99,10 +106,12 @@ export const getArticles = async (): Promise<Article[]> => {
 
 export const getArticle = async (id: string): Promise<Article | null> => {
     // AI articles are not in the DB, they are in localStorage
-    const aiArticlesRaw = localStorage.getItem('aiGeneratedArticles_v1');
-    const aiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
-    const aiArticle = aiArticles.find(a => a.id === id);
-    if (aiArticle) return Promise.resolve(aiArticle);
+    if (id.startsWith('ai-')) {
+        const aiArticlesRaw = localStorage.getItem('aiGeneratedArticles_v1');
+        const aiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
+        const aiArticle = aiArticles.find(a => a.id === id);
+        if (aiArticle) return Promise.resolve(aiArticle);
+    }
     
     // Fetch from backend if not an AI article
     try {
@@ -114,18 +123,23 @@ export const getArticle = async (id: string): Promise<Article | null> => {
 };
 
 export const addArticle = async (article: Omit<Article, 'id'>): Promise<Article> => {
-    console.warn("Add article functionality is not implemented on the backend.");
-    return Promise.resolve({ ...article, id: `temp-article-${Date.now()}`, date: new Date().toISOString() });
+     return fetchFromApi<Article>('/api/articles', { 
+        method: 'POST', 
+        body: JSON.stringify(article), 
+        headers: {'Content-Type': 'application/json'} 
+    });
 };
 
-export const updateArticle = async (id: string, updates: Partial<Article>): Promise<void> => {
-    console.warn("Update article functionality is not implemented on the backend.");
-    return Promise.resolve();
+export const updateArticle = async (id: string, updates: Partial<Article>): Promise<Article> => {
+     return fetchFromApi<Article>(`/api/articles/${id}`, { 
+        method: 'PUT', 
+        body: JSON.stringify(updates), 
+        headers: {'Content-Type': 'application/json'} 
+    });
 };
 
 export const deleteArticle = async (id: string): Promise<void> => {
-    console.warn("Delete article functionality is not implemented on the backend.");
-    return Promise.resolve();
+    return fetchFromApi<void>(`/api/articles/${id}`, { method: 'DELETE' });
 };
 
 
