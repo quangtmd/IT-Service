@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
-import * as Constants from '../constants';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -14,16 +13,8 @@ const LoginPage: React.FC = () => {
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/home";
 
   useEffect(() => {
-    // This effect is the single source of truth for navigation after authentication.
     if (isAuthenticated && currentUser) {
-      if (currentUser.role === 'admin' || currentUser.role === 'staff') {
-        // For admin/staff, always go to the admin page.
-        navigate('/admin', { replace: true });
-      } else {
-        // For regular customers, go back to the page they were on, or to the homepage.
-        // Avoids a redirect loop if 'from' is the login page itself.
-        navigate(from === '/login' ? '/home' : from, { replace: true });
-      }
+      navigate(currentUser.role === 'admin' || currentUser.role === 'staff' ? '/admin' : (from === '/login' ? '/home' : from), { replace: true });
     }
   }, [isAuthenticated, currentUser, navigate, from]);
 
@@ -34,86 +25,91 @@ const LoginPage: React.FC = () => {
       setError('Vui lòng nhập đầy đủ email và mật khẩu.');
       return;
     }
-
     try {
-        await login({ email, password });
-        // On success, the useEffect hook above will handle navigation.
+      await login({ email, password });
     } catch (err) {
-        console.error("Login page caught error:", err);
-        const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định.';
-        setError(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định.';
+      setError(errorMessage);
     }
   };
+  
+  const handleSocialLogin = (provider: string) => {
+    // In a real app, you would call your auth service here.
+    // e.g., auth.signInWithGoogle()
+    console.log(`Attempting to sign in with ${provider}...`);
+    setError(`Chức năng đăng nhập bằng ${provider} đang được phát triển.`);
+  };
+
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-lg shadow-lg border border-gray-200">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-primary">IQ Technology</h1>
-          <h2 className="mt-4 text-center text-3xl font-bold text-gray-900">
-            Đăng nhập tài khoản
-          </h2>
-          <p className="mt-2 text-center text-sm text-primary">
-            Hoặc{' '}
-            <Link to="/register" className="font-medium hover:text-primary-dark">
-              đăng ký nếu bạn chưa có tài khoản
-            </Link>
-          </p>
+    <div className="auth-container" style={{backgroundImage: "url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?q=80&w=1974&auto=format&fit=crop')"}}>
+      <div className="auth-card">
+        {/* Form Panel */}
+        <div className="auth-panel form-panel">
+          <form onSubmit={handleSubmit} className="w-full">
+            <h1 className="auth-title">Sign In</h1>
+            {error && (
+                <div className="p-3 mb-4 bg-red-500/20 border border-red-500/30 text-white rounded-md text-sm">
+                  {error}
+                </div>
+            )}
+            <input
+              type="email"
+              placeholder="Email"
+              className="auth-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              className="auth-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+             <div className="flex justify-between items-center mb-6">
+                <label className="auth-checkbox flex items-center">
+                    <input type="checkbox" className="mr-2 h-4 w-4 accent-primary"/>
+                    Remember me
+                </label>
+                <a href="#" className="text-sm text-white/80 hover:text-white hover:underline">Forgot password?</a>
+            </div>
+
+            <Button type="submit" className="w-full !py-3 !text-base" variant="primary" size="lg" isLoading={authLoading}>
+              Sign In
+            </Button>
+
+            <div className="auth-social-login">
+              <p className="auth-social-text">Or sign in with</p>
+              <div className="auth-social-icons">
+                <button type="button" onClick={() => handleSocialLogin('Facebook')} className="auth-social-icon" aria-label="Sign in with Facebook">
+                  <i className="fab fa-facebook-f"></i>
+                </button>
+                <button type="button" onClick={() => handleSocialLogin('Google')} className="auth-social-icon" aria-label="Sign in with Google">
+                  <i className="fab fa-google"></i>
+                </button>
+                <button type="button" onClick={() => handleSocialLogin('GitHub')} className="auth-social-icon" aria-label="Sign in with GitHub">
+                  <i className="fab fa-github"></i>
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
         
-        {error && (
-            <div className="p-4 bg-danger-bg border border-danger-border text-danger-text rounded-md text-sm">
-              {error}
-            </div>
-        )}
-        
-        <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Địa chỉ email
-              </label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none relative block w-full px-4 py-3 bg-slate-50 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
-                placeholder="Địa chỉ email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Mật khẩu
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
-                placeholder="Mật khẩu"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          
-          <div className="pt-2">
-            <Button type="submit" className="w-full !py-3 !text-base" size="lg" isLoading={authLoading}>
-              Đăng nhập
-            </Button>
+        {/* Info Panel */}
+        <div className="auth-panel items-center text-center hidden md:flex">
+          <div>
+            <h1 className="auth-title">Hello, Friend!</h1>
+            <p className="mb-8 text-white/80">Enter your personal details and start your journey with us</p>
+            <Link to="/register">
+                <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-black">
+                    Sign Up
+                </Button>
+            </Link>
           </div>
-        </form>
-        
-        <p className="text-center text-sm text-gray-500">
-            Quên mật khẩu?{' '}
-            <a href="#" className="font-medium text-primary hover:text-primary-dark">
-                Đặt lại mật khẩu
-            </a>
-        </p>
+        </div>
       </div>
     </div>
   );

@@ -389,7 +389,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClos
         date: new Date().toISOString().split('T')[0], type: 'expense', amount: 0
     });
 
-    {/* Fix: Correctly type the event handler for inputs, textareas, and selects. */}
+    // Fix: Correctly type the event handler for inputs, textareas, and selects.
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
 
