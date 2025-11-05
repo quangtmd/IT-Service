@@ -1,3 +1,4 @@
+
 import React, { ErrorInfo, ReactNode } from 'react';
 import * as Constants from './constants';
 
@@ -31,12 +32,9 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
-    // Fix: Destructure props and state from 'this' to correctly access them in a class component.
-    const { fallbackMessage, children } = this.props;
-    const { hasError, errorMessage } = this.state;
-
-    if (hasError) {
-      const displayMessage = errorMessage || fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
+    // Fix: Use this.state and this.props directly to avoid a strange destructuring error on line 35.
+    if (this.state.hasError) {
+      const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
         <div style={{
@@ -70,7 +68,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    return children;
+    return this.props.children;
   }
 }
 

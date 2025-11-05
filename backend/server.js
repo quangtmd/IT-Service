@@ -242,39 +242,48 @@ app.post('/api/products', async (req, res) => {
 
         let category_id = null;
         if (mainCategory && subCategory) {
-            const [mainCatRows] = await pool.query(
-                'SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', 
-                [mainCategory]
-            );
+            const [mainCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', [mainCategory]);
             if (mainCatRows.length > 0) {
                 const mainCatId = mainCatRows[0].id;
-                const [subCatRows] = await pool.query(
-                    'SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', 
-                    [subCategory, mainCatId]
-                );
+                const [subCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', [subCategory, mainCatId]);
                 if (subCatRows.length > 0) {
                     category_id = subCatRows[0].id;
                 }
             }
         }
         
-        const productToInsert = {
-            ...productData,
+        // Build a clean, sanitized object for DB insertion to prevent type errors and unknown column errors.
+        const productToDb = {
             id: productData.id || `prod-${Date.now()}`,
+            name: productData.name,
+            price: Number(productData.price) || 0,
+            originalPrice: (productData.originalPrice && Number(productData.originalPrice)) ? Number(productData.originalPrice) : null,
             imageUrls: JSON.stringify(productData.imageUrls || []),
+            description: productData.description || null,
+            shortDescription: productData.shortDescription || null,
             specifications: JSON.stringify(productData.specifications || {}),
+            stock: Number(productData.stock) || 0,
+            status: productData.status || null,
+            rating: (productData.rating && Number(productData.rating)) ? Number(productData.rating) : null,
+            reviews: (productData.reviews && Number(productData.reviews)) ? Number(productData.reviews) : null,
+            brand: productData.brand || null,
             tags: JSON.stringify(productData.tags || []),
-            is_published: isVisible,
+            brandLogoUrl: productData.brandLogoUrl || null,
+            seoMetaTitle: productData.seoMetaTitle || null,
+            seoMetaDescription: productData.seoMetaDescription || null,
+            slug: productData.slug || null,
+            is_published: isVisible === undefined ? true : Boolean(isVisible),
             category_id: category_id,
+            is_featured: Boolean(productData.is_featured),
         };
 
-        await pool.query('INSERT INTO Products SET ?', productToInsert);
+        await pool.query('INSERT INTO Products SET ?', productToDb);
         
-        const responseProduct = { ...req.body, id: productToInsert.id };
+        const responseProduct = { ...req.body, id: productToDb.id };
         res.status(201).json(responseProduct);
     } catch (error) {
         console.error("Lỗi khi tạo sản phẩm:", error);
-        res.status(500).json({ message: "Lỗi server", error: error.sqlMessage || error.message });
+        res.status(500).json({ message: "Lỗi server khi tạo sản phẩm", error: error.sqlMessage || error.message });
     }
 });
 
@@ -283,36 +292,43 @@ app.put('/api/products/:id', async (req, res) => {
         const { id } = req.params;
         const { mainCategory, subCategory, isVisible, category, ...productData } = req.body;
         
-        const updatedProductFields = {
-            ...productData,
-            imageUrls: JSON.stringify(productData.imageUrls || []),
-            specifications: JSON.stringify(productData.specifications || {}),
-            tags: JSON.stringify(productData.tags || []),
-            is_published: isVisible,
-        };
-        
+        let category_id = productData.category_id; // Keep existing if not changed
         if (mainCategory && subCategory) {
-            let category_id = null;
-            const [mainCatRows] = await pool.query(
-                'SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', 
-                [mainCategory]
-            );
+            const [mainCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', [mainCategory]);
             if (mainCatRows.length > 0) {
                 const mainCatId = mainCatRows[0].id;
-                const [subCatRows] = await pool.query(
-                    'SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', 
-                    [subCategory, mainCatId]
-                );
+                const [subCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', [subCategory, mainCatId]);
                 if (subCatRows.length > 0) {
                     category_id = subCatRows[0].id;
                 }
             }
-            updatedProductFields.category_id = category_id;
         }
         
-        delete updatedProductFields.id;
+        // Build a clean, sanitized object for DB update.
+        const fieldsToUpdate = {
+            name: productData.name,
+            price: Number(productData.price) || 0,
+            originalPrice: (productData.originalPrice && Number(productData.originalPrice)) ? Number(productData.originalPrice) : null,
+            imageUrls: JSON.stringify(productData.imageUrls || []),
+            description: productData.description || null,
+            shortDescription: productData.shortDescription || null,
+            specifications: JSON.stringify(productData.specifications || {}),
+            stock: Number(productData.stock) || 0,
+            status: productData.status || null,
+            rating: (productData.rating && Number(productData.rating)) ? Number(productData.rating) : null,
+            reviews: (productData.reviews && Number(productData.reviews)) ? Number(productData.reviews) : null,
+            brand: productData.brand || null,
+            tags: JSON.stringify(productData.tags || []),
+            brandLogoUrl: productData.brandLogoUrl || null,
+            seoMetaTitle: productData.seoMetaTitle || null,
+            seoMetaDescription: productData.seoMetaDescription || null,
+            slug: productData.slug || null,
+            is_published: isVisible === undefined ? true : Boolean(isVisible),
+            category_id: category_id,
+            is_featured: Boolean(productData.is_featured),
+        };
         
-        const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [updatedProductFields, id]);
+        const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [fieldsToUpdate, id]);
         
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy sản phẩm để cập nhật' });
@@ -320,7 +336,7 @@ app.put('/api/products/:id', async (req, res) => {
         res.json({ id, ...req.body });
     } catch (error) {
         console.error("Lỗi khi cập nhật sản phẩm:", error);
-        res.status(500).json({ message: "Lỗi server", error: error.sqlMessage || error.message });
+        res.status(500).json({ message: "Lỗi server khi cập nhật sản phẩm", error: error.sqlMessage || error.message });
     }
 });
 
