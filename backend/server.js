@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const path = require('path'); // Import path module
 require('dotenv').config(); // Tải các biến môi trường từ file .env
 
 const app = express();
@@ -154,6 +155,10 @@ const startServer = async () => {
         console.error('------------------------------------------------------------------');
         process.exit(1); // Exit the process if DB connection fails
     }
+
+    // Serve frontend static files
+    app.use(express.static(path.join(__dirname, '..', 'dist')));
+
 
     // --- PRODUCTS API ENDPOINTS ---
 
@@ -411,6 +416,12 @@ const startServer = async () => {
         } catch (err) {
             res.status(500).json({ error: 'Lỗi server khi xóa media.' });
         }
+    });
+
+    // The "catchall" handler: for any request that doesn't
+    // match one of the API routes above, send back React's index.html file.
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
     });
 
     // Khởi động server
