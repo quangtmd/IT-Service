@@ -24,7 +24,6 @@ services:
   # Frontend React static site
   - type: static_site
     name: it-service-frontend # A unique name for the frontend service
-    env: static                # Specify the environment for static sites
     plan: free                 # Use Render's free instance type
     buildCommand: npm install && npm run build
     publishDir: dist
