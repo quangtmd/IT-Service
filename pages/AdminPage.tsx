@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { User, AdminNotification, AdminView } from '../types';
+import { User, AdminNotification, AdminView, Order, ChatLogSession } from '../types';
 import { useAuth, AdminPermission } from '../contexts/AuthContext';
 import HRMProfileView from '../components/admin/HRMProfileView';
 import ProductManagementView from '../components/admin/ProductManagementView';
@@ -18,6 +18,8 @@ import FinancialManagementView from '../components/admin/FinancialManagementView
 import DashboardView from '../components/admin/DashboardView'; // Import the new DashboardView
 import InventoryView from '../components/admin/InventoryView';
 import ServiceTicketView from '../components/admin/ServiceTicketView';
+import QuotationManagementView from '../components/admin/QuotationManagementView';
+import { getOrders, getChatLogs } from '../services/localDataService';
 
 
 interface MenuItemConfig {
@@ -40,6 +42,31 @@ const AdminPage: React.FC = () => {
         content_management: true, sales_management: true, hrm_management: true,
         accounting_management: false, settings_management: false,
     });
+    const [newOrdersCount, setNewOrdersCount] = useState(0);
+    const [unreadChatsCount, setUnreadChatsCount] = useState(0);
+
+    const refreshCounts = async () => {
+        try {
+            const [orders, chatLogs] = await Promise.all([getOrders(), getChatLogs()]);
+            setNewOrdersCount(orders.filter(o => o.status === 'Chờ xử lý').length);
+            setUnreadChatsCount(chatLogs.filter(c => !c.isRead).length);
+        } catch (error) {
+            console.error("Failed to refresh counts:", error);
+        }
+    };
+
+    useEffect(() => {
+        refreshCounts();
+        
+        // Listen for custom events to refresh counts without a full page reload
+        window.addEventListener('ordersUpdated', refreshCounts);
+        window.addEventListener('chatLogsUpdated', refreshCounts);
+
+        return () => {
+            window.removeEventListener('ordersUpdated', refreshCounts);
+            window.removeEventListener('chatLogsUpdated', refreshCounts);
+        }
+    }, []);
 
     useEffect(() => {
         document.body.classList.add('admin-panel-active');
@@ -54,11 +81,12 @@ const AdminPage: React.FC = () => {
         { 
             id: 'sales_management', label: 'Quản Lý Bán Hàng', icon: 'fas fa-chart-line', permission: ['viewSales'],
             children: [
-                { id: 'orders', label: 'Đơn Hàng', icon: 'fas fa-receipt', permission: ['viewOrders'] },
+                { id: 'orders', label: 'Đơn Hàng', icon: 'fas fa-receipt', permission: ['viewOrders'], count: newOrdersCount },
+                { id: 'quotations', label: 'Báo Giá', icon: 'fas fa-file-invoice-dollar', permission: ['manageOrders'] },
                 { id: 'customers', label: 'Khách Hàng', icon: 'fas fa-user-friends', permission: ['viewCustomers'] },
                 { id: 'service_tickets', label: 'Dịch vụ Sửa chữa', icon: 'fas fa-tools', permission: ['manageOrders'] },
                 { id: 'discounts', label: 'Mã Giảm Giá', icon: 'fas fa-tags', permission: ['manageDiscounts'] },
-                { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewOrders'] },
+                { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewOrders'], count: unreadChatsCount },
             ]
         },
         { 
@@ -98,7 +126,7 @@ const AdminPage: React.FC = () => {
             ]
         },
         { id: 'notifications_panel', label: 'Thông Báo', icon: 'fas fa-bell', count: unreadNotificationCount, permission: ['viewNotifications'] },
-    ], [unreadNotificationCount]);
+    ], [unreadNotificationCount, newOrdersCount, unreadChatsCount]);
 
     const handleMenuClick = (viewId: AdminView | string, isParent: boolean) => {
         if (isParent) {
@@ -127,7 +155,7 @@ const AdminPage: React.FC = () => {
             case 'customers': return <CustomerManagementView />;
             case 'discounts': return <DiscountManagementView />;
             case 'faqs': return <FaqManagementView />;
-            case 'chat_logs': return <ChatLogView />;
+            case 'chat_logs': return <ChatLogView onDataChange={refreshCounts} />;
             case 'media_library': return <MediaLibraryView />;
             case 'homepage_management': return <HomepageManagementView />;
             case 'site_settings':
@@ -139,6 +167,7 @@ const AdminPage: React.FC = () => {
             case 'accounting_dashboard': return <FinancialManagementView />;
             case 'inventory': return <InventoryView />;
             case 'service_tickets': return <ServiceTicketView />;
+            case 'quotations': return <QuotationManagementView />;
 
             case 'analytics_dashboard': return <div className="admin-card"><div className="admin-card-body">Module Phân tích Báo cáo đang trong kế hoạch phát triển.</div></div>;
 

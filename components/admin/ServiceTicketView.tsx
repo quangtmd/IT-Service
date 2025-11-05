@@ -5,12 +5,14 @@ import { getServiceTickets } from '../../services/localDataService';
 import Button from '../ui/Button';
 
 const getStatusColor = (status: ServiceTicket['status']) => {
+    // Fix: Use Vietnamese status strings to match the ServiceTicket type definition.
     switch (status) {
-        case 'open': return 'bg-blue-100 text-blue-800';
-        case 'in_progress': return 'bg-yellow-100 text-yellow-800';
-        case 'awaiting_parts': return 'bg-purple-100 text-purple-800';
-        case 'resolved': return 'bg-green-100 text-green-800';
-        case 'closed': return 'bg-gray-100 text-gray-800';
+        case 'Đã tiếp nhận': return 'bg-blue-100 text-blue-800';
+        case 'Đang chẩn đoán': return 'bg-yellow-100 text-yellow-800';
+        case 'Đang sửa chữa': return 'bg-indigo-100 text-indigo-800';
+        case 'Chờ linh kiện': return 'bg-purple-100 text-purple-800';
+        case 'Sẵn sàng trả': return 'bg-green-100 text-green-800';
+        case 'Đã trả khách': return 'bg-gray-100 text-gray-800';
         default: return 'bg-gray-100 text-gray-800';
     }
 };
@@ -65,7 +67,7 @@ const ServiceTicketView: React.FC = () => {
                                 <tr key={ticket.id}>
                                     <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">{ticket.ticket_code}</span></td>
                                     <td>{ticket.customer_info?.fullName || 'Khách lẻ'}</td>
-                                    <td>{ticket.device_name}</td>
+                                    <td>{ticket.device_info.name}</td>
                                     <td>{new Date(ticket.created_at).toLocaleDateString('vi-VN')}</td>
                                     <td><span className={`status-badge ${getStatusColor(ticket.status)}`}>{ticket.status}</span></td>
                                     <td>
@@ -75,7 +77,8 @@ const ServiceTicketView: React.FC = () => {
                             ))
                             ) : (
                                 <tr><td colSpan={6} className="text-center py-4 text-textMuted">Không có phiếu dịch vụ nào.</td></tr>
-                            )}
+                            )
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -91,7 +94,7 @@ const ServiceTicketView: React.FC = () => {
                         <div className="admin-modal-body">
                             {/* Display ticket details here */}
                             <p><strong>Khách hàng:</strong> {selectedTicket.customer_info?.fullName}</p>
-                            <p><strong>Thiết bị:</strong> {selectedTicket.device_name}</p>
+                            <p><strong>Thiết bị:</strong> {selectedTicket.device_info.name}</p>
                             <p><strong>Vấn đề báo cáo:</strong> {selectedTicket.reported_issue}</p>
                         </div>
                          <div className="admin-modal-footer">

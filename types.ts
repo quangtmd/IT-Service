@@ -103,7 +103,7 @@ export interface ChatLogSession {
   userPhone: string;
   startTime: string; // ISO string date
   messages: ChatMessage[];
-  // Optionally, add end time, duration, etc.
+  isRead: boolean;
 }
 
 
@@ -173,7 +173,7 @@ export interface GroundingChunk {
 export type AdminView = 
   | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
   | 'staff' | 'customers' 
-  | 'orders' | 'discounts' | 'chat_logs' 
+  | 'orders' | 'discounts' | 'chat_logs' | 'quotations'
   | 'theme_settings' | 'menu_settings' | 'site_settings'
   | 'notifications_panel'
   | 'homepage_management'
@@ -629,18 +629,26 @@ export interface PayrollRecord {
   notes: string;
   status: 'Chưa thanh toán' | 'Đã thanh toán';
 }
-// Fix: Add missing ServiceTicket, Inventory, and ServerInfo types.
 export interface ServiceTicket {
   id: string;
   ticket_code: string;
   customer_info: {
     fullName: string;
     phone: string;
-  } | null;
-  device_name: string;
+    address?: string;
+  };
+  device_info: {
+      name: string;
+      serialNumber?: string;
+      type: 'Laptop' | 'PC' | 'Màn hình' | 'Linh kiện' | 'Khác';
+  };
   reported_issue: string;
+  physical_condition: string;
+  accessories: string[];
+  received_by: string; // staff user id
   created_at: string; // ISO string date
-  status: 'open' | 'in_progress' | 'awaiting_parts' | 'resolved' | 'closed';
+  status: 'Đã tiếp nhận' | 'Đang chẩn đoán' | 'Chờ linh kiện' | 'Đang sửa chữa' | 'Sẵn sàng trả' | 'Đã trả khách';
+  notes?: string;
 }
 
 export interface Inventory {
@@ -653,4 +661,17 @@ export interface Inventory {
 
 export interface ServerInfo {
   outboundIp: string;
+}
+
+export type QuotationStatus = 'Bản nháp' | 'Đã gửi' | 'Đã chấp nhận' | 'Đã hết hạn';
+export interface QuotationItem extends OrderItem {}
+export interface Quotation {
+    id: string;
+    customerInfo: CheckoutFormData;
+    items: QuotationItem[];
+    totalAmount: number;
+    creationDate: string;
+    expiryDate: string;
+    status: QuotationStatus;
+    notes?: string;
 }

@@ -102,7 +102,9 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
             text: initialBotGreeting,
             sender: 'bot', 
             timestamp: new Date() 
-          }]
+          }],
+        // Fix: Add missing 'isRead' property required by the ChatLogSession type.
+        isRead: false,
       };
       setCurrentChatLogSession(newLogSession);
 
