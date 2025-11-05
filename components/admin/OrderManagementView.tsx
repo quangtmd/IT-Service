@@ -158,51 +158,89 @@ interface OrderDetailModalProps {
     onUpdateStatus: (orderId: string, newStatus: OrderStatus) => void;
 }
 const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose, onUpdateStatus }) => {
+    const handlePrint = () => window.print();
+
     return (
         <div className="admin-modal-overlay">
-            <div className="admin-modal-panel">
-                <div className="admin-modal-header">
+            <div className="admin-modal-panel max-w-4xl">
+                <div className="admin-modal-header no-print">
                     <h4 className="admin-modal-title">Chi tiết Đơn hàng #{order.id.slice(-6)}</h4>
                     <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
                 </div>
-                <div className="admin-modal-body grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Customer Info */}
-                    <div>
-                        <h5 className="admin-form-subsection-title">Thông tin Khách hàng</h5>
-                        <p><strong>Tên:</strong> {order.customerInfo.fullName}</p>
-                        <p><strong>Email:</strong> {order.customerInfo.email}</p>
-                        <p><strong>SĐT:</strong> {order.customerInfo.phone}</p>
-                        <p><strong>Địa chỉ:</strong> {order.customerInfo.address}</p>
-                        {order.customerInfo.notes && <p><strong>Ghi chú:</strong> {order.customerInfo.notes}</p>}
-                    </div>
-                    {/* Order Info */}
-                    <div>
-                        <h5 className="admin-form-subsection-title">Thông tin Đơn hàng</h5>
-                        <p><strong>Ngày đặt:</strong> {new Date(order.orderDate).toLocaleString('vi-VN')}</p>
-                        <p><strong>Tổng tiền:</strong> <span className="font-bold text-lg text-primary">{order.totalAmount.toLocaleString('vi-VN')}₫</span></p>
-                        <p><strong>Thanh toán:</strong> {order.paymentInfo.method} ({order.paymentInfo.status})</p>
-                        <div className="admin-form-group mt-4">
-                            <label htmlFor="orderStatus">Cập nhật trạng thái</label>
-                            <select id="orderStatus" value={order.status} onChange={(e) => onUpdateStatus(order.id, e.target.value as OrderStatus)}>
-                                {Constants.ORDER_STATUSES.map(status => <option key={status} value={status}>{status}</option>)}
-                            </select>
+                <div className="admin-modal-body bg-white" id="printable-area">
+                   <div className="p-4">
+                        {/* Header */}
+                        <div className="flex justify-between items-start pb-4 border-b">
+                            <div>
+                                <h1 className="text-2xl font-bold text-primary">{Constants.COMPANY_NAME}</h1>
+                                <p className="text-xs">{Constants.COMPANY_ADDRESS}</p>
+                                <p className="text-xs">SĐT: {Constants.COMPANY_PHONE} | Email: {Constants.COMPANY_EMAIL}</p>
+                            </div>
+                            <div className="text-right">
+                                <h2 className="text-3xl font-bold text-gray-700 uppercase">Hóa Đơn</h2>
+                                <p className="text-sm">Mã đơn: <span className="font-mono">#{order.id.slice(-6)}</span></p>
+                                <p className="text-sm">Ngày: {new Date(order.orderDate).toLocaleDateString('vi-VN')}</p>
+                            </div>
                         </div>
-                    </div>
-                    {/* Items */}
-                    <div className="md:col-span-2">
-                         <h5 className="admin-form-subsection-title">Sản phẩm</h5>
-                         <ul className="space-y-2">
-                            {order.items.map(item => (
-                                <li key={item.productId} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
-                                    <span>{item.productName} (x{item.quantity})</span>
-                                    <span>{(item.price * item.quantity).toLocaleString('vi-VN')}₫</span>
-                                </li>
-                            ))}
-                         </ul>
+                        {/* Customer Info */}
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <h5 className="font-semibold text-gray-500 text-sm mb-1">Khách hàng:</h5>
+                                <p className="font-bold text-lg">{order.customerInfo.fullName}</p>
+                                <p className="text-sm">{order.customerInfo.address}</p>
+                                <p className="text-sm">SĐT: {order.customerInfo.phone}</p>
+                                <p className="text-sm">Email: {order.customerInfo.email}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm">Trạng thái: <span className={`font-semibold ${getStatusColor(order.status)} px-2 py-1 rounded-full text-xs`}>{order.status}</span></p>
+                                <p className="text-sm">Thanh toán: {order.paymentInfo.method} ({order.paymentInfo.status})</p>
+                            </div>
+                        </div>
+                        {/* Items Table */}
+                        <div className="mt-6">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-100">
+                                    <tr>
+                                        <th className="p-2 text-sm font-semibold">Sản phẩm</th>
+                                        <th className="p-2 text-sm font-semibold text-right">Đơn giá</th>
+                                        <th className="p-2 text-sm font-semibold text-center">Số lượng</th>
+                                        <th className="p-2 text-sm font-semibold text-right">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {order.items.map((item, index) => (
+                                        <tr key={index} className="border-b">
+                                            <td className="p-2">{item.productName}</td>
+                                            <td className="p-2 text-right">{item.price.toLocaleString('vi-VN')}₫</td>
+                                            <td className="p-2 text-center">{item.quantity}</td>
+                                            <td className="p-2 text-right font-medium">{(item.price * item.quantity).toLocaleString('vi-VN')}₫</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        {/* Total */}
+                        <div className="flex justify-end mt-4">
+                            <div className="w-full max-w-xs">
+                                <div className="flex justify-between text-lg font-bold">
+                                    <span>Tổng cộng:</span>
+                                    <span>{order.totalAmount.toLocaleString('vi-VN')}₫</span>
+                                </div>
+                            </div>
+                        </div>
+                         {/* Notes */}
+                        {order.customerInfo.notes && <div className="mt-6 text-sm text-gray-600 border-t pt-4"><strong>Ghi chú của khách hàng:</strong> {order.customerInfo.notes}</div>}
                     </div>
                 </div>
-                <div className="admin-modal-footer">
-                    <Button type="button" variant="primary" onClick={onClose}>Đóng</Button>
+                <div className="admin-modal-footer no-print">
+                     <div className="flex-grow">
+                        <label htmlFor="orderStatus" className="mr-2 text-sm font-medium">Cập nhật trạng thái:</label>
+                        <select id="orderStatus" value={order.status} onChange={(e) => onUpdateStatus(order.id, e.target.value as OrderStatus)} className="admin-form-group !w-auto !inline-block !mb-0">
+                            {Constants.ORDER_STATUSES.map(status => <option key={status} value={status}>{status}</option>)}
+                        </select>
+                    </div>
+                    <Button type="button" variant="outline" onClick={onClose}>Đóng</Button>
+                    <Button type="button" variant="primary" onClick={handlePrint} leftIcon={<i className="fas fa-print"></i>}>In Đơn hàng</Button>
                 </div>
             </div>
         </div>
@@ -218,10 +256,33 @@ const OrderFormModal: React.FC<{ onClose: () => void; onSave: () => void; }> = (
         status: 'Chờ xử lý',
         paymentInfo: { method: 'Thanh toán khi nhận hàng (COD)', status: 'Chưa thanh toán' }
     });
-    const [allProducts, setAllProducts] = useState<Product[]>([]);
+    
     const [productSearch, setProductSearch] = useState('');
+    const [searchedProducts, setSearchedProducts] = useState<Product[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
 
-    useEffect(() => { getProducts('limit=10000').then(data => setAllProducts(data.products)) }, []);
+    // Debounced search effect
+    useEffect(() => {
+        if (!productSearch.trim()) {
+            setSearchedProducts([]);
+            return;
+        }
+        setIsSearching(true);
+        const delayDebounceFn = setTimeout(async () => {
+            try {
+                // Use encodeURIComponent to handle special characters in search
+                const result = await getProducts(`q=${encodeURIComponent(productSearch)}&limit=5`);
+                setSearchedProducts(result.products);
+            } catch (error) {
+                console.error("Failed to search products:", error);
+                setSearchedProducts([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300); // 300ms delay
+        return () => clearTimeout(delayDebounceFn);
+    }, [productSearch]);
+
 
     const customerOptions = useMemo(() => users.filter(u => u.role === 'customer'), [users]);
 
@@ -259,6 +320,7 @@ const OrderFormModal: React.FC<{ onClose: () => void; onSave: () => void; }> = (
         }
         setFormData(p => ({ ...p, items: newItems as OrderItem[] }));
         setProductSearch('');
+        setSearchedProducts([]); // Clear results after selection
     };
     
     const removeItem = (index: number) => {
@@ -309,11 +371,6 @@ const OrderFormModal: React.FC<{ onClose: () => void; onSave: () => void; }> = (
         }
     };
 
-    const searchedProducts = useMemo(() => {
-        if (!productSearch) return [];
-        return allProducts.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())).slice(0, 5);
-    }, [productSearch, allProducts]);
-
     return (
         <div className="admin-modal-overlay">
             <form onSubmit={handleSubmit} className="admin-modal-panel max-w-4xl">
@@ -337,9 +394,18 @@ const OrderFormModal: React.FC<{ onClose: () => void; onSave: () => void; }> = (
                         <div className="relative admin-form-group">
                             <label>Tìm sản phẩm</label>
                             <input type="text" value={productSearch} onChange={e => setProductSearch(e.target.value)} placeholder="Nhập tên sản phẩm..."/>
-                            {searchedProducts.length > 0 && (
+                             {(isSearching || searchedProducts.length > 0) && (
                                 <ul className="absolute z-10 w-full bg-white border shadow-lg rounded-md mt-1 max-h-60 overflow-y-auto">
-                                    {searchedProducts.map(p => <li key={p.id} onClick={() => addItem(p)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{p.name}</li>)}
+                                    {isSearching ? (
+                                        <li className="p-2 text-sm text-gray-500">Đang tìm...</li>
+                                    ) : (
+                                        searchedProducts.map(p => (
+                                            <li key={p.id} onClick={() => addItem(p)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm flex justify-between">
+                                                <span>{p.name}</span>
+                                                <span className={`text-xs ${p.stock > 0 ? 'text-gray-500' : 'text-red-500 font-semibold'}`}>Tồn kho: {p.stock}</span>
+                                            </li>
+                                        ))
+                                    )}
                                 </ul>
                             )}
                         </div>

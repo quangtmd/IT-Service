@@ -135,10 +135,30 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, onSa
         expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         status: 'Bản nháp', notes: ''
     });
-    const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [productSearch, setProductSearch] = useState('');
+    const [searchedProducts, setSearchedProducts] = useState<Product[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
 
-    useEffect(() => { getProducts('limit=10000').then(data => setAllProducts(data.products)) }, []);
+    // Debounced search effect
+    useEffect(() => {
+        if (!productSearch.trim()) {
+            setSearchedProducts([]);
+            return;
+        }
+        setIsSearching(true);
+        const delayDebounceFn = setTimeout(async () => {
+            try {
+                const result = await getProducts(`q=${encodeURIComponent(productSearch)}&limit=5`);
+                setSearchedProducts(result.products);
+            } catch (error) {
+                console.error("Failed to search products:", error);
+                setSearchedProducts([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300); // 300ms delay
+        return () => clearTimeout(delayDebounceFn);
+    }, [productSearch]);
 
     const customerOptions = useMemo(() => users.filter(u => u.role === 'customer'), [users]);
 
@@ -176,6 +196,7 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, onSa
         }
         setFormData(p => ({ ...p, items: newItems as OrderItem[] }));
         setProductSearch('');
+        setSearchedProducts([]);
     };
     
     const removeItem = (index: number) => {
@@ -202,11 +223,6 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, onSa
         }
         onSave(formData as Quotation);
     };
-
-    const searchedProducts = useMemo(() => {
-        if (!productSearch) return [];
-        return allProducts.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())).slice(0, 5);
-    }, [productSearch, allProducts]);
 
     return (
         <div className="admin-modal-overlay">
@@ -244,9 +260,18 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, onSa
                         <div className="relative admin-form-group">
                             <label>Tìm sản phẩm</label>
                             <input type="text" value={productSearch} onChange={e => setProductSearch(e.target.value)} placeholder="Nhập tên sản phẩm..."/>
-                            {searchedProducts.length > 0 && (
+                            {(isSearching || searchedProducts.length > 0) && (
                                 <ul className="absolute z-10 w-full bg-white border shadow-lg rounded-md mt-1 max-h-60 overflow-y-auto">
-                                    {searchedProducts.map(p => <li key={p.id} onClick={() => addItem(p)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{p.name}</li>)}
+                                    {isSearching ? (
+                                        <li className="p-2 text-sm text-gray-500">Đang tìm...</li>
+                                    ) : (
+                                        searchedProducts.map(p => (
+                                            <li key={p.id} onClick={() => addItem(p)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm flex justify-between">
+                                                <span>{p.name}</span>
+                                                <span className={`text-xs ${p.stock > 0 ? 'text-gray-500' : 'text-red-500 font-semibold'}`}>Tồn kho: {p.stock}</span>
+                                            </li>
+                                        ))
+                                    )}
                                 </ul>
                             )}
                         </div>
@@ -283,12 +308,12 @@ const QuotationDetailModal: React.FC<QuotationDetailModalProps> = ({ quotation, 
 
     return (
         <div className="admin-modal-overlay">
-            <div className="admin-modal-panel max-w-4xl" id="printable-area">
+            <div className="admin-modal-panel max-w-4xl">
                 <div className="admin-modal-header no-print">
                     <h4 className="admin-modal-title">Chi tiết Báo giá #{quotation.id.slice(-6)}</h4>
                     <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
                 </div>
-                <div className="admin-modal-body bg-white">
+                <div className="admin-modal-body bg-white" id="printable-area">
                     <div className="p-4">
                         {/* Header */}
                         <div className="flex justify-between items-start pb-4 border-b">
