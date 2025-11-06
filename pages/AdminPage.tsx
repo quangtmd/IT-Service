@@ -1,334 +1,137 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { User, AdminNotification, AdminView } from '../types';
-import { useAuth, AdminPermission } from '../contexts/AuthContext';
-import HRMProfileView from '../components/admin/HRMProfileView';
+
+
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+// FIX: Import AdminPermission from types.ts where it is now defined.
+import { AdminPermission, AdminView } from '../types';
+
+// Import all Admin view components
+import DashboardView from '../components/admin/DashboardView';
 import ProductManagementView from '../components/admin/ProductManagementView';
-import ArticleManagementView from '../components/admin/ArticleManagementView';
 import OrderManagementView from '../components/admin/OrderManagementView';
 import CustomerManagementView from '../components/admin/CustomerManagementView';
+import ArticleManagementView from '../components/admin/ArticleManagementView';
 import DiscountManagementView from '../components/admin/DiscountManagementView';
 import FaqManagementView from '../components/admin/FaqManagementView';
-import ChatLogView from '../components/admin/ChatLogView';
 import SiteSettingsView from '../components/admin/SiteSettingsView';
+import HomepageManagementView from '../components/admin/HomepageManagementView';
 import MediaLibraryView from '../components/admin/MediaLibraryView';
 import NotificationsView from '../components/admin/NotificationsView';
-import HomepageManagementView from '../components/admin/HomepageManagementView';
+import ChatLogView from '../components/admin/ChatLogView';
 import FinancialManagementView from '../components/admin/FinancialManagementView';
-import DashboardView from '../components/admin/DashboardView'; // Import the new DashboardView
+import HRMProfileView from '../components/admin/HRMProfileView';
 import InventoryView from '../components/admin/InventoryView';
-import ServiceTicketView from '../components/admin/ServiceTicketView';
 import QuotationManagementView from '../components/admin/QuotationManagementView';
+import ServiceTicketView from '../components/admin/ServiceTicketView';
+import WarrantyManagementView from '../components/admin/WarrantyManagementView';
 
 
-interface MenuItemConfig {
-    id: AdminView | string; 
-    label: string;
-    icon: string;
-    permission: AdminPermission[];
-    count?: number;
-    children?: MenuItemConfig[];
+interface NavItem {
+  id: AdminView;
+  label: string;
+  icon: string;
+  permissions: AdminPermission[];
 }
 
+interface NavGroup {
+    groupLabel: string;
+    items: NavItem[];
+}
+
+const NAV_STRUCTURE: NavGroup[] = [
+    { groupLabel: "Tổng quan", items: [
+        { id: 'dashboard', label: 'Bảng điều khiển', icon: 'fa-tachometer-alt', permissions: ['viewDashboard'] },
+        { id: 'notifications_panel', label: 'Thông báo', icon: 'fa-bell', permissions: ['viewNotifications'] },
+    ]},
+    { groupLabel: "Bán hàng", items: [
+        { id: 'orders', label: 'Đơn hàng', icon: 'fa-receipt', permissions: ['viewSales', 'viewOrders'] },
+        { id: 'products', label: 'Sản phẩm', icon: 'fa-box-open', permissions: ['viewContent', 'viewProducts'] },
+        { id: 'customers', label: 'Khách hàng', icon: 'fa-users', permissions: ['viewUsers', 'viewCustomers'] },
+        { id: 'discounts', label: 'Mã giảm giá', icon: 'fa-tags', permissions: ['viewSales', 'manageDiscounts'] },
+        { id: 'quotations', label: 'Báo giá', icon: 'fa-file-invoice-dollar', permissions: ['viewSales'] },
+    ]},
+    { groupLabel: "Nội dung", items: [
+        { id: 'articles', label: 'Bài viết', icon: 'fa-newspaper', permissions: ['viewContent', 'viewArticles'] },
+        { id: 'faqs', label: 'FAQs', icon: 'fa-question-circle', permissions: ['viewContent', 'manageFaqs'] },
+        { id: 'media_library', label: 'Thư viện Media', icon: 'fa-photo-video', permissions: ['viewContent'] },
+    ]},
+    { groupLabel: "Hệ thống", items: [
+        { id: 'homepage_settings', label: 'Trang chủ', icon: 'fa-home', permissions: ['viewAppearance', 'manageSiteSettings'] },
+        { id: 'site_settings', label: 'Cài đặt chung', icon: 'fa-cogs', permissions: ['manageSiteSettings'] },
+        { id: 'theme_settings', label: 'Theme', icon: 'fa-palette', permissions: ['viewAppearance', 'manageTheme'] },
+        { id: 'menu_settings', label: 'Menu', icon: 'fa-bars', permissions: ['viewAppearance', 'manageMenu'] },
+    ]},
+    { groupLabel: "Vận hành", items: [
+        { id: 'inventory', label: 'Tồn kho', icon: 'fa-warehouse', permissions: ['viewSales'] },
+        { id: 'hrm_profiles', label: 'Nhân sự', icon: 'fa-id-card', permissions: ['viewHrm', 'manageEmployees'] },
+        { id: 'financial_transactions', label: 'Tài chính', icon: 'fa-wallet', permissions: ['viewAccounting'] },
+        { id: 'chat_logs', label: 'Lịch sử Chat', icon: 'fa-history', permissions: ['viewDashboard'] },
+    ]},
+];
 
 const AdminPage: React.FC = () => {
-    const { currentUser, adminNotifications, hasPermission } = useAuth();
-    
     const [activeView, setActiveView] = useState<AdminView>('dashboard');
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
-    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-        sales_crm: true,
-        service_management: true,
-        cms_marketing: true,
-        inventory_logistics: false,
-        finance_accounting: false,
-        reporting_analytics: false,
-        settings_management: false,
-    });
+    const { hasPermission } = useAuth();
 
-    useEffect(() => {
-        document.body.classList.add('admin-panel-active');
-        return () => {
-            document.body.classList.remove('admin-panel-active');
-        };
-    }, []);
-
-    const unreadNotificationCount = adminNotifications.filter(n => !n.isRead).length;
-    
-    const MENU_CONFIG: MenuItemConfig[] = useMemo(() => [
-        { id: 'dashboard', label: 'Tổng Quan', icon: 'fas fa-tachometer-alt', permission: ['viewDashboard'] },
-        
-        // I. Sales & CRM
-        { 
-            id: 'sales_crm', label: 'Bán hàng & CRM', icon: 'fas fa-hand-holding-usd', permission: ['viewSales'],
-            children: [
-                { id: 'customers', label: 'Khách Hàng', icon: 'fas fa-users', permission: ['viewCustomers'] },
-                { id: 'quotations', label: 'Báo Giá', icon: 'fas fa-file-invoice-dollar', permission: ['manageOrders'] },
-                { id: 'orders', label: 'Đơn Hàng', icon: 'fas fa-receipt', permission: ['viewOrders'] },
-                { id: 'discounts', label: 'Khuyến Mãi', icon: 'fas fa-tags', permission: ['manageDiscounts'] },
-                { id: 'returns', label: 'Hoàn Trả', icon: 'fas fa-undo-alt', permission: ['manageOrders'] },
-            ]
-        },
-        
-        // II. Service Management
-        {
-            id: 'service_management', label: 'Quản lý Dịch vụ', icon: 'fas fa-concierge-bell', permission: ['manageOrders'],
-            children: [
-                 { id: 'service_tickets', label: 'Dịch vụ Sửa chữa', icon: 'fas fa-tools', permission: ['manageOrders'] },
-                 { id: 'warranties', label: 'Quản lý Bảo hành', icon: 'fas fa-shield-alt', permission: ['manageOrders'] },
-                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-headset', permission: ['viewOrders'] },
-            ]
-        },
-
-        // III. CMS & Marketing
-        { 
-            id: 'cms_marketing', label: 'Website & Nội dung', icon: 'fas fa-desktop', permission: ['viewContent'],
-            children: [
-                { id: 'homepage_management', label: 'Quản lý Trang chủ', icon: 'fas fa-home', permission: ['manageSiteSettings'] },
-                { id: 'products', label: 'Sản Phẩm', icon: 'fas fa-box-open', permission: ['viewProducts'] },
-                { id: 'articles', label: 'Bài Viết', icon: 'fas fa-newspaper', permission: ['viewArticles'] },
-                { id: 'media_library', label: 'Thư Viện Media', icon: 'fas fa-photo-video', permission: ['manageSiteSettings'] },
-                { id: 'faqs', label: 'FAQs', icon: 'fas fa-question-circle', permission: ['manageFaqs'] },
-                { id: 'seo_analytics', label: 'SEO & Analytics', icon: 'fas fa-chart-line', permission: ['manageSiteSettings'] },
-                { id: 'email_marketing', label: 'Email Marketing', icon: 'fas fa-envelope-open-text', permission: ['manageSiteSettings'] },
-            ]
-        },
-
-        // IV. Inventory & Logistics
-        { 
-            id: 'inventory_logistics', label: 'Kho & Tồn kho', icon: 'fas fa-warehouse', permission: ['manageProducts'],
-            children: [
-                { id: 'inventory', label: 'Quản lý Tồn kho', icon: 'fas fa-boxes', permission: ['manageProducts'] },
-                { id: 'goods_receipts', label: 'Phiếu Nhập Kho', icon: 'fas fa-dolly', permission: ['manageProducts'] },
-                { id: 'delivery_notes', label: 'Phiếu Xuất Kho', icon: 'fas fa-truck-loading', permission: ['manageProducts'] },
-                { id: 'shipping_management', label: 'Quản lý Vận chuyển', icon: 'fas fa-shipping-fast', permission: ['manageOrders'] },
-            ]
-        },
-        
-        // V. Finance & Accounting
-        { 
-            id: 'finance_accounting', label: 'Tài chính - Kế toán', icon: 'fas fa-calculator', permission: ['viewAccounting'],
-            children: [
-                { id: 'accounting_dashboard', label: 'Giao dịch Thu/Chi', icon: 'fas fa-exchange-alt', permission: ['viewReports'] },
-                { id: 'receivables_payables', label: 'Công nợ', icon: 'fas fa-book', permission: ['viewReports'] },
-                { id: 'cash_flow', label: 'Sổ Quỹ', icon: 'fas fa-wallet', permission: ['viewReports'] },
-            ]
-        },
-
-        // VI. Reporting & Analytics
-        { 
-            id: 'reporting_analytics', label: 'Báo cáo & Phân tích', icon: 'fas fa-chart-pie', permission: ['viewReports'],
-            children: [
-                { id: 'reports_dashboard', label: 'Báo cáo Tổng hợp', icon: 'fas fa-chart-bar', permission: ['viewReports'] },
-            ]
-        },
-        
-        // Separated for clarity
-        {
-            id: 'settings_management', label: 'Hệ Thống', icon: 'fas fa-cogs', permission: ['viewAppearance'], 
-            children: [
-                { id: 'hrm_dashboard', label: 'Quản lý Nhân sự', icon: 'fas fa-id-card', permission: ['manageEmployees'] },
-                { id: 'site_settings', label: 'Cài Đặt Trang', icon: 'fas fa-cog', permission: ['manageSiteSettings'] }, 
-                { id: 'theme_settings', label: 'Theme Màu', icon: 'fas fa-palette', permission: ['manageTheme'] },
-                { id: 'menu_settings', label: 'Menu Điều Hướng', icon: 'fas fa-list-ul', permission: ['manageMenu'] },
-            ]
-        },
-        { id: 'notifications_panel', label: 'Thông Báo', icon: 'fas fa-bell', count: unreadNotificationCount, permission: ['viewNotifications'] },
-    ], [unreadNotificationCount]);
-
-
-    const handleMenuClick = (viewId: AdminView | string, isParent: boolean) => {
-        if (isParent) {
-            setOpenMenus(prev => ({ ...prev, [viewId]: !prev[viewId] }));
-        } else {
-            setActiveView(viewId as AdminView);
-            setIsMobileSidebarOpen(false);
-        }
-    };
-    
-    const renderPlaceholder = (title: string) => (
-        <div className="admin-card">
-            <div className="admin-card-body">
-                <h3 className="admin-card-title">{title}</h3>
-                <p>Tính năng này đang được phát triển.</p>
-            </div>
-        </div>
-    );
-
-    const renderContent = () => {
-        const currentMenuItem = MENU_CONFIG.flatMap(m => m.children || m).find(i => i.id === activeView);
-        if (currentMenuItem && !hasPermission(currentMenuItem.permission)) {
-            if (hasPermission(['viewDashboard'])) {
-                setActiveView('dashboard');
-            }
-            return <div className="admin-card"><div className="admin-card-body">Bạn không có quyền truy cập mục này.</div></div>;
-        }
-
-        switch(activeView) {
+    const renderView = () => {
+        switch (activeView) {
             case 'dashboard': return <DashboardView setActiveView={setActiveView} />;
-            // Sales & CRM
-            case 'customers': return <CustomerManagementView />;
-            case 'orders': return <OrderManagementView />;
-            case 'discounts': return <DiscountManagementView />;
-            case 'quotations': return <QuotationManagementView />;
-            case 'returns': return renderPlaceholder('Quản lý Hoàn trả');
-            // Service
-            case 'service_tickets': return <ServiceTicketView />;
-            case 'warranties': return renderPlaceholder('Quản lý Bảo hành');
-            case 'chat_logs': return <ChatLogView />;
-            // CMS
-            case 'homepage_management': return <HomepageManagementView />;
             case 'products': return <ProductManagementView />;
+            case 'orders': return <OrderManagementView />;
+            case 'customers': return <CustomerManagementView />;
             case 'articles': return <ArticleManagementView />;
-            case 'media_library': return <MediaLibraryView />;
+            case 'discounts': return <DiscountManagementView />;
             case 'faqs': return <FaqManagementView />;
-            case 'seo_analytics': return <SiteSettingsView initialTab={'site_settings'} />; // Map to general settings for now
-            case 'email_marketing': return renderPlaceholder('Quản lý Email Marketing');
-            // Inventory
-            case 'inventory': return <InventoryView />;
-            case 'goods_receipts': return renderPlaceholder('Quản lý Phiếu Nhập Kho');
-            case 'delivery_notes': return renderPlaceholder('Quản lý Phiếu Xuất Kho');
-            case 'shipping_management': return renderPlaceholder('Quản lý Vận chuyển');
-            // Finance
-            case 'accounting_dashboard': return <FinancialManagementView />;
-            case 'receivables_payables': return renderPlaceholder('Quản lý Công nợ');
-            case 'cash_flow': return renderPlaceholder('Quản lý Sổ Quỹ');
-             // Reports
-            case 'reports_dashboard': return renderPlaceholder('Báo cáo Tổng hợp');
-            // System
-            case 'hrm_dashboard': return <HRMProfileView />;
-            case 'site_settings':
-            case 'theme_settings':
-            case 'menu_settings':
-                return <SiteSettingsView initialTab={activeView} />;
-            // Other
+            case 'site_settings': return <SiteSettingsView initialTab="site_settings" />;
+            case 'theme_settings': return <SiteSettingsView initialTab="theme_settings" />;
+            case 'menu_settings': return <SiteSettingsView initialTab="menu_settings" />;
+            case 'homepage_settings': return <HomepageManagementView />;
+            case 'media_library': return <MediaLibraryView />;
             case 'notifications_panel': return <NotificationsView />;
-
-            default: return <div className="admin-card"><div className="admin-card-body"><h3 className="admin-card-title">{currentMenuItem?.label || 'Chào mừng'}</h3><p>Tính năng này đang được phát triển.</p></div></div>;
+            case 'chat_logs': return <ChatLogView />;
+            case 'financial_transactions': return <FinancialManagementView />;
+            case 'hrm_profiles': return <HRMProfileView />;
+            case 'inventory': return <InventoryView />;
+            case 'quotations': return <QuotationManagementView />;
+            case 'tickets': return <ServiceTicketView />;
+            case 'warranties': return <WarrantyManagementView />;
+            default: return <p>Chọn một mục từ menu.</p>;
         }
     };
 
     return (
-        <div className="admin-wrapper">
-            <AdminSidebar 
-                isOpen={isMobileSidebarOpen}
-                isCollapsed={isSidebarCollapsed}
-                onClose={() => setIsMobileSidebarOpen(false)}
-                onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
-                activeView={activeView}
-                openMenus={openMenus}
-                onMenuClick={handleMenuClick}
-                menuConfig={MENU_CONFIG}
-                authContext={{ currentUser, hasPermission }}
-            />
-            <main className={`admin-main-content ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-                <AdminHeader 
-                    onMobileMenuOpen={() => setIsMobileSidebarOpen(true)}
-                    pageTitle={MENU_CONFIG.flatMap(m => m.children || m).find(i => i.id === activeView)?.label || "Tổng Quan"}
-                    currentUser={currentUser}
-                />
-                <div className="admin-content-area">
-                    {renderContent()}
-                </div>
+        <div className="flex bg-gray-100">
+            <aside className="w-64 bg-gray-800 text-white min-h-screen flex flex-col">
+                <div className="p-4 text-center font-bold text-lg border-b border-gray-700">Admin Panel</div>
+                <nav className="flex-grow p-2">
+                    {NAV_STRUCTURE.map(group => (
+                        hasPermission(group.items.flatMap(item => item.permissions)) && (
+                            <div key={group.groupLabel} className="mb-4">
+                                <h4 className="px-2 text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{group.groupLabel}</h4>
+                                {group.items.filter(item => hasPermission(item.permissions)).map(item => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setActiveView(item.id)}
+                                        className={`w-full text-left flex items-center p-2 rounded-md text-sm transition-colors ${
+                                            activeView === item.id
+                                                ? 'bg-primary text-white'
+                                                : 'text-gray-300 hover:bg-gray-700'
+                                        }`}
+                                    >
+                                        <i className={`fas ${item.icon} w-6 text-center mr-2`}></i>
+                                        <span>{item.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )
+                    ))}
+                </nav>
+            </aside>
+            <main className="flex-grow p-6">
+                {renderView()}
             </main>
         </div>
     );
 };
-
-// --- Sub-components for AdminPage ---
-
-const AdminSidebar: React.FC<{
-    isOpen: boolean; isCollapsed: boolean; onClose: () => void; onToggleCollapse: () => void;
-    activeView: AdminView; openMenus: Record<string, boolean>;
-    onMenuClick: (viewId: string, isParent: boolean) => void;
-    menuConfig: MenuItemConfig[];
-    authContext: { currentUser: User | null; hasPermission: (p: AdminPermission[]) => boolean; };
-}> = ({ isOpen, isCollapsed, onClose, onToggleCollapse, activeView, openMenus, onMenuClick, menuConfig, authContext }) => {
-    
-    const renderSidebarItem = (item: MenuItemConfig, isChild = false) => {
-        if (!authContext.hasPermission(item.permission)) return null;
-
-        const isActive = activeView === item.id;
-        const isParentOpen = !!item.children && !!openMenus[item.id];
-        
-        const itemClasses = `w-full flex items-center p-3 my-1 rounded-md transition-colors text-sm ${
-            isChild ? '' : ''
-        } ${
-            isActive 
-            ? 'bg-primary/90 text-white font-semibold shadow-inner' 
-            : 'text-gray-300 hover:bg-slate-700 hover:text-white'
-        }`;
-
-        if (item.children) {
-            return (
-                <div key={item.id}>
-                    <button className={`${itemClasses} justify-between`} onClick={() => onMenuClick(item.id, true)}>
-                        <div className="flex items-center">
-                            <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
-                            <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
-                        </div>
-                        <i className={`fas fa-chevron-right text-xs transition-transform duration-200 ${isParentOpen ? 'rotate-90' : ''} ${isCollapsed ? 'hidden' : ''}`}></i>
-                    </button>
-                    <div className={`pl-6 mt-1 border-l border-slate-700 ml-5 transition-all duration-300 ease-in-out overflow-hidden ${isParentOpen ? 'max-h-96' : 'max-h-0'} ${isCollapsed ? 'hidden' : ''}`}>
-                        {item.children.map(child => renderSidebarItem(child, true))}
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-          <button key={item.id} className={itemClasses} onClick={() => onMenuClick(item.id, false)}>
-            <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
-            <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
-            {!isCollapsed && item.count !== undefined && item.count > 0 && 
-                <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{item.count}</span>
-            }
-          </button>
-        );
-    };
-    
-    return (
-        <>
-            <div className={`fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
-            <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`}>
-                <div className="admin-sidebar-header justify-between">
-                    {!isCollapsed && <Link to="/home"><span className="text-xl font-bold text-white">IQ Technology</span></Link>}
-                    <button onClick={onToggleCollapse} className="hidden md:block text-slate-400 hover:text-white text-lg">
-                        <i className={`fas ${isCollapsed ? 'fa-align-right' : 'fa-align-left'}`}></i>
-                    </button>
-                </div>
-                <nav className="flex-grow p-2">
-                    {menuConfig.map(item => renderSidebarItem(item))}
-                </nav>
-                <div className="admin-sidebar-footer">
-                    <Link to="/home" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
-                        <i className="fas fa-globe w-6 text-center mr-3"></i>
-                        {!isCollapsed && <span className="text-sm">Về trang chủ</span>}
-                    </Link>
-                </div>
-            </aside>
-        </>
-    );
-};
-
-const AdminHeader: React.FC<{
-    onMobileMenuOpen: () => void;
-    pageTitle: string;
-    currentUser: User | null;
-}> = ({ onMobileMenuOpen, pageTitle, currentUser }) => (
-    <header className="admin-page-header flex justify-between items-center">
-        <div className="flex items-center">
-            <button onClick={onMobileMenuOpen} className="md:hidden text-2xl text-slate-600 mr-4"><i className="fas fa-bars"></i></button>
-            <h1 className="admin-page-title">{pageTitle}</h1>
-        </div>
-         <div className="flex items-center gap-4">
-            <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
-            <Link to="/home">
-                <i className="fas fa-user-circle text-2xl text-admin-textSecondary hover:text-primary"></i>
-            </Link>
-        </div>
-    </header>
-);
 
 export default AdminPage;

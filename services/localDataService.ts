@@ -1,279 +1,269 @@
-// This service now fetches data from the backend API instead of localStorage.
 
 import { 
-    Product, Order, Article, OrderStatus, MediaItem, ServerInfo, 
-    ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
-    // Fix: Import User and Quotation types
-    User, Quotation 
+    Product, Order, OrderStatus, Article, User, SiteSettings, FaqItem, 
+    DiscountCode, SiteThemeSettings, CustomMenuLink, MediaItem, 
+    ChatLogSession, ServerInfo, FinancialTransaction, PayrollRecord, 
+    Quotation, Inventory 
 } from '../types';
-import { BACKEND_API_BASE_URL } from '../constants';
+import * as Constants from '../constants';
+import { MOCK_SERVICES, MOCK_STAFF_USERS, MOCK_PROJECTS, MOCK_TESTIMONIALS, MOCK_ARTICLES as INITIAL_ARTICLES } from '../data/mockData';
 
-const API_BASE = BACKEND_API_BASE_URL;
-
-// --- Helper for API calls ---
-async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+// --- Generic LocalStorage Helper ---
+const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try {
-        const response = await fetch(`${API_BASE}${endpoint}`, options);
-        if (!response.ok) {
-            // Try to parse error message from backend
-            try {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Lỗi mạng hoặc server không phản hồi (Status: ${response.status})`);
-            } catch (e) {
-                 throw new Error(`Lỗi mạng hoặc server không phản hồi (Status: ${response.status})`);
-            }
-        }
-        // Handle 204 No Content for delete operations
-        if (response.status === 204) {
-            return {} as T;
-        }
-        return response.json();
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
     } catch (error) {
-        console.error(`API call failed for endpoint ${endpoint}:`, error);
-        // Re-throw a more user-friendly error message
-        if (error instanceof TypeError) { // This often indicates a network failure
-            throw new Error('Lỗi mạng hoặc server không phản hồi');
-        }
-        throw error;
+        console.error(`Error reading localStorage key "${key}":`, error);
+        return defaultValue;
     }
-}
+};
 
+const setLocalStorageItem = <T,>(key: string, value: T) => {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+        // Dispatch a custom event to notify other components of the change
+        const eventName = `${key.replace(/_v\d+$/, '')}Updated`;
+        window.dispatchEvent(new CustomEvent(eventName));
+    } catch (error) {
+        console.error(`Error setting localStorage key "${key}":`, error);
+    }
+};
+
+// --- Initialization ---
+const initializeData = () => {
+    if (!localStorage.getItem(Constants.PRODUCTS_STORAGE_KEY)) {
+        // Mock some products for initial load if none exist
+        const initialProducts: Product[] = [];
+        setLocalStorageItem(Constants.PRODUCTS_STORAGE_KEY, initialProducts);
+    }
+    if (!localStorage.getItem('adminArticles_v1')) {
+        setLocalStorageItem('adminArticles_v1', INITIAL_ARTICLES);
+    }
+     if (!localStorage.getItem('adminUsers_v1')) {
+        const initialUsers: User[] = [
+            { id: 'user001', username: 'Quang Trần', email: Constants.ADMIN_EMAIL, password: 'password123', role: 'admin' },
+            ...MOCK_STAFF_USERS
+        ];
+        setLocalStorageItem('adminUsers_v1', initialUsers);
+    }
+};
+initializeData(); // Run on script load
 
 // --- Product Service ---
-export const getProducts = async (queryParamsString: string = ''): Promise<{ products: Product[], totalProducts: number }> => {
-    const endpoint = `/api/products${queryParamsString ? `?${queryParamsString}` : ''}`;
-    return fetchFromApi<{ products: Product[], totalProducts: number }>(endpoint);
+export const getProducts = async (query: string = ''): Promise<{ products: Product[], totalProducts: number }> => {
+    const allProducts: Product[] = getLocalStorageItem(Constants.PRODUCTS_STORAGE_KEY, []);
+    const params = new URLSearchParams(query);
+    
+    let filtered = allProducts.filter(p => p.isVisible);
+
+    if (params.get('mainCategory')) filtered = filtered.filter(p => p.mainCategory.toLowerCase() === params.get('mainCategory')?.toLowerCase());
+    if (params.get('subCategory')) filtered = filtered.filter(p => p.subCategory.toLowerCase() === params.get('subCategory')?.toLowerCase());
+    if (params.get('brand')) filtered = filtered.filter(p => p.brand?.toLowerCase() === params.get('brand')?.toLowerCase());
+    if (params.get('q')) {
+        const q = params.get('q')!.toLowerCase();
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || p.brand?.toLowerCase().includes(q));
+    }
+    if (params.get('tags')) {
+        const tag = params.get('tags')!.toLowerCase();
+        filtered = filtered.filter(p => p.tags?.map(t => t.toLowerCase()).includes(tag));
+    }
+
+    const totalProducts = filtered.length;
+    const page = parseInt(params.get('page') || '1', 10);
+    const limit = parseInt(params.get('limit') || '12', 10);
+    const startIndex = (page - 1) * limit;
+    const paginatedProducts = filtered.slice(startIndex, startIndex + limit);
+
+    return { products: paginatedProducts, totalProducts };
 };
 
 export const getProduct = async (id: string): Promise<Product | null> => {
-    try {
-        return await fetchFromApi<Product>(`/api/products/${id}`);
-    } catch (error) {
-        if (error instanceof Error && error.message.includes('404')) return null;
-        throw error;
-    }
+    const allProducts = getLocalStorageItem<Product[]>(Constants.PRODUCTS_STORAGE_KEY, []);
+    return allProducts.find(p => p.id === id) || null;
 };
-
 export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
-    return fetchFromApi<Product>('/api/products', { 
-        method: 'POST', 
-        body: JSON.stringify(product), 
-        headers: {'Content-Type': 'application/json'} 
-    });
+    const allProducts = getLocalStorageItem<Product[]>(Constants.PRODUCTS_STORAGE_KEY, []);
+    const newProduct = { ...product, id: `prod-${Date.now()}` };
+    setLocalStorageItem(Constants.PRODUCTS_STORAGE_KEY, [...allProducts, newProduct]);
+    return newProduct;
 };
-
-export const updateProduct = async (id: string, updates: Partial<Product>): Promise<Product> => {
-     return fetchFromApi<Product>(`/api/products/${id}`, { 
-        method: 'PUT', 
-        body: JSON.stringify(updates), 
-        headers: {'Content-Type': 'application/json'} 
-    });
+export const updateProduct = async (id: string, updates: Partial<Product>): Promise<boolean> => {
+    const allProducts = getLocalStorageItem<Product[]>(Constants.PRODUCTS_STORAGE_KEY, []);
+    const updatedProducts = allProducts.map(p => p.id === id ? { ...p, ...updates } : p);
+    setLocalStorageItem(Constants.PRODUCTS_STORAGE_KEY, updatedProducts);
+    return true;
 };
-
-export const deleteProduct = async (id: string): Promise<void> => {
-    return fetchFromApi<void>(`/api/products/${id}`, { method: 'DELETE' });
+export const deleteProduct = async (id: string): Promise<boolean> => {
+    const allProducts = getLocalStorageItem<Product[]>(Constants.PRODUCTS_STORAGE_KEY, []);
+    setLocalStorageItem(Constants.PRODUCTS_STORAGE_KEY, allProducts.filter(p => p.id !== id));
+    return true;
 };
-
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    return fetchFromApi<Product[]>('/api/products/featured');
-};
-
-
-// --- Order Service ---
-export const getOrders = async (): Promise<Order[]> => {
-    return fetchFromApi<Order[]>('/api/orders');
-};
-
-export const addOrder = async (order: Order): Promise<Order> => {
-    return fetchFromApi<Order>('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order),
-    });
-};
-
-export const updateOrderStatus = async (id: string, status: OrderStatus): Promise<void> => {
-    return fetchFromApi<void>(`/api/orders/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-    });
-};
+    const allProducts = getLocalStorageItem<Product[]>(Constants.PRODUCTS_STORAGE_KEY, []);
+    return allProducts.filter(p => p.tags?.includes('Nổi bật')).slice(0, 4);
+}
 
 
 // --- Article Service ---
-export const getArticles = async (): Promise<Article[]> => {
-    return fetchFromApi<Article[]>('/api/articles');
-};
-
+export const getArticles = async (): Promise<Article[]> => getLocalStorageItem('adminArticles_v1', INITIAL_ARTICLES);
 export const getArticle = async (id: string): Promise<Article | null> => {
-    // AI articles are not in the DB, they are in localStorage
-    if (id.startsWith('ai-')) {
-        const aiArticlesRaw = localStorage.getItem('aiGeneratedArticles_v1');
-        const aiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
-        const aiArticle = aiArticles.find(a => a.id === id);
-        if (aiArticle) return Promise.resolve(aiArticle);
-    }
-    
-    // Fetch from backend if not an AI article
-    try {
-        return await fetchFromApi<Article>(`/api/articles/${id}`);
-    } catch (error) {
-        if (error instanceof Error && error.message.includes('404')) return null;
-        throw error;
-    }
-};
-
+    const articles = await getArticles();
+    // Also check AI articles from local storage
+    const aiArticlesRaw = localStorage.getItem('aiGeneratedArticles_v1');
+    const aiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
+    const combined = [...articles, ...aiArticles];
+    return combined.find(a => a.id === id) || null;
+}
 export const addArticle = async (article: Omit<Article, 'id'>): Promise<Article> => {
-     return fetchFromApi<Article>('/api/articles', { 
-        method: 'POST', 
-        body: JSON.stringify(article), 
-        headers: {'Content-Type': 'application/json'} 
-    });
+    const articles = await getArticles();
+    const newArticle = { ...article, id: `art-${Date.now()}` };
+    setLocalStorageItem('adminArticles_v1', [newArticle, ...articles]);
+    return newArticle;
+};
+export const updateArticle = async (id: string, updates: Partial<Article>): Promise<boolean> => {
+    const articles = await getArticles();
+    setLocalStorageItem('adminArticles_v1', articles.map(a => a.id === id ? { ...a, ...updates } : a));
+    return true;
+};
+export const deleteArticle = async (id: string): Promise<boolean> => {
+    const articles = await getArticles();
+    setLocalStorageItem('adminArticles_v1', articles.filter(a => a.id !== id));
+    return true;
 };
 
-export const updateArticle = async (id: string, updates: Partial<Article>): Promise<Article> => {
-     return fetchFromApi<Article>(`/api/articles/${id}`, { 
-        method: 'PUT', 
-        body: JSON.stringify(updates), 
-        headers: {'Content-Type': 'application/json'} 
-    });
-};
-
-export const deleteArticle = async (id: string): Promise<void> => {
-    return fetchFromApi<void>(`/api/articles/${id}`, { method: 'DELETE' });
-};
-
-// Fix: Add missing User and Quotation service functions
 // --- User Service ---
-export const getUsers = async (): Promise<User[]> => {
-    return fetchFromApi<User[]>('/api/users');
-};
-
+export const getUsers = async (): Promise<User[]> => getLocalStorageItem('adminUsers_v1', []);
 export const addUser = async (user: Omit<User, 'id'>): Promise<User> => {
-    return fetchFromApi<User>('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(user),
-    });
+    const users = await getUsers();
+    const newUser = { ...user, id: `user-${Date.now()}` };
+    setLocalStorageItem('adminUsers_v1', [...users, newUser]);
+    return newUser;
 };
-
 export const updateUser = async (id: string, updates: Partial<User>): Promise<boolean> => {
-    await fetchFromApi(`/api/users/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-    });
-    return true; // if fetchFromApi doesn't throw, it was successful
+    const users = await getUsers();
+    setLocalStorageItem('adminUsers_v1', users.map(u => u.id === id ? { ...u, ...updates } : u));
+    return true;
 };
-
 export const deleteUser = async (id: string): Promise<boolean> => {
-    await fetchFromApi(`/api/users/${id}`, { method: 'DELETE' });
-    return true; // if fetchFromApi doesn't throw, it was successful
+    const users = await getUsers();
+    setLocalStorageItem('adminUsers_v1', users.filter(u => u.id !== id));
+    return true;
 };
 
-// --- Quotation Service ---
-export const getQuotations = async (): Promise<Quotation[]> => {
-    return fetchFromApi<Quotation[]>('/api/quotations');
+// --- Order Service ---
+export const getOrders = async (): Promise<Order[]> => getLocalStorageItem(Constants.ORDERS_STORAGE_KEY, []);
+export const addOrder = async (order: Order): Promise<Order> => {
+    const orders = await getOrders();
+    setLocalStorageItem(Constants.ORDERS_STORAGE_KEY, [order, ...orders]);
+    return order;
 };
-
-export const addQuotation = async (quotation: Omit<Quotation, 'id'>): Promise<Quotation> => {
-    return fetchFromApi<Quotation>('/api/quotations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(quotation),
-    });
+export const updateOrderStatus = async (id: string, status: OrderStatus): Promise<boolean> => {
+    const orders = await getOrders();
+    setLocalStorageItem(Constants.ORDERS_STORAGE_KEY, orders.map(o => o.id === id ? { ...o, status } : o));
+    return true;
 };
-
-export const updateQuotation = async (id: string, updates: Quotation): Promise<Quotation> => {
-    return fetchFromApi<Quotation>(`/api/quotations/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-    });
-};
-
-export const deleteQuotation = async (id: string): Promise<void> => {
-    return fetchFromApi<void>(`/api/quotations/${id}`, { method: 'DELETE' });
-};
-
 
 // --- Media Library Service ---
-export const getMediaItems = async (): Promise<MediaItem[]> => fetchFromApi('/api/media');
-
+export const getMediaItems = async (): Promise<MediaItem[]> => getLocalStorageItem(Constants.SITE_CONFIG_STORAGE_KEY, Constants.INITIAL_SITE_SETTINGS).siteMediaLibrary || [];
 export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaItem> => {
-    return fetchFromApi<MediaItem>('/api/media', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item),
-    });
+    const settings = getLocalStorageItem(Constants.SITE_CONFIG_STORAGE_KEY, Constants.INITIAL_SITE_SETTINGS);
+    const newItem = { ...item, id: `media-${Date.now()}` };
+    const newLibrary = [newItem, ...settings.siteMediaLibrary];
+    setLocalStorageItem(Constants.SITE_CONFIG_STORAGE_KEY, { ...settings, siteMediaLibrary: newLibrary });
+    return newItem;
+};
+export const deleteMediaItem = async (id: string): Promise<boolean> => {
+    const settings = getLocalStorageItem(Constants.SITE_CONFIG_STORAGE_KEY, Constants.INITIAL_SITE_SETTINGS);
+    const newLibrary = settings.siteMediaLibrary.filter(item => item.id !== id);
+    setLocalStorageItem(Constants.SITE_CONFIG_STORAGE_KEY, { ...settings, siteMediaLibrary: newLibrary });
+    return true;
 };
 
-export const deleteMediaItem = async (id: string): Promise<void> => {
-    return fetchFromApi(`/api/media/${id}`, { method: 'DELETE' });
-};
-
-// --- Chat Log Service ---
-export const getChatLogs = async (): Promise<ChatLogSession[]> => {
-    return fetchFromApi<ChatLogSession[]>('/api/chatlogs');
-};
-
+// --- ChatLog Service ---
 export const saveChatLogSession = async (session: ChatLogSession): Promise<void> => {
-    return fetchFromApi<void>('/api/chatlogs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(session),
-    });
+    const logs = getLocalStorageItem<ChatLogSession[]>(Constants.CHAT_LOGS_STORAGE_KEY, []);
+    const existingIndex = logs.findIndex(log => log.id === session.id);
+    if (existingIndex > -1) {
+        logs[existingIndex] = session;
+    } else {
+        logs.unshift(session);
+    }
+    // Keep only the last 50 logs
+    const limitedLogs = logs.slice(0, 50);
+    setLocalStorageItem(Constants.CHAT_LOGS_STORAGE_KEY, limitedLogs);
+};
+export const getChatLogSessions = async (): Promise<ChatLogSession[]> => {
+    return getLocalStorageItem(Constants.CHAT_LOGS_STORAGE_KEY, []);
+}
+export const deleteChatLogSession = async (id: string): Promise<boolean> => {
+    const logs = getLocalStorageItem<ChatLogSession[]>(Constants.CHAT_LOGS_STORAGE_KEY, []);
+    setLocalStorageItem(Constants.CHAT_LOGS_STORAGE_KEY, logs.filter(log => log.id !== id));
+    return true;
 };
 
-// --- Financials Service ---
-export const getFinancialTransactions = async (): Promise<FinancialTransaction[]> => {
-    return fetchFromApi<FinancialTransaction[]>('/api/financials/transactions');
-};
 
+// --- Financial & HRM ---
+export const getFinancialTransactions = async (): Promise<FinancialTransaction[]> => getLocalStorageItem(Constants.FINANCIAL_TRANSACTIONS_STORAGE_KEY, []);
 export const addFinancialTransaction = async (transaction: Omit<FinancialTransaction, 'id'>): Promise<FinancialTransaction> => {
-    return fetchFromApi<FinancialTransaction>('/api/financials/transactions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(transaction),
-    });
+    const items = await getFinancialTransactions();
+    const newItem = { ...transaction, id: `fin-${Date.now()}` };
+    setLocalStorageItem(Constants.FINANCIAL_TRANSACTIONS_STORAGE_KEY, [newItem, ...items]);
+    return newItem;
+};
+export const updateFinancialTransaction = async (id: string, updates: Partial<FinancialTransaction>): Promise<boolean> => {
+    const items = await getFinancialTransactions();
+    setLocalStorageItem(Constants.FINANCIAL_TRANSACTIONS_STORAGE_KEY, items.map(i => i.id === id ? { ...i, ...updates } : i));
+    return true;
+};
+export const deleteFinancialTransaction = async (id: string): Promise<boolean> => {
+    const items = await getFinancialTransactions();
+    setLocalStorageItem(Constants.FINANCIAL_TRANSACTIONS_STORAGE_KEY, items.filter(i => i.id !== id));
+    return true;
 };
 
-export const updateFinancialTransaction = async (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => {
-    return fetchFromApi<FinancialTransaction>(`/api/financials/transactions/${id}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates),
-    });
+export const getPayrollRecords = async (): Promise<PayrollRecord[]> => getLocalStorageItem(Constants.PAYROLL_RECORDS_STORAGE_KEY, []);
+export const savePayrollRecords = async (records: PayrollRecord[]): Promise<boolean> => {
+    setLocalStorageItem(Constants.PAYROLL_RECORDS_STORAGE_KEY, records);
+    return true;
 };
 
-export const deleteFinancialTransaction = async (id: string): Promise<void> => {
-    return fetchFromApi<void>(`/api/financials/transactions/${id}`, { method: 'DELETE' });
+
+// --- Quotations, Inventory, etc. ---
+export const getQuotations = async (): Promise<Quotation[]> => getLocalStorageItem('siteQuotations_v1', []);
+export const addQuotation = async (quote: Omit<Quotation, 'id'>): Promise<Quotation> => {
+    const items = await getQuotations();
+    const newItem = { ...quote, id: `quote-${Date.now()}` };
+    setLocalStorageItem('siteQuotations_v1', [newItem, ...items]);
+    return newItem;
+};
+export const updateQuotation = async (id: string, updates: Partial<Quotation>): Promise<boolean> => {
+    const items = await getQuotations();
+    setLocalStorageItem('siteQuotations_v1', items.map(i => i.id === id ? { ...i, ...updates } : i));
+    return true;
+};
+export const deleteQuotation = async (id: string): Promise<boolean> => {
+    const items = await getQuotations();
+    setLocalStorageItem('siteQuotations_v1', items.filter(i => i.id !== id));
+    return true;
 };
 
-export const getPayrollRecords = async (): Promise<PayrollRecord[]> => {
-    return fetchFromApi<PayrollRecord[]>('/api/financials/payroll');
-};
-
-export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
-    return fetchFromApi<void>('/api/financials/payroll', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records),
-    });
-};
-
-// --- Service Ticket Service ---
-export const getServiceTickets = async (): Promise<ServiceTicket[]> => {
-    return fetchFromApi<ServiceTicket[]>('/api/service-tickets');
-};
-
-// --- Inventory Service ---
 export const getInventory = async (): Promise<Inventory[]> => {
-    return fetchFromApi<Inventory[]>('/api/inventory');
+    const products = await getProducts('limit=10000');
+    // Simulate inventory from product stock
+    return products.products.map(p => ({
+        product_id: p.id,
+        product_name: p.name,
+        warehouse_id: 'main',
+        warehouse_name: 'Kho Chính',
+        quantity: p.stock,
+        last_updated: new Date().toISOString()
+    }));
 };
 
-// --- Misc Services ---
+
+// --- Server Info ---
+// This is a mock as we can't get server IP in a browser/static site context
 export const getServerInfo = async (): Promise<ServerInfo> => {
-    // This is a placeholder, as the backend doesn't expose this directly.
-    // The health check is a better diagnostic tool.
-    return Promise.resolve({ outboundIp: 'Not available' });
-};
-
-export const checkBackendHealth = async () => {
-    return fetchFromApi<{ status: string; database: string; errorCode?: string; message?: string }>('/api/health');
+    return { outboundIp: "Not available" };
 };

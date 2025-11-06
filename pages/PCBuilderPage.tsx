@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
@@ -137,11 +138,14 @@ const PCBuilderPage: React.FC = () => {
     }
 
     let descriptionString = "Cấu hình PC theo yêu cầu:\n";
+    const specs: Record<string, string> = {};
     for (const [key, value] of Object.entries(builtComponents)) {
         descriptionString += `- ${key}: ${value.name} (${(value.price || 0).toLocaleString('vi-VN')}₫)\n`;
+        specs[key] = value.name;
     }
     descriptionString += `Tổng cộng: ${totalCost.toLocaleString('vi-VN')}₫`;
-
+    
+    // FIX: Add missing properties (stock, specifications, isVisible) to conform to the CustomPCBuildCartItem type.
     const customBuildItem: CustomPCBuildCartItem = {
         id: `custom-pc-${Date.now()}`,
         name: `PC Xây Dựng Theo Yêu Cầu - ${useCase}`,
@@ -156,9 +160,12 @@ const PCBuilderPage: React.FC = () => {
         subCategory: "Theo Yêu Cầu",
         category: "PC Xây Dựng",
         tags: ['PC Xây Dựng', 'Theo Yêu Cầu', useCase],
+        stock: 1, // Custom builds are made to order, conceptually in stock.
+        specifications: specs,
+        isVisible: true, // This is a purchasable item.
     };
 
-    addToCart(customBuildItem as any);
+    addToCart(customBuildItem);
     addAdminNotification(`Yêu cầu xây dựng PC mới (Ngân sách: ${parseInt(budget).toLocaleString('vi-VN')}₫, Nhu cầu: ${useCase}) đã được thêm vào giỏ hàng.`, 'info');
     navigate('/cart'); // Changed from history.push
   };

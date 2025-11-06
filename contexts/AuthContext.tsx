@@ -1,43 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { User, UserRole, AdminNotification, StaffRole } from '../types'; 
+// FIX: Import AdminPermission from types.ts
+import { User, UserRole, AdminNotification, StaffRole, AdminPermission } from '../types'; 
 import * as Constants from '../constants';
 import { getUsers, addUser as addUserApi, updateUser as updateUserApi, deleteUser as deleteUserApi } from '../services/localDataService';
-
-export type AdminPermission = 
-  // General
-  | 'viewDashboard'
-  | 'viewNotifications'
-  // Website Content Management
-  | 'viewContent'
-  | 'manageProducts'
-  | 'viewProducts'
-  | 'manageArticles'
-  | 'viewArticles'
-  | 'manageFaqs'
-  // User Management
-  | 'viewUsers'
-  | 'manageStaff'
-  | 'viewCustomers'
-  // Sales Management
-  | 'viewSales'
-  | 'manageOrders'
-  | 'viewOrders'
-  | 'manageDiscounts'
-  // Appearance & Settings
-  | 'viewAppearance'
-  | 'manageTheme'
-  | 'manageMenu'
-  | 'manageSiteSettings'
-  // HRM (Future)
-  | 'viewHrm'
-  | 'manageEmployees'
-  | 'managePayroll'
-  // Accounting (Future)
-  | 'viewAccounting'
-  | 'manageInvoices'
-  | 'viewReports'
-  // High-level (Future)
-  | 'viewAnalytics';
 
 export interface AuthContextType {
   isAuthenticated: boolean;

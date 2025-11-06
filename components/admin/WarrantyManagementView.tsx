@@ -1,21 +1,21 @@
 
 import React from 'react';
 
-const ServiceTicketView: React.FC = () => {
+const WarrantyManagementView: React.FC = () => {
     return (
         <div className="admin-card">
             <div className="admin-card-header">
-                <h3 className="admin-card-title">Quản lý Yêu cầu Dịch vụ</h3>
+                <h3 className="admin-card-title">Quản lý Bảo hành</h3>
             </div>
             <div className="admin-card-body">
                 <p className="text-center text-textMuted py-8">
-                    <i className="fas fa-tools text-4xl mb-4"></i>
+                    <i className="fas fa-shield-alt text-4xl mb-4"></i>
                     <br/>
-                    Tính năng Quản lý Yêu cầu Dịch vụ đang được phát triển.
+                    Tính năng Quản lý Bảo hành đang được phát triển.
                 </p>
             </div>
         </div>
     );
 };
 
-export default ServiceTicketView;
+export default WarrantyManagementView;

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getOrders, getProducts, getArticles, getServerInfo } from '../../services/localDataService';
@@ -241,7 +242,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                             <Button onClick={() => setActiveView('products')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-plus w-6 mr-2"></i>Thêm sản phẩm</Button>
                             <Button onClick={() => setActiveView('articles')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-pen w-6 mr-2"></i>Viết bài mới</Button>
                             <Button onClick={() => setActiveView('discounts')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-tags w-6 mr-2"></i>Tạo mã giảm giá</Button>
-                            <Button onClick={() => setActiveView('hrm_dashboard')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-user-plus w-6 mr-2"></i>Thêm nhân viên</Button>
+                            <Button onClick={() => setActiveView('hrm_profiles')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-user-plus w-6 mr-2"></i>Thêm nhân viên</Button>
                         </div>
                     </Card>
 
