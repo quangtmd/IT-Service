@@ -18,7 +18,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, groundingChunks }) =
       <div
         className={`max-w-xs lg:max-w-md rounded-xl shadow overflow-hidden ${
           isUser ? 'bg-primary text-white rounded-br-none' : 
-          isBot ? 'bg-bgMuted text-textBase rounded-bl-none border border-borderDefault' : 
+          isBot ? 'bg-gray-700 text-white rounded-bl-none' : 
           'bg-warning-bg text-warning-text text-sm italic text-center w-full border border-warning-border' 
         }`}
       >
