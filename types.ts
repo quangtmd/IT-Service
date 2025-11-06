@@ -221,6 +221,15 @@ export interface User {
   address?: string;
   joinDate?: string; // ISO string date
   status?: UserStatus;
+
+  // CRM Fields
+  gender?: 'Nam' | 'Nữ' | 'Khác';
+  dateOfBirth?: string; // ISO string date
+  leadSource?: string; // e.g., 'Website', 'Facebook', 'Referral'
+  assignedStaffId?: string;
+  loyaltyPoints?: number;
+  customerGroup?: 'VIP' | 'Sỉ' | 'Mới' | 'Thường';
+  debtStatus?: string; // e.g., 'Không có nợ', 'Nợ quá hạn'
 }
 
 export interface Project {
@@ -261,7 +270,7 @@ export interface OrderItem {
   price: number;
 }
 
-export type OrderStatus = 'Chờ xử lý' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy';
+export type OrderStatus = 'Chờ xử lý' | 'Đã xác nhận' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy';
 
 export interface ShippingInfo {
   carrier?: string;
@@ -283,8 +292,12 @@ export interface Order {
   totalAmount: number;
   orderDate: string; 
   status: OrderStatus;
-  shippingInfo?: ShippingInfo; // Added for shipping management
+  shippingInfo?: ShippingInfo; 
   paymentInfo: PaymentInfo;
+  // New fields
+  customer_id?: string;
+  discount_code?: string;
+  total_discount?: number;
 }
 
 export interface AdminNotification {
@@ -314,7 +327,13 @@ export interface DiscountCode {
   isActive: boolean;
   minSpend?: number;
   usageLimit?: number; 
-  timesUsed?: number;  
+  timesUsed?: number;
+  // New fields for Promotion Programs
+  name?: string; // Tên chương trình
+  scope_type?: 'all_products' | 'specific_products' | 'specific_categories';
+  scope_details?: string[]; // Array of product IDs or category slugs
+  condition_type?: 'none' | 'min_order_value';
+  condition_value?: number;
 }
 
 export interface SiteThemeSettings {
@@ -361,6 +380,28 @@ export interface PricingPlan {
   isPopular?: boolean;
   buttonText?: string;
   buttonLink?: string;
+}
+
+export interface QuotationItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
+export interface Quotation {
+  id: string;
+  creation_date: string;
+  expiry_date?: string;
+  customer_id?: string;
+  customerInfo?: { name: string; email: string }; // For display
+  items: QuotationItem[];
+  subtotal: number;
+  discount_amount?: number;
+  tax_amount?: number;
+  total_amount: number;
+  terms?: string;
+  status: 'Nháp' | 'Đã gửi' | 'Đã chấp nhận' | 'Hết hạn' | 'Đã hủy';
 }
 
 // --- Homepage Content Specific Types ---

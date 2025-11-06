@@ -18,6 +18,7 @@ import FinancialManagementView from '../components/admin/FinancialManagementView
 import DashboardView from '../components/admin/DashboardView'; // Import the new DashboardView
 import InventoryView from '../components/admin/InventoryView';
 import ServiceTicketView from '../components/admin/ServiceTicketView';
+import QuotationManagementView from '../components/admin/QuotationManagementView';
 
 
 interface MenuItemConfig {
@@ -170,7 +171,7 @@ const AdminPage: React.FC = () => {
             case 'customers': return <CustomerManagementView />;
             case 'orders': return <OrderManagementView />;
             case 'discounts': return <DiscountManagementView />;
-            case 'quotations': return renderPlaceholder('Quản lý Báo giá');
+            case 'quotations': return <QuotationManagementView />;
             case 'returns': return renderPlaceholder('Quản lý Hoàn trả');
             // Service
             case 'service_tickets': return <ServiceTicketView />;

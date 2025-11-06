@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User, UserRole, AdminNotification, StaffRole } from '../types'; 
 import * as Constants from '../constants';
-import { MOCK_STAFF_USERS } from '../data/mockData';
+import { getUsers, addUser as addUserApi, updateUser as updateUserApi, deleteUser as deleteUserApi } from '../services/localDataService';
 
 export type AdminPermission = 
   // General
@@ -60,7 +60,6 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
-const USERS_STORAGE_KEY = 'siteUsers_v1_local';
 const CURRENT_USER_SESSION_KEY = 'currentUserSession_v1_local';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
@@ -85,47 +84,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, setCurrentUser] = useState<User | null>(() => getSessionStorageItem(CURRENT_USER_SESSION_KEY, null));
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!currentUser);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [users, setUsers] = useState<User[]>(() => getLocalStorageItem(USERS_STORAGE_KEY, []));
+  const [users, setUsers] = useState<User[]>([]);
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>(() => getLocalStorageItem(ADMIN_NOTIFICATIONS_STORAGE_KEY, []));
 
   useEffect(() => {
-    const initializeUsers = () => {
-        const storedUsers = getLocalStorageItem<User[]>(USERS_STORAGE_KEY, []);
-        if (storedUsers.length === 0) {
-            const adminUser: User = {
-                id: 'admin001',
-                username: 'Admin Quang',
-                email: Constants.ADMIN_EMAIL,
-                password: 'password123', // In a real app, this should be hashed.
-                role: 'admin',
-                staffRole: 'Nhân viên Toàn quyền',
-            };
-            const initialUsers = [adminUser, ...MOCK_STAFF_USERS];
-            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
-            setUsers(initialUsers);
-        } else {
-            setUsers(storedUsers);
-        }
-        
-        const sessionUser = getSessionStorageItem<User | null>(CURRENT_USER_SESSION_KEY, null);
-        if (sessionUser) {
-            setCurrentUser(sessionUser);
-            setIsAuthenticated(true);
-        }
-        setIsLoading(false);
-    };
-    initializeUsers();
-  }, []);
+    const initializeAuth = async () => {
+        setIsLoading(true);
+        try {
+            const fetchedUsers = await getUsers();
+            setUsers(fetchedUsers);
 
-  const saveUsers = (updatedUsers: User[]) => {
-    setUsers(updatedUsers);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-  }
+            const sessionUser = getSessionStorageItem<User | null>(CURRENT_USER_SESSION_KEY, null);
+            if (sessionUser) {
+                const updatedUser = fetchedUsers.find(u => u.id === sessionUser.id);
+                if (updatedUser) {
+                    setCurrentUser(updatedUser);
+                    setIsAuthenticated(true);
+                } else {
+                    // User in session not found in DB, log them out
+                    logout();
+                }
+            }
+        } catch (error) {
+            console.error("Failed to initialize user data from API:", error);
+            // In case of backend error, we can still operate with session user
+            const sessionUser = getSessionStorageItem<User | null>(CURRENT_USER_SESSION_KEY, null);
+            if (sessionUser) {
+                setCurrentUser(sessionUser);
+                setIsAuthenticated(true);
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    initializeAuth();
+  }, []);
 
   const login = async (credentials: { email: string; password?: string }): Promise<void> => {
     setIsLoading(true);
     return new Promise((resolve, reject) => {
-      setTimeout(() => { // Simulate network delay
+      // Simulate login check against fetched users
+      setTimeout(() => {
         const user = users.find(u => u.email === credentials.email && u.password === credentials.password);
         if (user) {
           const { password, ...userToStore } = user;
@@ -143,40 +142,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const register = async (details: { username: string; email: string; password?: string, role?: UserRole }): Promise<User | null> => {
-    setIsLoading(true);
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            if (users.some(u => u.email === details.email)) {
-                setIsLoading(false);
-                reject(new Error('Email đã được sử dụng.'));
-                return null;
-            }
-
-            const newUser: User = {
-                id: `user-${Date.now()}`,
-                username: details.username,
-                email: details.email,
-                password: details.password,
-                role: details.role || 'customer',
-                joinDate: new Date().toISOString(),
-                status: 'Đang hoạt động',
-            };
-            
-            const updatedUsers = [...users, newUser];
-            saveUsers(updatedUsers);
-
-            addAdminNotification(`Người dùng mới '${newUser.username}' (${newUser.email}) đã đăng ký.`, 'info');
-            
-            // Auto-login after registration
-            const { password, ...userToStore } = newUser;
-            setCurrentUser(userToStore as User);
-            setIsAuthenticated(true);
-            sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(userToStore));
-            
-            setIsLoading(false);
-            resolve(newUser);
-        }, 500);
-    });
+      if (users.some(u => u.email === details.email)) {
+          throw new Error('Email đã được sử dụng.');
+      }
+      const newUserDto: Omit<User, 'id'> = {
+          username: details.username,
+          email: details.email,
+          password: details.password,
+          role: details.role || 'customer',
+          joinDate: new Date().toISOString(),
+          status: 'Đang hoạt động',
+      };
+      const newUser = await addUser(newUserDto);
+      if (newUser) {
+          addAdminNotification(`Người dùng mới '${newUser.username}' (${newUser.email}) đã đăng ký.`, 'info');
+          // Auto-login after registration
+          const { password, ...userToStore } = newUser;
+          setCurrentUser(userToStore as User);
+          setIsAuthenticated(true);
+          sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(userToStore));
+      }
+      return newUser;
   };
 
   const logout = async () => {
@@ -186,17 +172,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addUser = async (userDto: Omit<User, 'id'>): Promise<User | null> => {
-    const newUser = { ...userDto, id: `user-${Date.now()}`};
-    saveUsers([...users, newUser]);
-    addAdminNotification(`Quản trị viên đã thêm hồ sơ: ${newUser.username}.`, 'success');
+    const newUser = await addUserApi(userDto);
+    if (newUser) {
+        setUsers(prev => [...prev, newUser]);
+        addAdminNotification(`Quản trị viên đã thêm hồ sơ: ${newUser.username}.`, 'success');
+    }
     return newUser;
   };
 
   const updateUser = async (userId: string, updates: Partial<User>): Promise<boolean> => {
-    const updatedUsers = users.map(u => u.id === userId ? { ...u, ...updates } : u);
-    saveUsers(updatedUsers);
-    addAdminNotification(`Thông tin người dùng đã được cập nhật.`, 'info');
-    return true;
+    const success = await updateUserApi(userId, updates);
+    if (success) {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+        addAdminNotification(`Thông tin người dùng đã được cập nhật.`, 'info');
+    }
+    return success;
   };
 
   const deleteUser = async (userId: string): Promise<boolean> => {
@@ -204,9 +194,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addAdminNotification("Không thể xóa tài khoản quản trị viên chính.", "error");
         return false;
      }
-     saveUsers(users.filter(u => u.id !== userId));
-     addAdminNotification(`Hồ sơ người dùng đã bị xóa.`, 'warning');
-     return true;
+     const success = await deleteUserApi(userId);
+     if (success) {
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        addAdminNotification(`Hồ sơ người dùng đã bị xóa.`, 'warning');
+     }
+     return success;
   };
   
   const saveNotifications = (notifications: AdminNotification[]) => {

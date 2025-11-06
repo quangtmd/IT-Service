@@ -8,7 +8,7 @@ SET FOREIGN_KEY_CHECKS=0;
 -- Drop tables in reverse order of dependency to avoid foreign key errors
 DROP TABLE IF EXISTS
     Inventory, Warehouses, ServiceTickets, PayrollRecords, FinancialTransactions,
-    ChatLogSessions, MediaItems, Orders, Products, ProductCategories,
+    Quotations, ChatLogSessions, MediaItems, Orders, Products, ProductCategories,
     Articles, ArticleCategories, Projects, Services, Testimonials, FaqItems,
     DiscountCodes, CustomMenuLinks, SiteSettings, users;
 
@@ -33,8 +33,18 @@ CREATE TABLE users (
     address TEXT,
     joinDate DATE COMMENT 'HRM field: Date of joining',
     status ENUM('Đang hoạt động', 'Tạm nghỉ', 'Đã nghỉ việc') DEFAULT 'Đang hoạt động',
+    -- CRM Fields
+    gender ENUM('Nam', 'Nữ', 'Khác'),
+    dateOfBirth DATE,
+    leadSource VARCHAR(255),
+    assignedStaffId VARCHAR(255),
+    loyaltyPoints INT DEFAULT 0,
+    customerGroup ENUM('VIP', 'Sỉ', 'Mới', 'Thường') DEFAULT 'Thường',
+    debtStatus VARCHAR(255) DEFAULT 'Không có nợ',
+    -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (assignedStaffId) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Product Categories Table: Hierarchical categories for products
@@ -82,24 +92,23 @@ CREATE TABLE Orders (
     items JSON NOT NULL COMMENT 'Array of ordered items',
     totalAmount DECIMAL(12, 0) NOT NULL,
     orderDate DATETIME NOT NULL,
-    status ENUM('Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy') NOT NULL,
+    status ENUM('Chờ xử lý', 'Đã xác nhận', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy') NOT NULL,
     shippingInfo JSON COMMENT 'e.g., carrier, trackingNumber',
     paymentInfo JSON NOT NULL COMMENT 'e.g., method, status, transactionId',
+    -- New Fields
+    customer_id VARCHAR(255),
+    discount_code VARCHAR(255),
+    total_discount DECIMAL(12, 0) DEFAULT 0,
+    -- Timestamps & FK
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 
 -- =================================================================
 -- 2. CONTENT MANAGEMENT TABLES
 -- =================================================================
-
--- Article Categories Table
-CREATE TABLE ArticleCategories (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) UNIQUE NOT NULL
-);
 
 -- Articles Table: Blog posts, news, guides
 CREATE TABLE Articles (
@@ -109,7 +118,7 @@ CREATE TABLE Articles (
     imageUrl TEXT,
     author VARCHAR(255),
     date DATETIME NOT NULL,
-    category VARCHAR(255), -- This could be a FK to ArticleCategories
+    category VARCHAR(255),
     content LONGTEXT,
     isAIGenerated BOOLEAN DEFAULT FALSE,
     imageSearchQuery VARCHAR(255),
@@ -186,7 +195,7 @@ CREATE TABLE ChatLogSessions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- DiscountCodes Table
+-- DiscountCodes (Promotions) Table
 CREATE TABLE DiscountCodes (
     id VARCHAR(255) PRIMARY KEY,
     code VARCHAR(255) UNIQUE NOT NULL,
@@ -195,9 +204,14 @@ CREATE TABLE DiscountCodes (
     description TEXT,
     expiryDate DATE,
     isActive BOOLEAN DEFAULT TRUE,
-    minSpend DECIMAL(12, 0),
     usageLimit INT,
-    timesUsed INT DEFAULT 0
+    timesUsed INT DEFAULT 0,
+    -- New Fields
+    name VARCHAR(255),
+    scope_type ENUM('all_products', 'specific_products', 'specific_categories') DEFAULT 'all_products',
+    scope_details JSON,
+    condition_type ENUM('none', 'min_order_value') DEFAULT 'none',
+    condition_value DECIMAL(12, 0)
 );
 
 -- ServiceTickets Table
@@ -210,6 +224,24 @@ CREATE TABLE ServiceTickets (
     status ENUM('open', 'in_progress', 'awaiting_parts', 'resolved', 'closed') DEFAULT 'open',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Quotations Table (NEW)
+CREATE TABLE Quotations (
+    id VARCHAR(255) PRIMARY KEY,
+    creation_date DATETIME NOT NULL,
+    expiry_date DATETIME,
+    customer_id VARCHAR(255),
+    items JSON,
+    subtotal DECIMAL(12, 0) NOT NULL,
+    discount_amount DECIMAL(12, 0) DEFAULT 0,
+    tax_amount DECIMAL(12, 0) DEFAULT 0,
+    total_amount DECIMAL(12, 0) NOT NULL,
+    terms TEXT,
+    status ENUM('Nháp', 'Đã gửi', 'Đã chấp nhận', 'Hết hạn', 'Đã hủy') DEFAULT 'Nháp',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 
@@ -288,9 +320,10 @@ CREATE TABLE SiteSettings (
 -- 6. INITIAL DATA INSERTION
 -- =================================================================
 
--- Insert Admin User
-INSERT INTO users (id, username, email, password, role, staffRole) VALUES
-('admin001', 'Admin Quang', 'quangtmdit@gmail.com', 'password123', 'admin', 'Nhân viên Toàn quyền');
+-- Insert Admin User & Sample Customer
+INSERT INTO users (id, username, email, password, role, staffRole, phone, address, customerGroup, loyaltyPoints) VALUES
+('admin001', 'Admin Quang', 'quangtmdit@gmail.com', 'password123', 'admin', 'Nhân viên Toàn quyền', '0911855055', 'Đà Nẵng', 'VIP', 1000),
+('customer001', 'Nguyễn Văn An', 'khachhang@email.com', 'password123', 'customer', NULL, '0905111222', '123 Nguyễn Văn Linh, Đà Nẵng', 'Mới', 50);
 
 -- Insert Main Product Categories
 INSERT INTO ProductCategories (id, name, slug, icon, parent_category_id) VALUES
@@ -316,6 +349,11 @@ INSERT INTO ProductCategories (name, slug, parent_category_id) VALUES
 ('Bản quyền Windows, Office', 'ban_quyen_phan_mem', 7), ('Dịch vụ cài đặt (Tận nơi / Online)', 'dich_vu_cai_dat', 7),
 ('Cáp chuyển, Hub USB, Docking', 'cap_hub_docking', 8), ('Balo, Túi chống sốc', 'balo_tui', 8),
 ('Theo Yêu Cầu', 'theo_yeu_cau', 9);
+
+-- Insert a sample Quotation
+INSERT INTO Quotations (id, creation_date, expiry_date, customer_id, items, subtotal, discount_amount, tax_amount, total_amount, terms, status) VALUES
+('QT-20240729-001', '2024-07-29 10:00:00', '2024-08-05 10:00:00', 'customer001', '[{"productId":"PCVP001","productName":"PC Văn Phòng IQ Office Standard","quantity":2,"price":7590000}]', 15180000, 180000, 0, 15000000, 'Thanh toán 50% khi ký hợp đồng.', 'Đã gửi');
+
 
 -- =================================================================
 -- 7. MOCK PRODUCTS INSERTION - DỮ LIỆU SẢN PHẨM MẪU
@@ -343,29 +381,29 @@ INSERT INTO Products (id, name, category_id, price, originalPrice, imageUrls, sh
 ('PCGM004', 'PC Gaming ASUS ROG Strix G16CH', 11, 35000000, 38000000, '["https://images.unsplash.com/photo-1616432525019-58b2e31c8d76?q=80&w=800&auto=format&fit=crop"]', 'Máy bộ gaming từ ASUS ROG, thiết kế độc đáo, hiệu năng được tinh chỉnh tối ưu.', '{"CPU": "Intel Core i7-13700F", "RAM": "16GB DDR4", "SSD": "1TB NVMe", "VGA": "NVIDIA RTX 4060 Ti"}', 8, 'ASUS', '["Máy bộ", "ROG"]', false),
 ('PCGM005', 'PC Gaming Entry Level IQ Flash', 11, 11990000, NULL, '["https://images.unsplash.com/photo-1625041400649-5d4f3b06420a?q=80&w=800&auto=format&fit=crop"]', 'Lựa chọn tuyệt vời để bắt đầu với gaming PC, có thể nâng cấp dễ dàng trong tương lai.', '{"CPU": "AMD Ryzen 5 5600G", "RAM": "16GB DDR4 3200MHz", "SSD": "512GB NVMe", "Graphics": "Radeon Vega 7 Graphics"}', 30, 'IQ Tech', '["Giá rẻ", "APU", "Nâng cấp"]', false);
 
--- CPU (category_id: 18)
+-- CPU (category_id: 19)
 INSERT INTO Products (id, name, category_id, price, originalPrice, imageUrls, shortDescription, specifications, stock, brand, tags, is_featured) VALUES
-('CPU001', 'CPU Intel Core i5-14600K', 18, 8590000, 9200000, '["https://images.unsplash.com/photo-1627398292454-245842239121?q=80&w=800&auto=format&fit=crop"]', 'Hiệu năng gaming và làm việc đa nhiệm vượt trội. Tần số turbo cao, hỗ trợ ép xung.', '{"Socket": "LGA 1700", "Nhân/Luồng": "14/20", "Xung nhịp Turbo": "5.3 GHz", "TDP": "125W"}', 40, 'Intel', '["Gaming", "Mới nhất"]', true),
-('CPU002', 'CPU AMD Ryzen 7 7800X3D', 18, 10490000, NULL, '["https://images.unsplash.com/photo-1591799264318-7e6e74e3c84e?q=80&w=800&auto=format&fit=crop"]', 'Vua gaming với công nghệ 3D V-Cache, mang lại FPS cực cao trong hầu hết các tựa game.', '{"Socket": "AM5", "Nhân/Luồng": "8/16", "Xung nhịp Turbo": "5.0 GHz", "Cache L3": "96MB"}', 25, 'AMD', '["Gaming", "3D V-Cache", "Bán chạy"]', true),
-('CPU003', 'CPU Intel Core i9-14900K', 18, 16990000, NULL, '["https://images.unsplash.com/photo-1616441588820-a6f059c11b34?q=80&w=800&auto=format&fit=crop"]', 'CPU mạnh nhất cho người dùng cuối, hiệu năng đỉnh cao cho cả gaming và các tác vụ sáng tạo nội dung.', '{"Socket": "LGA 1700", "Nhân/Luồng": "24/32", "Xung nhịp Turbo": "6.0 GHz", "TDP": "125W"}', 10, 'Intel', '["High-end", "Sáng tạo"]', false),
-('CPU004', 'CPU AMD Ryzen 5 7600', 18, 5500000, 6000000, '["https://images.unsplash.com/photo-1633519114754-1f8d4a97e688?q=80&w=800&auto=format&fit=crop"]', 'Lựa chọn p/p tốt nhất cho gaming tầm trung trên nền tảng AM5, hiệu năng mạnh mẽ.', '{"Socket": "AM5", "Nhân/Luồng": "6/12", "Xung nhịp Turbo": "5.1 GHz", "TDP": "65W"}', 50, 'AMD', '["Tầm trung", "Giá tốt"]', false),
-('CPU005', 'CPU Intel Core i3-12100F', 18, 2350000, NULL, '["https://images.unsplash.com/photo-158223328-985338787334?q=80&w=800&auto=format&fit=crop"]', 'CPU giá rẻ nhưng có hiệu năng đơn nhân mạnh, lựa chọn tuyệt vời cho các bộ PC gaming giá rẻ.', '{"Socket": "LGA 1700", "Nhân/Luồng": "4/8", "Xung nhịp Turbo": "4.3 GHz", "TDP": "58W"}', 60, 'Intel', '["Giá rẻ", "Gaming"]', false);
+('CPU001', 'CPU Intel Core i5-14600K', 19, 8590000, 9200000, '["https://images.unsplash.com/photo-1627398292454-245842239121?q=80&w=800&auto=format&fit=crop"]', 'Hiệu năng gaming và làm việc đa nhiệm vượt trội. Tần số turbo cao, hỗ trợ ép xung.', '{"Socket": "LGA 1700", "Nhân/Luồng": "14/20", "Xung nhịp Turbo": "5.3 GHz", "TDP": "125W"}', 40, 'Intel', '["Gaming", "Mới nhất"]', true),
+('CPU002', 'CPU AMD Ryzen 7 7800X3D', 19, 10490000, NULL, '["https://images.unsplash.com/photo-1591799264318-7e6e74e3c84e?q=80&w=800&auto=format&fit=crop"]', 'Vua gaming với công nghệ 3D V-Cache, mang lại FPS cực cao trong hầu hết các tựa game.', '{"Socket": "AM5", "Nhân/Luồng": "8/16", "Xung nhịp Turbo": "5.0 GHz", "Cache L3": "96MB"}', 25, 'AMD', '["Gaming", "3D V-Cache", "Bán chạy"]', true),
+('CPU003', 'CPU Intel Core i9-14900K', 19, 16990000, NULL, '["https://images.unsplash.com/photo-1616441588820-a6f059c11b34?q=80&w=800&auto=format&fit=crop"]', 'CPU mạnh nhất cho người dùng cuối, hiệu năng đỉnh cao cho cả gaming và các tác vụ sáng tạo nội dung.', '{"Socket": "LGA 1700", "Nhân/Luồng": "24/32", "Xung nhịp Turbo": "6.0 GHz", "TDP": "125W"}', 10, 'Intel', '["High-end", "Sáng tạo"]', false),
+('CPU004', 'CPU AMD Ryzen 5 7600', 19, 5500000, 6000000, '["https://images.unsplash.com/photo-1633519114754-1f8d4a97e688?q=80&w=800&auto=format&fit=crop"]', 'Lựa chọn p/p tốt nhất cho gaming tầm trung trên nền tảng AM5, hiệu năng mạnh mẽ.', '{"Socket": "AM5", "Nhân/Luồng": "6/12", "Xung nhịp Turbo": "5.1 GHz", "TDP": "65W"}', 50, 'AMD', '["Tầm trung", "Giá tốt"]', false),
+('CPU005', 'CPU Intel Core i3-12100F', 19, 2350000, NULL, '["https://images.unsplash.com/photo-158223328-985338787334?q=80&w=800&auto=format&fit=crop"]', 'CPU giá rẻ nhưng có hiệu năng đơn nhân mạnh, lựa chọn tuyệt vời cho các bộ PC gaming giá rẻ.', '{"Socket": "LGA 1700", "Nhân/Luồng": "4/8", "Xung nhịp Turbo": "4.3 GHz", "TDP": "58W"}', 60, 'Intel', '["Giá rẻ", "Gaming"]', false);
 
--- VGA (category_id: 21)
+-- VGA (category_id: 22)
 INSERT INTO Products (id, name, category_id, price, originalPrice, imageUrls, shortDescription, specifications, stock, brand, tags, is_featured) VALUES
-('VGA001', 'VGA GIGABYTE GeForce RTX 4060 WINDFORCE OC 8G', 21, 8690000, 9500000, '["https://images.unsplash.com/photo-1627885793933-568b2f34a81a?q=80&w=800&auto=format&fit=crop"]', 'Hiệu năng tốt cho gaming Full HD, hỗ trợ DLSS 3. Tản nhiệt WINDFORCE mát mẻ.', '{"GPU": "RTX 4060", "Bộ nhớ": "8GB GDDR6", "Giao tiếp": "PCIe 4.0"}', 30, 'Gigabyte', '["RTX 40 series", "Full HD", "Khuyến mãi"]', true),
-('VGA002', 'VGA ASUS TUF Gaming GeForce RTX 4070 Ti SUPER 16GB', 21, 25990000, NULL, '["https://images.unsplash.com/photo-1591463925312-dce92543a655?q=80&w=800&auto=format&fit=crop"]', 'Sức mạnh vượt trội cho gaming 2K và 4K. Linh kiện TUF bền bỉ, tản nhiệt hiệu quả.', '{"GPU": "RTX 4070 Ti SUPER", "Bộ nhớ": "16GB GDDR6X", "Giao tiếp": "PCIe 4.0"}', 10, 'ASUS', '["Gaming 4K", "TUF Gaming"]', false),
-('VGA003', 'VGA MSI GeForce RTX 3060 VENTUS 2X 12G OC', 21, 7490000, 8200000, '["https://images.unsplash.com/photo-1633519114754-1f8d4a97e688?q=80&w=800&auto=format&fit=crop"]', 'Card đồ họa quốc dân, cân tốt các game eSports và nhiều game AAA ở Full HD.', '{"GPU": "RTX 3060", "Bộ nhớ": "12GB GDDR6", "Giao tiếp": "PCIe 4.0"}', 40, 'MSI', '["Bán chạy", "Quốc dân"]', false),
-('VGA004', 'VGA SAPPHIRE PULSE Radeon RX 7800 XT 16GB', 21, 14500000, NULL, '["https://images.unsplash.com/photo-1616441588820-a6f059c11b34?q=80&w=800&auto=format&fit=crop"]', 'Đối thủ nặng ký trong phân khúc gaming 2K, p/p cực tốt so với đội xanh.', '{"GPU": "RX 7800 XT", "Bộ nhớ": "16GB GDDR6", "Giao tiếp": "PCIe 4.0"}', 15, 'Sapphire', '["AMD", "Gaming 2K"]', false),
-('VGA005', 'VGA GIGABYTE GeForce RTX 4090 GAMING OC 24G', 21, 52990000, NULL, '["https://images.unsplash.com/photo-1627885793933-568b2f34a81a?q=80&w=800&auto=format&fit=crop"]', 'Card đồ họa mạnh nhất thế giới, dành cho trải nghiệm gaming 4K và các tác vụ AI, đồ họa chuyên nghiệp.', '{"GPU": "RTX 4090", "Bộ nhớ": "24GB GDDR6X", "Giao tiếp": "PCIe 4.0"}', 5, 'Gigabyte', '["Flagship", "High-end"]', false);
+('VGA001', 'VGA GIGABYTE GeForce RTX 4060 WINDFORCE OC 8G', 22, 8690000, 9500000, '["https://images.unsplash.com/photo-1627885793933-568b2f34a81a?q=80&w=800&auto=format&fit=crop"]', 'Hiệu năng tốt cho gaming Full HD, hỗ trợ DLSS 3. Tản nhiệt WINDFORCE mát mẻ.', '{"GPU": "RTX 4060", "Bộ nhớ": "8GB GDDR6", "Giao tiếp": "PCIe 4.0"}', 30, 'Gigabyte', '["RTX 40 series", "Full HD", "Khuyến mãi"]', true),
+('VGA002', 'VGA ASUS TUF Gaming GeForce RTX 4070 Ti SUPER 16GB', 22, 25990000, NULL, '["https://images.unsplash.com/photo-1591463925312-dce92543a655?q=80&w=800&auto=format&fit=crop"]', 'Sức mạnh vượt trội cho gaming 2K và 4K. Linh kiện TUF bền bỉ, tản nhiệt hiệu quả.', '{"GPU": "RTX 4070 Ti SUPER", "Bộ nhớ": "16GB GDDR6X", "Giao tiếp": "PCIe 4.0"}', 10, 'ASUS', '["Gaming 4K", "TUF Gaming"]', false),
+('VGA003', 'VGA MSI GeForce RTX 3060 VENTUS 2X 12G OC', 22, 7490000, 8200000, '["https://images.unsplash.com/photo-1633519114754-1f8d4a97e688?q=80&w=800&auto=format&fit=crop"]', 'Card đồ họa quốc dân, cân tốt các game eSports và nhiều game AAA ở Full HD.', '{"GPU": "RTX 3060", "Bộ nhớ": "12GB GDDR6", "Giao tiếp": "PCIe 4.0"}', 40, 'MSI', '["Bán chạy", "Quốc dân"]', false),
+('VGA004', 'VGA SAPPHIRE PULSE Radeon RX 7800 XT 16GB', 22, 14500000, NULL, '["https://images.unsplash.com/photo-1616441588820-a6f059c11b34?q=80&w=800&auto=format&fit=crop"]', 'Đối thủ nặng ký trong phân khúc gaming 2K, p/p cực tốt so với đội xanh.', '{"GPU": "RX 7800 XT", "Bộ nhớ": "16GB GDDR6", "Giao tiếp": "PCIe 4.0"}', 15, 'Sapphire', '["AMD", "Gaming 2K"]', false),
+('VGA005', 'VGA GIGABYTE GeForce RTX 4090 GAMING OC 24G', 22, 52990000, NULL, '["https://images.unsplash.com/photo-1627885793933-568b2f34a81a?q=80&w=800&auto=format&fit=crop"]', 'Card đồ họa mạnh nhất thế giới, dành cho trải nghiệm gaming 4K và các tác vụ AI, đồ họa chuyên nghiệp.', '{"GPU": "RTX 4090", "Bộ nhớ": "24GB GDDR6X", "Giao tiếp": "PCIe 4.0"}', 5, 'Gigabyte', '["Flagship", "High-end"]', false);
 
--- Màn hình (category_id: 26)
+-- Màn hình (category_id: 27)
 INSERT INTO Products (id, name, category_id, price, originalPrice, imageUrls, shortDescription, specifications, stock, brand, tags, is_featured) VALUES
-('SCR001', 'Màn hình LG 27GP850-B 27 inch 2K 165Hz Nano IPS', 26, 7990000, 8990000, '["https://images.unsplash.com/photo-1593640495253-2319d27a185e?q=80&w=800&auto=format&fit=crop"]', 'Màn hình gaming 2K đỉnh cao với tấm nền Nano IPS cho màu sắc rực rỡ và tốc độ phản hồi 1ms.', '{"Kích thước": "27 inch", "Độ phân giải": "2560x1440 (2K)", "Tần số quét": "165Hz", "Tấm nền": "Nano IPS"}', 20, 'LG', '["Gaming", "2K", "165Hz", "Bán chạy"]', true),
-('SCR002', 'Màn hình Dell UltraSharp U2723QE 27 inch 4K IPS', 26, 12500000, NULL, '["https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?q=80&w=800&auto=format&fit=crop"]', 'Dành cho dân đồ họa chuyên nghiệp. Độ phân giải 4K, màu sắc chính xác, tích hợp hub USB-C tiện lợi.', '{"Kích thước": "27 inch", "Độ phân giải": "3840x2160 (4K)", "Tấm nền": "IPS Black", "Cổng kết nối": "USB-C (DP 1.4, Power Delivery 90W)"}', 15, 'Dell', '["Đồ họa", "4K", "USB-C"]', false),
-('SCR003', 'Màn hình Samsung Odyssey G5 32 inch Cong 1000R 2K 144Hz', 26, 7290000, 8000000, '["https://images.unsplash.com/photo-1616588589676-62b3bd4d2b96?q=80&w=800&auto=format&fit=crop"]', 'Trải nghiệm cong đắm chìm với độ cong 1000R, hoàn hảo cho các tựa game nhập vai và đua xe.', '{"Kích thước": "32 inch", "Độ cong": "1000R", "Độ phân giải": "2560x1440 (2K)", "Tần số quét": "144Hz"}', 18, 'Samsung', '["Màn hình cong", "Gaming"]', false),
-('SCR004', 'Màn hình ViewSonic VX2428 24 inch FHD 165Hz IPS', 26, 3590000, NULL, '["https://images.unsplash.com/photo-1606226131653-b248b11319b8?q=80&w=800&auto=format&fit=crop"]', 'Màn hình gaming giá rẻ p/p tốt, tần số quét cao cho game eSports.', '{"Kích thước": "24 inch", "Độ phân giải": "1920x1080 (FHD)", "Tần số quét": "165Hz", "Tấm nền": "IPS"}', 40, 'ViewSonic', '["Giá rẻ", "eSports"]', false),
-('SCR005', 'Màn hình di động ASUS ZenScreen MB16ACV 15.6 inch FHD IPS', 26, 5500000, NULL, '["https://images.unsplash.com/photo-1587584180293-270561571f37?q=80&w=800&auto=format&fit=crop"]', 'Mở rộng không gian làm việc của bạn mọi lúc mọi nơi với màn hình di động mỏng nhẹ, kết nối chỉ qua một cáp USB-C.', '{"Kích thước": "15.6 inch", "Độ phân giải": "1920x1080 (FHD)", "Kết nối": "USB-C", "Trọng lượng": "0.78kg"}', 22, 'ASUS', '["Màn hình di động", "Linh hoạt"]', false);
+('SCR001', 'Màn hình LG 27GP850-B 27 inch 2K 165Hz Nano IPS', 27, 7990000, 8990000, '["https://images.unsplash.com/photo-1593640495253-2319d27a185e?q=80&w=800&auto=format&fit=crop"]', 'Màn hình gaming 2K đỉnh cao với tấm nền Nano IPS cho màu sắc rực rỡ và tốc độ phản hồi 1ms.', '{"Kích thước": "27 inch", "Độ phân giải": "2560x1440 (2K)", "Tần số quét": "165Hz", "Tấm nền": "Nano IPS"}', 20, 'LG', '["Gaming", "2K", "165Hz", "Bán chạy"]', true),
+('SCR002', 'Màn hình Dell UltraSharp U2723QE 27 inch 4K IPS', 27, 12500000, NULL, '["https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?q=80&w=800&auto=format&fit=crop"]', 'Dành cho dân đồ họa chuyên nghiệp. Độ phân giải 4K, màu sắc chính xác, tích hợp hub USB-C tiện lợi.', '{"Kích thước": "27 inch", "Độ phân giải": "3840x2160 (4K)", "Tấm nền": "IPS Black", "Cổng kết nối": "USB-C (DP 1.4, Power Delivery 90W)"}', 15, 'Dell', '["Đồ họa", "4K", "USB-C"]', false),
+('SCR003', 'Màn hình Samsung Odyssey G5 32 inch Cong 1000R 2K 144Hz', 27, 7290000, 8000000, '["https://images.unsplash.com/photo-1616588589676-62b3bd4d2b96?q=80&w=800&auto=format&fit=crop"]', 'Trải nghiệm cong đắm chìm với độ cong 1000R, hoàn hảo cho các tựa game nhập vai và đua xe.', '{"Kích thước": "32 inch", "Độ cong": "1000R", "Độ phân giải": "2560x1440 (2K)", "Tần số quét": "144Hz"}', 18, 'Samsung', '["Màn hình cong", "Gaming"]', false),
+('SCR004', 'Màn hình ViewSonic VX2428 24 inch FHD 165Hz IPS', 27, 3590000, NULL, '["https://images.unsplash.com/photo-1606226131653-b248b11319b8?q=80&w=800&auto=format&fit=crop"]', 'Màn hình gaming giá rẻ p/p tốt, tần số quét cao cho game eSports.', '{"Kích thước": "24 inch", "Độ phân giải": "1920x1080 (FHD)", "Tần số quét": "165Hz", "Tấm nền": "IPS"}', 40, 'ViewSonic', '["Giá rẻ", "eSports"]', false),
+('SCR005', 'Màn hình di động ASUS ZenScreen MB16ACV 15.6 inch FHD IPS', 27, 5500000, NULL, '["https://images.unsplash.com/photo-1587584180293-270561571f37?q=80&w=800&auto=format&fit=crop"]', 'Mở rộng không gian làm việc của bạn mọi lúc mọi nơi với màn hình di động mỏng nhẹ, kết nối chỉ qua một cáp USB-C.', '{"Kích thước": "15.6 inch", "Độ phân giải": "1920x1080 (FHD)", "Kết nối": "USB-C", "Trọng lượng": "0.78kg"}', 22, 'ASUS', '["Màn hình di động", "Linh hoạt"]', false);
 
 
 -- Insert Warehouses

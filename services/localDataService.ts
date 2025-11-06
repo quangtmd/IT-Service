@@ -2,7 +2,9 @@
 
 import { 
     Product, Order, Article, OrderStatus, MediaItem, ServerInfo, 
-    ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord
+    ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
+    // Fix: Import User and Quotation types
+    User, Quotation 
 } from '../types';
 import { BACKEND_API_BASE_URL } from '../constants';
 
@@ -141,6 +143,60 @@ export const updateArticle = async (id: string, updates: Partial<Article>): Prom
 export const deleteArticle = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/articles/${id}`, { method: 'DELETE' });
 };
+
+// Fix: Add missing User and Quotation service functions
+// --- User Service ---
+export const getUsers = async (): Promise<User[]> => {
+    return fetchFromApi<User[]>('/api/users');
+};
+
+export const addUser = async (user: Omit<User, 'id'>): Promise<User> => {
+    return fetchFromApi<User>('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user),
+    });
+};
+
+export const updateUser = async (id: string, updates: Partial<User>): Promise<boolean> => {
+    await fetchFromApi(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+    });
+    return true; // if fetchFromApi doesn't throw, it was successful
+};
+
+export const deleteUser = async (id: string): Promise<boolean> => {
+    await fetchFromApi(`/api/users/${id}`, { method: 'DELETE' });
+    return true; // if fetchFromApi doesn't throw, it was successful
+};
+
+// --- Quotation Service ---
+export const getQuotations = async (): Promise<Quotation[]> => {
+    return fetchFromApi<Quotation[]>('/api/quotations');
+};
+
+export const addQuotation = async (quotation: Omit<Quotation, 'id'>): Promise<Quotation> => {
+    return fetchFromApi<Quotation>('/api/quotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(quotation),
+    });
+};
+
+export const updateQuotation = async (id: string, updates: Quotation): Promise<Quotation> => {
+    return fetchFromApi<Quotation>(`/api/quotations/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+    });
+};
+
+export const deleteQuotation = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/quotations/${id}`, { method: 'DELETE' });
+};
+
 
 // --- Media Library Service ---
 export const getMediaItems = async (): Promise<MediaItem[]> => fetchFromApi('/api/media');

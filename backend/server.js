@@ -357,6 +357,132 @@ app.delete('/api/products/:id', async (req, res) => {
     }
 });
 
+// Fix: Add missing Users and Quotations API endpoints
+// --- USERS API ---
+app.get('/api/users', async (req, res) => {
+    try {
+        const [users] = await pool.query('SELECT * FROM Users ORDER BY username');
+        // Do not send password to client
+        const safeUsers = users.map(({ password, ...user }) => user);
+        res.json(safeUsers);
+    } catch (error) {
+        console.error("Lỗi khi truy vấn người dùng:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy người dùng", error: error.sqlMessage || error.message });
+    }
+});
+
+app.post('/api/users', async (req, res) => {
+    try {
+        const user = { ...req.body, id: `user-${Date.now()}` };
+        await pool.query('INSERT INTO Users SET ?', user);
+        const { password, ...safeUser } = user;
+        res.status(201).json(safeUser);
+    } catch (error) {
+        console.error("Lỗi khi tạo người dùng:", error);
+        res.status(500).json({ message: 'Lỗi server khi tạo người dùng', error: error.sqlMessage || error.message });
+    }
+});
+
+app.put('/api/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        // Never update ID, and don't update password if it's not provided
+        delete updates.id;
+        if (updates.password === '' || updates.password === undefined) {
+            delete updates.password;
+        }
+
+        const [result] = await pool.query('UPDATE Users SET ? WHERE id = ?', [updates, id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng để cập nhật' });
+        }
+        res.json({ message: 'Cập nhật thành công' });
+    } catch (error) {
+        console.error("Lỗi khi cập nhật người dùng:", error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật người dùng', error: error.sqlMessage || error.message });
+    }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [result] = await pool.query('DELETE FROM Users WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng để xóa' });
+        }
+        res.status(204).send();
+    } catch (error) {
+        console.error("Lỗi khi xóa người dùng:", error);
+        res.status(500).json({ message: 'Lỗi server khi xóa người dùng', error: error.sqlMessage || error.message });
+    }
+});
+
+
+// --- QUOTATIONS API ---
+app.get('/api/quotations', async (req, res) => {
+    try {
+        const [quotations] = await pool.query('SELECT * FROM Quotations ORDER BY creation_date DESC');
+        const deserialized = quotations.map(q => ({ ...q, items: JSON.parse(q.items || '[]') }));
+        res.json(deserialized);
+    } catch (error) {
+        console.error("Lỗi khi truy vấn báo giá:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy báo giá", error: error.sqlMessage || error.message });
+    }
+});
+
+app.post('/api/quotations', async (req, res) => {
+    try {
+        const data = req.body;
+        const quotation = {
+            ...data,
+            id: `quote-${Date.now()}`,
+            items: JSON.stringify(data.items || [])
+        };
+        await pool.query('INSERT INTO Quotations SET ?', quotation);
+        res.status(201).json({ ...data, id: quotation.id });
+    } catch (error) {
+        console.error("Lỗi khi tạo báo giá:", error);
+        res.status(500).json({ message: 'Lỗi server khi tạo báo giá', error: error.sqlMessage || error.message });
+    }
+});
+
+app.put('/api/quotations/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const data = req.body;
+        const quotation = {
+            ...data,
+            items: JSON.stringify(data.items || [])
+        };
+        delete quotation.id;
+        delete quotation.customerInfo; // This is a display field, not in DB
+        const [result] = await pool.query('UPDATE Quotations SET ? WHERE id = ?', [quotation, id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy báo giá' });
+        }
+        res.json({ id, ...data });
+    } catch (error) {
+        console.error("Lỗi khi cập nhật báo giá:", error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật báo giá', error: error.sqlMessage || error.message });
+    }
+});
+
+app.delete('/api/quotations/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [result] = await pool.query('DELETE FROM Quotations WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy báo giá' });
+        }
+        res.status(204).send();
+    } catch (error) {
+        console.error("Lỗi khi xóa báo giá:", error);
+        res.status(500).json({ message: 'Lỗi server khi xóa báo giá', error: error.sqlMessage || error.message });
+    }
+});
+
 
 // --- ARTICLES API ---
 app.get('/api/articles', async (req, res) => {
