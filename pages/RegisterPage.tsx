@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
+import * as Constants from '../constants.tsx';
 
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [agreed, setAgreed] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Changed from useHistory
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/home');
+      navigate('/home'); // Changed from history.push
     }
   }, [isAuthenticated, navigate]);
 
@@ -23,134 +24,127 @@ const RegisterPage: React.FC = () => {
     setError(null);
 
     if (!username.trim() || !email.trim() || !password.trim()) {
-      setError('Vui lòng điền đầy đủ các trường.');
+      setError('Vui lòng điền đầy đủ các trường bắt buộc.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp.');
       return;
     }
     if (password.length < 6) {
       setError('Mật khẩu phải có ít nhất 6 ký tự.');
       return;
     }
-    if (!agreed) {
-      setError('Bạn phải đồng ý với điều khoản dịch vụ.');
-      return;
-    }
 
     try {
-      const user = await register({ username, email, password });
-      if (user) {
-        navigate('/home');
-      } else {
-        setError('Đăng ký không thành công. Vui lòng thử lại.');
-      }
+        const user = await register({ username, email, password });
+        if (user) {
+          navigate('/home');
+        } else {
+          setError('Đăng ký không thành công. Vui lòng thử lại.');
+        }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Đã xảy ra lỗi không xác định.';
-      setError(errorMessage);
+        const errorMessage = err instanceof Error ? err.message : 'Đã xảy ra lỗi không xác định.';
+        setError(errorMessage);
     }
-  };
-  
-  const handleSocialLogin = (provider: string) => {
-    console.log(`Attempting to sign up with ${provider}...`);
-    setError(`Chức năng đăng ký bằng ${provider} đang được phát triển.`);
   };
 
   return (
-    <div className="auth-container" style={{backgroundImage: "url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?q=80&w=1974&auto=format&fit=crop')"}}>
-      <div className="auth-card">
-        {/* Info Panel */}
-        <div className="auth-panel items-center text-center hidden md:flex">
-          <div>
-             <h2 className="text-2xl font-bold mb-4">IQ Technology</h2>
-            <h1 className="auth-title">Chào Mừng Trở Lại!</h1>
-            <p className="mb-8 text-white/80">Để giữ kết nối với chúng tôi, vui lòng đăng nhập bằng thông tin cá nhân của bạn</p>
-            <Link to="/login">
-                <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-black">
-                    Đăng Nhập
-                </Button>
+    <div className="min-h-screen flex items-center justify-center bg-bgCanvas py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-bgBase p-10 rounded-xl shadow-xl border border-borderDefault">
+        <div>
+          <Link to="/home" className="flex justify-center">
+             <span className="text-3xl font-bold text-primary">{Constants.COMPANY_NAME}</span>
+          </Link>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-textBase">
+            Tạo tài khoản mới
+          </h2>
+          <p className="mt-2 text-center text-sm text-textMuted">
+            Hoặc{' '}
+            <Link to="/login" className="font-medium text-primary hover:text-primary-dark">
+              đăng nhập nếu bạn đã có tài khoản
             </Link>
-             <div className="auth-social-login mt-12">
-              <p className="auth-social-text">Hoặc đăng nhập với</p>
-              <div className="auth-social-icons">
-                <button type="button" onClick={() => handleSocialLogin('Facebook')} className="auth-social-icon" aria-label="Đăng nhập với Facebook">
-                  <i className="fab fa-facebook-f"></i>
-                </button>
-                <button type="button" onClick={() => handleSocialLogin('Google')} className="auth-social-icon" aria-label="Đăng nhập với Google">
-                  <i className="fab fa-google"></i>
-                </button>
-                <button type="button" onClick={() => handleSocialLogin('GitHub')} className="auth-social-icon" aria-label="Đăng nhập với GitHub">
-                  <i className="fab fa-github"></i>
-                </button>
-              </div>
+          </p>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="p-3 bg-danger-bg border border-danger-border text-danger-text rounded-md text-sm">
+              {error}
+            </div>
+          )}
+          <div className="rounded-md shadow-sm">
+            <div>
+              <label htmlFor="username" className="sr-only">
+                Tên người dùng
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                placeholder="Tên người dùng *"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div className="-mt-px">
+              <label htmlFor="email-address" className="sr-only">
+                Địa chỉ email
+              </label>
+              <input
+                id="email-address"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                placeholder="Địa chỉ email *"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="-mt-px">
+              <label htmlFor="password" className="sr-only">
+                Mật khẩu
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                placeholder="Mật khẩu *"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div className="-mt-px">
+              <label htmlFor="confirm-password" className="sr-only">
+                Xác nhận mật khẩu
+              </label>
+              <input
+                id="confirm-password"
+                name="confirm-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                placeholder="Xác nhận mật khẩu *"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
             </div>
           </div>
-        </div>
 
-        {/* Form Panel */}
-        <div className="auth-panel form-panel">
-          <form onSubmit={handleSubmit} className="w-full">
-            <h1 className="auth-title">Tạo Tài Khoản</h1>
-            {error && (
-                <div className="p-3 mb-4 bg-red-500/20 border border-red-500/30 text-white rounded-md text-sm">
-                  {error}
-                </div>
-            )}
-            <input
-              type="text"
-              placeholder="Tên người dùng"
-              className="auth-input"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              className="auth-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Mật khẩu"
-              className="auth-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <div className="flex items-center my-4">
-               <label className="auth-checkbox flex items-center">
-                    <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mr-2 h-4 w-4 accent-primary"/>
-                    Tôi đồng ý với tất cả các điều khoản trong <a href="#" className="ml-1">Điều khoản dịch vụ</a>
-                </label>
-            </div>
-            <Button type="submit" className="w-full !py-3 !text-base" variant="primary" size="lg" isLoading={authLoading}>
-              Đăng Ký
+          <div>
+            <Button type="submit" className="w-full" size="lg" isLoading={authLoading}>
+              Đăng ký
             </Button>
-            
-            <div className="md:hidden">
-              <div className="auth-social-login">
-              <p className="auth-social-text">Hoặc đăng ký với</p>
-              <div className="auth-social-icons">
-                <button type="button" onClick={() => handleSocialLogin('Facebook')} className="auth-social-icon" aria-label="Đăng ký với Facebook">
-                  <i className="fab fa-facebook-f"></i>
-                </button>
-                <button type="button" onClick={() => handleSocialLogin('Google')} className="auth-social-icon" aria-label="Đăng ký với Google">
-                  <i className="fab fa-google"></i>
-                </button>
-                <button type="button" onClick={() => handleSocialLogin('GitHub')} className="auth-social-icon" aria-label="Đăng ký với GitHub">
-                  <i className="fab fa-github"></i>
-                </button>
-              </div>
-            </div>
-              <p className="text-center text-sm text-white/80 mt-6">
-                Bạn đã có tài khoản?{' '}
-                <Link to="/login" className="font-medium text-white hover:underline">
-                  Đăng Nhập
-                </Link>
-              </p>
-            </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );

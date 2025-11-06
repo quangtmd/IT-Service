@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
@@ -76,10 +77,10 @@ const HomeContactIts: React.FC = () => {
                     </span>
                 )}
                 <h2 className="home-section-title text-4xl md:text-5xl font-extrabold">
-                    {contactConfig.title || "Liên Lạc"}
+                    {contactConfig.title || "Get In Touch"}
                 </h2>
                 <p className="home-section-subtitle">
-                    Chúng tôi ở đây để giúp đỡ. Gửi tin nhắn cho chúng tôi hoặc liên hệ qua các kênh của chúng tôi.
+                    We're here to help. Send us a message or reach out through our contact channels.
                 </p>
             </div>
 
@@ -130,9 +131,9 @@ const HomeContactIts: React.FC = () => {
                     <div className="bg-bgCanvas p-8 md:p-10 rounded-xl shadow-xl space-y-6 border border-borderDefault h-full">
                         <h3 className="text-2xl font-semibold text-textBase mb-4">Thông Tin Liên Hệ Khác</h3>
                         {[
-                            { icon: 'fas fa-phone-alt', title: 'Điện thoại:', content: siteSettings.companyPhone, href: `tel:${siteSettings.companyPhone.replace(/\./g, '')}` },
+                            { icon: 'fas fa-phone-alt', title: 'Phone:', content: siteSettings.companyPhone, href: `tel:${siteSettings.companyPhone.replace(/\./g, '')}` },
                             { icon: 'fas fa-envelope', title: 'Email:', content: siteSettings.companyEmail, href: `mailto:${siteSettings.companyEmail}` },
-                            { icon: 'fas fa-map-marker-alt', title: 'Địa chỉ:', content: siteSettings.companyAddress, href: '#' } 
+                            { icon: 'fas fa-map-marker-alt', title: 'Address:', content: siteSettings.companyAddress, href: '#' } 
                         ].map((info, index) => (
                             <div key={index} className="flex items-start py-3">
                                 <div className="flex-shrink-0 mr-5 modern-card-icon-wrapper !w-12 !h-12 !p-3 bg-primary/10">
@@ -145,8 +146,8 @@ const HomeContactIts: React.FC = () => {
                             </div>
                         ))}
                          <div className="mt-6 pt-6 border-t border-borderDefault">
-                            <h4 className="text-md font-semibold text-textBase mb-2">Giờ làm việc:</h4>
-                            <p className="text-textMuted">{siteSettings.workingHours || "Thứ 2 - Thứ 7: 8:00 - 18:00"}</p>
+                            <h4 className="text-md font-semibold text-textBase mb-2">Working Hours:</h4>
+                            <p className="text-textMuted">{siteSettings.workingHours || "Mon - Sat: 8:00 AM - 6:00 PM"}</p>
                         </div>
                     </div>
                 </div>

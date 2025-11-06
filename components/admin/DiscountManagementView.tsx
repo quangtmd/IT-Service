@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { DiscountCode } from '../../types';
 import * as Constants from '../../constants';
@@ -113,27 +114,23 @@ const DiscountFormModal: React.FC<DiscountFormModalProps> = ({ discount, onClose
 
     return (
         <div className="admin-modal-overlay">
-            <form onSubmit={handleSubmit} className="admin-modal-panel">
-                <div className="admin-modal-header">
-                    <h4 className="admin-modal-title">{formData.id ? 'Sửa Mã giảm giá' : 'Thêm Mã giảm giá'}</h4>
-                    <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
-                </div>
-                <div className="admin-modal-body grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="admin-form-group"><label>Mã Code *</label><input type="text" name="code" value={formData.code || ''} onChange={handleChange} required className="font-mono" /></div>
-                    <div className="admin-form-group"><label>Loại *</label>
-                        <select name="type" value={formData.type || 'percentage'} onChange={handleChange}><option value="percentage">Phần trăm</option><option value="fixed_amount">Số tiền cố định</option></select>
+            <div className="admin-modal-panel">
+                <form onSubmit={handleSubmit}>
+                    <div className="admin-modal-header"><h4 className="admin-modal-title">{formData.id ? 'Sửa Mã giảm giá' : 'Thêm Mã giảm giá'}</h4><button type="button" onClick={onClose}>&times;</button></div>
+                    <div className="admin-modal-body grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="admin-form-group"><label>Mã Code *</label><input type="text" name="code" value={formData.code || ''} onChange={handleChange} required className="font-mono" /></div>
+                        <div className="admin-form-group"><label>Loại *</label>
+                            <select name="type" value={formData.type || 'percentage'} onChange={handleChange}><option value="percentage">Phần trăm</option><option value="fixed_amount">Số tiền cố định</option></select>
+                        </div>
+                        <div className="admin-form-group"><label>Giá trị *</label><input type="number" name="value" value={formData.value || 0} onChange={handleChange} required /></div>
+                        <div className="admin-form-group"><label>Chi tiêu tối thiểu</label><input type="number" name="minSpend" value={formData.minSpend || ''} onChange={handleChange} /></div>
+                        <div className="admin-form-group md:col-span-2"><label>Mô tả</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={3}></textarea></div>
+                        <div className="admin-form-group"><label>Ngày hết hạn</label><input type="date" name="expiryDate" value={formData.expiryDate || ''} onChange={handleChange} /></div>
+                        <div className="admin-form-group-checkbox items-center pt-6"><input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleChange} className="w-4 h-4" /><label className="!mb-0 !ml-2">Kích hoạt</label></div>
                     </div>
-                    <div className="admin-form-group"><label>Giá trị *</label><input type="number" name="value" value={formData.value || 0} onChange={handleChange} required /></div>
-                    <div className="admin-form-group"><label>Chi tiêu tối thiểu</label><input type="number" name="minSpend" value={formData.minSpend || ''} onChange={handleChange} /></div>
-                    <div className="admin-form-group md:col-span-2"><label>Mô tả</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={3}></textarea></div>
-                    <div className="admin-form-group"><label>Ngày hết hạn</label><input type="date" name="expiryDate" value={formData.expiryDate || ''} onChange={handleChange} /></div>
-                    <div className="admin-form-group-checkbox items-center pt-6"><input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleChange} className="w-4 h-4" /><label className="!mb-0 !ml-2">Kích hoạt</label></div>
-                </div>
-                <div className="admin-modal-footer">
-                    <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
-                    <Button type="submit">Lưu</Button>
-                </div>
-            </form>
+                    <div className="admin-modal-footer"><Button type="button" variant="outline" onClick={onClose}>Hủy</Button><Button type="submit">Lưu</Button></div>
+                </form>
+            </div>
         </div>
     );
 };

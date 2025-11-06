@@ -1,27 +1,24 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Article } from '../../types';
-import * => Constants from '../../constants';
+import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadInput from '../ui/ImageUploadInput';
 import { getArticles, addArticle, updateArticle, deleteArticle } from '../../services/localDataService';
-import BackendConnectionError from '../shared/BackendConnectionError';
 
 const ArticleManagementView: React.FC = () => {
     const [articles, setArticles] = useState<Article[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingArticle, setEditingArticle] = useState<Article | null>(null);
 
     const loadArticles = useCallback(async () => {
         setIsLoading(true);
-        setError(null);
         try {
             const articlesFromDb = await getArticles();
             setArticles(articlesFromDb);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu bài viết.');
+        } catch (error) {
+            console.error("Failed to load articles:", error);
         } finally {
             setIsLoading(false);
         }
@@ -63,27 +60,19 @@ const ArticleManagementView: React.FC = () => {
     };
 
     const handleSave = async (articleData: Article) => {
-        try {
-            if (articleData.id) {
-                await updateArticle(articleData.id, articleData);
-            } else {
-                await addArticle(articleData);
-            }
-            loadArticles();
-            closeModal();
-        } catch (err) {
-            alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi lưu bài viết.');
+        if (articleData.id) {
+            await updateArticle(articleData.id, articleData);
+        } else {
+            await addArticle(articleData);
         }
+        loadArticles();
+        closeModal();
     };
 
     const handleDelete = async (articleId: string) => {
         if (window.confirm('Bạn có chắc muốn xóa bài viết này?')) {
-            try {
-                await deleteArticle(articleId);
-                loadArticles();
-            } catch (err) {
-                 alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi xóa bài viết.');
-            }
+            await deleteArticle(articleId);
+            loadArticles();
         }
     };
     
@@ -103,7 +92,6 @@ const ArticleManagementView: React.FC = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="admin-form-group w-full max-w-md mb-4"
                 />
-                {error && <BackendConnectionError error={error} />}
                 <div className="overflow-x-auto">
                     <table className="admin-table">
                          <thead>
@@ -118,7 +106,7 @@ const ArticleManagementView: React.FC = () => {
                         <tbody>
                             {isLoading ? (
                                 <tr><td colSpan={5} className="text-center py-4">Đang tải...</td></tr>
-                            ) : !error && filteredArticles.length > 0 ? (
+                            ) : (
                                 filteredArticles.map(article => (
                                     <tr key={article.id}>
                                         <td>
@@ -138,8 +126,6 @@ const ArticleManagementView: React.FC = () => {
                                         </td>
                                     </tr>
                                 ))
-                             ) : (
-                                !error && <tr><td colSpan={5} className="text-center py-4 text-textMuted">Không có bài viết nào.</td></tr>
                             )}
                         </tbody>
                     </table>
@@ -171,47 +157,49 @@ const ArticleFormModal: React.FC<ArticleFormModalProps> = ({ article, onClose, o
 
     return (
         <div className="admin-modal-overlay">
-            <form onSubmit={handleSubmit} className="admin-modal-panel">
-                <div className="admin-modal-header">
-                    <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Bài viết' : 'Thêm Bài viết Mới'}</h4>
-                    <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
-                </div>
-                <div className="admin-modal-body">
-                     <div className="admin-form-group">
-                        <label htmlFor="title">Tiêu đề *</label>
-                        <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required />
+            <div className="admin-modal-panel">
+                <form onSubmit={handleSubmit} className="contents">
+                    <div className="admin-modal-header">
+                        <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Bài viết' : 'Thêm Bài viết Mới'}</h4>
+                        <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="admin-modal-body">
+                         <div className="admin-form-group">
+                            <label htmlFor="title">Tiêu đề *</label>
+                            <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="admin-form-group">
+                                <label htmlFor="author">Tác giả</label>
+                                <input type="text" name="author" id="author" value={formData.author} onChange={handleChange} />
+                            </div>
+                            <div className="admin-form-group">
+                                <label htmlFor="category">Danh mục</label>
+                                <select name="category" id="category" value={formData.category} onChange={handleChange}>
+                                    {Constants.ARTICLE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <ImageUploadInput
+                            label="URL Ảnh đại diện"
+                            value={formData.imageUrl}
+                            onChange={value => setFormData(p => ({ ...p, imageUrl: value }))}
+                        />
                         <div className="admin-form-group">
-                            <label htmlFor="author">Tác giả</label>
-                            <input type="text" name="author" id="author" value={formData.author} onChange={handleChange} />
+                            <label htmlFor="summary">Tóm tắt *</label>
+                            <textarea name="summary" id="summary" rows={3} value={formData.summary} onChange={handleChange} required></textarea>
                         </div>
                         <div className="admin-form-group">
-                            <label htmlFor="category">Danh mục</label>
-                            <select name="category" id="category" value={formData.category} onChange={handleChange}>
-                                {Constants.ARTICLE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
+                            <label htmlFor="content">Nội dung (hỗ trợ Markdown)</label>
+                            <textarea name="content" id="content" rows={10} value={formData.content || ''} onChange={handleChange}></textarea>
                         </div>
                     </div>
-                    <ImageUploadInput
-                        label="URL Ảnh đại diện"
-                        value={formData.imageUrl}
-                        onChange={value => setFormData(p => ({ ...p, imageUrl: value }))}
-                    />
-                    <div className="admin-form-group">
-                        <label htmlFor="summary">Tóm tắt *</label>
-                        <textarea name="summary" id="summary" rows={3} value={formData.summary} onChange={handleChange} required></textarea>
+                    <div className="admin-modal-footer">
+                        <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
+                        <Button type="submit" variant="primary">Lưu Bài viết</Button>
                     </div>
-                    <div className="admin-form-group">
-                        <label htmlFor="content">Nội dung (hỗ trợ Markdown)</label>
-                        <textarea name="content" id="content" rows={10} value={formData.content || ''} onChange={handleChange}></textarea>
-                    </div>
-                </div>
-                <div className="admin-modal-footer">
-                    <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
-                    <Button type="submit" variant="primary">Lưu Bài viết</Button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     );
 };

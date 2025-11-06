@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom'; 
+import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import { Article } from '../../types';
 
 interface ArticlePreviewProps {
@@ -36,12 +36,12 @@ const ArticlePreview: React.FC<ArticlePreviewProps> = ({ article }) => {
           </Link>
         </h3>
         <p className="text-xs text-textSubtle mb-3">
-            Bởi {article.author} vào ngày {new Date(article.date).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
+            By {article.author} on {new Date(article.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
         <p className="modern-card-description mb-4 line-clamp-3 flex-grow">{article.summary}</p>
         <div className="mt-auto">
              <Link to={`/article/${article.id}`} className="modern-card-link self-start">
-                Đọc thêm <i className="fas fa-arrow-right text-xs ml-1"></i>
+                Read More <i className="fas fa-arrow-right text-xs ml-1"></i>
             </Link>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
@@ -34,7 +35,7 @@ const HomeBannerIts: React.FC = () => {
 
     const timer = setInterval(() => {
       setCurrentIndex(prevIndex => (prevIndex + 1) % banners.length);
-    }, 3000); 
+    }, 3000); // Change slide every 3 seconds
 
     return () => clearInterval(timer);
   }, [banners]);
@@ -44,13 +45,13 @@ const HomeBannerIts: React.FC = () => {
   };
 
   if (banners.length === 0) {
-    return <div className="h-[500px] bg-gray-700 flex items-center justify-center"><p className="text-white">Loading Banners...</p></div>;
+    return <div className="h-[90vh] min-h-[600px] bg-gray-800 flex items-center justify-center"><p className="text-white">Loading Banners...</p></div>;
   }
 
   const currentBanner = banners[currentIndex];
 
   return (
-    <section className="relative text-white h-[500px] flex items-center overflow-hidden bg-gray-700">
+    <section className="relative text-white h-[90vh] min-h-[600px] max-h-[800px] flex items-center overflow-hidden">
       {/* Background Slides */}
       {banners.map((banner, index) => (
         <div

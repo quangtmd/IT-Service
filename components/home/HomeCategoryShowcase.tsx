@@ -20,10 +20,10 @@ const HomeCategoryShowcase: React.FC = () => {
     const [activeIndex, setActiveIndex] = useState(1); // 'Linh Kiện' is active in example
 
     return (
-        <section className="bg-bgCanvas">
+        <section className="bg-bgCanvas py-8">
             <div className="container mx-auto px-4">
-                <div className="relative">
-                    <div className="flex justify-center -space-x-5 md:-space-x-8 pb-14">
+                <div className="relative pt-4 pb-12">
+                    <div className="flex justify-center -space-x-5 md:-space-x-8">
                         {CATEGORY_TABS_DATA.map((tab, index) => (
                             <div
                                 key={index}

@@ -1,5 +1,4 @@
 import React, { ErrorInfo, ReactNode } from 'react';
-import * as Constants from './constants';
 
 interface Props {
   children: ReactNode;
@@ -12,10 +11,14 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  state: State = {
-    hasError: false,
-    errorMessage: '',
-  };
+  // Fix: Replaced class property state initialization with a constructor to ensure `this.props` is correctly set up, which resolves the TypeScript error about 'props' not existing.
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      errorMessage: '',
+    };
+  }
 
   static getDerivedStateFromError(error: Error): State {
     // Update state so the next render will show the fallback UI.
@@ -30,12 +33,8 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
-    const { hasError, errorMessage } = this.state;
-    // Fix: In a React class component, props are accessed via `this.props`, not directly as a `props` variable. Changed `props` to `this.props` to resolve the "Property 'props' does not exist" error.
-    const { children, fallbackMessage } = this.props;
-
-    if (hasError) {
-      const displayMessage = errorMessage || fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
+    if (this.state.hasError) {
+      const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
         <div style={{
@@ -69,7 +68,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    return children;
+    return this.props.children;
   }
 }
 

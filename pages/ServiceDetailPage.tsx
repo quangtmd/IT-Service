@@ -1,26 +1,15 @@
+
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MOCK_SERVICES } from '../data/mockData';
 import { Service } from '../types';
 import Button from '../components/ui/Button';
 import PageTitleBannerIts from '../components/services_page_its/PageTitleBannerIts';
-import { useChatbotContext } from '../contexts/ChatbotContext'; // Import the context hook
 
 const ServiceDetailPage: React.FC = () => {
   const { serviceId } = useParams<{ serviceId: string }>();
   const [service, setService] = useState<Service | null>(null);
-  const { setCurrentContext } = useChatbotContext(); // Get the context setter
-
-  useEffect(() => {
-    // When the service data is loaded, set the chatbot context.
-    if (service) {
-      setCurrentContext(`Khách hàng đang xem dịch vụ: "${service.name}".`);
-    }
-    // Cleanup function to clear the context when the component unmounts.
-    return () => {
-      setCurrentContext(null);
-    };
-  }, [service, setCurrentContext]);
 
   useEffect(() => {
     const foundService = MOCK_SERVICES.find(s => s.id === serviceId || s.slug === serviceId);

@@ -6,8 +6,6 @@ import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
 import { getProduct, getProducts } from '../services/localDataService';
-import BackendConnectionError from '../components/shared/BackendConnectionError';
-import { useChatbotContext } from '../contexts/ChatbotContext'; // Import the context hook
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -21,18 +19,6 @@ const ProductDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'description' | 'specs'>('description');
   const { addToCart } = useCart();
   const navigate = useNavigate();
-  const { setCurrentContext } = useChatbotContext(); // Get the context setter
-
-  useEffect(() => {
-    // When the product data is loaded, set the chatbot context.
-    if (product) {
-      setCurrentContext(`Khách hàng đang xem sản phẩm: "${product.name}".`);
-    }
-    // Cleanup function to clear the context when the component unmounts.
-    return () => {
-      setCurrentContext(null);
-    };
-  }, [product, setCurrentContext]);
 
   useEffect(() => {
     const loadProductData = async () => {
@@ -51,17 +37,16 @@ const ProductDetailPage: React.FC = () => {
           setProduct(foundProduct);
           setMainImage(foundProduct.imageUrls?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
           
-          const query = `?subCategory=${foundProduct.subCategory}&limit=4`;
-          const { products: allProducts } = await getProducts(query);
-          const related = allProducts.filter(p => p.id !== foundProduct.id);
+          const allProducts = await getProducts();
+          const related = allProducts.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
           setRelatedProducts(related);
 
         } else {
           setError('Không tìm thấy sản phẩm.');
         }
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu sản phẩm từ API:", err);
-        setError(err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải sản phẩm.");
+        console.error("Lỗi khi tải dữ liệu sản phẩm từ Local Storage:", err);
+        setError("Đã xảy ra lỗi khi tải sản phẩm.");
       } finally {
         setIsLoading(false);
         window.scrollTo(0, 0);
@@ -75,17 +60,6 @@ const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = () => { if (product) addToCart(product, quantity); };
   const handleBuyNow = () => { if (product) { addToCart(product, quantity); navigate('/checkout'); } };
-  
-  const getDisplayName = (product: Product): string => {
-    if (!product.name || !product.subCategory) {
-      return product.name;
-    }
-    const subCategoryPrefix = product.subCategory.split('(')[0].trim();
-    if (product.name.startsWith(subCategoryPrefix) && product.name.length > subCategoryPrefix.length) {
-      return product.name.substring(subCategoryPrefix.length).trim();
-    }
-    return product.name;
-  };
 
   if (isLoading) {
     return (
@@ -96,18 +70,10 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-        <div className="container mx-auto px-4 py-8">
-            <BackendConnectionError error={error} />
-        </div>
-    );
-  }
-  
-  if (!product) {
+  if (error || !product) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-semibold text-textBase">Không tìm thấy sản phẩm</h2>
+        <h2 className="text-2xl font-semibold text-textBase">{error || 'Không tìm thấy sản phẩm'}</h2>
         <Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
           Quay lại cửa hàng
         </Link>
@@ -115,7 +81,6 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  const displayName = getDisplayName(product);
   const savings = product.originalPrice && product.originalPrice > product.price ? product.originalPrice - product.price : 0;
   const mainCategoryInfo = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.name === product.mainCategory);
   const subCategoryInfo = mainCategoryInfo?.subCategories.find(sc => sc.name === product.subCategory);
@@ -142,7 +107,7 @@ const ProductDetailPage: React.FC = () => {
             )}
             <li><span className="text-textSubtle">/</span></li>
             <li className="text-textSubtle truncate max-w-[200px] sm:max-w-xs" aria-current="page" title={product.name}>
-                {displayName}
+                {product.name}
             </li>
           </ol>
         </nav>
@@ -160,7 +125,7 @@ const ProductDetailPage: React.FC = () => {
                   ))}
                 </div>
               )}
-               <div className="mt-6 p-4 border border-borderDefault rounded-lg bg-bgMuted space-y-3">
+               <div className="mt-6 p-4 border border-borderDefault rounded-lg bg-bgCanvas space-y-3">
                   <div className="flex items-center text-sm text-textMuted"><i className="fas fa-check-circle text-green-500 w-5 mr-2"></i>Sản phẩm chính hãng</div>
                   <div className="flex items-center text-sm text-textMuted"><i className="fas fa-truck text-blue-500 w-5 mr-2"></i>Giao hàng toàn quốc</div>
                   <div className="flex items-center text-sm text-textMuted"><i className="fas fa-shield-alt text-yellow-500 w-5 mr-2"></i>Bảo hành theo NSX</div>
@@ -168,7 +133,7 @@ const ProductDetailPage: React.FC = () => {
             </div>
 
             <div className="lg:col-span-3">
-              <h1 className="text-2xl md:text-3xl font-bold text-textBase mb-3">{displayName}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-textBase mb-3">{product.name}</h1>
               <div className="flex items-center text-sm text-textMuted mb-3 space-x-4">
                   <span>Mã SP: <span className="font-medium text-textBase">{product.id}</span></span>
                   {product.brand && <span>Thương hiệu: <span className="font-medium text-textBase">{product.brand}</span></span>}
@@ -191,8 +156,8 @@ const ProductDetailPage: React.FC = () => {
               </div>
               
               {product.shortDescription && (
-                  <div className="mb-4 p-4 border border-blue-500/30 bg-blue-900/20 rounded-lg">
-                      <h3 className="font-semibold text-blue-300 mb-2"><i className="fas fa-info-circle mr-2"></i>Thông tin nổi bật</h3>
+                  <div className="mb-4 p-4 border border-blue-200 bg-blue-50 rounded-lg">
+                      <h3 className="font-semibold text-blue-800 mb-2"><i className="fas fa-info-circle mr-2"></i>Thông tin nổi bật</h3>
                       <p className="text-sm text-textMuted leading-relaxed">{product.shortDescription}</p>
                   </div>
               )}
@@ -200,7 +165,7 @@ const ProductDetailPage: React.FC = () => {
               <div className="mb-4">
                   <span className="font-semibold text-textBase">Tình trạng: </span>
                   {product.stock > 0 ? (
-                      <span className="text-green-400 font-bold"><i className="fas fa-check-circle mr-1"></i> Còn hàng</span>
+                      <span className="text-green-600 font-bold"><i className="fas fa-check-circle mr-1"></i> Còn hàng</span>
                   ) : (
                       <span className="text-danger-text font-bold"><i className="fas fa-times-circle mr-1"></i> Hết hàng</span>
                   )}
@@ -208,7 +173,7 @@ const ProductDetailPage: React.FC = () => {
 
               <div className="flex items-center mb-6 space-x-3">
                 <label htmlFor="quantity" className="font-semibold text-textBase">Số lượng:</label>
-                <input type="number" id="quantity" value={quantity} min="1" max={product.stock > 0 ? product.stock : 10} onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))} className="w-20 bg-bgMuted border border-borderStrong text-textBase rounded-md p-2 text-center focus:ring-primary focus:border-primary" />
+                <input type="number" id="quantity" value={quantity} min="1" max={product.stock > 0 ? product.stock : 10} onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))} className="w-20 bg-white border border-borderStrong text-textBase rounded-md p-2 text-center focus:ring-primary focus:border-primary" />
               </div>
 
               <div className="space-y-3 mb-6">
@@ -216,9 +181,9 @@ const ProductDetailPage: React.FC = () => {
                 <Button onClick={handleAddToCart} size="lg" className="w-full text-lg py-3.5" variant="outline" disabled={product.stock <=0}><i className="fas fa-cart-plus mr-2"></i> Thêm vào giỏ hàng</Button>
               </div>
               
-               <div className="p-4 border-2 border-dashed border-danger-border bg-danger-bg rounded-lg">
-                  <h3 className="font-bold text-danger-text mb-2"><i className="fas fa-gift mr-2"></i> Khuyến mãi đặc biệt</h3>
-                  <ul className="list-disc list-inside text-sm text-red-300 space-y-1">
+               <div className="p-4 border-2 border-dashed border-red-300 bg-red-50 rounded-lg">
+                  <h3 className="font-bold text-red-700 mb-2"><i className="fas fa-gift mr-2"></i> Khuyến mãi đặc biệt</h3>
+                  <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
                       <li>Giảm thêm 100.000₫ khi thanh toán qua VNPay.</li>
                       <li>Tặng kèm chuột không dây và túi chống sốc.</li>
                       <li>Miễn phí cài đặt phần mềm cơ bản.</li>
@@ -235,7 +200,7 @@ const ProductDetailPage: React.FC = () => {
             </div>
 
             {activeTab === 'description' && (
-                <div className="prose prose-lg max-w-none text-textMuted leading-relaxed">
+                <div className="prose prose-base max-w-none text-textMuted leading-relaxed">
                     <p>{product.description}</p>
                 </div>
             )}
@@ -260,7 +225,7 @@ const ProductDetailPage: React.FC = () => {
             <h2 className="text-2xl font-bold text-textBase mb-6 text-center">Sản phẩm liên quan</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map(relatedProduct => (
-                <ProductCard key={relatedProduct.id} product={relatedProduct} />
+                <ProductCard key={relatedProduct.id} product={relatedProduct} context="detail-view" />
               ))}
             </div>
           </div>

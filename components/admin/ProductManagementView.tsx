@@ -4,7 +4,7 @@ import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadPreview from '../ui/ImageUploadPreview';
 import { getProducts, addProduct, updateProduct, deleteProduct } from '../../services/localDataService';
-import BackendConnectionError from '../shared/BackendConnectionError';
+import MediaLibraryView from './MediaLibraryView'; // Import the MediaLibraryView
 
 const PRODUCTS_PER_PAGE = 10;
 
@@ -21,8 +21,7 @@ const ProductManagementView: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            // Fetch all products for admin view by setting a high limit
-            const { products } = await getProducts('limit=10000');
+            const products = await getProducts();
             setAllProducts(products);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
@@ -38,8 +37,8 @@ const ProductManagementView: React.FC = () => {
     const filteredProducts = useMemo(() =>
         allProducts.filter(p =>
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.mainCategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.subCategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.mainCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.subCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
         ), [allProducts, searchTerm]);
 
@@ -101,8 +100,11 @@ const ProductManagementView: React.FC = () => {
         if (error) {
             return (
                 <tr>
-                    <td colSpan={6} className="p-0">
-                        <BackendConnectionError error={error} />
+                    <td colSpan={6} className="text-center py-8">
+                        <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 max-w-2xl mx-auto">
+                            <h4 className="font-bold text-lg mb-2"><i className="fas fa-exclamation-triangle mr-2"></i>Lỗi Tải Dữ Liệu</h4>
+                            <p className="text-sm">{error}</p>
+                        </div>
                     </td>
                 </tr>
             );
@@ -202,6 +204,7 @@ interface ProductFormModalProps {
 const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, onSave }) => {
     const [formData, setFormData] = useState<Product>(product || {} as Product);
     const [subCategoryOptions, setSubCategoryOptions] = useState<SubCategoryInfo[]>([]);
+    const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
     useEffect(() => {
         if (formData.mainCategory) {
@@ -237,6 +240,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
         setFormData(prev => ({...prev, specifications: rest}));
     }
 
+    const handleImageSelectFromLibrary = (url: string) => {
+        setFormData(prev => ({
+            ...prev,
+            imageUrls: [...(prev.imageUrls || []), url]
+        }));
+        setIsMediaModalOpen(false);
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(formData);
@@ -244,68 +255,86 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
 
     return (
         <div className="admin-modal-overlay">
-            <form onSubmit={handleSubmit} className="admin-modal-panel">
-                <div className="admin-modal-header">
-                    <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Sản phẩm' : 'Thêm Sản phẩm Mới'}</h4>
-                    <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
-                </div>
-                <div className="admin-modal-body">
-                    {/* --- Main Info --- */}
-                    <div className="admin-form-subsection-title">Thông tin cơ bản</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="admin-form-group md:col-span-2"><label htmlFor="name">Tên sản phẩm *</label><input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required /></div>
-                        <div className="admin-form-group"><label htmlFor="mainCategory">Danh mục chính *</label>
-                            <select name="mainCategory" id="mainCategory" value={formData.mainCategory} onChange={handleChange} required>
-                                <option value="">-- Chọn --</option>
-                                {Constants.PRODUCT_CATEGORIES_HIERARCHY.map(c => <option key={c.slug} value={c.name}>{c.name}</option>)}
-                            </select>
-                        </div>
-                        <div className="admin-form-group"><label htmlFor="subCategory">Danh mục con *</label>
-                            <select name="subCategory" id="subCategory" value={formData.subCategory} onChange={handleChange} required disabled={!formData.mainCategory}>
-                                 <option value="">-- Chọn --</option>
-                                 {subCategoryOptions.map(sc => <option key={sc.slug} value={sc.name}>{sc.name}</option>)}
-                            </select>
-                        </div>
-                        <div className="admin-form-group"><label htmlFor="brand">Hãng sản xuất</label><input type="text" name="brand" id="brand" value={formData.brand || ''} onChange={handleChange} /></div>
-                        <div className="admin-form-group"><label htmlFor="tags">Tags (phân cách bằng dấu phẩy)</label><input type="text" name="tags" id="tags" value={(formData.tags || []).join(', ')} onChange={e => setFormData(p => ({...p, tags: e.target.value.split(',').map(t => t.trim())}))} /></div>
+            <div className="admin-modal-panel">
+                <form onSubmit={handleSubmit} className="contents">
+                    <div className="admin-modal-header">
+                        <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Sản phẩm' : 'Thêm Sản phẩm Mới'}</h4>
+                        <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
                     </div>
-                    <div className="admin-form-group"><label htmlFor="description">Mô tả chi tiết</label><textarea name="description" id="description" rows={5} value={formData.description} onChange={handleChange}></textarea></div>
-                    <div className="admin-form-group"><label htmlFor="shortDescription">Mô tả ngắn</label><textarea name="shortDescription" id="shortDescription" rows={2} value={formData.shortDescription || ''} onChange={handleChange}></textarea></div>
-                    <div className="admin-form-group"><label htmlFor="imageUrls">Link ảnh (mỗi link 1 dòng)</label><textarea name="imageUrls" id="imageUrls" rows={3} value={(formData.imageUrls || []).join('\n')} onChange={e => setFormData(p => ({...p, imageUrls: e.target.value.split('\n').map(t=>t.trim()).filter(Boolean)}))}></textarea></div>
-                    
-                    {/* --- Pricing & Stock --- */}
-                    <div className="admin-form-subsection-title">Giá & Kho hàng</div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                         <div className="admin-form-group"><label htmlFor="price">Giá bán (VNĐ) *</label><input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required /></div>
-                         <div className="admin-form-group"><label htmlFor="originalPrice">Giá gốc (VNĐ)</label><input type="number" name="originalPrice" id="originalPrice" value={formData.originalPrice || ''} onChange={handleChange} /></div>
-                         <div className="admin-form-group"><label htmlFor="stock">Tồn kho *</label><input type="number" name="stock" id="stock" value={formData.stock} onChange={handleChange} required /></div>
-                    </div>
-
-                     {/* --- Specifications --- */}
-                     <div className="admin-form-subsection-title">Thông số kỹ thuật</div>
-                     <div className="space-y-2">
-                        {Object.entries(formData.specifications || {}).map(([key, value], index) => (
-                            <div key={index} className="flex gap-2 items-center">
-                                <input type="text" value={key} onChange={(e) => handleSpecChange(index, 'key', e.target.value)} placeholder="Tên thuộc tính" className="w-1/3" />
-                                <input type="text" value={value} onChange={(e) => handleSpecChange(index, 'value', e.target.value)} placeholder="Giá trị" className="flex-grow" />
-                                <Button type="button" size="sm" variant="ghost" className="!text-red-500" onClick={() => removeSpec(key)}><i className="fas fa-times"></i></Button>
+                    <div className="admin-modal-body">
+                        {/* --- Main Info --- */}
+                        <div className="admin-form-subsection-title">Thông tin cơ bản</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="admin-form-group md:col-span-2"><label htmlFor="name">Tên sản phẩm *</label><input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required /></div>
+                            <div className="admin-form-group"><label htmlFor="mainCategory">Danh mục chính *</label>
+                                <select name="mainCategory" id="mainCategory" value={formData.mainCategory} onChange={handleChange} required>
+                                    <option value="">-- Chọn --</option>
+                                    {Constants.PRODUCT_CATEGORIES_HIERARCHY.map(c => <option key={c.slug} value={c.name}>{c.name}</option>)}
+                                </select>
                             </div>
-                        ))}
-                        <Button type="button" size="sm" variant="outline" onClick={addSpec} leftIcon={<i className="fas fa-plus"></i>}>Thêm thông số</Button>
-                     </div>
-                    
-                     {/* --- Settings --- */}
-                    <div className="admin-form-subsection-title">Cài đặt hiển thị</div>
-                    <div className="admin-form-group-checkbox">
-                        <input type="checkbox" name="isVisible" id="isVisible" checked={formData.isVisible} onChange={handleChange} className="w-4 h-4" />
-                        <label htmlFor="isVisible" className="!mb-0 !ml-2">Hiển thị sản phẩm trên trang web</label>
+                            <div className="admin-form-group"><label htmlFor="subCategory">Danh mục con *</label>
+                                <select name="subCategory" id="subCategory" value={formData.subCategory} onChange={handleChange} required disabled={!formData.mainCategory}>
+                                     <option value="">-- Chọn --</option>
+                                     {subCategoryOptions.map(sc => <option key={sc.slug} value={sc.name}>{sc.name}</option>)}
+                                </select>
+                            </div>
+                            <div className="admin-form-group"><label htmlFor="brand">Hãng sản xuất</label><input type="text" name="brand" id="brand" value={formData.brand || ''} onChange={handleChange} /></div>
+                            <div className="admin-form-group"><label htmlFor="tags">Tags (phân cách bằng dấu phẩy)</label><input type="text" name="tags" id="tags" value={(formData.tags || []).join(', ')} onChange={e => setFormData(p => ({...p, tags: e.target.value.split(',').map(t => t.trim())}))} /></div>
+                        </div>
+                        <div className="admin-form-group"><label htmlFor="description">Mô tả chi tiết</label><textarea name="description" id="description" rows={5} value={formData.description} onChange={handleChange}></textarea></div>
+                        <div className="admin-form-group"><label htmlFor="shortDescription">Mô tả ngắn</label><textarea name="shortDescription" id="shortDescription" rows={2} value={formData.shortDescription || ''} onChange={handleChange}></textarea></div>
+                        
+                        <div className="admin-form-group">
+                            <div className="flex justify-between items-center mb-1">
+                                <label htmlFor="imageUrls">Link ảnh (mỗi link 1 dòng)</label>
+                                <Button type="button" size="sm" variant="outline" onClick={() => setIsMediaModalOpen(true)}>
+                                    <i className="fas fa-photo-video mr-2"></i> Chọn từ Thư viện
+                                </Button>
+                            </div>
+                            <textarea name="imageUrls" id="imageUrls" rows={3} value={(formData.imageUrls || []).join('\n')} onChange={e => setFormData(p => ({...p, imageUrls: e.target.value.split('\n').map(t=>t.trim()).filter(Boolean)}))}></textarea>
+                        </div>
+                        
+                        {/* --- Pricing & Stock --- */}
+                        <div className="admin-form-subsection-title">Giá & Kho hàng</div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                             <div className="admin-form-group"><label htmlFor="price">Giá bán (VNĐ) *</label><input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required /></div>
+                             <div className="admin-form-group"><label htmlFor="originalPrice">Giá gốc (VNĐ)</label><input type="number" name="originalPrice" id="originalPrice" value={formData.originalPrice || ''} onChange={handleChange} /></div>
+                             <div className="admin-form-group"><label htmlFor="stock">Tồn kho *</label><input type="number" name="stock" id="stock" value={formData.stock} onChange={handleChange} required /></div>
+                        </div>
+
+                         {/* --- Specifications --- */}
+                         <div className="admin-form-subsection-title">Thông số kỹ thuật</div>
+                         <div className="space-y-2">
+                            {Object.entries(formData.specifications).map(([key, value], index) => (
+                                <div key={index} className="flex gap-2 items-center">
+                                    <input type="text" value={key} onChange={(e) => handleSpecChange(index, 'key', e.target.value)} placeholder="Tên thuộc tính" className="w-1/3" />
+                                    <input type="text" value={value} onChange={(e) => handleSpecChange(index, 'value', e.target.value)} placeholder="Giá trị" className="flex-grow" />
+                                    <Button type="button" size="sm" variant="ghost" className="!text-red-500" onClick={() => removeSpec(key)}><i className="fas fa-times"></i></Button>
+                                </div>
+                            ))}
+                            <Button type="button" size="sm" variant="outline" onClick={addSpec} leftIcon={<i className="fas fa-plus"></i>}>Thêm thông số</Button>
+                         </div>
+                        
+                         {/* --- Settings --- */}
+                        <div className="admin-form-subsection-title">Cài đặt hiển thị</div>
+                        <div className="admin-form-group-checkbox">
+                            <input type="checkbox" name="isVisible" id="isVisible" checked={formData.isVisible} onChange={handleChange} className="w-4 h-4" />
+                            <label htmlFor="isVisible" className="!mb-0 !ml-2">Hiển thị sản phẩm trên trang web</label>
+                        </div>
                     </div>
-                </div>
-                <div className="admin-modal-footer">
-                    <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
-                    <Button type="submit" variant="primary">Lưu Sản phẩm</Button>
-                </div>
-            </form>
+                    <div className="admin-modal-footer">
+                        <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
+                        <Button type="submit" variant="primary">Lưu Sản phẩm</Button>
+                    </div>
+                </form>
+                {isMediaModalOpen && (
+                    <MediaLibraryView
+                        isModalMode={true}
+                        onSelect={handleImageSelectFromLibrary}
+                        onClose={() => setIsMediaModalOpen(false)}
+                    />
+                )}
+            </div>
         </div>
     );
 }

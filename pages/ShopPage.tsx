@@ -7,13 +7,25 @@ import Pagination from '../components/shared/Pagination';
 import * as Constants from '../constants.tsx';
 import CategorySidebar from '../components/shop/CategorySidebar';
 import { getProducts } from '../services/localDataService';
-import BackendConnectionError from '../components/shared/BackendConnectionError';
-import SkeletonProductCard from '../components/shop/SkeletonProductCard';
-import ProductCarouselSection from '../components/shop/ProductCarouselSection';
-import ShopBanner from '../components/shop/ShopBanner';
-import ShopPromotions from '../components/shop/ShopPromotions';
 
 const PRODUCTS_PER_PAGE = 12;
+
+// Helper to get category name from slug
+const getCategoryNameFromSlug = (slug: string, type: 'main' | 'sub'): string | null => {
+    if (type === 'main') {
+        const mainCat = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
+        return mainCat ? mainCat.name : null;
+    }
+    if (type === 'sub') {
+        for (const mainCat of Constants.PRODUCT_CATEGORIES_HIERARCHY) {
+            const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
+            if (subCat) return subCat.name;
+        }
+        return null;
+    }
+    return null;
+};
+
 
 const ProductCategoryNav: React.FC<{
   categories: MainCategoryInfo[];
@@ -46,6 +58,7 @@ const ShopPage: React.FC = () => {
   const navigate = useNavigate();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,33 +74,63 @@ const ShopPage: React.FC = () => {
     tags: null as string | null,
   });
 
-  const hasFilters = queryParams.has('mainCategory') || queryParams.has('subCategory') || queryParams.has('brand') || queryParams.has('status') || queryParams.has('q') || queryParams.has('tags');
-
   const currentPage = parseInt(queryParams.get('page') || '1', 10);
 
    useEffect(() => {
-    // Only fetch for grid view if filters are active
-    if (!hasFilters) {
-        setIsLoading(false);
-        return;
-    };
-
-    const loadProducts = async () => {
+    const loadAndFilterProducts = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const searchParams = new URLSearchParams(location.search);
-        if (!searchParams.has('limit')) {
-            searchParams.set('limit', String(PRODUCTS_PER_PAGE));
+        const productsFromDb = await getProducts();
+        setAllProducts(productsFromDb);
+
+        // Apply filters from queryParams
+        const params = new URLSearchParams(location.search);
+        const q = params.get('q')?.toLowerCase() || '';
+        const mainCategorySlug = params.get('mainCategory');
+        const subCategorySlug = params.get('subCategory');
+        const brand = params.get('brand');
+        const status = params.get('status');
+        const tags = params.get('tags');
+
+        let filtered = productsFromDb.filter(p => p.isVisible !== false);
+
+        if (q) {
+          filtered = filtered.filter(p => 
+            p.name.toLowerCase().includes(q) ||
+            (p.brand && p.brand.toLowerCase().includes(q)) ||
+            p.description.toLowerCase().includes(q) ||
+            (p.tags && p.tags.some(t => t.toLowerCase().includes(q)))
+          );
         }
-        
-        const { products, totalProducts } = await getProducts(searchParams.toString());
-        setDisplayedProducts(products);
-        setTotalProducts(totalProducts);
+        if (mainCategorySlug) {
+            const mainCategoryName = getCategoryNameFromSlug(mainCategorySlug, 'main');
+            if(mainCategoryName) filtered = filtered.filter(p => p.mainCategory === mainCategoryName);
+        }
+        if (subCategorySlug) {
+            const subCategoryName = getCategoryNameFromSlug(subCategorySlug, 'sub');
+            if(subCategoryName) filtered = filtered.filter(p => p.subCategory === subCategoryName);
+        }
+        if (brand) {
+            filtered = filtered.filter(p => p.brand === brand);
+        }
+        if (status) {
+            filtered = filtered.filter(p => p.status === status);
+        }
+        if (tags) {
+            filtered = filtered.filter(p => p.tags && p.tags.includes(tags));
+        }
+
+        setTotalProducts(filtered.length);
+
+        // Apply pagination
+        const page = parseInt(params.get('page') || '1', 10);
+        const startIndex = (page - 1) * PRODUCTS_PER_PAGE;
+        setDisplayedProducts(filtered.slice(startIndex, startIndex + PRODUCTS_PER_PAGE));
         
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
-        console.error("Lỗi khi tải sản phẩm từ API:", err);
+        console.error("Lỗi khi tải sản phẩm từ Local Storage:", err);
         setDisplayedProducts([]);
         setTotalProducts(0);
       } finally {
@@ -95,8 +138,8 @@ const ShopPage: React.FC = () => {
       }
     };
     
-    loadProducts();
-  }, [location.search, hasFilters]);
+    loadAndFilterProducts();
+  }, [location.search]);
 
 
   const handleScroll = useCallback(() => {
@@ -173,24 +216,27 @@ const ShopPage: React.FC = () => {
     return name;
   };
   
-  const renderGridView = () => {
+  const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-          {Array.from({ length: PRODUCTS_PER_PAGE }).map((_, index) => (
-            <SkeletonProductCard key={index} />
-          ))}
+        <div className="text-center py-20 w-full flex-grow">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4">Đang tải sản phẩm...</p>
         </div>
       );
     }
     if (error) {
-        return <BackendConnectionError error={error} />;
+      return (
+        <div className="text-center py-20 w-full flex-grow text-red-500 bg-red-50 p-4 rounded-lg">
+          <strong>Lỗi:</strong> {error}
+        </div>
+      );
     }
     
     return (
         <main className="flex-grow w-full min-w-0">
             <ProductCategoryNav
-                categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Build")}
+                categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
                 activeSlug={currentFilters.mainCategory}
                 onSelect={(slug) => handleFilterChange('mainCategory', slug)}
             />
@@ -222,83 +268,27 @@ const ShopPage: React.FC = () => {
             )}
         </main>
     )
-  };
-
-  const renderCarouselView = () => (
-    <div className="space-y-4">
-      <ProductCarouselSection
-        title="SẢN PHẨM BÁN CHẠY"
-        filterParams={{ tags: 'Bán chạy', limit: 10 }}
-        viewAllLink="/shop?tags=Bán%20chạy"
-      />
-       <ProductCarouselSection
-        title="KHUYẾN MÃI HOT"
-        filterParams={{ tags: 'Khuyến mãi', limit: 10 }}
-        viewAllLink="/shop?tags=Khuyến%20mãi"
-      />
-      <ProductCarouselSection
-        title="MÁY TÍNH XÁCH TAY"
-        filterParams={{ mainCategory: 'laptop', limit: 10 }}
-        viewAllLink="/shop?mainCategory=laptop"
-      />
-      <ProductCarouselSection
-        title="PC GAMING"
-        filterParams={{ subCategory: 'pc_gaming', limit: 10 }}
-        viewAllLink="/shop?mainCategory=may_tinh_de_ban&subCategory=pc_gaming"
-      />
-       <ProductCarouselSection
-        title="LINH KIỆN MÁY TÍNH"
-        filterParams={{ mainCategory: 'linh_kien_may_tinh', limit: 10 }}
-        viewAllLink="/shop?mainCategory=linh_kien_may_tinh"
-      />
-       <ProductCarouselSection
-        title="MÀN HÌNH"
-        filterParams={{ subCategory: 'man_hinh', limit: 10 }}
-        viewAllLink="/shop?mainCategory=thiet_bi_ngoai_vi&subCategory=man_hinh"
-      />
-    </div>
-  );
+  }
 
   return (
     <div className="bg-bgCanvas">
-        {hasFilters ? (
-            <div className="container mx-auto px-4 py-8">
-                <div className="mb-8">
-                    <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
-                </div>
-                <div className="shop-layout-container">
-                    <aside className="shop-sidebar">
-                        <CategorySidebar 
-                        currentMainCategorySlug={currentFilters.mainCategory}
-                        currentSubCategorySlug={currentFilters.subCategory}
-                        isCollapsed={isSidebarCollapsed}
-                        />
-                    </aside>
-                    <div className="shop-main-content">
-                        {renderGridView()}
-                    </div>
-                </div>
-            </div>
-        ) : (
-            <div className="pb-8">
-                <div className="container mx-auto px-4 pt-8">
-                    <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="w-full lg:w-[280px] flex-shrink-0">
-                            <CategorySidebar 
-                                currentMainCategorySlug={null} 
-                                currentSubCategorySlug={null} 
-                                isCollapsed={false} 
-                            />
-                        </div>
-                        <div className="w-full flex-grow rounded-lg overflow-hidden shadow-lg">
-                            <ShopBanner />
-                        </div>
-                    </div>
-                </div>
-                <ShopPromotions />
-                {renderCarouselView()}
-            </div>
-        )}
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+            <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
+        </div>
+        <div className="shop-layout-container">
+          <aside className="shop-sidebar">
+            <CategorySidebar 
+              currentMainCategorySlug={currentFilters.mainCategory}
+              currentSubCategorySlug={currentFilters.subCategory}
+              isCollapsed={isSidebarCollapsed}
+            />
+          </aside>
+          <div className="shop-main-content">
+            {renderContent()}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

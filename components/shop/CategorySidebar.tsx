@@ -24,18 +24,18 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
         <Link
             to="/shop"
             className={`w-full flex items-center py-2 px-3 rounded-md text-sm transition-colors duration-150
-                        ${!currentMainCategorySlug ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-bgMuted hover:text-primary'}`}
+                        ${!currentMainCategorySlug ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-gray-100 hover:text-primary'}`}
         >
             <i className="fas fa-th-large mr-3 w-5 text-center"></i>
             <span className="sidebar-item-label">Tất cả sản phẩm</span>
         </Link>
 
-        {Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Build").map((mainCat) => (
+        {Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng").map((mainCat) => (
           <div key={mainCat.slug} className="group relative">
             <Link
               to={`/shop?mainCategory=${mainCat.slug}`}
               className={`w-full flex items-center justify-between py-2 px-3 rounded-md text-sm transition-colors duration-150
-                          ${currentMainCategorySlug === mainCat.slug && !currentSubCategorySlug ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-bgMuted hover:text-primary'}`}
+                          ${currentMainCategorySlug === mainCat.slug && !currentSubCategorySlug ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-gray-100 hover:text-primary'}`}
             >
               <div className="flex items-center">
                 <i className={`${mainCat.icon || 'fas fa-folder'} mr-3 w-5 text-center text-base ${currentMainCategorySlug === mainCat.slug ? 'text-primary' : 'text-textSubtle'}`}></i>
@@ -48,7 +48,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
             
             {/* Flyout Panel for Desktop */}
             {mainCat.subCategories.length > 0 && (
-              <div className="flyout-panel absolute left-full top-0 w-64 bg-bgBase rounded-r-lg shadow-lg border border-borderDefault p-4 hidden lg:group-hover:block z-20">
+              <div className="flyout-panel absolute left-full top-0 w-64 bg-white rounded-r-lg shadow-lg border border-gray-200 p-4 hidden lg:group-hover:block z-20">
                 <h4 className="font-bold text-primary mb-2 text-base">{mainCat.name}</h4>
                 <ul className="space-y-1">
                   {mainCat.subCategories.map(subCat => (
@@ -66,7 +66,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
          <div className="pt-2 mt-2 border-t border-borderDefault">
             <Link
                 to="/shop?tags=Khuyến%20mãi"
-                className="w-full flex items-center py-2 px-3 rounded-md text-sm transition-colors duration-150 text-textMuted hover:bg-bgMuted hover:text-primary"
+                className="w-full flex items-center py-2 px-3 rounded-md text-sm transition-colors duration-150 text-textMuted hover:bg-gray-100 hover:text-primary"
             >
                 <i className="fas fa-tags mr-3 w-5 text-center text-primary"></i>
                 <span className="sidebar-item-label">Tin Khuyến mãi</span>

@@ -1,17 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom'; 
+import { useParams, Link } from 'react-router-dom'; // useParams and Link are compatible with v6/v7
 import { Article } from '../types';
 import Markdown from 'react-markdown';
 import ArticlePreview from '../components/blog/ArticlePreview';
 import { getArticle, getArticles } from '../services/localDataService';
-import BackendConnectionError from '../components/shared/BackendConnectionError';
 
 const ArticleDetailPage: React.FC = () => {
   const { articleId } = useParams<{ articleId: string }>();
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadArticle = async () => {
@@ -20,28 +18,19 @@ const ArticleDetailPage: React.FC = () => {
           return;
       }
       setIsLoading(true);
-      setError(null);
       try {
           const foundArticle = await getArticle(articleId);
-          
-          if (!foundArticle) {
-            setError("Không tìm thấy bài viết.");
-          } else {
-            setArticle(foundArticle);
-            const allArticles = await getArticles(); // Fetch from backend
-            // Also get AI articles from local storage
-            const aiArticlesRaw = localStorage.getItem('aiGeneratedArticles_v1');
-            const aiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
-            const combinedArticles = [...allArticles, ...aiArticles];
+          setArticle(foundArticle);
 
-            const filteredRelated = combinedArticles.filter(
-                a => a.id !== foundArticle.id && a.category === foundArticle.category
-            ).slice(0, 3);
-            setRelatedArticles(filteredRelated);
+          if(foundArticle) {
+              const allArticles = await getArticles();
+              const filteredRelated = allArticles.filter(
+                  a => a.id !== foundArticle.id && a.category === foundArticle.category
+              ).slice(0, 3);
+              setRelatedArticles(filteredRelated);
           }
-      } catch (err) {
-          console.error("Error fetching article:", err);
-          setError(err instanceof Error ? err.message : "Lỗi không xác định khi tải bài viết.");
+      } catch (error) {
+          console.error("Error fetching article:", error);
       } finally {
           setIsLoading(false);
           window.scrollTo(0, 0);
@@ -57,19 +46,6 @@ const ArticleDetailPage: React.FC = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-textMuted">Đang tải bài viết...</p>
         </div>
-    );
-  }
-  
-  if (error) {
-    if (error.includes('Lỗi mạng hoặc server không phản hồi')) {
-        return <div className="container mx-auto px-4 py-8"><BackendConnectionError error={error} /></div>;
-    }
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-semibold text-textBase">Lỗi Tải Bài Viết</h2>
-        <p className="text-textMuted mb-4">{error}</p>
-        <Link to="/blog" className="text-primary hover:underline mt-4 inline-block">Quay lại trang Blog</Link>
-      </div>
     );
   }
 

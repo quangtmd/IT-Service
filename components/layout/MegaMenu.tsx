@@ -35,21 +35,21 @@ const MegaMenu: React.FC = () => {
       </Link>
       
       {/* Mega Menu Panel */}
-      <div className="mega-menu-panel absolute top-full left-1/2 -translate-x-1/2 mt-2 w-auto min-w-[700px] bg-bgBase rounded-lg shadow-2xl hidden group-hover:block transition-all duration-300 ease-in-out z-50">
+      <div className="mega-menu-panel absolute top-full left-1/2 -translate-x-1/2 mt-2 w-auto min-w-[700px] bg-white rounded-lg shadow-2xl hidden group-hover:block transition-all duration-300 ease-in-out z-50">
         <div className="flex">
           {/* Left Panel: Main Categories */}
-          <div className="w-1/3 bg-bgCanvas rounded-l-lg border-r border-borderDefault p-4">
+          <div className="w-1/3 bg-gray-50/50 rounded-l-lg border-r border-gray-200 p-4">
             <ul className="space-y-1">
               {categories.map(category => (
                 <li key={category.slug}>
                   <Link
                     to={`/shop?mainCategory=${category.slug}`}
-                    className={`flex items-center w-full text-left p-3 rounded-md text-sm font-medium transition-colors ${activeCategory?.slug === category.slug ? 'bg-primary/10 text-primary' : 'text-textMuted hover:bg-bgMuted'}`}
+                    className={`flex items-center w-full text-left p-3 rounded-md text-sm font-medium transition-colors ${activeCategory?.slug === category.slug ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-200/50'}`}
                     onMouseEnter={() => setActiveCategory(category)}
                   >
                     <i className={`${category.icon || 'fas fa-tag'} w-6 text-center mr-3 text-primary/80`}></i>
                     <span className="flex-grow">{category.name}</span>
-                    <i className="fas fa-chevron-right text-xs text-textSubtle"></i>
+                    <i className="fas fa-chevron-right text-xs text-gray-400"></i>
                   </Link>
                 </li>
               ))}
@@ -60,7 +60,7 @@ const MegaMenu: React.FC = () => {
           <div className="w-2/3 p-6">
             {activeCategory ? (
               <div>
-                <h3 className="text-lg font-semibold text-textBase mb-4 border-b border-borderDefault pb-2">
+                <h3 className="text-lg font-semibold text-textBase mb-4 border-b border-gray-200 pb-2">
                   {activeCategory.name}
                 </h3>
                 <ul className="grid grid-cols-2 gap-x-6 gap-y-3">

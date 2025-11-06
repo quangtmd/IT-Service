@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 interface SearchBarProps {
@@ -26,7 +27,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = "TÃ¬m kiá
         value={term}
         onChange={(e) => setTerm(e.target.value)}
         placeholder={placeholder}
-        className="flex-grow p-3 bg-bgBase border border-borderStrong text-textBase rounded-l-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none shadow-sm placeholder-textSubtle"
+        className="flex-grow p-3 bg-white border border-borderStrong text-textBase rounded-l-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none shadow-sm placeholder-textSubtle"
       />
       <button
         type="submit"

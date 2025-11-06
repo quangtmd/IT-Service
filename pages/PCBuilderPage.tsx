@@ -1,5 +1,6 @@
+
 import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
@@ -151,11 +152,10 @@ const PCBuilderPage: React.FC = () => {
         isCustomBuild: true,
         buildComponents: builtComponents,
         description: descriptionString,
-        // Fix: Changed "PC Xây Dựng" to "PC Build" to match the CustomPCBuildCartItem type definition.
-        mainCategory: "PC Build",
+        mainCategory: "PC Xây Dựng",
         subCategory: "Theo Yêu Cầu",
-        category: "PC Build",
-        tags: ['PC Build', 'Theo Yêu Cầu', useCase],
+        category: "PC Xây Dựng",
+        tags: ['PC Xây Dựng', 'Theo Yêu Cầu', useCase],
     };
 
     addToCart(customBuildItem as any);
@@ -198,7 +198,7 @@ const PCBuilderPage: React.FC = () => {
                 id="useCase"
                 value={useCase}
                 onChange={(e) => setUseCase(e.target.value)}
-                className="w-full p-2 bg-bgBase border border-borderStrong text-textBase rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                className="w-full p-2 bg-white border border-borderStrong text-textBase rounded-md shadow-sm focus:ring-primary focus:border-primary"
               >
                 {Constants.USE_CASES.map(uc => <option key={uc} value={uc}>{uc}</option>)}
               </select>
@@ -210,7 +210,7 @@ const PCBuilderPage: React.FC = () => {
                 id="budget"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                className="w-full p-2 bg-bgBase border border-borderStrong text-textBase rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                className="w-full p-2 bg-white border border-borderStrong text-textBase rounded-md shadow-sm focus:ring-primary focus:border-primary"
                 placeholder="VD: 20000000"
                 step="1000000"
               />

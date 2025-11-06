@@ -26,17 +26,17 @@ const Button: React.FC<ButtonProps> = ({
     lg: 'px-6 py-3 text-lg',
   };
 
-  // Adjusted for new dark theme
+  // Adjusted for light theme
   const variantStyles = {
     primary: 'bg-primary hover:bg-primary-dark focus:ring-primary text-white',
-    secondary: 'bg-secondary hover:bg-secondary-dark focus:ring-secondary text-white', 
-    outline: 'border border-primary text-primary hover:bg-primary/10 focus:ring-primary', 
-    ghost: 'text-primary hover:bg-primary/10 focus:ring-primary', 
-    danger: 'bg-danger-bg text-danger-text border border-danger-border hover:bg-danger-bg/50 focus:ring-danger-text',
+    secondary: 'bg-secondary hover:bg-secondary-dark focus:ring-secondary text-white', // This is a dark red, might need adjustment for light theme if used as main secondary
+    outline: 'border border-primary text-primary hover:bg-primary/10 focus:ring-primary', // Primary outline
+    ghost: 'text-primary hover:bg-primary/10 focus:ring-primary', // Ghost for primary actions
+    danger: 'bg-danger-bg text-danger-text border border-danger-border hover:bg-red-100 focus:ring-danger-text', // Using Tailwind danger palette
   };
   
-  // Specific outline for non-primary colors to use new dark theme variables
-  if (variant === 'outline' && !className.includes('border-primary')) { 
+  // Specific outline for non-primary colors in light theme
+  if (variant === 'outline' && !className.includes('border-primary')) { // Default outline to use textMuted and borderStrong
      variantStyles.outline = `border border-borderStrong text-textMuted hover:bg-bgMuted hover:border-borderStrong focus:ring-primary`;
   }
   if (variant === 'ghost' && !className.includes('text-primary')) { // Default ghost for textMuted

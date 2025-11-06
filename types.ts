@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import { AdminPermission } from './contexts/AuthContext';
 
@@ -21,7 +23,6 @@ export interface Product {
   tags: string[]; // Changed from optional to required, default to []
   brandLogoUrl?: string;
   isVisible?: boolean; // New field for product visibility
-  is_featured?: boolean; // Added for featured products
   seoMetaTitle?: string; // New SEO field
   seoMetaDescription?: string; // New SEO field
   slug?: string; // New field for custom URL slug
@@ -64,10 +65,9 @@ export interface CustomPCBuildCartItem extends Omit<Product, 'imageUrls' | 'main
   imageUrl: string; 
   isCustomBuild: true;
   buildComponents: Record<string, { name: string; price?: number }>; 
-  // Fix: Change "PC Xây Dựng" to "PC Build" to resolve type error
-  mainCategory: "PC Build";
+  mainCategory: "PC Xây Dựng";
   subCategory: "Theo Yêu Cầu";
-  category: "PC Build";
+  category: "PC Xây Dựng";
   imageUrls: [string]; 
   tags: string[];
 }
@@ -94,7 +94,6 @@ export interface ChatMessage {
   text: string;
   sender: 'user' | 'bot' | 'system';
   timestamp: Date;
-  imageUrl?: string;
 }
 
 // New Type for Chat Log Sessions
@@ -104,7 +103,7 @@ export interface ChatLogSession {
   userPhone: string;
   startTime: string; // ISO string date
   messages: ChatMessage[];
-  isRead: boolean;
+  // Optionally, add end time, duration, etc.
 }
 
 
@@ -169,26 +168,6 @@ export interface GroundingChunkWeb {
 export interface GroundingChunk {
   web: GroundingChunkWeb;
 }
-
-// Fix: Add AdminView type to be shared across components
-export type AdminView = 
-  | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
-  | 'staff' | 'customers' 
-  | 'orders' | 'discounts' | 'chat_logs' | 'quotations'
-  | 'theme_settings' | 'menu_settings' | 'site_settings'
-  | 'notifications_panel'
-  | 'homepage_management'
-  | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard'
-  | 'inventory' | 'service_tickets'
-  // New accounting views
-  | 'purchasing' | 'sales' | 'invoice_management' 
-  | 'payroll' | 'tax' | 'reports' | 'financial_analysis'
-  // New menu items from image
-  | 'cash' | 'bank_deposits' | 'warehouse' | 'tools_supplies'
-  | 'fixed_assets' | 'salary' | 'tax' | 'cost_price' | 'capital_connection'
-  | 'summary' | 'budget' | 'reports' | 'financial_analysis' | 'categories'
-  | 'opening_balance' | 'knowledge_base';
-
 
 export type UserRole = 'admin' | 'staff' | 'customer';
 export type StaffRole = 'Quản lý Bán hàng' | 'Biên tập Nội dung' | 'Trưởng nhóm Kỹ thuật' | 'Chuyên viên Hỗ trợ' | 'Nhân viên Toàn quyền';
@@ -638,87 +617,4 @@ export interface PayrollRecord {
   finalSalary: number;
   notes: string;
   status: 'Chưa thanh toán' | 'Đã thanh toán';
-}
-export interface ServiceTicket {
-  id: string;
-  ticket_code: string;
-  customer_info: {
-    fullName: string;
-    phone: string;
-    address?: string;
-  };
-  device_info: {
-      name: string;
-      serialNumber?: string;
-      type: 'Laptop' | 'PC' | 'Màn hình' | 'Linh kiện' | 'Khác';
-  };
-  service_type: 'Sửa chữa Dịch vụ' | 'Bảo hành Hãng' | 'Bảo hành Cửa hàng';
-  reported_issue: string;
-  physical_condition: string;
-  accessories: string; // Changed from array to string for easier form handling
-  received_by: string; // staff user id
-  created_at: string; // ISO string date
-  status: 'Đã tiếp nhận' | 'Đang chẩn đoán' | 'Chờ linh kiện' | 'Đang sửa chữa' | 'Sẵn sàng trả' | 'Đã trả khách';
-  notes?: string;
-}
-
-export interface Inventory {
-  product_id: string;
-  warehouse_id: string;
-  product_name: string;
-  warehouse_name: string;
-  quantity: number;
-}
-
-export interface ServerInfo {
-  outboundIp: string;
-}
-
-export type QuotationStatus = 'Bản nháp' | 'Đã gửi' | 'Đã chấp nhận' | 'Đã hết hạn';
-export interface QuotationItem extends OrderItem {}
-export interface Quotation {
-    id: string;
-    customerInfo: CheckoutFormData;
-    items: QuotationItem[];
-    totalAmount: number;
-    creationDate: string;
-    expiryDate: string;
-    status: QuotationStatus;
-    notes?: string;
-}
-
-// New types for the Financial Dashboard
-export interface ChartDataPoint {
-  label: string; // e.g., 'Tháng 1', '15/07'
-  revenue: number;
-  expense: number;
-  profit: number;
-}
-
-export interface CategoryDataPoint {
-  name: string;
-  value: number;
-}
-
-export interface FinancialDashboardData {
-  financialStatus: {
-    totalCash: number;
-    revenue: number;
-    expense: number;
-    profit: number;
-    inventoryValue: number;
-  };
-  receivables: {
-    total: number;
-    overdue: number;
-  };
-  payables: {
-    total: number;
-    overdue: number;
-  };
-  revenueExpenseChart: ChartDataPoint[];
-  cashFlowChart: ChartDataPoint[]; // Reusing for simplicity
-  expensePieChart: CategoryDataPoint[];
-  lowStockItems: number;
-  pendingOrders: number;
 }
