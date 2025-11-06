@@ -11,7 +11,7 @@ This application uses a MySQL database. To begin, create a database and then exe
 ```sql
 --
 -- IQ Technology - Comprehensive SQL Schema
--- Version 2.0
+-- Version 2.1
 --
 -- This script drops all existing tables and rebuilds the entire database structure
 -- for all modules including Core, CMS, E-commerce, CRM, Services, Finance, HRM,
@@ -89,7 +89,7 @@ CREATE TABLE `Articles` (
   `authorId` VARCHAR(255),
   `categoryId` VARCHAR(255),
   `imageUrl` TEXT,
-  `publishedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `date` DATETIME NOT NULL,
   FOREIGN KEY (`authorId`) REFERENCES `Users`(`id`) ON DELETE SET NULL,
   FOREIGN KEY (`categoryId`) REFERENCES `ArticleCategories`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -157,6 +157,7 @@ CREATE TABLE `Orders` (
   `totalAmount` DECIMAL(15,2) NOT NULL,
   `status` ENUM('Chờ xử lý','Đã xác nhận','Đang chuẩn bị','Đang giao','Hoàn thành','Đã hủy') NOT NULL,
   `paymentInfo` JSON,
+  `orderDate` DATETIME NOT NULL,
   `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`userId`) REFERENCES `Users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -433,7 +434,7 @@ INSERT INTO `Products` (`id`, `name`, `price`, `stock`, `mainCategory`, `subCate
 ('cpu001', 'Intel Core i5-13600K', 8000000.00, 15, 'Linh kiện máy tính', 'CPU', 'Intel', '{\"Socket\":\"LGA1700\"}', '[\"Nổi bật\"]', 1),
 ('gpu001', 'NVIDIA GeForce RTX 4070', 15000000.00, 10, 'Linh kiện máy tính', 'VGA', 'NVIDIA', '{\"VRAM\":\"12GB\"}', '[\"Gaming\"]', 1);
 
-INSERT INTO `Articles` (`id`, `title`, `summary`, `authorId`, `publishedAt`, `categoryId`) VALUES
+INSERT INTO `Articles` (`id`, `title`, `summary`, `authorId`, `date`, `categoryId`) VALUES
 ('art001', 'Lợi Ích Của Dịch Vụ IT Thuê Ngoài', 'Khám phá cách dịch vụ IT thuê ngoài giúp doanh nghiệp.', 'user001', '2024-07-25 10:00:00', NULL);
 
 COMMIT;
