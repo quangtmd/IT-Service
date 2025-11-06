@@ -367,6 +367,27 @@ INSERT INTO Products (id, name, category_id, price, originalPrice, imageUrls, sh
 ('SCR004', 'Màn hình ViewSonic VX2428 24 inch FHD 165Hz IPS', 26, 3590000, NULL, '["https://images.unsplash.com/photo-1606226131653-b248b11319b8?q=80&w=800&auto=format&fit=crop"]', 'Màn hình gaming giá rẻ p/p tốt, tần số quét cao cho game eSports.', '{"Kích thước": "24 inch", "Độ phân giải": "1920x1080 (FHD)", "Tần số quét": "165Hz", "Tấm nền": "IPS"}', 40, 'ViewSonic', '["Giá rẻ", "eSports"]', false),
 ('SCR005', 'Màn hình di động ASUS ZenScreen MB16ACV 15.6 inch FHD IPS', 26, 5500000, NULL, '["https://images.unsplash.com/photo-1587584180293-270561571f37?q=80&w=800&auto=format&fit=crop"]', 'Mở rộng không gian làm việc của bạn mọi lúc mọi nơi với màn hình di động mỏng nhẹ, kết nối chỉ qua một cáp USB-C.', '{"Kích thước": "15.6 inch", "Độ phân giải": "1920x1080 (FHD)", "Kết nối": "USB-C", "Trọng lượng": "0.78kg"}', 22, 'ASUS', '["Màn hình di động", "Linh hoạt"]', false);
 
+
+-- Insert Warehouses
+INSERT INTO Warehouses (id, name, location) VALUES
+('WH001', 'Kho Chính', '10 Huỳnh Thúc Kháng, Đà Nẵng'),
+('WH002', 'Kho Phụ', 'Khu công nghiệp Hòa Khánh, Đà Nẵng');
+
+-- Insert Inventory (must be done after products are inserted)
+INSERT INTO Inventory (product_id, warehouse_id, quantity) VALUES
+('PCVP001', 'WH001', 50),
+('PCGM001', 'WH001', 20),
+('CPU001', 'WH001', 40),
+('CPU002', 'WH002', 25),
+('VGA001', 'WH001', 30),
+('SCR001', 'WH001', 20);
+
+-- Insert Service Tickets
+INSERT INTO ServiceTickets (id, ticket_code, customer_info, device_name, reported_issue, status) VALUES
+('ST-001', 'SVC-20240728-001', '{"fullName": "Nguyễn Văn A", "phone": "0905123456"}', 'Laptop Dell XPS 15', 'Máy không lên nguồn, không sạc được pin.', 'open'),
+('ST-002', 'SVC-20240727-002', '{"fullName": "Trần Thị B", "phone": "0987654321"}', 'PC Gaming Custom', 'Chơi game bị giật lag, màn hình xanh.', 'in_progress');
+
+
 -- =================================================================
 -- KẾT THÚC SCRIPT SQL - BẠN CHỈ CẦN SAO CHÉP MỌI THỨ Ở TRÊN
 -- =================================================================

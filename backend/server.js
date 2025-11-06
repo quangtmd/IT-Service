@@ -595,6 +595,45 @@ app.post('/api/financials/payroll', async (req, res) => {
     } catch (error) { res.status(500).json({ message: 'Lỗi server khi lưu bảng lương', error: error.message }); }
 });
 
+// --- SERVICE TICKETS API ---
+app.get('/api/service-tickets', async (req, res) => {
+    try {
+        const [tickets] = await pool.query('SELECT * FROM ServiceTickets ORDER BY created_at DESC');
+        // Deserialize JSON fields
+        const deserialized = tickets.map(t => ({
+            ...t,
+            customer_info: JSON.parse(t.customer_info || 'null')
+        }));
+        res.json(deserialized);
+    } catch (error) {
+        console.error("Lỗi khi truy vấn phiếu dịch vụ:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy phiếu dịch vụ", error: error.sqlMessage || error.message });
+    }
+});
+
+// --- INVENTORY API ---
+app.get('/api/inventory', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                i.product_id,
+                i.warehouse_id,
+                p.name as product_name,
+                w.name as warehouse_name,
+                i.quantity 
+            FROM Inventory i
+            JOIN Products p ON i.product_id = p.id
+            JOIN Warehouses w ON i.warehouse_id = w.id
+            ORDER BY p.name;
+        `;
+        const [inventory] = await pool.query(query);
+        res.json(inventory);
+    } catch (error) {
+        console.error("Lỗi khi truy vấn tồn kho:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy tồn kho", error: error.sqlMessage || error.message });
+    }
+});
+
 
 // --- CATCH-ALL ROOT ---
 app.get('/', (req, res) => {

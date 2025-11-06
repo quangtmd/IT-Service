@@ -171,6 +171,7 @@ export interface GroundingChunk {
 
 // Fix: Add AdminView type to be shared across components
 export type AdminView = 
+  // Old Views (kept for compatibility)
   | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
   | 'staff' | 'customers' 
   | 'orders' | 'discounts' | 'chat_logs' 
@@ -178,7 +179,24 @@ export type AdminView =
   | 'notifications_panel'
   | 'homepage_management'
   | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard'
-  | 'inventory' | 'service_tickets';
+  | 'inventory' | 'service_tickets'
+  // New Views from Restructure
+  | 'quotations' // Báo Giá
+  | 'returns' // Hoàn Trả
+  | 'warranties' // Quản lý Bảo hành
+  | 'seo_analytics' // SEO & Analytics
+  | 'email_marketing' // Email Marketing
+  | 'goods_receipts' // Phiếu Nhập Kho
+  | 'delivery_notes' // Phiếu Xuất Kho
+  | 'shipping_management' // Quản lý Vận chuyển
+  | 'receivables_payables' // Công nợ
+  | 'cash_flow' // Sổ quỹ
+  | 'reports_dashboard' // Báo cáo chung
+  | 'sales_reports'
+  | 'customer_reports'
+  | 'inventory_reports'
+  ;
+
 
 export type UserRole = 'admin' | 'staff' | 'customer';
 export type StaffRole = 'Quản lý Bán hàng' | 'Biên tập Nội dung' | 'Trưởng nhóm Kỹ thuật' | 'Chuyên viên Hỗ trợ' | 'Nhân viên Toàn quyền';

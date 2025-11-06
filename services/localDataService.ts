@@ -201,6 +201,15 @@ export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void
     });
 };
 
+// --- Service Ticket Service ---
+export const getServiceTickets = async (): Promise<ServiceTicket[]> => {
+    return fetchFromApi<ServiceTicket[]>('/api/service-tickets');
+};
+
+// --- Inventory Service ---
+export const getInventory = async (): Promise<Inventory[]> => {
+    return fetchFromApi<Inventory[]>('/api/inventory');
+};
 
 // --- Misc Services ---
 export const getServerInfo = async (): Promise<ServerInfo> => {
@@ -212,8 +221,3 @@ export const getServerInfo = async (): Promise<ServerInfo> => {
 export const checkBackendHealth = async () => {
     return fetchFromApi<{ status: string; database: string; errorCode?: string; message?: string }>('/api/health');
 };
-
-// These are still local as backend doesn't support them
-export const getServiceTickets = async (): Promise<ServiceTicket[]> => Promise.resolve(getLocal('serviceTickets_v1', []));
-export const getInventory = async (): Promise<Inventory[]> => Promise.resolve(getLocal('inventory_v1', []));
-const getLocal = <T,>(key: string, def: T): T => { try { const i = localStorage.getItem(key); return i ? JSON.parse(i) : def; } catch (e) { return def; }};

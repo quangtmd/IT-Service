@@ -37,8 +37,13 @@ const AdminPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-        content_management: true, sales_management: true, hrm_management: true,
-        accounting_management: false, settings_management: false,
+        sales_crm: true,
+        service_management: true,
+        cms_marketing: true,
+        inventory_logistics: false,
+        finance_accounting: false,
+        reporting_analytics: false,
+        settings_management: false,
     });
 
     useEffect(() => {
@@ -49,49 +54,80 @@ const AdminPage: React.FC = () => {
     }, []);
 
     const unreadNotificationCount = adminNotifications.filter(n => !n.isRead).length;
+    
     const MENU_CONFIG: MenuItemConfig[] = useMemo(() => [
         { id: 'dashboard', label: 'Tổng Quan', icon: 'fas fa-tachometer-alt', permission: ['viewDashboard'] },
+        
+        // I. Sales & CRM
         { 
-            id: 'sales_management', label: 'Quản Lý Bán Hàng', icon: 'fas fa-chart-line', permission: ['viewSales'],
+            id: 'sales_crm', label: 'Bán hàng & CRM', icon: 'fas fa-hand-holding-usd', permission: ['viewSales'],
             children: [
+                { id: 'customers', label: 'Khách Hàng', icon: 'fas fa-users', permission: ['viewCustomers'] },
+                { id: 'quotations', label: 'Báo Giá', icon: 'fas fa-file-invoice-dollar', permission: ['manageOrders'] },
                 { id: 'orders', label: 'Đơn Hàng', icon: 'fas fa-receipt', permission: ['viewOrders'] },
-                { id: 'customers', label: 'Khách Hàng', icon: 'fas fa-user-friends', permission: ['viewCustomers'] },
-                { id: 'service_tickets', label: 'Dịch vụ Sửa chữa', icon: 'fas fa-tools', permission: ['manageOrders'] },
-                { id: 'discounts', label: 'Mã Giảm Giá', icon: 'fas fa-tags', permission: ['manageDiscounts'] },
-                { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewOrders'] },
+                { id: 'discounts', label: 'Khuyến Mãi', icon: 'fas fa-tags', permission: ['manageDiscounts'] },
+                { id: 'returns', label: 'Hoàn Trả', icon: 'fas fa-undo-alt', permission: ['manageOrders'] },
             ]
         },
+        
+        // II. Service Management
+        {
+            id: 'service_management', label: 'Quản lý Dịch vụ', icon: 'fas fa-concierge-bell', permission: ['manageOrders'],
+            children: [
+                 { id: 'service_tickets', label: 'Dịch vụ Sửa chữa', icon: 'fas fa-tools', permission: ['manageOrders'] },
+                 { id: 'warranties', label: 'Quản lý Bảo hành', icon: 'fas fa-shield-alt', permission: ['manageOrders'] },
+                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-headset', permission: ['viewOrders'] },
+            ]
+        },
+
+        // III. CMS & Marketing
         { 
-            id: 'content_management', label: 'Quản Trị Website', icon: 'fas fa-file-alt', permission: ['viewContent'],
+            id: 'cms_marketing', label: 'Website & Nội dung', icon: 'fas fa-desktop', permission: ['viewContent'],
             children: [
                 { id: 'homepage_management', label: 'Quản lý Trang chủ', icon: 'fas fa-home', permission: ['manageSiteSettings'] },
                 { id: 'products', label: 'Sản Phẩm', icon: 'fas fa-box-open', permission: ['viewProducts'] },
                 { id: 'articles', label: 'Bài Viết', icon: 'fas fa-newspaper', permission: ['viewArticles'] },
                 { id: 'media_library', label: 'Thư Viện Media', icon: 'fas fa-photo-video', permission: ['manageSiteSettings'] },
                 { id: 'faqs', label: 'FAQs', icon: 'fas fa-question-circle', permission: ['manageFaqs'] },
+                { id: 'seo_analytics', label: 'SEO & Analytics', icon: 'fas fa-chart-line', permission: ['manageSiteSettings'] },
+                { id: 'email_marketing', label: 'Email Marketing', icon: 'fas fa-envelope-open-text', permission: ['manageSiteSettings'] },
             ]
         },
+
+        // IV. Inventory & Logistics
         { 
-            id: 'hrm_management', label: 'Quản Lý Nhân Sự', icon: 'fas fa-users-cog', permission: ['viewHrm'],
-            children: [
-                { id: 'hrm_dashboard', label: 'Hồ Sơ Nhân Sự', icon: 'fas fa-id-card', permission: ['manageEmployees'] },
-            ]
-        },
-        { 
-            id: 'accounting_management', label: 'Tài Chính - Kế Toán', icon: 'fas fa-calculator', permission: ['viewAccounting'],
-            children: [
-                { id: 'accounting_dashboard', label: 'Tổng Quan Tài Chính', icon: 'fas fa-chart-pie', permission: ['viewReports'] },
-            ]
-        },
-         { 
-            id: 'inventory_management', label: 'Kho & Tồn Kho', icon: 'fas fa-warehouse', permission: ['manageProducts'],
+            id: 'inventory_logistics', label: 'Kho & Tồn kho', icon: 'fas fa-warehouse', permission: ['manageProducts'],
             children: [
                 { id: 'inventory', label: 'Quản lý Tồn kho', icon: 'fas fa-boxes', permission: ['manageProducts'] },
+                { id: 'goods_receipts', label: 'Phiếu Nhập Kho', icon: 'fas fa-dolly', permission: ['manageProducts'] },
+                { id: 'delivery_notes', label: 'Phiếu Xuất Kho', icon: 'fas fa-truck-loading', permission: ['manageProducts'] },
+                { id: 'shipping_management', label: 'Quản lý Vận chuyển', icon: 'fas fa-shipping-fast', permission: ['manageOrders'] },
             ]
         },
-        {
-            id: 'settings_management', label: 'Cấu Hình Hệ Thống', icon: 'fas fa-cogs', permission: ['viewAppearance'], 
+        
+        // V. Finance & Accounting
+        { 
+            id: 'finance_accounting', label: 'Tài chính - Kế toán', icon: 'fas fa-calculator', permission: ['viewAccounting'],
             children: [
+                { id: 'accounting_dashboard', label: 'Giao dịch Thu/Chi', icon: 'fas fa-exchange-alt', permission: ['viewReports'] },
+                { id: 'receivables_payables', label: 'Công nợ', icon: 'fas fa-book', permission: ['viewReports'] },
+                { id: 'cash_flow', label: 'Sổ Quỹ', icon: 'fas fa-wallet', permission: ['viewReports'] },
+            ]
+        },
+
+        // VI. Reporting & Analytics
+        { 
+            id: 'reporting_analytics', label: 'Báo cáo & Phân tích', icon: 'fas fa-chart-pie', permission: ['viewReports'],
+            children: [
+                { id: 'reports_dashboard', label: 'Báo cáo Tổng hợp', icon: 'fas fa-chart-bar', permission: ['viewReports'] },
+            ]
+        },
+        
+        // Separated for clarity
+        {
+            id: 'settings_management', label: 'Hệ Thống', icon: 'fas fa-cogs', permission: ['viewAppearance'], 
+            children: [
+                { id: 'hrm_dashboard', label: 'Quản lý Nhân sự', icon: 'fas fa-id-card', permission: ['manageEmployees'] },
                 { id: 'site_settings', label: 'Cài Đặt Trang', icon: 'fas fa-cog', permission: ['manageSiteSettings'] }, 
                 { id: 'theme_settings', label: 'Theme Màu', icon: 'fas fa-palette', permission: ['manageTheme'] },
                 { id: 'menu_settings', label: 'Menu Điều Hướng', icon: 'fas fa-list-ul', permission: ['manageMenu'] },
@@ -99,6 +135,7 @@ const AdminPage: React.FC = () => {
         },
         { id: 'notifications_panel', label: 'Thông Báo', icon: 'fas fa-bell', count: unreadNotificationCount, permission: ['viewNotifications'] },
     ], [unreadNotificationCount]);
+
 
     const handleMenuClick = (viewId: AdminView | string, isParent: boolean) => {
         if (isParent) {
@@ -109,6 +146,15 @@ const AdminPage: React.FC = () => {
         }
     };
     
+    const renderPlaceholder = (title: string) => (
+        <div className="admin-card">
+            <div className="admin-card-body">
+                <h3 className="admin-card-title">{title}</h3>
+                <p>Tính năng này đang được phát triển.</p>
+            </div>
+        </div>
+    );
+
     const renderContent = () => {
         const currentMenuItem = MENU_CONFIG.flatMap(m => m.children || m).find(i => i.id === activeView);
         if (currentMenuItem && !hasPermission(currentMenuItem.permission)) {
@@ -120,27 +166,43 @@ const AdminPage: React.FC = () => {
 
         switch(activeView) {
             case 'dashboard': return <DashboardView setActiveView={setActiveView} />;
+            // Sales & CRM
+            case 'customers': return <CustomerManagementView />;
+            case 'orders': return <OrderManagementView />;
+            case 'discounts': return <DiscountManagementView />;
+            case 'quotations': return renderPlaceholder('Quản lý Báo giá');
+            case 'returns': return renderPlaceholder('Quản lý Hoàn trả');
+            // Service
+            case 'service_tickets': return <ServiceTicketView />;
+            case 'warranties': return renderPlaceholder('Quản lý Bảo hành');
+            case 'chat_logs': return <ChatLogView />;
+            // CMS
+            case 'homepage_management': return <HomepageManagementView />;
             case 'products': return <ProductManagementView />;
             case 'articles': return <ArticleManagementView />;
-            case 'orders': return <OrderManagementView />;
-            case 'hrm_dashboard': return <HRMProfileView />;
-            case 'customers': return <CustomerManagementView />;
-            case 'discounts': return <DiscountManagementView />;
-            case 'faqs': return <FaqManagementView />;
-            case 'chat_logs': return <ChatLogView />;
             case 'media_library': return <MediaLibraryView />;
-            case 'homepage_management': return <HomepageManagementView />;
+            case 'faqs': return <FaqManagementView />;
+            case 'seo_analytics': return <SiteSettingsView initialTab={'site_settings'} />; // Map to general settings for now
+            case 'email_marketing': return renderPlaceholder('Quản lý Email Marketing');
+            // Inventory
+            case 'inventory': return <InventoryView />;
+            case 'goods_receipts': return renderPlaceholder('Quản lý Phiếu Nhập Kho');
+            case 'delivery_notes': return renderPlaceholder('Quản lý Phiếu Xuất Kho');
+            case 'shipping_management': return renderPlaceholder('Quản lý Vận chuyển');
+            // Finance
+            case 'accounting_dashboard': return <FinancialManagementView />;
+            case 'receivables_payables': return renderPlaceholder('Quản lý Công nợ');
+            case 'cash_flow': return renderPlaceholder('Quản lý Sổ Quỹ');
+             // Reports
+            case 'reports_dashboard': return renderPlaceholder('Báo cáo Tổng hợp');
+            // System
+            case 'hrm_dashboard': return <HRMProfileView />;
             case 'site_settings':
             case 'theme_settings':
             case 'menu_settings':
                 return <SiteSettingsView initialTab={activeView} />;
+            // Other
             case 'notifications_panel': return <NotificationsView />;
-
-            case 'accounting_dashboard': return <FinancialManagementView />;
-            case 'inventory': return <InventoryView />;
-            case 'service_tickets': return <ServiceTicketView />;
-
-            case 'analytics_dashboard': return <div className="admin-card"><div className="admin-card-body">Module Phân tích Báo cáo đang trong kế hoạch phát triển.</div></div>;
 
             default: return <div className="admin-card"><div className="admin-card-body"><h3 className="admin-card-title">{currentMenuItem?.label || 'Chào mừng'}</h3><p>Tính năng này đang được phát triển.</p></div></div>;
         }
