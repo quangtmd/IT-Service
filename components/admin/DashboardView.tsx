@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getOrders, getProducts, getArticles, getServerInfo } from '../../services/localDataService';
 import Card from '../ui/Card';
@@ -6,7 +6,6 @@ import { Order, OrderStatus, ServerInfo, Product, Article, AdminView } from '../
 import Button from '../ui/Button';
 
 interface DashboardViewProps {
-  // Fix: Changed parameter type from string to the specific AdminView type for type safety.
   setActiveView: (view: AdminView) => void;
 }
 

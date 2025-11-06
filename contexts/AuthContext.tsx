@@ -5,39 +5,27 @@ import { MOCK_STAFF_USERS } from '../data/mockData';
 
 export type AdminPermission = 
   // General
-  | 'viewDashboard'
-  | 'viewNotifications'
-  // Website Content Management
-  | 'viewContent'
-  | 'manageProducts'
-  | 'viewProducts'
-  | 'manageArticles'
-  | 'viewArticles'
-  | 'manageFaqs'
-  // User Management
-  | 'viewUsers'
-  | 'manageStaff'
-  | 'viewCustomers'
-  // Sales Management
-  | 'viewSales'
-  | 'manageOrders'
-  | 'viewOrders'
-  | 'manageDiscounts'
-  // Appearance & Settings
-  | 'viewAppearance'
-  | 'manageTheme'
-  | 'manageMenu'
-  | 'manageSiteSettings'
-  // HRM (Future)
-  | 'viewHrm'
-  | 'manageEmployees'
-  | 'managePayroll'
-  // Accounting (Future)
-  | 'viewAccounting'
-  | 'manageInvoices'
-  | 'viewReports'
-  // High-level (Future)
-  | 'viewAnalytics';
+  | 'viewDashboard' | 'viewNotifications'
+  // Sales & CRM
+  | 'viewSales' | 'viewCustomers' | 'viewQuotations' | 'viewOrders' | 'manageOrders' | 'manageDiscounts' | 'viewSuppliers' | 'viewHelpdesk'
+  // Service
+  | 'viewService' | 'manageServiceTickets' | 'manageWarranty' | 'viewChatLogs'
+  // Content
+  | 'viewContent' | 'viewProducts' | 'manageProducts' | 'viewArticles' | 'manageArticles' | 'manageMedia' | 'manageFaqs'
+  // Inventory
+  | 'viewInventory' | 'manageInventory'
+  // Finance
+  | 'viewAccounting' | 'manageTransactions' | 'managePayroll'
+  // Procurement
+  | 'viewProcurement'
+  // HR & System
+  | 'viewSystem' | 'viewHrm' | 'manageEmployees' | 'manageSiteSettings' | 'manageTheme' | 'manageMenu'
+  // Analytics
+  | 'viewAnalytics'
+  // Multi-branch
+  | 'viewBranches'
+  ;
+
 
 export interface AuthContextType {
   isAuthenticated: boolean;
@@ -240,18 +228,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const currentStaffRoleCleaned = currentUser.staffRole.trim() as StaffRole;
         
         const allPermissions: AdminPermission[] = [
-          'viewDashboard', 'viewNotifications', 'viewContent', 'manageProducts', 'viewProducts', 
-          'manageArticles', 'viewArticles', 'manageFaqs', 'viewUsers', 'manageStaff', 'viewCustomers', 
-          'viewSales', 'manageOrders', 'viewOrders', 'manageDiscounts', 'viewAppearance', 
-          'manageTheme', 'manageMenu', 'manageSiteSettings', 'viewHrm', 'manageEmployees', 
-          'managePayroll', 'viewAccounting', 'manageInvoices', 'viewReports', 'viewAnalytics'
+          'viewDashboard', 'viewNotifications', 'viewSales', 'viewCustomers', 'viewQuotations', 
+          'viewOrders', 'manageOrders', 'manageDiscounts', 'viewSuppliers', 'viewHelpdesk', 
+          'viewService', 'manageServiceTickets', 'manageWarranty', 'viewChatLogs', 
+          'viewContent', 'viewProducts', 'manageProducts', 'viewArticles', 'manageArticles', 'manageMedia', 'manageFaqs',
+          'viewInventory', 'manageInventory', 'viewAccounting', 'manageTransactions', 'managePayroll',
+          'viewProcurement', 'viewSystem', 'viewHrm', 'manageEmployees', 'manageSiteSettings', 'manageTheme', 'manageMenu',
+          'viewAnalytics', 'viewBranches'
         ];
         
         const staffPermissionsMap: Record<StaffRole, AdminPermission[]> = {
-            'Quản lý Bán hàng': ['viewDashboard', 'viewSales', 'viewOrders', 'manageOrders', 'manageDiscounts', 'viewNotifications', 'viewProducts', 'viewCustomers', 'viewContent'],
-            'Biên tập Nội dung': ['viewDashboard', 'viewContent', 'viewArticles', 'manageArticles', 'manageFaqs', 'viewNotifications', 'manageSiteSettings'],
-            'Trưởng nhóm Kỹ thuật': ['viewDashboard', 'viewContent', 'viewProducts', 'manageProducts', 'viewNotifications', 'viewOrders'], 
-            'Chuyên viên Hỗ trợ': ['viewDashboard', 'viewSales', 'viewOrders', 'viewNotifications', 'viewCustomers', 'manageFaqs'], 
+            'Quản lý Bán hàng': ['viewDashboard', 'viewSales', 'viewCustomers', 'viewQuotations', 'viewOrders', 'manageOrders', 'manageDiscounts', 'viewSuppliers', 'viewHelpdesk', 'viewService', 'viewInventory', 'viewNotifications'],
+            'Biên tập Nội dung': ['viewDashboard', 'viewContent', 'viewArticles', 'manageArticles', 'manageFaqs', 'manageMedia', 'manageSiteSettings', 'viewNotifications'],
+            'Trưởng nhóm Kỹ thuật': ['viewDashboard', 'viewService', 'manageServiceTickets', 'manageWarranty', 'viewInventory', 'manageInventory', 'viewOrders', 'viewProducts', 'viewNotifications'], 
+            'Chuyên viên Hỗ trợ': ['viewDashboard', 'viewHelpdesk', 'manageServiceTickets', 'viewOrders', 'viewCustomers', 'viewChatLogs', 'viewNotifications'], 
             'Nhân viên Toàn quyền': allPermissions
         };
         const userStaffPermissions = staffPermissionsMap[currentStaffRoleCleaned] || [];

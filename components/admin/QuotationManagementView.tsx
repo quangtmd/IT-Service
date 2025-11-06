@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Quotation, QuotationItem, User, Product } from '../../types';
 import Button from '../ui/Button';
-import { getQuotations, addQuotation, updateQuotation, deleteQuotation, getUsers, getProducts } from '../../services/localDataService';
+import { getQuotations, addQuotation, updateQuotation, deleteQuotation } from '../../services/localDataService';
+import { getUsers, getProducts } from '../../services/localDataService'; // Assuming these exist
 import BackendConnectionError from '../shared/BackendConnectionError';
 
 const getStatusColor = (status: Quotation['status']) => {
@@ -22,7 +23,6 @@ const QuotationManagementView: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
     
-    // Data for modals
     const [customers, setCustomers] = useState<User[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
 
@@ -30,20 +30,20 @@ const QuotationManagementView: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const [quotes, users, prods] = await Promise.all([
+            // These services need to be implemented, using localStorage for now.
+            const [quotes, users, prodsData] = await Promise.all([
                 getQuotations(),
-                getUsers(),
-                getProducts('limit=10000') // fetch all products
+                getUsers(), // Assuming this fetches all users
+                getProducts('limit=10000') 
             ]);
+            
             setQuotations(quotes.map(q => {
                 const customer = users.find(u => u.id === q.customer_id);
-                return {
-                    ...q,
-                    customerInfo: customer ? { name: customer.username, email: customer.email } : undefined,
-                };
+                return { ...q, customerInfo: customer ? { name: customer.username, email: customer.email } : undefined };
             }));
+
             setCustomers(users.filter(u => u.role === 'customer' || u.role === 'admin'));
-            setProducts(prods.products);
+            setProducts(prodsData.products);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu báo giá.');
         } finally {
@@ -56,9 +56,10 @@ const QuotationManagementView: React.FC = () => {
     }, [loadData]);
 
     const openModalForNew = () => {
+        const newId = `quote-${Date.now()}`;
         setEditingQuotation({
-            id: '', creation_date: new Date().toISOString(), items: [],
-            subtotal: 0, total_amount: 0, status: 'Nháp',
+            id: newId, creation_date: new Date().toISOString(), expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            items: [], subtotal: 0, total_amount: 0, status: 'Nháp',
         });
         setIsModalOpen(true);
     };
@@ -75,7 +76,7 @@ const QuotationManagementView: React.FC = () => {
 
     const handleSave = async (data: Quotation) => {
         try {
-            if (data.id && quotations.some(q => q.id === data.id)) {
+            if (quotations.some(q => q.id === data.id)) {
                 await updateQuotation(data.id, data);
             } else {
                 await addQuotation(data);
@@ -135,7 +136,7 @@ const QuotationManagementView: React.FC = () => {
                     </table>
                 </div>
             </div>
-            {isModalOpen && <QuotationFormModal quotation={editingQuotation} customers={customers} products={products} onClose={closeModal} onSave={handleSave} />}
+            {isModalOpen && <QuotationFormModal quotation={editingQuotation} customers={customers} products={products} quotations={quotations} onClose={closeModal} onSave={handleSave} />}
         </div>
     );
 };
@@ -146,19 +147,20 @@ interface QuotationFormModalProps {
     quotation: Quotation | null;
     customers: User[];
     products: Product[];
+    quotations: Quotation[];
     onClose: () => void;
     onSave: (data: Quotation) => void;
 }
 
-const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, customers, products, onClose, onSave }) => {
+const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, customers, products, quotations, onClose, onSave }) => {
     const [formData, setFormData] = useState<Quotation>(quotation || {} as Quotation);
     const [productSearch, setProductSearch] = useState('');
 
-    const calculateTotals = (items: QuotationItem[], discount: number = 0, tax: number = 0) => {
+    const calculateTotals = useCallback((items: QuotationItem[], discount: number = 0, tax: number = 0) => {
         const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const total = subtotal - discount + tax;
         return { subtotal, total };
-    };
+    }, []);
 
     const handleItemChange = (index: number, field: 'quantity' | 'price', value: number) => {
         const newItems = [...formData.items];
@@ -193,7 +195,8 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, cust
         <div className="admin-modal-panel">
             <form onSubmit={handleSubmit}>
                 <div className="admin-modal-header">
-                    <h4 className="admin-modal-title">{formData.id ? 'Sửa Báo giá' : 'Tạo Báo giá'}</h4>
+                    {/* FIX: The 'quotations' variable was not in scope. It has been passed as a prop to fix the error. */}
+                    <h4 className="admin-modal-title">{formData.id && quotations.some(q=>q.id === formData.id) ? 'Sửa Báo giá' : 'Tạo Báo giá'}</h4>
                     <button type="button" onClick={onClose}>&times;</button>
                 </div>
                 <div className="admin-modal-body">
@@ -209,7 +212,6 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, cust
                     </div>
 
                     <div className="admin-form-subsection-title">Sản phẩm/Dịch vụ</div>
-                    {/* Items table */}
                     <div className="overflow-x-auto mb-4">
                         <table className="admin-table text-sm">
                             <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th></th></tr></thead>
@@ -217,8 +219,8 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, cust
                                 {formData.items.map((item, index) => (
                                     <tr key={index}>
                                         <td>{item.productName}</td>
-                                        <td><input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} className="w-16 p-1" /></td>
-                                        <td><input type="number" value={item.price} onChange={e => handleItemChange(index, 'price', Number(e.target.value))} className="w-32 p-1" /></td>
+                                        <td><input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} className="w-16 p-1 admin-form-group" /></td>
+                                        <td><input type="number" value={item.price} onChange={e => handleItemChange(index, 'price', Number(e.target.value))} className="w-32 p-1 admin-form-group" /></td>
                                         <td>{(item.quantity * item.price).toLocaleString('vi-VN')}₫</td>
                                         <td><Button type="button" size="sm" variant="ghost" className="!text-red-500" onClick={() => removeItem(index)}><i className="fas fa-times"></i></Button></td>
                                     </tr>
@@ -226,7 +228,6 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, cust
                             </tbody>
                         </table>
                     </div>
-                    {/* Add product search */}
                     <div className="relative admin-form-group">
                         <label>Thêm sản phẩm</label>
                         <input type="text" placeholder="Tìm kiếm sản phẩm..." value={productSearch} onChange={e => setProductSearch(e.target.value)} />
@@ -237,12 +238,11 @@ const QuotationFormModal: React.FC<QuotationFormModalProps> = ({ quotation, cust
                         )}
                     </div>
                     
-                    {/* Totals */}
                      <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div className="admin-form-group"><label>Tổng phụ</label><input type="text" value={formData.subtotal.toLocaleString('vi-VN') + '₫'} readOnly disabled /></div>
+                        <div className="admin-form-group"><label>Tổng phụ</label><input type="text" value={(formData.subtotal || 0).toLocaleString('vi-VN') + '₫'} readOnly disabled /></div>
                         <div className="admin-form-group"><label>Giảm giá</label><input type="number" value={formData.discount_amount || 0} onChange={e => { const discount = Number(e.target.value); const { total } = calculateTotals(formData.items, discount, formData.tax_amount); setFormData(p=>({...p, discount_amount: discount, total_amount: total}))}} /></div>
                         <div className="admin-form-group"><label>Thuế</label><input type="number" value={formData.tax_amount || 0} onChange={e => { const tax = Number(e.target.value); const { total } = calculateTotals(formData.items, formData.discount_amount, tax); setFormData(p=>({...p, tax_amount: tax, total_amount: total}))}} /></div>
-                        <div className="admin-form-group"><label>Tổng cộng</label><input type="text" value={formData.total_amount.toLocaleString('vi-VN') + '₫'} readOnly disabled /></div>
+                        <div className="admin-form-group"><label>Tổng cộng</label><input type="text" value={(formData.total_amount || 0).toLocaleString('vi-VN') + '₫'} readOnly disabled /></div>
                     </div>
                     <div className="admin-form-group"><label>Điều khoản</label><textarea value={formData.terms || ''} onChange={e => setFormData(p=>({...p, terms: e.target.value}))} rows={3}></textarea></div>
                     <div className="admin-form-group"><label>Trạng thái</label>

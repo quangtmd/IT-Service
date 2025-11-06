@@ -169,16 +169,30 @@ export interface GroundingChunk {
   web: GroundingChunkWeb;
 }
 
-// Fix: Add AdminView type to be shared across components
+// Updated AdminView to include all new modules
 export type AdminView = 
-  | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
-  | 'staff' | 'customers' 
-  | 'orders' | 'discounts' | 'chat_logs' 
-  | 'theme_settings' | 'menu_settings' | 'site_settings'
-  | 'notifications_panel'
-  | 'homepage_management'
-  | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard'
-  | 'inventory' | 'service_tickets';
+  | 'dashboard'
+  // Sales & CRM
+  | 'customers' | 'quotations' | 'orders' | 'discounts' | 'returns' | 'suppliers' | 'helpdesk_tickets'
+  // Service & Warranty
+  | 'service_tickets' | 'warranty_claims' | 'chat_logs'
+  // CMS & Marketing
+  | 'products' | 'articles' | 'media_library' | 'email_marketing' | 'seo_management'
+  // Inventory & Logistics
+  | 'inventory' | 'stock_receipts' | 'stock_issues' | 'shipping' | 'stock_transfers'
+  // Finance & Accounting
+  | 'accounting_dashboard' | 'invoices' | 'expenses' | 'debt_management' | 'cashflow_forecast' | 'payment_approval'
+  // Procurement
+  | 'purchase_requests' | 'purchase_orders' | 'procurement_approval'
+  // System & HR
+  | 'hrm_dashboard' | 'user_permissions' | 'site_settings' | 'activity_log' | 'contract_management' | 'asset_management' | 'kpi_management'
+  // Analytics & Automation
+  | 'workflows' | 'notification_center' | 'ai_forecast' | 'branch_reports' | 'system_backup'
+  // Multi-branch
+  | 'branch_list' | 'branch_permissions' | 'reports_by_branch'
+  // Old/Misc that need to be categorized
+  | 'faqs' | 'theme_settings' | 'menu_settings' | 'notifications_panel' | 'homepage_management'
+  ;
 
 export type UserRole = 'admin' | 'staff' | 'customer';
 export type StaffRole = 'Quản lý Bán hàng' | 'Biên tập Nội dung' | 'Trưởng nhóm Kỹ thuật' | 'Chuyên viên Hỗ trợ' | 'Nhân viên Toàn quyền';
@@ -653,4 +667,38 @@ export interface Inventory {
 
 export interface ServerInfo {
   outboundIp: string;
+}
+
+// --- NEW CRM & SALES TYPES ---
+export interface QuotationItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+export interface Quotation {
+  id: string;
+  customer_id?: string;
+  customerInfo?: { name: string, email: string }; // Denormalized for display
+  creation_date: string; // ISO
+  expiry_date?: string; // ISO
+  items: QuotationItem[];
+  subtotal: number;
+  discount_amount?: number;
+  tax_amount?: number;
+  total_amount: number;
+  status: 'Nháp' | 'Đã gửi' | 'Đã chấp nhận' | 'Đã hủy' | 'Hết hạn';
+  terms?: string;
+}
+
+export interface WarrantyClaim {
+    id: string;
+    claim_code: string;
+    order_id: string;
+    product_id: string;
+    product_name: string;
+    customer_name: string;
+    reported_issue: string;
+    status: 'Đang tiếp nhận' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Từ chối';
+    created_at: string; // ISO
 }
