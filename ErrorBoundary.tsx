@@ -30,11 +30,12 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
+    // Fix: Destructure props and state to avoid potential 'this' context issues.
     const { hasError, errorMessage } = this.state;
+    const { children, fallbackMessage } = this.props;
 
     if (hasError) {
-      // Fix: Directly access 'this.props.fallbackMessage' to avoid destructuring error.
-      const displayMessage = errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
+      const displayMessage = errorMessage || fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
         <div style={{
@@ -68,8 +69,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Fix: Return 'this.props.children' directly to avoid destructuring error.
-    return this.props.children;
+    return children;
   }
 }
 

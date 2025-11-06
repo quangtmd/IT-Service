@@ -306,7 +306,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
   return (
     <div
-      className={`fixed bottom-0 right-0 sm:bottom-6 sm:right-6 bg-bgBase rounded-t-lg sm:rounded-lg shadow-xl w-full sm:w-96 h-[70vh] sm:h-[calc(100vh-10rem)] max-h-[600px] flex flex-col z-50 transition-all duration-300 ease-in-out transform border border-borderDefault ${
+      className={`fixed bottom-0 right-0 sm:bottom-6 sm:right-6 bg-white rounded-t-lg sm:rounded-lg shadow-xl w-full sm:w-96 h-[70vh] sm:h-[calc(100vh-10rem)] max-h-[600px] flex flex-col z-50 transition-all duration-300 ease-in-out transform ${
         isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full sm:translate-y-16 opacity-0 pointer-events-none'
       }`}
       role="dialog"
@@ -314,16 +314,16 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
       aria-labelledby="chatbot-title"
     >
       <header className="bg-primary text-white p-4 flex justify-between items-center rounded-t-lg sm:rounded-t-lg">
-        <h3 id="chatbot-title" className="font-semibold text-lg">AI Chatbot {siteSettings.companyName}</h3>
+        <h3 id="chatbot-title" className="font-semibold text-lg">AI Chatbot IQ Technology</h3>
         <button onClick={() => setIsOpen(false)} className="text-xl hover:text-red-100" aria-label="Đóng chatbot">
           <i className="fas fa-times"></i>
         </button>
       </header>
 
       {!isUserInfoSubmitted ? (
-        <div className="p-6 flex-grow flex flex-col justify-center bg-white">
-          <h4 className="text-lg font-semibold text-textBase mb-3 text-center">Thông tin của bạn</h4>
-          <p className="text-sm text-textMuted mb-4 text-center">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
+        <div className="p-8 pt-12 flex-grow flex flex-col justify-start bg-white">
+          <h4 className="text-xl font-bold text-textBase mb-2 text-center">Thông tin của bạn</h4>
+          <p className="text-sm text-textMuted mb-8 text-center">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
           {userInfoError && <p className="text-sm text-danger-text mb-3 bg-danger-bg p-2 rounded-md">{userInfoError}</p>}
           <form onSubmit={handleUserInfoSubmit} className="space-y-4">
             <div>

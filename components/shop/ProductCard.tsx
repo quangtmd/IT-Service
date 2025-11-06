@@ -15,6 +15,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
+  const getDisplayName = (product: Product): string => {
+    if (!product.name || !product.subCategory) {
+      return product.name;
+    }
+    const subCategoryPrefix = product.subCategory.split('(')[0].trim();
+    if (product.name.startsWith(subCategoryPrefix) && product.name.length > subCategoryPrefix.length) {
+      return product.name.substring(subCategoryPrefix.length).trim();
+    }
+    return product.name;
+  };
+  const displayName = getDisplayName(product);
+
+
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -54,7 +67,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <div className="pt-3 px-1 flex flex-col flex-grow">
           {/* Use min-height to ensure alignment but allow wrapping */}
           <h4 className="text-sm font-semibold text-textBase mb-2 flex-grow min-h-[40px] group-hover:text-primary transition-colors line-clamp-2" title={product.name}>
-            {product.name}
+            {displayName}
           </h4>
           
           <div className="mt-auto">

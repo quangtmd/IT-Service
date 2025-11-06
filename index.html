@@ -87,6 +87,8 @@
       background-color: #f3f4f6;
       transition: all 0.2s ease-in-out;
       white-space: nowrap;
+      min-width: 140px; /* Added for uniformity */
+      text-align: center; /* Added for uniformity */
     }
     .shop-category-nav button:hover {
       background-color: var(--color-primary-default);
@@ -459,10 +461,8 @@
       border-radius: 1rem;
       overflow: hidden;
       box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
-      background-color: rgba(66, 66, 66, 0.8);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: #1e293b; /* Changed from transparent to solid dark slate */
+      border: 1px solid #334155; /* Adjusted border for new background */
       color: #fff;
     }
 
@@ -564,7 +564,7 @@
         border-radius: 0;
         box-shadow: none;
         border: none;
-        background-color: rgba(51, 51, 51, 0.9);
+        background-color: #1e293b; /* Changed from transparent to solid dark slate */
       }
       .auth-panel {
         padding: 2rem;

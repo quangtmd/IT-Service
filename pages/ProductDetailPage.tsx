@@ -75,6 +75,17 @@ const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = () => { if (product) addToCart(product, quantity); };
   const handleBuyNow = () => { if (product) { addToCart(product, quantity); navigate('/checkout'); } };
+  
+  const getDisplayName = (product: Product): string => {
+    if (!product.name || !product.subCategory) {
+      return product.name;
+    }
+    const subCategoryPrefix = product.subCategory.split('(')[0].trim();
+    if (product.name.startsWith(subCategoryPrefix) && product.name.length > subCategoryPrefix.length) {
+      return product.name.substring(subCategoryPrefix.length).trim();
+    }
+    return product.name;
+  };
 
   if (isLoading) {
     return (
@@ -104,6 +115,7 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
+  const displayName = getDisplayName(product);
   const savings = product.originalPrice && product.originalPrice > product.price ? product.originalPrice - product.price : 0;
   const mainCategoryInfo = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.name === product.mainCategory);
   const subCategoryInfo = mainCategoryInfo?.subCategories.find(sc => sc.name === product.subCategory);
@@ -130,7 +142,7 @@ const ProductDetailPage: React.FC = () => {
             )}
             <li><span className="text-textSubtle">/</span></li>
             <li className="text-textSubtle truncate max-w-[200px] sm:max-w-xs" aria-current="page" title={product.name}>
-                {product.name}
+                {displayName}
             </li>
           </ol>
         </nav>
@@ -156,7 +168,7 @@ const ProductDetailPage: React.FC = () => {
             </div>
 
             <div className="lg:col-span-3">
-              <h1 className="text-2xl md:text-3xl font-bold text-textBase mb-3">{product.name}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-textBase mb-3">{displayName}</h1>
               <div className="flex items-center text-sm text-textMuted mb-3 space-x-4">
                   <span>Mã SP: <span className="font-medium text-textBase">{product.id}</span></span>
                   {product.brand && <span>Thương hiệu: <span className="font-medium text-textBase">{product.brand}</span></span>}
@@ -248,7 +260,6 @@ const ProductDetailPage: React.FC = () => {
             <h2 className="text-2xl font-bold text-textBase mb-6 text-center">Sản phẩm liên quan</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map(relatedProduct => (
-                // Fix: Removed the 'context' prop as it is not defined in the ProductCardProps interface.
                 <ProductCard key={relatedProduct.id} product={relatedProduct} />
               ))}
             </div>
