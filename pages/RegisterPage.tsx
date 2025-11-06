@@ -60,23 +60,23 @@ const RegisterPage: React.FC = () => {
         <div className="auth-panel items-center text-center hidden md:flex">
           <div>
              <h2 className="text-2xl font-bold mb-4">IQ Technology</h2>
-            <h1 className="auth-title">Welcome Back!</h1>
-            <p className="mb-8 text-white/80">To keep connected with us please login with your personal info</p>
+            <h1 className="auth-title">Chào Mừng Trở Lại!</h1>
+            <p className="mb-8 text-white/80">Để giữ kết nối với chúng tôi, vui lòng đăng nhập bằng thông tin cá nhân của bạn</p>
             <Link to="/login">
                 <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-black">
-                    Sign In
+                    Đăng Nhập
                 </Button>
             </Link>
              <div className="auth-social-login mt-12">
-              <p className="auth-social-text">Or sign in with</p>
+              <p className="auth-social-text">Hoặc đăng nhập với</p>
               <div className="auth-social-icons">
-                <button type="button" onClick={() => handleSocialLogin('Facebook')} className="auth-social-icon" aria-label="Sign in with Facebook">
+                <button type="button" onClick={() => handleSocialLogin('Facebook')} className="auth-social-icon" aria-label="Đăng nhập với Facebook">
                   <i className="fab fa-facebook-f"></i>
                 </button>
-                <button type="button" onClick={() => handleSocialLogin('Google')} className="auth-social-icon" aria-label="Sign in with Google">
+                <button type="button" onClick={() => handleSocialLogin('Google')} className="auth-social-icon" aria-label="Đăng nhập với Google">
                   <i className="fab fa-google"></i>
                 </button>
-                <button type="button" onClick={() => handleSocialLogin('GitHub')} className="auth-social-icon" aria-label="Sign in with GitHub">
+                <button type="button" onClick={() => handleSocialLogin('GitHub')} className="auth-social-icon" aria-label="Đăng nhập với GitHub">
                   <i className="fab fa-github"></i>
                 </button>
               </div>
@@ -87,7 +87,7 @@ const RegisterPage: React.FC = () => {
         {/* Form Panel */}
         <div className="auth-panel form-panel">
           <form onSubmit={handleSubmit} className="w-full">
-            <h1 className="auth-title">Create Account</h1>
+            <h1 className="auth-title">Tạo Tài Khoản</h1>
             {error && (
                 <div className="p-3 mb-4 bg-red-500/20 border border-red-500/30 text-white rounded-md text-sm">
                   {error}
@@ -95,7 +95,7 @@ const RegisterPage: React.FC = () => {
             )}
             <input
               type="text"
-              placeholder="Username"
+              placeholder="Tên người dùng"
               className="auth-input"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -111,7 +111,7 @@ const RegisterPage: React.FC = () => {
             />
             <input
               type="password"
-              placeholder="Password"
+              placeholder="Mật khẩu"
               className="auth-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -120,32 +120,32 @@ const RegisterPage: React.FC = () => {
             <div className="flex items-center my-4">
                <label className="auth-checkbox flex items-center">
                     <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mr-2 h-4 w-4 accent-primary"/>
-                    I agree to the all statements in <a href="#" className="ml-1">Terms of service</a>
+                    Tôi đồng ý với tất cả các điều khoản trong <a href="#" className="ml-1">Điều khoản dịch vụ</a>
                 </label>
             </div>
             <Button type="submit" className="w-full !py-3 !text-base" variant="primary" size="lg" isLoading={authLoading}>
-              Sign Up
+              Đăng Ký
             </Button>
             
             <div className="md:hidden">
               <div className="auth-social-login">
-              <p className="auth-social-text">Or sign up with</p>
+              <p className="auth-social-text">Hoặc đăng ký với</p>
               <div className="auth-social-icons">
-                <button type="button" onClick={() => handleSocialLogin('Facebook')} className="auth-social-icon" aria-label="Sign in with Facebook">
+                <button type="button" onClick={() => handleSocialLogin('Facebook')} className="auth-social-icon" aria-label="Đăng ký với Facebook">
                   <i className="fab fa-facebook-f"></i>
                 </button>
-                <button type="button" onClick={() => handleSocialLogin('Google')} className="auth-social-icon" aria-label="Sign in with Google">
+                <button type="button" onClick={() => handleSocialLogin('Google')} className="auth-social-icon" aria-label="Đăng ký với Google">
                   <i className="fab fa-google"></i>
                 </button>
-                <button type="button" onClick={() => handleSocialLogin('GitHub')} className="auth-social-icon" aria-label="Sign in with GitHub">
+                <button type="button" onClick={() => handleSocialLogin('GitHub')} className="auth-social-icon" aria-label="Đăng ký với GitHub">
                   <i className="fab fa-github"></i>
                 </button>
               </div>
             </div>
               <p className="text-center text-sm text-white/80 mt-6">
-                Already have an account?{' '}
+                Bạn đã có tài khoản?{' '}
                 <Link to="/login" className="font-medium text-white hover:underline">
-                  Sign In
+                  Đăng Nhập
                 </Link>
               </p>
             </div>

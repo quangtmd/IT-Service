@@ -34,7 +34,7 @@ const HomeBannerIts: React.FC = () => {
 
     const timer = setInterval(() => {
       setCurrentIndex(prevIndex => (prevIndex + 1) % banners.length);
-    }, 3000); // Change slide every 3 seconds
+    }, 5000); 
 
     return () => clearInterval(timer);
   }, [banners]);
@@ -44,13 +44,13 @@ const HomeBannerIts: React.FC = () => {
   };
 
   if (banners.length === 0) {
-    return <div className="h-[500px] bg-gray-800 flex items-center justify-center"><p className="text-white">Loading Banners...</p></div>;
+    return <div className="h-[500px] bg-gray-700 flex items-center justify-center"><p className="text-white">Loading Banners...</p></div>;
   }
 
   const currentBanner = banners[currentIndex];
 
   return (
-    <section className="relative text-white h-[500px] flex items-center overflow-hidden">
+    <section className="relative text-white h-[500px] flex items-center overflow-hidden bg-gray-700">
       {/* Background Slides */}
       {banners.map((banner, index) => (
         <div

@@ -321,7 +321,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
       </header>
 
       {!isUserInfoSubmitted ? (
-        <div className="p-6 flex-grow flex flex-col justify-center bg-bgCanvas">
+        <div className="p-6 flex-grow flex flex-col justify-center bg-white">
           <h4 className="text-lg font-semibold text-textBase mb-3 text-center">Thông tin của bạn</h4>
           <p className="text-sm text-textMuted mb-4 text-center">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
           {userInfoError && <p className="text-sm text-danger-text mb-3 bg-danger-bg p-2 rounded-md">{userInfoError}</p>}

@@ -343,10 +343,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                {/* Fix: Wrap the onClick handler in an arrow function to pass arguments correctly without immediate execution. */}
-                <Button onClick={() => savePayrollRecords(localPayroll)} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* Fix: Pass the function reference directly to onClick, as it doesn't require arguments from this call site. */}
-                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={() => { void savePayrollRecords(localPayroll); }} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={() => { void handleSettlePayroll(); }} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">
@@ -389,7 +387,6 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClos
         date: new Date().toISOString().split('T')[0], type: 'expense', amount: 0
     });
 
-    // Fix: Correctly type the event handler for inputs, textareas, and selects.
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
 

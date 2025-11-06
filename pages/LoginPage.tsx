@@ -34,12 +34,9 @@ const LoginPage: React.FC = () => {
   };
   
   const handleSocialLogin = (provider: string) => {
-    // In a real app, you would call your auth service here.
-    // e.g., auth.signInWithGoogle()
     console.log(`Attempting to sign in with ${provider}...`);
     setError(`Chức năng đăng nhập bằng ${provider} đang được phát triển.`);
   };
-
 
   return (
     <div className="auth-container" style={{backgroundImage: "url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?q=80&w=1974&auto=format&fit=crop')"}}>
@@ -47,7 +44,7 @@ const LoginPage: React.FC = () => {
         {/* Form Panel */}
         <div className="auth-panel form-panel">
           <form onSubmit={handleSubmit} className="w-full">
-            <h1 className="auth-title">Sign In</h1>
+            <h1 className="auth-title">Đăng Nhập</h1>
             {error && (
                 <div className="p-3 mb-4 bg-red-500/20 border border-red-500/30 text-white rounded-md text-sm">
                   {error}
@@ -63,7 +60,7 @@ const LoginPage: React.FC = () => {
             />
             <input
               type="password"
-              placeholder="Password"
+              placeholder="Mật khẩu"
               className="auth-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -72,25 +69,25 @@ const LoginPage: React.FC = () => {
              <div className="flex justify-between items-center mb-6">
                 <label className="auth-checkbox flex items-center">
                     <input type="checkbox" className="mr-2 h-4 w-4 accent-primary"/>
-                    Remember me
+                    Ghi nhớ tôi
                 </label>
-                <a href="#" className="text-sm text-white/80 hover:text-white hover:underline">Forgot password?</a>
+                <a href="#" className="text-sm text-white/80 hover:text-white hover:underline">Quên mật khẩu?</a>
             </div>
 
             <Button type="submit" className="w-full !py-3 !text-base" variant="primary" size="lg" isLoading={authLoading}>
-              Sign In
+              Đăng Nhập
             </Button>
 
             <div className="auth-social-login">
-              <p className="auth-social-text">Or sign in with</p>
+              <p className="auth-social-text">Hoặc đăng nhập với</p>
               <div className="auth-social-icons">
-                <button type="button" onClick={() => handleSocialLogin('Facebook')} className="auth-social-icon" aria-label="Sign in with Facebook">
+                <button type="button" onClick={() => handleSocialLogin('Facebook')} className="auth-social-icon" aria-label="Đăng nhập với Facebook">
                   <i className="fab fa-facebook-f"></i>
                 </button>
-                <button type="button" onClick={() => handleSocialLogin('Google')} className="auth-social-icon" aria-label="Sign in with Google">
+                <button type="button" onClick={() => handleSocialLogin('Google')} className="auth-social-icon" aria-label="Đăng nhập với Google">
                   <i className="fab fa-google"></i>
                 </button>
-                <button type="button" onClick={() => handleSocialLogin('GitHub')} className="auth-social-icon" aria-label="Sign in with GitHub">
+                <button type="button" onClick={() => handleSocialLogin('GitHub')} className="auth-social-icon" aria-label="Đăng nhập với GitHub">
                   <i className="fab fa-github"></i>
                 </button>
               </div>
@@ -101,11 +98,11 @@ const LoginPage: React.FC = () => {
         {/* Info Panel */}
         <div className="auth-panel items-center text-center hidden md:flex">
           <div>
-            <h1 className="auth-title">Hello, Friend!</h1>
-            <p className="mb-8 text-white/80">Enter your personal details and start your journey with us</p>
+            <h1 className="auth-title">Xin Chào!</h1>
+            <p className="mb-8 text-white/80">Nhập thông tin cá nhân của bạn và bắt đầu hành trình với chúng tôi</p>
             <Link to="/register">
                 <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-black">
-                    Sign Up
+                    Đăng Ký
                 </Button>
             </Link>
           </div>

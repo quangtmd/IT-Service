@@ -183,6 +183,7 @@ CREATE TABLE ChatLogSessions (
     userPhone VARCHAR(255),
     startTime DATETIME NOT NULL,
     messages JSON,
+    isRead BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -207,7 +208,7 @@ CREATE TABLE ServiceTickets (
     customer_info JSON,
     device_name VARCHAR(255),
     reported_issue TEXT,
-    status ENUM('open', 'in_progress', 'awaiting_parts', 'resolved', 'closed') DEFAULT 'open',
+    status ENUM('Đã tiếp nhận', 'Đang chẩn đoán', 'Chờ linh kiện', 'Đang sửa chữa', 'Sẵn sàng trả', 'Đã trả khách') DEFAULT 'Đã tiếp nhận',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

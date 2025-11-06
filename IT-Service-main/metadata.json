@@ -1,0 +1,8 @@
+{
+  "name": " IT Services",
+  "description": "A modern web application for a PC components retailer and IT service provider, featuring AI-powered chatbot and component recommendations.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "prompt": ""
+}
