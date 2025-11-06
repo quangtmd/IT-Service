@@ -46,16 +46,20 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-lg shadow-lg border border-gray-200">
+    <div 
+      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-cover bg-center"
+      style={{ backgroundImage: "url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop')" }}
+    >
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div className="relative max-w-md w-full space-y-6 bg-black/40 backdrop-blur-xl border border-slate-700 p-8 rounded-2xl shadow-2xl">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-primary">IQ Technology</h1>
-          <h2 className="mt-4 text-center text-3xl font-bold text-gray-900">
+          <h2 className="mt-4 text-center text-3xl font-bold text-white">
             Đăng nhập tài khoản
           </h2>
-          <p className="mt-2 text-center text-sm text-primary">
+          <p className="mt-2 text-center text-sm text-gray-300">
             Hoặc{' '}
-            <Link to="/register" className="font-medium hover:text-primary-dark">
+            <Link to="/register" className="font-medium text-primary hover:text-primary-dark">
               đăng ký nếu bạn chưa có tài khoản
             </Link>
           </p>
@@ -78,7 +82,7 @@ const LoginPage: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none relative block w-full px-4 py-3 bg-slate-50 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+                className="appearance-none relative block w-full px-4 py-3 bg-white/10 border border-gray-500 placeholder-gray-400 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm focus:ring-offset-2 focus:ring-offset-gray-900"
                 placeholder="Địa chỉ email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -94,7 +98,7 @@ const LoginPage: React.FC = () => {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+                className="appearance-none relative block w-full px-4 py-3 bg-white/10 border border-gray-500 placeholder-gray-400 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm focus:ring-offset-2 focus:ring-offset-gray-900"
                 placeholder="Mật khẩu"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -107,8 +111,26 @@ const LoginPage: React.FC = () => {
             </Button>
           </div>
         </form>
+
+        <div className="relative flex py-3 items-center">
+          <div className="flex-grow border-t border-gray-600"></div>
+          <span className="flex-shrink mx-4 text-gray-300 text-sm">Hoặc đăng nhập với</span>
+          <div className="flex-grow border-t border-gray-600"></div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+            <Button variant="outline" className="!border-gray-600 !text-white hover:!bg-white/10 !py-3">
+                <i className="fab fa-google text-red-500 text-xl"></i>
+            </Button>
+            <Button variant="outline" className="!border-gray-600 !text-white hover:!bg-white/10 !py-3">
+                <i className="fab fa-facebook-f text-blue-500 text-xl"></i>
+            </Button>
+            <Button variant="outline" className="!border-gray-600 !text-white hover:!bg-white/10 !py-3">
+                <i className="fab fa-github text-xl"></i>
+            </Button>
+        </div>
         
-        <p className="text-center text-sm text-gray-500">
+        <p className="text-center text-sm text-gray-300">
             Quên mật khẩu?{' '}
             <a href="#" className="font-medium text-primary hover:text-primary-dark">
                 Đặt lại mật khẩu
