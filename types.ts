@@ -43,7 +43,6 @@ export interface User {
   position?: string; // e.g., 'Kỹ thuật viên', 'Nhân viên kinh doanh'
 }
 
-// FIX: Moved AdminPermission type here to be globally accessible.
 export type AdminPermission = 
   // General
   | 'viewDashboard'
@@ -94,8 +93,9 @@ export interface Product {
   name: string;
   price: number;
   originalPrice?: number;
+  costPrice?: number; // Giá vốn
   stock: number;
-  category: string; // The full path, e.g., "Linh kiện máy tính > CPU"
+  category: string; 
   mainCategory: string;
   subCategory: string;
   brand?: string;
@@ -107,6 +107,7 @@ export interface Product {
   isVisible: boolean;
   rating?: number;
   reviews?: number;
+  variants?: any; // For size/color
 }
 
 export interface CartItem extends Product {
@@ -153,6 +154,9 @@ export interface Order {
     price: number;
   }>;
   totalAmount: number;
+  discountCode?: string;
+  discountAmount?: number;
+  shippingInfo?: string;
   orderDate: string;
   status: OrderStatus;
   paymentInfo: PaymentInfo;
@@ -162,7 +166,7 @@ export interface DiscountCode {
     id: string;
     name?: string;
     code: string;
-    type: 'percentage' | 'fixed_amount';
+    type: 'percentage' | 'fixed_amount' | 'buy_x_get_y';
     value: number;
     description?: string;
     expiryDate?: string;
@@ -170,8 +174,8 @@ export interface DiscountCode {
     minSpend?: number;
     usageLimit?: number;
     timesUsed?: number;
+    appliesTo?: { type: 'products' | 'categories', ids: string[] }; // Scope
 }
-
 
 // --- CONTENT & SITE SETTINGS ---
 export interface MainCategoryInfo {
@@ -197,6 +201,10 @@ export interface Article {
   category: string;
   isAIGenerated?: boolean;
   imageSearchQuery?: string;
+  tags?: string[];
+  canonicalUrl?: string;
+  robots?: string;
+  viewCount?: number;
 }
 
 export interface Service {
@@ -451,6 +459,10 @@ export interface SiteSettings {
   defaultMetaTitle: string;
   defaultMetaDescription: string;
   defaultMetaKeywords: string;
+  
+  googleAnalyticsId?: string;
+  facebookPixelId?: string;
+  robotsTxt?: string;
 
   aboutPageTitle: string;
   aboutPageSubtitle: string;
@@ -572,6 +584,7 @@ export interface ChatLogSession {
     startTime: string;
     endTime?: string;
     messages: ChatMessage[];
+    notes?: string;
 }
 
 // --- FINANCIAL & HRM TYPES ---
@@ -606,45 +619,85 @@ export interface ServerInfo {
     outboundIp: string;
 }
 
+// Fix: Add 'shipping_management' and 'hrm_profiles' to AdminView type
 export type AdminView = 
+  // Main
   | 'dashboard'
-  | 'products'
-  | 'articles'
+  // Sales & CRM
   | 'orders'
+  | 'quotations'
   | 'customers'
   | 'discounts'
-  | 'faqs'
-  | 'chat_logs'
+  // Services
   | 'tickets'
   | 'warranties'
-  | 'inventory'
-  | 'quotations'
-  | 'reports'
+  | 'chat_logs'
+  // CMS & Marketing
+  | 'products'
+  | 'articles'
+  | 'media_library'
+  | 'faqs'
+  | 'marketing_email'
+  // Inventory
+  | 'inventory_dashboard'
+  | 'inventory_in'
+  | 'inventory_out'
+  | 'inventory_suppliers'
+  // Finance
+  | 'financial_dashboard'
+  | 'financial_transactions'
+  | 'financial_debts'
+  | 'financial_accounts'
+  | 'hrm_payroll'
+  // Reports
+  | 'reports_dashboard'
+  | 'reports_sales'
+  | 'reports_customers'
+  | 'reports_inventory'
+  // System & Settings
+  | 'homepage_settings'
   | 'site_settings'
   | 'theme_settings'
   | 'menu_settings'
-  | 'homepage_settings'
-  | 'media_library'
   | 'notifications_panel'
-  // HRM
-  | 'hrm_dashboard'
-  | 'hrm_profiles'
-  | 'hrm_payroll'
-  // Financial
-  | 'financial_dashboard'
-  | 'financial_transactions'
-  | 'financial_reports';
+  | 'shipping_management'
+  | 'hrm_profiles';
 
 
-// --- Inventory, Quotation, Warranty ---
-export interface Inventory {
-  product_id: string;
-  product_name?: string;
-  warehouse_id: string;
-  warehouse_name?: string;
-  quantity: number;
-  last_updated: string;
+// --- Inventory, Service, Finance, Marketing (New) ---
+
+export interface ServiceTicket {
+  id: string;
+  customer_id: string;
+  product_name: string;
+  product_serial?: string;
+  reported_issue: string;
+  reception_date: string;
+  completion_date?: string;
+  status: 'Mới tạo' | 'Chờ báo giá' | 'Chờ linh kiện' | 'Đang sửa chữa' | 'Hoàn thành' | 'Đã hủy';
+  inspection_fee?: number;
+  component_cost?: number;
+  labor_cost?: number;
+  total_cost?: number;
+  notes?: string;
 }
+
+export interface WarrantyTicket {
+    id: string;
+    original_order_id: string;
+    customer_id: string;
+    product_name: string;
+    product_serial?: string;
+    reported_issue: string;
+    actual_issue?: string;
+    reception_date: string;
+    completion_date?: string;
+    status: 'Mới tạo' | 'Đang kiểm tra' | 'Chờ linh kiện' | 'Đang xử lý' | 'Hoàn thành' | 'Từ chối bảo hành';
+    solution?: 'Sửa chữa' | 'Đổi mới' | 'Hoàn tiền';
+    notes?: string;
+    internal_cost?: number;
+}
+
 
 export interface QuotationItem {
   productId: string;
@@ -665,4 +718,69 @@ export interface Quotation {
   total_amount: number;
   status: 'Nháp' | 'Đã gửi' | 'Đã chấp nhận' | 'Hết hạn' | 'Đã hủy';
   terms?: string;
+}
+
+export interface Supplier {
+    id: string;
+    name: string;
+    contact_person?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    notes?: string;
+}
+
+export interface StockEntryItem {
+    productId: string;
+    productName: string;
+    quantity: number;
+    costPrice?: number; // Only for 'in' type
+}
+
+export interface StockEntry {
+    id: string;
+    type: 'in' | 'out';
+    entry_date: string;
+    supplier_id?: string;
+    order_id?: string;
+    employee_name: string;
+    items: StockEntryItem[];
+    total_value?: number; // Only for 'in' type
+    reason?: string;
+}
+
+export interface Shipment {
+    id: string;
+    order_id: string;
+    shipping_partner: string;
+    tracking_code?: string;
+    status: 'Đã lấy hàng' | 'Đang giao' | 'Phát thành công' | 'Thất bại';
+    shipping_fee?: number;
+}
+
+export interface Debt {
+    id: string;
+    entity_id: string; // Customer or Supplier ID
+    entity_name: string;
+    type: 'receivable' | 'payable'; // Phải thu | Phải trả
+    amount: number;
+    due_date: string;
+    status: 'Chưa đến hạn' | 'Quá hạn' | 'Đã thanh toán';
+}
+
+export interface Account {
+    id: string;
+    name: string;
+    type: 'Tiền mặt' | 'Ngân hàng';
+    initial_balance: number;
+    current_balance?: number; // Calculated on frontend/backend
+}
+// Fix: Add Inventory interface
+export interface Inventory {
+    product_id: string;
+    product_name: string;
+    warehouse_id: string;
+    warehouse_name: string;
+    quantity: number;
+    last_updated: string;
 }

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../ui/Button';
@@ -18,11 +19,16 @@ const getStartOfWeek = (d: Date) => {
     return new Date(date.setDate(diff));
 };
 
-type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll';
+type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll' | 'debts' | 'accounts';
 
 // --- MAIN COMPONENT ---
-const FinancialManagementView: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<FinancialTab>('overview');
+// Fix: Add props interface to accept initialTab
+interface FinancialManagementViewProps {
+  initialTab?: FinancialTab;
+}
+
+const FinancialManagementView: React.FC<FinancialManagementViewProps> = ({ initialTab = 'overview' }) => {
+    const [activeTab, setActiveTab] = useState<FinancialTab>(initialTab);
     const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
     const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);

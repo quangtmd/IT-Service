@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { User, StaffRole, STAFF_ROLE_OPTIONS, UserStatus, USER_STATUS_OPTIONS } from '../../types';
 import Button from '../ui/Button';
 import ImageUploadInput from '../ui/ImageUploadInput';
-import { getUsers, addUser, updateUser, deleteUser } from '../../services/localDataService';
+import { getUsers, addUser, updateUser, deleteUser } from '../../services/apiService';
 
 const CustomerManagementView: React.FC = () => {
     const { addAdminNotification } = useAuth();

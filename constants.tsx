@@ -25,6 +25,7 @@ export const FAQ_STORAGE_KEY = 'siteFAQs_v1';
 export const DISCOUNTS_STORAGE_KEY = 'siteDiscountCodes_v1';
 export const THEME_SETTINGS_STORAGE_KEY = 'siteThemeSettings_v1';
 export const CUSTOM_MENU_STORAGE_KEY = 'siteCustomMenu_v1';
+// These are now fetched from API, but keys can be used for caching if needed
 export const PRODUCTS_STORAGE_KEY = 'siteProducts_v1';
 export const ORDERS_STORAGE_KEY = 'siteOrders_v1';
 export const CHAT_LOGS_STORAGE_KEY = 'siteChatLogs_v1'; // For storing chat logs

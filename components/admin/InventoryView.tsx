@@ -1,10 +1,54 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 // Fix: Import the newly added Inventory type.
 import { Inventory } from '../../types';
-import { getInventory } from '../../services/localDataService';
+// Fix: Import getInventory from apiService where it is correctly defined.
+import { getInventory } from '../../services/apiService';
 import Button from '../ui/Button';
 
-const InventoryView: React.FC = () => {
+// Fix: Add types for props to allow setting initial tab
+type InventoryTab = 'inventory' | 'import' | 'export' | 'suppliers';
+interface InventoryManagementViewProps {
+    initialTab?: InventoryTab;
+}
+
+// Fix: Rename component to InventoryManagementView and accept props
+const InventoryManagementView: React.FC<InventoryManagementViewProps> = ({ initialTab = 'inventory' }) => {
+    const [activeTab, setActiveTab] = useState<InventoryTab>(initialTab);
+
+    const renderTabContent = () => {
+        switch(activeTab) {
+            case 'inventory':
+                return <InventoryList />;
+            case 'import':
+            case 'export':
+            case 'suppliers':
+                return <PlaceholderTab featureName={activeTab} />;
+            default:
+                return <InventoryList />;
+        }
+    };
+
+    return (
+        <div className="admin-card">
+            <div className="admin-card-header">
+                <h3 className="admin-card-title">Quản lý Kho & Vận hành</h3>
+            </div>
+            <div className="admin-card-body">
+                <nav className="admin-tabs">
+                    <button onClick={() => setActiveTab('inventory')} className={`admin-tab-button ${activeTab === 'inventory' ? 'active' : ''}`}>Tồn kho</button>
+                    <button onClick={() => setActiveTab('import')} className={`admin-tab-button ${activeTab === 'import' ? 'active' : ''}`}>Nhập kho</button>
+                    <button onClick={() => setActiveTab('export')} className={`admin-tab-button ${activeTab === 'export' ? 'active' : ''}`}>Xuất kho</button>
+                    <button onClick={() => setActiveTab('suppliers')} className={`admin-tab-button ${activeTab === 'suppliers' ? 'active' : ''}`}>Nhà cung cấp</button>
+                </nav>
+                 <div className="mt-6">
+                    {renderTabContent()}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const InventoryList: React.FC = () => {
     const [inventory, setInventory] = useState<Inventory[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -35,53 +79,57 @@ const InventoryView: React.FC = () => {
     [inventory, searchTerm]);
 
     return (
-        <div className="admin-card">
-            <div className="admin-card-header">
-                <h3 className="admin-card-title">Quản lý Kho & Tồn kho</h3>
-            </div>
-            <div className="admin-card-body">
-                 <input
-                    type="text"
-                    placeholder="Tìm sản phẩm hoặc kho..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="admin-form-group w-full max-w-md mb-4"
-                />
-                <div className="overflow-x-auto">
-                    <table className="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Sản phẩm</th>
-                                <th>Kho</th>
-                                <th>Số lượng tồn</th>
-                                <th>Hành động</th>
+        <div>
+            <input
+                type="text"
+                placeholder="Tìm sản phẩm hoặc kho..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="admin-form-group w-full max-w-md mb-4"
+            />
+            <div className="overflow-x-auto">
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>Kho</th>
+                            <th>Số lượng tồn</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {isLoading ? (
+                            <tr><td colSpan={4} className="text-center py-4">Đang tải...</td></tr>
+                        ) : error ? (
+                            <tr><td colSpan={4} className="text-center py-4 text-red-500">{error}</td></tr>
+                        ) : filteredInventory.length > 0 ? ( filteredInventory.map(item => (
+                            <tr key={`${item.product_id}-${item.warehouse_id}`}>
+                                <td className="font-semibold">{item.product_name}</td>
+                                <td>{item.warehouse_name}</td>
+                                <td className="font-bold">{item.quantity}</td>
+                                <td>
+                                    <Button size="sm" variant="outline">Điều chỉnh</Button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {isLoading ? (
-                                <tr><td colSpan={4} className="text-center py-4">Đang tải...</td></tr>
-                            ) : error ? (
-                                <tr><td colSpan={4} className="text-center py-4 text-red-500">{error}</td></tr>
-                            ) : filteredInventory.length > 0 ? ( filteredInventory.map(item => (
-                                <tr key={`${item.product_id}-${item.warehouse_id}`}>
-                                    <td className="font-semibold">{item.product_name}</td>
-                                    <td>{item.warehouse_name}</td>
-                                    <td className="font-bold">{item.quantity}</td>
-                                    <td>
-                                        <Button size="sm" variant="outline">Điều chỉnh</Button>
-                                    </td>
-                                </tr>
-                            ))
-                            ) : (
-                                <tr><td colSpan={4} className="text-center py-4 text-textMuted">Không có dữ liệu tồn kho.</td></tr>
-                            )
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                        ))
+                        ) : (
+                            <tr><td colSpan={4} className="text-center py-4 text-textMuted">Không có dữ liệu tồn kho.</td></tr>
+                        )
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     );
 };
 
-export default InventoryView;
+const PlaceholderTab: React.FC<{featureName: string}> = ({ featureName }) => (
+    <div className="text-center text-textMuted py-8">
+        <i className="fas fa-tools text-4xl mb-4"></i>
+        <br/>
+        Tính năng '{featureName}' đang được phát triển.
+    </div>
+);
+
+
+export default InventoryManagementView;

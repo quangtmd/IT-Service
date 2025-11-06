@@ -1,0 +1,52 @@
+# render.yaml
+# Deploys a React Vite frontend and a Node.js Express backend.
+
+# 1. Environment Variable Group for shared secrets (like database credentials)
+envVarGroups:
+  - name: it-service-secrets
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: VITE_GEMINI_API_KEY
+        sync: false
+
+services:
+  # 2. Backend Service (Web Service)
+  - type: web
+    name: it-service-backend
+    runtime: node
+    plan: free # Or your preferred instance type
+    region: singapore
+    rootDir: backend # Specify the directory for the backend
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    envVars:
+      - fromGroup: it-service-secrets # Inherit the secrets
+      - key: PORT
+        value: 3001 # Render provides its own PORT, but this is good practice for local
+
+  # 3. Frontend Service (Static Site)
+  - type: static
+    name: it-service-frontend
+    region: singapore
+    rootDir: . # Root directory for the frontend
+    buildCommand: "npm install && npm run build"
+    publishDir: dist
+    envVars:
+      - fromGroup: it-service-secrets # To get VITE_GEMINI_API_KEY
+      - key: VITE_BACKEND_API_BASE_URL
+        fromService:
+          type: web
+          name: it-service-backend
+          property: url # Automatically use the deployed backend URL
+    # Redirect all paths to index.html to support client-side routing (React Router)
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -1,298 +1,454 @@
 # IQ Technology - IT Services & PC Store Web Application
 
-Đây là một ứng dụng web hiện đại được xây dựng cho một nhà bán lẻ linh kiện PC và nhà cung cấp dịch vụ CNTT, có chatbot hỗ trợ bởi AI và các tính năng đề xuất linh kiện.
+This is a modern web application for a PC components retailer and IT service provider, featuring an AI-powered chatbot and component recommendations. This version is architected with a full backend API and a comprehensive SQL database.
 
-## Thiết lập Cơ sở dữ liệu (Database Setup)
+## Database Setup (SQL Schema)
 
-Ứng dụng này sử dụng cơ sở dữ liệu SQL (ví dụ: MySQL, MariaDB) để lưu trữ dữ liệu. Để bắt đầu, bạn cần tạo một cơ sở dữ liệu và sau đó thực thi các câu lệnh SQL dưới đây để tạo các bảng cần thiết và chèn dữ liệu mẫu.
+This application uses a MySQL database. To begin, create a database and then execute the entire SQL script below. This script will drop any existing tables to ensure a clean setup and create a complete, robust schema for all application modules.
 
-**Lưu ý:** Sao chép và chạy toàn bộ khối lệnh SQL này trong công cụ quản lý cơ sở dữ liệu của bạn (như phpMyAdmin, DBeaver, MySQL Workbench).
+**Note:** This script is designed to be run in its entirety.
 
 ```sql
 --
--- Cấu trúc bảng cho `Articles` (Bài viết)
+-- IQ Technology - Comprehensive SQL Schema
+-- Version 2.0
 --
-CREATE TABLE `Articles` (
-  `id` varchar(255) NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `summary` text NOT NULL,
-  `content` longtext,
-  `imageUrl` varchar(255) DEFAULT NULL,
-  `author` varchar(255) NOT NULL,
-  `date` datetime NOT NULL,
-  `category` varchar(255) NOT NULL,
-  `isAIGenerated` tinyint(1) DEFAULT '0',
-  `imageSearchQuery` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- This script drops all existing tables and rebuilds the entire database structure
+-- for all modules including Core, CMS, E-commerce, CRM, Services, Finance, HRM,
+-- Project Management, Asset Management, and Security.
+--
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- Drop existing tables for a clean slate
+DROP TABLE IF EXISTS
+  `Users`, `UserDetails`, `SiteSettings`, `MediaLibrary`, `Articles`, `ArticleCategories`,
+  `Pages`, `Menus`, `MenuItems`, `Faqs`, `FaqCategories`, `Products`, `ProductCategories`,
+  `ProductBrands`, `ProductReviews`, `Orders`, `OrderItems`, `DiscountCodes`, `Warehouses`,
+  `Inventory`, `Suppliers`, `StockEntries`, `StockEntryItems`, `Shipments`, `Customers`,
+  `Interactions`, `ChatLogSessions`, `Services`, `ServiceTickets`, `WarrantyTickets`,
+  `FinancialAccounts`, `FinancialTransactions`, `Debts`, `Invoices`, `InvoiceItems`, `Payments`,
+  `Employees`, `PayrollRecords`, `LeaveRequests`, `KPIs`, `EmployeeKPIs`, `Projects`,
+  `Tasks`, `Assets`, `Contracts`, `Roles`, `Permissions`, `RolePermissions`, `UserRoles`, `AuditLogs`;
+
+SET FOREIGN_KEY_CHECKS=1;
 
 --
--- Đổ dữ liệu cho bảng `Articles`
---
-INSERT INTO `Articles` (`id`, `title`, `summary`, `content`, `imageUrl`, `author`, `date`, `category`, `isAIGenerated`, `imageSearchQuery`) VALUES
-('it001', 'Top 5 Lợi Ích Của Dịch Vụ IT Thuê Ngoài Cho Doanh Nghiệp', 'Khám phá cách dịch vụ IT thuê ngoài có thể giúp doanh nghiệp của bạn tiết kiệm chi phí, tăng cường bảo mật và tập trung vào hoạt động kinh doanh cốt lõi.', 'Nội dung chi tiết về lợi ích của IT thuê ngoài...', 'https://images.unsplash.com/photo-1556740758-90de374c12ad?q=80&w=1770&auto=format&fit=crop', 'Trần Minh Quang', '2024-07-15 10:00:00', 'Dịch vụ IT', 0, NULL),
-('it002', 'Hướng Dẫn Xây Dựng Cấu Hình PC Gaming Tối Ưu Ngân Sách', 'Bạn muốn xây dựng một dàn PC gaming mạnh mẽ mà không tốn quá nhiều chi phí? Bài viết này sẽ hướng dẫn bạn cách chọn lựa linh kiện thông minh.', 'Nội dung chi tiết về build PC gaming...', 'https://images.unsplash.com/photo-1598986646512-921b0d2c6948?q=80&w=1853&auto=format&fit=crop', 'Lê Hùng', '2024-07-12 14:30:00', 'Hướng dẫn', 0, NULL),
-('it003', 'So Sánh Card Đồ Họa NVIDIA và AMD: Lựa Chọn Nào Cho Bạn?', 'Cuộc chiến không hồi kết giữa hai ông lớn NVIDIA và AMD. Chúng tôi sẽ phân tích ưu và nhược điểm của các dòng card đồ họa mới nhất để giúp bạn đưa ra lựa chọn đúng đắn.', NULL, 'https://images.unsplash.com/photo-1591463925312-dce92543a655?q=80&w=1770&auto=format&fit=crop', 'Admin', '2024-07-10 11:00:00', 'So sánh', 0, NULL),
-('it005', 'Tại Sao Doanh Nghiệp Cần Đầu Tư Vào An Ninh Mạng Ngay Hôm Nay?', 'Các mối đe dọa an ninh mạng ngày càng tinh vi. Tìm hiểu lý do tại sao việc đầu tư vào các giải pháp bảo mật là cực kỳ quan trọng để bảo vệ dữ liệu và uy tín của doanh nghiệp bạn.', 'Nội dung chi tiết về an ninh mạng...', 'https://images.unsplash.com/photo-1562813733-b31f71025d54?q=80&w=1769&auto=format&fit=crop', 'Nguyễn Thị An', '2024-07-18 09:00:00', 'Bảo mật', 0, NULL);
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho `ChatLogSessions`
---
-CREATE TABLE `ChatLogSessions` (
-  `id` varchar(255) NOT NULL,
-  `userName` varchar(255) NOT NULL,
-  `userPhone` varchar(20) NOT NULL,
-  `startTime` datetime NOT NULL,
-  `endTime` datetime DEFAULT NULL,
-  `messages` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `notes` TEXT DEFAULT NULL COMMENT 'Ghi chú của nhân viên hỗ trợ'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đổ dữ liệu cho bảng `ChatLogSessions`
---
-INSERT INTO `ChatLogSessions` (`id`, `userName`, `userPhone`, `startTime`, `endTime`, `messages`, `notes`) VALUES
-('chat-1693824123456', 'Nguyễn Văn A', '0905123456', '2024-07-20 10:00:00', '2024-07-20 10:15:00', '[{\"id\":\"msg1\",\"text\":\"Chào bạn, tôi cần tư vấn về dịch vụ mạng.\",\"sender\":\"user\",\"timestamp\":\"2024-07-20T03:00:00.000Z\"},{\"id\":\"msg2\",\"text\":\"Chào anh A, IQ Technology có thể giúp gì cho anh?\",\"sender\":\"bot\",\"timestamp\":\"2024-07-20T03:00:05.000Z\"}]', 'Khách hàng quan tâm gói mạng cho văn phòng 20 người. Đã hẹn gọi lại tư vấn chi tiết.');
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho `DiscountCodes`
---
-CREATE TABLE `DiscountCodes` (
-  `id` varchar(255) NOT NULL,
-  `name` varchar(255) DEFAULT NULL,
-  `code` varchar(255) NOT NULL,
-  `type` enum('percentage','fixed_amount') NOT NULL,
-  `value` decimal(10,2) NOT NULL,
-  `description` text,
-  `expiryDate` date DEFAULT NULL,
-  `isActive` tinyint(1) NOT NULL DEFAULT '1',
-  `minSpend` decimal(15,2) DEFAULT NULL,
-  `usageLimit` int(11) DEFAULT NULL,
-  `timesUsed` int(11) DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đổ dữ liệu cho bảng `DiscountCodes`
---
-INSERT INTO `DiscountCodes` (`id`, `name`, `code`, `type`, `value`, `description`, `expiryDate`, `isActive`, `minSpend`, `usageLimit`, `timesUsed`) VALUES
-('dc_freeship', 'Miễn phí vận chuyển', 'FREESHIP500K', 'fixed_amount', 30000.00, 'Miễn phí vận chuyển (tối đa 30k) cho đơn hàng từ 500k.', NULL, 1, 500000.00, NULL, 0),
-('dc_welcome', 'Chào mừng thành viên mới', 'WELCOME10', 'percentage', 10.00, 'Giảm 10% cho đơn hàng đầu tiên của khách hàng mới.', '2024-12-31', 1, 500000.00, 1, 0);
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho `Faqs`
---
-CREATE TABLE `Faqs` (
-  `id` varchar(255) NOT NULL,
-  `question` text NOT NULL,
-  `answer` text NOT NULL,
-  `category` varchar(255) NOT NULL,
-  `isVisible` tinyint(1) NOT NULL DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đổ dữ liệu cho bảng `Faqs`
---
-INSERT INTO `Faqs` (`id`, `question`, `answer`, `category`, `isVisible`) VALUES
-('faq_g1', 'Thời gian bảo hành sản phẩm là bao lâu?', 'Thời gian bảo hành tùy thuộc vào từng loại sản phẩm và nhà sản xuất, thường từ 12 đến 36 tháng. Thông tin chi tiết được ghi rõ trên phiếu bảo hành và mô tả sản phẩm.', 'Chính sách', 1),
-('faq_s1', 'IQ Technology có hỗ trợ lắp đặt tận nơi không?', 'Có, chúng tôi cung cấp dịch vụ lắp đặt PC, hệ thống mạng, camera tận nơi tại Đà Nẵng và các khu vực lân cận. Vui lòng liên hệ để biết thêm chi tiết.', 'Dịch vụ', 1),
-('faq_s2', 'Làm thế nào để yêu cầu dịch vụ sửa chữa?', 'Bạn có thể gọi hotline, gửi email, chat trực tiếp trên website hoặc mang máy trực tiếp đến cửa hàng của chúng tôi để được hỗ trợ.', 'Dịch vụ', 1);
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho `Orders`
---
-CREATE TABLE `Orders` (
-  `id` varchar(255) NOT NULL,
-  `customerInfo` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `totalAmount` decimal(15,2) NOT NULL,
-  `orderDate` datetime NOT NULL,
-  `status` enum('Chờ xử lý','Đã xác nhận','Đang chuẩn bị','Đang giao','Hoàn thành','Đã hủy') NOT NULL,
-  `paymentInfo` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đổ dữ liệu cho bảng `Orders`
---
-INSERT INTO `Orders` (`id`, `customerInfo`, `items`, `totalAmount`, `orderDate`, `status`, `paymentInfo`) VALUES
-('order-1693824987654', '{\"fullName\":\"Trần Văn B\",\"phone\":\"0912345678\",\"address\":\"123 Lê Lợi, Đà Nẵng\",\"email\":\"tranvanb@example.com\"}', '[{\"productId\":\"cpu001\",\"productName\":\"Intel Core i5-13600K\",\"quantity\":1,\"price\":8000000}]', 8000000.00, '2024-07-20 12:00:00', 'Hoàn thành', '{\"method\":\"Thanh toán khi nhận hàng (COD)\",\"status\":\"Đã thanh toán\"}'),
-('order-1693825123456', '{\"fullName\":\"Lê Thị C\",\"phone\":\"0987654321\",\"address\":\"456 Nguyễn Văn Linh, Đà Nẵng\",\"email\":\"lethic@example.com\"}', '[{\"productId\":\"gpu001\",\"productName\":\"NVIDIA GeForce RTX 4070\",\"quantity\":1,\"price\":15000000},{\"productId\":\"ram002\",\"productName\":\"Corsair Vengeance 32GB DDR5\",\"quantity\":1,\"price\":3500000}]', 18500000.00, '2024-07-21 09:30:00', 'Đang giao', '{\"method\":\"Chuyển khoản ngân hàng\",\"status\":\"Đã thanh toán\"}');
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho `Products`
---
-CREATE TABLE `Products` (
-  `id` varchar(255) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `price` decimal(15,2) NOT NULL,
-  `originalPrice` decimal(15,2) DEFAULT NULL,
-  `stock` int(11) NOT NULL,
-  `category` varchar(255) NOT NULL,
-  `mainCategory` varchar(255) NOT NULL,
-  `subCategory` varchar(255) NOT NULL,
-  `brand` varchar(255) DEFAULT NULL,
-  `imageUrls` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `description` text NOT NULL,
-  `shortDescription` text,
-  `specifications` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `tags` text,
-  `isVisible` tinyint(1) NOT NULL DEFAULT '1',
-  `rating` decimal(3,2) DEFAULT NULL,
-  `reviews` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đổ dữ liệu cho bảng `Products`
---
-INSERT INTO `Products` (`id`, `name`, `price`, `originalPrice`, `stock`, `category`, `mainCategory`, `subCategory`, `brand`, `imageUrls`, `description`, `shortDescription`, `specifications`, `tags`, `isVisible`, `rating`, `reviews`) VALUES
-('cpu001', 'Intel Core i5-13600K', 8000000.00, 8500000.00, 15, 'Linh kiện máy tính > CPU', 'Linh kiện máy tính', 'CPU', 'Intel', '[\"https://images.unsplash.com/photo-1627885928325-a8b2f153a863?q=80&w=600&auto=format&fit=crop\"]', 'Vi xử lý Intel Core i5 thế hệ 13 mạnh mẽ, phù hợp cho gaming và làm việc.', '14 nhân, 20 luồng, Turbo Boost 5.1GHz', '{\"Socket\":\"LGA1700\",\"Số nhân\":\"14\",\"Số luồng\":\"20\"}', 'Nổi bật, CPU', 1, 4.80, 152);
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho `Users`
+-- Module: Core System & Users
 --
 CREATE TABLE `Users` (
-  `id` varchar(255) NOT NULL,
-  `username` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `password` varchar(255) DEFAULT NULL,
-  `role` enum('admin','staff','customer') NOT NULL,
-  `staffRole` enum('Quản lý Bán hàng','Biên tập Nội dung','Trưởng nhóm Kỹ thuật','Chuyên viên Hỗ trợ','Nhân viên Toàn quyền') DEFAULT NULL,
-  `joinDate` datetime DEFAULT NULL,
-  `status` enum('Đang hoạt động','Tạm khóa') DEFAULT 'Đang hoạt động',
-  `isLocked` tinyint(1) DEFAULT '0',
-  `phone` varchar(20) DEFAULT NULL,
-  `address` text,
-  `imageUrl` varchar(255) DEFAULT NULL,
-  `gender` enum('Nam','Nữ','Khác') DEFAULT NULL,
-  `dateOfBirth` date DEFAULT NULL,
-  `leadSource` varchar(255) DEFAULT NULL,
-  `customerGroup` enum('Mới','Thường','VIP','Sỉ') DEFAULT 'Mới',
-  `loyaltyPoints` int(11) DEFAULT '0',
-  `debtStatus` varchar(255) DEFAULT NULL,
-  `position` varchar(255) DEFAULT NULL
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `username` VARCHAR(255) NOT NULL,
+  `email` VARCHAR(255) NOT NULL UNIQUE,
+  `password` VARCHAR(255) NOT NULL,
+  `role` ENUM('admin','staff','customer') NOT NULL,
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `status` ENUM('Đang hoạt động','Tạm khóa') DEFAULT 'Đang hoạt động',
+  `isLocked` BOOLEAN DEFAULT FALSE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `UserDetails` (
+  `userId` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `fullName` VARCHAR(255),
+  `phone` VARCHAR(20),
+  `address` TEXT,
+  `imageUrl` TEXT,
+  `dateOfBirth` DATE,
+  FOREIGN KEY (`userId`) REFERENCES `Users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `SiteSettings` (
+  `settingKey` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `settingValue` JSON,
+  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `MediaLibrary` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `url` TEXT NOT NULL,
+  `name` VARCHAR(255),
+  `type` VARCHAR(100),
+  `uploadedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đổ dữ liệu cho bảng `Users`
+-- Module: Content Management System (CMS)
 --
-INSERT INTO `Users` (`id`, `username`, `email`, `password`, `role`, `staffRole`, `joinDate`, `status`, `isLocked`, `phone`, `address`, `imageUrl`, `gender`, `dateOfBirth`, `leadSource`, `customerGroup`, `loyaltyPoints`, `debtStatus`, `position`) VALUES
-('staff001', 'Nhân Viên Sales', 'sales01@iqtech.com', 'password123', 'staff', 'Quản lý Bán hàng', NULL, 'Đang hoạt động', 0, NULL, NULL, NULL, NULL, NULL, NULL, 'Mới', 0, NULL, NULL),
-('staff002', 'Kỹ Thuật Viên', 'tech01@iqtech.com', 'password123', 'staff', 'Trưởng nhóm Kỹ thuật', NULL, 'Đang hoạt động', 0, NULL, NULL, NULL, NULL, NULL, NULL, 'Mới', 0, NULL, NULL),
-('staff003', 'Biên Tập Viên', 'content01@iqtech.com', 'password123', 'staff', 'Biên tập Nội dung', NULL, 'Đang hoạt động', 0, NULL, NULL, NULL, NULL, NULL, NULL, 'Mới', 0, NULL, NULL),
-('user001', 'Quang Trần', 'quangtmdit@gmail.com', 'password123', 'admin', 'Nhân viên Toàn quyền', '2024-01-01 00:00:00', 'Đang hoạt động', 0, '0911855055', '123 Đà Nẵng', NULL, 'Nam', '1990-01-01', 'Website', 'VIP', 1500, 'Không nợ', 'CEO');
+CREATE TABLE `ArticleCategories` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL UNIQUE,
+  `slug` VARCHAR(255) NOT NULL UNIQUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Articles` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `title` VARCHAR(255) NOT NULL,
+  `summary` TEXT,
+  `content` LONGTEXT,
+  `authorId` VARCHAR(255),
+  `categoryId` VARCHAR(255),
+  `imageUrl` TEXT,
+  `publishedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`authorId`) REFERENCES `Users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`categoryId`) REFERENCES `ArticleCategories`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Faqs` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `question` TEXT NOT NULL,
+  `answer` TEXT NOT NULL,
+  `category` VARCHAR(255),
+  `isVisible` BOOLEAN DEFAULT TRUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 --
--- Cấu trúc bảng cho `Quotations` (Báo giá)
+-- Module: E-commerce & Inventory
 --
-CREATE TABLE `Quotations` (
-  `id` varchar(255) NOT NULL,
-  `customer_id` varchar(255) DEFAULT NULL,
-  `creation_date` datetime NOT NULL,
-  `expiry_date` datetime DEFAULT NULL,
-  `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `subtotal` decimal(15,2) NOT NULL,
-  `discount_amount` decimal(15,2) DEFAULT '0.00',
-  `tax_amount` decimal(15,2) DEFAULT '0.00',
-  `total_amount` decimal(15,2) NOT NULL,
-  `status` enum('Nháp','Đã gửi','Đã chấp nhận','Hết hạn','Đã hủy') NOT NULL,
-  `terms` text
+CREATE TABLE `ProductCategories` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `slug` VARCHAR(255) NOT NULL UNIQUE,
+  `parentId` VARCHAR(255),
+  `icon` VARCHAR(100),
+  FOREIGN KEY (`parentId`) REFERENCES `ProductCategories`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `ProductBrands` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL UNIQUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Products` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `description` TEXT,
+  `price` DECIMAL(15,2) NOT NULL,
+  `originalPrice` DECIMAL(15,2),
+  `costPrice` DECIMAL(15,2),
+  `stock` INT NOT NULL,
+  `categoryId` VARCHAR(255),
+  `mainCategory` VARCHAR(255),
+  `subCategory` VARCHAR(255),
+  `brand` VARCHAR(255),
+  `imageUrls` JSON,
+  `specifications` JSON,
+  `tags` JSON,
+  `isVisible` BOOLEAN DEFAULT TRUE,
+  FOREIGN KEY (`categoryId`) REFERENCES `ProductCategories`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `ProductReviews` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `productId` VARCHAR(255) NOT NULL,
+  `userId` VARCHAR(255) NOT NULL,
+  `rating` TINYINT NOT NULL,
+  `comment` TEXT,
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`productId`) REFERENCES `Products`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`userId`) REFERENCES `Users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Orders` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `userId` VARCHAR(255),
+  `customerInfo` JSON NOT NULL,
+  `totalAmount` DECIMAL(15,2) NOT NULL,
+  `status` ENUM('Chờ xử lý','Đã xác nhận','Đang chuẩn bị','Đang giao','Hoàn thành','Đã hủy') NOT NULL,
+  `paymentInfo` JSON,
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`userId`) REFERENCES `Users`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `OrderItems` (
+  `orderId` VARCHAR(255) NOT NULL,
+  `productId` VARCHAR(255) NOT NULL,
+  `quantity` INT NOT NULL,
+  `price` DECIMAL(15,2) NOT NULL,
+  PRIMARY KEY (`orderId`, `productId`),
+  FOREIGN KEY (`orderId`) REFERENCES `Orders`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`productId`) REFERENCES `Products`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `DiscountCodes` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `code` VARCHAR(255) NOT NULL UNIQUE,
+  `type` ENUM('percentage','fixed_amount') NOT NULL,
+  `value` DECIMAL(10,2) NOT NULL,
+  `description` TEXT,
+  `expiryDate` DATE,
+  `isActive` BOOLEAN DEFAULT TRUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Warehouses` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `location` TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Inventory` (
+  `productId` VARCHAR(255) NOT NULL,
+  `warehouseId` VARCHAR(255) NOT NULL,
+  `quantity` INT NOT NULL,
+  PRIMARY KEY (`productId`, `warehouseId`),
+  FOREIGN KEY (`productId`) REFERENCES `Products`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`warehouseId`) REFERENCES `Warehouses`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Suppliers` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `contactInfo` JSON
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `StockEntries` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `type` ENUM('in', 'out') NOT NULL,
+  `entryDate` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `supplierId` VARCHAR(255),
+  `orderId` VARCHAR(255),
+  `notes` TEXT,
+  FOREIGN KEY (`supplierId`) REFERENCES `Suppliers`(`id`),
+  FOREIGN KEY (`orderId`) REFERENCES `Orders`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `StockEntryItems` (
+  `stockEntryId` VARCHAR(255) NOT NULL,
+  `productId` VARCHAR(255) NOT NULL,
+  `quantity` INT NOT NULL,
+  `costPrice` DECIMAL(15,2),
+  PRIMARY KEY (`stockEntryId`, `productId`),
+  FOREIGN KEY (`stockEntryId`) REFERENCES `StockEntries`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`productId`) REFERENCES `Products`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Shipments` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `orderId` VARCHAR(255) NOT NULL,
+  `trackingCode` VARCHAR(255),
+  `shippingPartner` VARCHAR(255),
+  `status` VARCHAR(255),
+  FOREIGN KEY (`orderId`) REFERENCES `Orders`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đổ dữ liệu cho bảng `Quotations`
+-- Module: Customer Relationship Management (CRM)
 --
-INSERT INTO `Quotations` (`id`, `customer_id`, `creation_date`, `expiry_date`, `items`, `subtotal`, `discount_amount`, `tax_amount`, `total_amount`, `status`, `terms`) VALUES
-('quote-1693826123456', 'user001', '2024-07-22 14:00:00', '2024-07-29 14:00:00', '[{\"productId\":\"cpu001\",\"productName\":\"Intel Core i5-13600K\",\"quantity\":5,\"price\":7900000}]', 39500000.00, 500000.00, 0.00, 39000000.00, 'Đã gửi', 'Thanh toán 50% trước khi giao hàng.');
-
+CREATE TABLE `ChatLogSessions` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `userName` VARCHAR(255),
+  `userPhone` VARCHAR(20),
+  `startTime` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `messages` JSON
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Cấu trúc bảng cho `ServiceTickets` (Phiếu sửa chữa)
+-- Module: Services
 --
 CREATE TABLE `ServiceTickets` (
-  `id` VARCHAR(255) NOT NULL,
-  `customer_id` VARCHAR(255) NOT NULL,
-  `product_name` VARCHAR(255) NOT NULL,
-  `product_serial` VARCHAR(255) DEFAULT NULL,
-  `reported_issue` TEXT NOT NULL,
-  `reception_date` DATETIME NOT NULL,
-  `completion_date` DATETIME DEFAULT NULL,
-  `status` ENUM('Mới tạo', 'Chờ báo giá', 'Chờ linh kiện', 'Đang sửa chữa', 'Hoàn thành', 'Đã hủy') NOT NULL,
-  `inspection_fee` DECIMAL(15,2) DEFAULT 0.00,
-  `component_cost` DECIMAL(15,2) DEFAULT 0.00,
-  `labor_cost` DECIMAL(15,2) DEFAULT 0.00,
-  `total_cost` DECIMAL(15,2) DEFAULT 0.00,
-  `notes` TEXT
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `customerId` VARCHAR(255),
+  `productName` VARCHAR(255),
+  `issueDescription` TEXT,
+  `status` VARCHAR(255),
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`customerId`) REFERENCES `Users`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Đổ dữ liệu cho bảng `ServiceTickets`
---
-INSERT INTO `ServiceTickets` (`id`, `customer_id`, `product_name`, `product_serial`, `reported_issue`, `reception_date`, `status`, `total_cost`) VALUES
-('svc-tkt-1', 'user001', 'Laptop Dell XPS 15', 'ABC123XYZ', 'Máy không lên nguồn, không có đèn báo.', '2024-07-21 09:00:00', 'Đang sửa chữa', 1500000.00);
-
---
--- Cấu trúc bảng cho `WarrantyTickets` (Phiếu bảo hành)
---
 CREATE TABLE `WarrantyTickets` (
-  `id` VARCHAR(255) NOT NULL,
-  `original_order_id` VARCHAR(255) NOT NULL,
-  `customer_id` VARCHAR(255) NOT NULL,
-  `product_name` VARCHAR(255) NOT NULL,
-  `product_serial` VARCHAR(255) DEFAULT NULL,
-  `reported_issue` TEXT NOT NULL,
-  `actual_issue` TEXT,
-  `reception_date` DATETIME NOT NULL,
-  `completion_date` DATETIME DEFAULT NULL,
-  `status` ENUM('Mới tạo', 'Đang kiểm tra', 'Chờ linh kiện', 'Đang xử lý', 'Hoàn thành', 'Từ chối bảo hành') NOT NULL,
-  `solution` ENUM('Sửa chữa', 'Đổi mới', 'Hoàn tiền') DEFAULT NULL,
-  `notes` TEXT,
-  `internal_cost` DECIMAL(15,2) DEFAULT 0.00
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `orderId` VARCHAR(255),
+  `productId` VARCHAR(255),
+  `issueDescription` TEXT,
+  `status` VARCHAR(255),
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`orderId`) REFERENCES `Orders`(`id`),
+  FOREIGN KEY (`productId`) REFERENCES `Products`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đổ dữ liệu cho bảng `WarrantyTickets`
+-- Module: Finance
 --
-INSERT INTO `WarrantyTickets` (`id`, `original_order_id`, `customer_id`, `product_name`, `product_serial`, `reported_issue`, `reception_date`, `status`, `solution`, `notes`) VALUES
-('warr-tkt-1', 'order-1693824987654', 'user001', 'Nguồn Antec 650W', 'XYZ987ABC', 'Nguồn máy tính kêu to khi tải nặng.', '2024-07-22 14:00:00', 'Hoàn thành', 'Đổi mới', 'Lỗi quạt từ nhà sản xuất, đã đổi sản phẩm mới cho khách.');
+CREATE TABLE `FinancialAccounts` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `type` VARCHAR(100),
+  `balance` DECIMAL(15,2) DEFAULT 0.00
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `FinancialTransactions` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `accountId` VARCHAR(255),
+  `type` ENUM('income', 'expense') NOT NULL,
+  `category` VARCHAR(255),
+  `amount` DECIMAL(15,2) NOT NULL,
+  `description` TEXT,
+  `transactionDate` DATE NOT NULL,
+  FOREIGN KEY (`accountId`) REFERENCES `FinancialAccounts`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Debts` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `entityId` VARCHAR(255) NOT NULL,
+  `entityType` ENUM('customer', 'supplier') NOT NULL,
+  `type` ENUM('receivable', 'payable') NOT NULL,
+  `amount` DECIMAL(15,2) NOT NULL,
+  `dueDate` DATE,
+  `status` VARCHAR(100)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Invoices` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `orderId` VARCHAR(255),
+  `amount` DECIMAL(15,2) NOT NULL,
+  `status` ENUM('unpaid', 'paid', 'overdue') NOT NULL,
+  `dueDate` DATE,
+  FOREIGN KEY (`orderId`) REFERENCES `Orders`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Module: Human Resource Management (HRM)
+--
+CREATE TABLE `Employees` (
+  `userId` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `position` VARCHAR(255),
+  `joinDate` DATE,
+  `salary` DECIMAL(15,2),
+  FOREIGN KEY (`userId`) REFERENCES `Users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `PayrollRecords` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `employeeId` VARCHAR(255) NOT NULL,
+  `payPeriod` VARCHAR(7) NOT NULL, -- YYYY-MM
+  `baseSalary` DECIMAL(15,2),
+  `bonus` DECIMAL(15,2),
+  `deduction` DECIMAL(15,2),
+  `finalSalary` DECIMAL(15,2),
+  `status` ENUM('Chưa thanh toán', 'Đã thanh toán') NOT NULL,
+  `notes` TEXT,
+  FOREIGN KEY (`employeeId`) REFERENCES `Employees`(`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `LeaveRequests` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `employeeId` VARCHAR(255) NOT NULL,
+  `startDate` DATE,
+  `endDate` DATE,
+  `reason` TEXT,
+  `status` ENUM('pending', 'approved', 'rejected'),
+  FOREIGN KEY (`employeeId`) REFERENCES `Employees`(`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `KPIs` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255),
+  `targetValue` DECIMAL(15,2),
+  `unit` VARCHAR(50),
+  `period` VARCHAR(50)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `EmployeeKPIs` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `employeeId` VARCHAR(255) NOT NULL,
+  `kpiId` VARCHAR(255) NOT NULL,
+  `actualValue` DECIMAL(15,2),
+  `period` VARCHAR(50),
+  FOREIGN KEY (`employeeId`) REFERENCES `Employees`(`userId`),
+  FOREIGN KEY (`kpiId`) REFERENCES `KPIs`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Module: Project Management
+--
+CREATE TABLE `Projects` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `managerId` VARCHAR(255),
+  `startDate` DATE,
+  `endDate` DATE,
+  `budget` DECIMAL(15,2),
+  `status` VARCHAR(100),
+  FOREIGN KEY (`managerId`) REFERENCES `Users`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Tasks` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `projectId` VARCHAR(255) NOT NULL,
+  `name` VARCHAR(255) NOT NULL,
+  `assigneeId` VARCHAR(255),
+  `dueDate` DATE,
+  `status` VARCHAR(100),
+  FOREIGN KEY (`projectId`) REFERENCES `Projects`(`id`),
+  FOREIGN KEY (`assigneeId`) REFERENCES `Users`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Module: Asset & Legal
+--
+CREATE TABLE `Assets` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255),
+  `serialNumber` VARCHAR(255),
+  `purchaseDate` DATE,
+  `value` DECIMAL(15,2),
+  `assignedTo` VARCHAR(255),
+  FOREIGN KEY (`assignedTo`) REFERENCES `Users`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Contracts` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255),
+  `partnerName` VARCHAR(255),
+  `startDate` DATE,
+  `endDate` DATE,
+  `fileUrl` TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Module: Security & Access Control
+--
+CREATE TABLE `AuditLogs` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `userId` VARCHAR(255),
+  `action` VARCHAR(255) NOT NULL,
+  `target` VARCHAR(255),
+  `details` JSON,
+  `ipAddress` VARCHAR(45),
+  `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`userId`) REFERENCES `Users`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 --
--- Khóa chính cho các bảng
+-- INSERT INITIAL DATA
 --
-ALTER TABLE `Articles` ADD PRIMARY KEY (`id`);
-ALTER TABLE `ChatLogSessions` ADD PRIMARY KEY (`id`);
-ALTER TABLE `DiscountCodes` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `code` (`code`);
-ALTER TABLE `Faqs` ADD PRIMARY KEY (`id`);
-ALTER TABLE `Orders` ADD PRIMARY KEY (`id`);
-ALTER TABLE `Products` ADD PRIMARY KEY (`id`);
-ALTER TABLE `Users` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `email` (`email`);
-ALTER TABLE `Quotations` ADD PRIMARY KEY (`id`);
-ALTER TABLE `ServiceTickets` ADD PRIMARY KEY (`id`);
-ALTER TABLE `WarrantyTickets` ADD PRIMARY KEY (`id`);
+INSERT INTO `Users` (`id`, `username`, `email`, `password`, `role`) VALUES
+('user001', 'Quang Trần', 'quangtmdit@gmail.com', 'password123', 'admin'),
+('staff001', 'Nhân Viên Sales', 'sales01@iqtech.com', 'password123', 'staff'),
+('cust001', 'Nguyễn Văn An', 'an.nguyen@email.com', 'password123', 'customer');
+
+INSERT INTO `Products` (`id`, `name`, `price`, `stock`, `mainCategory`, `subCategory`, `brand`, `specifications`, `tags`, `isVisible`) VALUES
+('cpu001', 'Intel Core i5-13600K', 8000000.00, 15, 'Linh kiện máy tính', 'CPU', 'Intel', '{\"Socket\":\"LGA1700\"}', '[\"Nổi bật\"]', 1),
+('gpu001', 'NVIDIA GeForce RTX 4070', 15000000.00, 10, 'Linh kiện máy tính', 'VGA', 'NVIDIA', '{\"VRAM\":\"12GB\"}', '[\"Gaming\"]', 1);
+
+INSERT INTO `Articles` (`id`, `title`, `summary`, `authorId`, `publishedAt`, `categoryId`) VALUES
+('art001', 'Lợi Ích Của Dịch Vụ IT Thuê Ngoài', 'Khám phá cách dịch vụ IT thuê ngoài giúp doanh nghiệp.', 'user001', '2024-07-25 10:00:00', NULL);
 
 COMMIT;
+
 ```
 
-## Thiết lập Backend
+## Backend Setup (Node.js/Express)
 
-1.  **Cài đặt Dependencies:**
-    Trong thư mục `backend`, chạy lệnh:
+1.  **Install Dependencies:**
+    In the `backend` directory, run:
     ```bash
     npm install
     ```
-2.  **Tạo file `.env`:**
-    Trong thư mục `backend`, tạo một file có tên là `.env` và thêm các biến môi trường sau, thay thế các giá trị bằng thông tin kết nối cơ sở dữ liệu của bạn:
+2.  **Create `.env` File:**
+    In the `backend` directory, create a file named `.env` and add your database connection details:
 
     ```env
     DB_HOST=your_database_host
@@ -302,36 +458,40 @@ COMMIT;
     PORT=3001
     ```
 
-3.  **Chạy Backend Server:**
-    Vẫn trong thư mục `backend`, chạy lệnh:
+3.  **Run Backend Server:**
+    From the `backend` directory, run:
     ```bash
     npm start
     ```
-    Server backend sẽ khởi động trên cổng 3001 (hoặc cổng bạn đã chỉ định trong file `.env`).
+    The backend API server will start on port 3001.
 
-## Thiết lập Frontend
+## Frontend Setup (Vite/React)
 
-1.  **Cài đặt Dependencies:**
-    Trong thư mục gốc của dự án (nơi có file `package.json`), chạy lệnh:
+1.  **Install Dependencies:**
+    In the project's root directory, run:
     ```bash
     npm install
     ```
-2.  **Tạo file `.env`:**
-    Trong thư mục gốc của dự án, tạo một file `.env` và thêm khóa API Gemini của bạn:
+2.  **Create `.env` File:**
+    In the project's root directory, create a `.env` file and add your Gemini API key:
     ```env
     VITE_GEMINI_API_KEY=your_gemini_api_key
     ```
-3.  **Chạy Frontend Development Server:**
-    Vẫn trong thư mục gốc, chạy lệnh:
+    For production deployment on services like Render, also add:
+    ```env
+    VITE_BACKEND_API_BASE_URL=your_deployed_backend_url
+    ```
+3.  **Run Frontend Development Server:**
+    From the root directory, run:
     ```bash
     npm run dev
     ```
-    Ứng dụng sẽ có thể truy cập tại `http://localhost:3000` (hoặc cổng khác nếu 3000 đã được sử dụng). Frontend sẽ tự động proxy các yêu cầu `/api` đến backend server đang chạy trên cổng 3001.
+    The application will be accessible at `http://localhost:3000`. API requests to `/api` will be proxied to the backend server at `http://localhost:3001`.
 
-## Đăng nhập quản trị
+## Admin Login
 
-Để truy cập vào trang quản trị, sử dụng thông tin đăng nhập mặc định:
+To access the admin panel, use the default credentials:
 *   **Email:** `quangtmdit@gmail.com`
 *   **Password:** `password123`
 
-Sau khi đăng nhập, truy cập vào đường dẫn `/admin` để vào trang quản trị.
+Navigate to `/admin` after logging in.

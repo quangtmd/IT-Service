@@ -3,7 +3,7 @@ import ArticlePreview from '../components/blog/ArticlePreview';
 import SearchBar from '../components/shared/SearchBar';
 import { Article } from '../types';
 import geminiService from '../services/geminiService';
-import { getArticles } from '../services/localDataService';
+import { getArticles } from '../services/apiService';
 import * as Constants from '../constants';
 import BackendConnectionError from '../components/shared/BackendConnectionError';
 

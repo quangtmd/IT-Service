@@ -4,7 +4,7 @@ import { Product } from '../../types';
 import ProductCard from '../shop/ProductCard';
 import Button from '../ui/Button';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
-import { getFeaturedProducts } from '../../services/localDataService';
+import { getFeaturedProducts } from '../../services/apiService';
 import BackendConnectionError from '../shared/BackendConnectionError';
 
 const HotProducts: React.FC = () => {

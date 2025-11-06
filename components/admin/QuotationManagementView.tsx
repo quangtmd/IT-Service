@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Quotation, QuotationItem, User, Product } from '../../types';
 import Button from '../ui/Button';
-import { getQuotations, addQuotation, updateQuotation, deleteQuotation, getUsers, getProducts } from '../../services/localDataService';
+// Fix: Split imports to resolve module errors. Quotation functions are local, users/products are from API.
+import { getQuotations, addQuotation, updateQuotation, deleteQuotation } from '../../services/localDataService';
+import { getUsers, getProducts } from '../../services/apiService';
 import BackendConnectionError from '../shared/BackendConnectionError';
 
 const getStatusColor = (status: Quotation['status']) => {

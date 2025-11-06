@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { ChatLogSession, ChatMessage } from '../../types';
 import { getChatLogSessions, deleteChatLogSession } from '../../services/localDataService';

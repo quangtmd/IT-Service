@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'; // useParams and Link are co
 import { Article } from '../types';
 import Markdown from 'react-markdown';
 import ArticlePreview from '../components/blog/ArticlePreview';
-import { getArticle, getArticles } from '../services/localDataService';
+import { getArticle, getArticles } from '../services/apiService';
 import BackendConnectionError from '../components/shared/BackendConnectionError';
 
 const ArticleDetailPage: React.FC = () => {

@@ -3,7 +3,7 @@ import { Article } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadInput from '../ui/ImageUploadInput';
-import { getArticles, addArticle, updateArticle, deleteArticle } from '../../services/localDataService';
+import { getArticles, addArticle, updateArticle, deleteArticle } from '../../services/apiService';
 import BackendConnectionError from '../shared/BackendConnectionError';
 
 const ArticleManagementView: React.FC = () => {

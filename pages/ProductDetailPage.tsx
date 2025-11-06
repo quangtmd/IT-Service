@@ -5,7 +5,7 @@ import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
-import { getProduct, getProducts } from '../services/localDataService';
+import { getProduct, getProducts } from '../services/apiService';
 import BackendConnectionError from '../components/shared/BackendConnectionError';
 import { useChatbotContext } from '../contexts/ChatbotContext'; // Import the context hook
 

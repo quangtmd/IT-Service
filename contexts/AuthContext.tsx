@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 // FIX: Import AdminPermission from types.ts
 import { User, UserRole, AdminNotification, StaffRole, AdminPermission } from '../types'; 
 import * as Constants from '../constants';
-import { getUsers, addUser as addUserApi, updateUser as updateUserApi, deleteUser as deleteUserApi } from '../services/localDataService';
+import { getUsers, addUser as addUserApi, updateUser as updateUserApi, deleteUser as deleteUserApi } from '../services/apiService';
 
 export interface AuthContextType {
   isAuthenticated: boolean;
