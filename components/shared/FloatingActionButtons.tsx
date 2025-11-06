@@ -32,7 +32,10 @@ const FloatingActionButtons: React.FC = () => {
     useEffect(() => {
         if (isAiEnabled) {
             const showTimer = setTimeout(() => {
-                setShowInitialBubble(true);
+                // Don't show the bubble if the chat is already open
+                if (!isChatOpen) {
+                    setShowInitialBubble(true);
+                }
             }, 2000); // Show after 2 seconds
 
             const hideTimer = setTimeout(() => {
@@ -44,7 +47,7 @@ const FloatingActionButtons: React.FC = () => {
                 clearTimeout(hideTimer);
             };
         }
-    }, [isAiEnabled]);
+    }, [isAiEnabled, isChatOpen]);
 
     const quickContactCommonClasses = "w-14 h-14 text-white rounded-full p-3.5 shadow-lg flex items-center justify-center text-xl transition-all duration-300 transform hover:scale-110";
     const fabVisibilityClass = isChatOpen ? 'opacity-0 scale-0 pointer-events-none' : 'opacity-100 scale-100';
@@ -92,18 +95,17 @@ const FloatingActionButtons: React.FC = () => {
                      <div className="relative group">
                         <div className={`
                             absolute bottom-2 right-[70px] w-max max-w-[200px] text-center
-                            bg-primary text-white text-sm font-semibold
+                            bg-white text-primary text-sm font-semibold
                             py-2 px-4 rounded-lg shadow-lg
                             transition-all duration-300 origin-right
-                            ${showInitialBubble ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}
-                            group-hover:opacity-100 group-hover:scale-100
-                            pointer-events-none
+                            ${showInitialBubble ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}
+                            group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto
                         `}>
-                            Chào bạn, tôi có thể giúp gì?
-                            <div className="absolute top-1/2 -translate-y-1/2 right-[-6px] h-0 w-0 border-y-8 border-y-transparent border-l-[8px] border-l-primary"></div>
+                            Tôi có thể giúp gì cho bạn?
+                            <div className="absolute top-1/2 -translate-y-1/2 right-[-6px] h-0 w-0 border-y-8 border-y-transparent border-l-[8px] border-l-white"></div>
                         </div>
                         <button onClick={() => setIsChatOpen(true)} className={`${quickContactCommonClasses} bg-primary hover:bg-primary-dark animate-pulse-red`} aria-label="Toggle Chatbot" title="Mở Chatbot AI">
-                            <i className="fas fa-comments"></i>
+                            <i className="fas fa-robot"></i>
                         </button>
                     </div>
                 )}

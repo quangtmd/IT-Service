@@ -36,7 +36,7 @@ interface MenuItemConfig {
 const AdminPage: React.FC = () => {
     const { currentUser, adminNotifications, hasPermission } = useAuth();
     
-    const [activeView, setActiveView] = useState<AdminView>('dashboard');
+    const [activeView, setActiveView] = useState<AdminView>('accounting_dashboard');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({

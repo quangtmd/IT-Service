@@ -1,7 +1,6 @@
 
-
 import React from 'react';
-import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
+import { Link } from 'react-router-dom'; 
 import Button from '../components/ui/Button';
 
 const NotFoundPage: React.FC = () => {

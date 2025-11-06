@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
+import { Link } from 'react-router-dom'; 
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
@@ -86,17 +86,4 @@ const HomeWhyChooseUsIts: React.FC = () => {
               {whyChooseUsConfig.experienceStatNumber && whyChooseUsConfig.experienceStatLabel && (
                  <div className="absolute bottom-8 left-8 bg-white p-6 shadow-2xl rounded-xl transform transition-all duration-300 hover:scale-105 hover:shadow-primary/30">
                    <div className="text-center">
-                      <div className="text-primary text-5xl font-bold mb-1">{whyChooseUsConfig.experienceStatNumber}</div>
-                      <p className="text-sm text-textMuted font-medium">{whyChooseUsConfig.experienceStatLabel}</p>
-                   </div>
-                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-export default HomeWhyChooseUsIts;
+                      <div className="text-primary text

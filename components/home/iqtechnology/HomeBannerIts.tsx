@@ -34,7 +34,7 @@ const HomeBannerIts: React.FC = () => {
 
     const timer = setInterval(() => {
       setCurrentIndex(prevIndex => (prevIndex + 1) % banners.length);
-    }, 5000); 
+    }, 3000); 
 
     return () => clearInterval(timer);
   }, [banners]);

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PCComponent } from '../../types';
 
@@ -46,7 +45,7 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({ type, options, se
         name={type}
         value={selectedValue || ""}
         onChange={(e) => onChange(type, e.target.value)}
-        className="w-full p-2.5 bg-white border border-borderStrong text-textBase rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm"
+        className="w-full p-2.5 bg-bgBase border border-borderStrong text-textBase rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm"
       >
         <option value="">-- Chọn {typeLabels[type]} --</option>
         {options.map(option => (

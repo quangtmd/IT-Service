@@ -42,12 +42,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <Link to={`/product/${product.id}`} className="block h-full group">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col border border-gray-200 hover:border-primary/50 hover:shadow-xl transition-all duration-300 p-2.5">
+      <div className="bg-bgBase rounded-lg shadow-md overflow-hidden h-full flex flex-col border border-borderDefault hover:border-primary/50 hover:shadow-xl transition-all duration-300 p-2.5">
         <div className="relative overflow-hidden rounded-md">
           <img
             src={imageSrc}
             alt={product.name}
-            className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105 bg-gray-100"
+            className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105 bg-bgMuted"
           />
           {discountPercentage > 0 && (
             <div className="absolute top-1.5 right-1.5 bg-red-600 text-white text-xs font-bold w-10 h-10 flex items-center justify-center rounded-full border-2 border-white shadow-md">
@@ -78,14 +78,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   {product.originalPrice.toLocaleString('vi-VN')}₫
                 </span>
               )}
-              <span className="text-lg font-bold text-red-600">
+              <span className="text-lg font-bold text-red-500">
                 {product.price.toLocaleString('vi-VN')}₫
               </span>
             </div>
             
             {/* Use min-height to ensure brand alignment */}
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-start items-center min-h-[32px]">
-              <span className="text-sm font-bold text-gray-700">{product.brand || 'Khác'}</span>
+            <div className="mt-2 pt-2 border-t border-borderDefault flex justify-start items-center min-h-[32px]">
+              <span className="text-sm font-bold text-textMuted">{product.brand || 'Khác'}</span>
             </div>
             
             <div className="mt-2">

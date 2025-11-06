@@ -160,7 +160,7 @@ const ProductDetailPage: React.FC = () => {
                   ))}
                 </div>
               )}
-               <div className="mt-6 p-4 border border-borderDefault rounded-lg bg-bgCanvas space-y-3">
+               <div className="mt-6 p-4 border border-borderDefault rounded-lg bg-bgMuted space-y-3">
                   <div className="flex items-center text-sm text-textMuted"><i className="fas fa-check-circle text-green-500 w-5 mr-2"></i>Sản phẩm chính hãng</div>
                   <div className="flex items-center text-sm text-textMuted"><i className="fas fa-truck text-blue-500 w-5 mr-2"></i>Giao hàng toàn quốc</div>
                   <div className="flex items-center text-sm text-textMuted"><i className="fas fa-shield-alt text-yellow-500 w-5 mr-2"></i>Bảo hành theo NSX</div>
@@ -191,8 +191,8 @@ const ProductDetailPage: React.FC = () => {
               </div>
               
               {product.shortDescription && (
-                  <div className="mb-4 p-4 border border-blue-200 bg-blue-50 rounded-lg">
-                      <h3 className="font-semibold text-blue-800 mb-2"><i className="fas fa-info-circle mr-2"></i>Thông tin nổi bật</h3>
+                  <div className="mb-4 p-4 border border-blue-500/30 bg-blue-900/20 rounded-lg">
+                      <h3 className="font-semibold text-blue-300 mb-2"><i className="fas fa-info-circle mr-2"></i>Thông tin nổi bật</h3>
                       <p className="text-sm text-textMuted leading-relaxed">{product.shortDescription}</p>
                   </div>
               )}
@@ -200,7 +200,7 @@ const ProductDetailPage: React.FC = () => {
               <div className="mb-4">
                   <span className="font-semibold text-textBase">Tình trạng: </span>
                   {product.stock > 0 ? (
-                      <span className="text-green-600 font-bold"><i className="fas fa-check-circle mr-1"></i> Còn hàng</span>
+                      <span className="text-green-400 font-bold"><i className="fas fa-check-circle mr-1"></i> Còn hàng</span>
                   ) : (
                       <span className="text-danger-text font-bold"><i className="fas fa-times-circle mr-1"></i> Hết hàng</span>
                   )}
@@ -208,7 +208,7 @@ const ProductDetailPage: React.FC = () => {
 
               <div className="flex items-center mb-6 space-x-3">
                 <label htmlFor="quantity" className="font-semibold text-textBase">Số lượng:</label>
-                <input type="number" id="quantity" value={quantity} min="1" max={product.stock > 0 ? product.stock : 10} onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))} className="w-20 bg-white border border-borderStrong text-textBase rounded-md p-2 text-center focus:ring-primary focus:border-primary" />
+                <input type="number" id="quantity" value={quantity} min="1" max={product.stock > 0 ? product.stock : 10} onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))} className="w-20 bg-bgMuted border border-borderStrong text-textBase rounded-md p-2 text-center focus:ring-primary focus:border-primary" />
               </div>
 
               <div className="space-y-3 mb-6">
@@ -216,9 +216,9 @@ const ProductDetailPage: React.FC = () => {
                 <Button onClick={handleAddToCart} size="lg" className="w-full text-lg py-3.5" variant="outline" disabled={product.stock <=0}><i className="fas fa-cart-plus mr-2"></i> Thêm vào giỏ hàng</Button>
               </div>
               
-               <div className="p-4 border-2 border-dashed border-red-300 bg-red-50 rounded-lg">
-                  <h3 className="font-bold text-red-700 mb-2"><i className="fas fa-gift mr-2"></i> Khuyến mãi đặc biệt</h3>
-                  <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
+               <div className="p-4 border-2 border-dashed border-danger-border bg-danger-bg rounded-lg">
+                  <h3 className="font-bold text-danger-text mb-2"><i className="fas fa-gift mr-2"></i> Khuyến mãi đặc biệt</h3>
+                  <ul className="list-disc list-inside text-sm text-red-300 space-y-1">
                       <li>Giảm thêm 100.000₫ khi thanh toán qua VNPay.</li>
                       <li>Tặng kèm chuột không dây và túi chống sốc.</li>
                       <li>Miễn phí cài đặt phần mềm cơ bản.</li>
@@ -235,7 +235,7 @@ const ProductDetailPage: React.FC = () => {
             </div>
 
             {activeTab === 'description' && (
-                <div className="prose prose-base max-w-none text-textMuted leading-relaxed">
+                <div className="prose prose-lg max-w-none text-textMuted leading-relaxed">
                     <p>{product.description}</p>
                 </div>
             )}

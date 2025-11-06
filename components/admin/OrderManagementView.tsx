@@ -431,5 +431,4 @@ const OrderFormModal: React.FC<{ onClose: () => void; onSave: () => void; }> = (
     );
 };
 
-
-export default OrderManagementView;
+export default CheckoutPage;

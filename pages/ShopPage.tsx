@@ -190,7 +190,7 @@ const ShopPage: React.FC = () => {
     return (
         <main className="flex-grow w-full min-w-0">
             <ProductCategoryNav
-                categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
+                categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Build")}
                 activeSlug={currentFilters.mainCategory}
                 onSelect={(slug) => handleFilterChange('mainCategory', slug)}
             />

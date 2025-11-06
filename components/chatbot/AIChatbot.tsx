@@ -138,9 +138,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     if (currentChatLogSession && currentChatLogSession.messages.length > 0) {
       try {
         await saveChatLogSession(currentChatLogSession);
-      } catch (error) {
-        console.error("Failed to save chat log to backend:", error);
-        // Optionally notify user of save failure, but don't block UI
       }
     }
   }, [currentChatLogSession]);
@@ -306,7 +303,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
   return (
     <div
-      className={`fixed bottom-0 right-0 sm:bottom-6 sm:right-6 bg-gray-800 rounded-t-lg sm:rounded-lg shadow-xl w-full sm:w-96 h-[70vh] sm:h-[calc(100vh-10rem)] max-h-[600px] flex flex-col z-50 transition-all duration-300 ease-in-out transform border border-gray-700 ${
+      className={`fixed bottom-0 right-0 sm:bottom-6 sm:right-6 bg-white rounded-t-lg sm:rounded-lg shadow-xl w-full sm:w-96 h-[70vh] sm:h-auto max-h-[600px] flex flex-col z-50 transition-all duration-300 ease-in-out transform border border-borderDefault ${
         isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full sm:translate-y-16 opacity-0 pointer-events-none'
       }`}
       role="dialog"
@@ -314,17 +311,17 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
       aria-labelledby="chatbot-title"
     >
       <header className="bg-primary text-white p-4 flex justify-between items-center rounded-t-lg sm:rounded-t-lg">
-        <h3 id="chatbot-title" className="font-semibold text-lg">AI Chatbot {siteSettings.companyName}</h3>
-        <button onClick={() => setIsOpen(false)} className="text-xl hover:text-red-100" aria-label="Đóng chatbot">
+        <h3 id="chatbot-title" className="font-semibold text-lg">AI Chatbot IQ Technology</h3>
+        <button onClick={() => setIsOpen(false)} className="text-2xl font-bold hover:text-red-100" aria-label="Đóng chatbot">
           <i className="fas fa-times"></i>
         </button>
       </header>
 
       {!isUserInfoSubmitted ? (
-        <div className="p-6 flex-grow flex flex-col justify-center">
-          <h4 className="text-lg font-semibold text-white mb-3 text-center">Thông tin của bạn</h4>
-          <p className="text-sm text-gray-300 mb-4 text-center">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
-          {userInfoError && <p className="text-sm text-danger-text mb-3 bg-danger-bg p-2 rounded-md">{userInfoError}</p>}
+        <div className="p-8 flex-grow flex flex-col justify-center bg-white">
+          <h4 className="text-xl font-bold text-gray-800 mb-2 text-center">Thông tin của bạn</h4>
+          <p className="text-sm text-gray-600 mb-6 text-center">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
+          {userInfoError && <p className="text-sm text-red-600 mb-3 bg-red-100 p-2 rounded-md">{userInfoError}</p>}
           <form onSubmit={handleUserInfoSubmit} className="space-y-4">
             <div>
               <label htmlFor="userName" className="sr-only">Tên của bạn</label>
@@ -334,7 +331,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 placeholder="Tên của bạn *"
-                className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-primary focus:border-primary focus:ring-2 outline-none placeholder:text-gray-400 transition"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary transition text-gray-900"
                 aria-required="true"
               />
             </div>
@@ -346,18 +343,18 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                 value={userPhone}
                 onChange={(e) => setUserPhone(e.target.value)}
                 placeholder="Số điện thoại *"
-                className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-primary focus:border-primary focus:ring-2 outline-none placeholder:text-gray-400 transition"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary transition text-gray-900"
                 aria-required="true"
               />
             </div>
-            <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
+            <Button type="submit" variant="primary" className="w-full !py-3 !text-base" size="lg" isLoading={isLoading}>
               Bắt đầu trò chuyện
             </Button>
           </form>
         </div>
       ) : (
         <>
-          <div className="flex-grow p-4 overflow-y-auto" aria-live="polite">
+          <div className="flex-grow p-4 overflow-y-auto bg-bgCanvas" aria-live="polite">
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} groundingChunks={msg.id === currentBotMessageId ? currentGroundingChunks : undefined} />
             ))}
@@ -365,7 +362,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
             {error && <div className="text-danger-text text-sm p-2 bg-danger-bg rounded border border-danger-border">{error}</div>}
           </div>
 
-          <div className="p-4 border-t border-gray-700 bg-gray-900">
+          <div className="p-4 border-t border-borderDefault bg-bgBase">
             {imagePreview && (
                 <div className="mb-2 relative w-20 h-20">
                     <img src={imagePreview} alt="Preview" className="h-full w-full object-cover rounded-md" />
@@ -375,10 +372,10 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
             <form onSubmit={handleSendMessage}>
               <div className="flex items-center space-x-2">
                 <input type="file" ref={imageInputRef} onChange={handleImageChange} accept="image/*" className="hidden" aria-hidden="true" />
-                <Button type="button" variant="ghost" className="!px-2 text-gray-400 hover:text-white" onClick={() => imageInputRef.current?.click()} aria-label="Đính kèm ảnh" title="Đính kèm ảnh">
+                <Button type="button" variant="ghost" className="!px-2 text-textMuted hover:text-textBase" onClick={() => imageInputRef.current?.click()} aria-label="Đính kèm ảnh" title="Đính kèm ảnh">
                     <i className="fas fa-paperclip"></i>
                 </Button>
-                 <Button type="button" variant="ghost" className={`!px-2 ${isRecording ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-white'}`} onClick={handleToggleRecording} aria-label="Bật/tắt nhập giọng nói" title="Nhập bằng giọng nói">
+                 <Button type="button" variant="ghost" className={`!px-2 ${isRecording ? 'text-red-500 animate-pulse' : 'text-textMuted hover:text-textBase'}`} onClick={handleToggleRecording} aria-label="Bật/tắt nhập giọng nói" title="Nhập bằng giọng nói">
                     <i className="fas fa-microphone"></i>
                 </Button>
                 <input
@@ -386,7 +383,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Nhập tin nhắn..."
-                  className="flex-grow bg-gray-700 border border-gray-600 text-white rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none placeholder:text-gray-400 transition"
+                  className="flex-grow bg-white border border-borderStrong text-textBase rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none placeholder:text-textSubtle transition"
                   disabled={isLoading || !chatSession}
                   aria-label="Tin nhắn của bạn"
                 />

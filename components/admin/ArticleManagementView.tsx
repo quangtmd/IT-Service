@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Article } from '../../types';
-import * as Constants from '../../constants';
+import * => Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadInput from '../ui/ImageUploadInput';
 import { getArticles, addArticle, updateArticle, deleteArticle } from '../../services/localDataService';

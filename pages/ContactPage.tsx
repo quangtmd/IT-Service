@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import Button from '../components/ui/Button';
 import * as Constants from '../constants.tsx';
@@ -115,32 +114,4 @@ const ContactPage: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-bgBase p-6 md:p-8 rounded-lg shadow-xl border border-borderDefault">
-          <h2 className="text-2xl font-semibold text-textBase mb-6">Gửi tin nhắn cho chúng tôi</h2>
-          {isSubmitted ? (
-            <div className="text-center p-6 bg-success-bg border border-success-border rounded-lg">
-              <i className="fas fa-check-circle text-4xl text-success-text mb-3"></i>
-              <h3 className="text-xl font-semibold text-success-text">Cảm ơn bạn đã liên hệ!</h3>
-              <p className="text-green-700">Chúng tôi sẽ phản hồi sớm nhất có thể.</p>
-              <Button onClick={() => setIsSubmitted(false)} className="mt-4" variant="outline">Gửi tin nhắn khác</Button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {formError && <p className="text-sm text-danger-text bg-danger-bg p-3 rounded-md border border-danger-border">{formError}</p>}
-              <div><label htmlFor="name" className="block text-sm font-medium text-textMuted mb-1">Họ và tên *</label><input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required className="input-style bg-white text-textBase" /></div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div><label htmlFor="email" className="block text-sm font-medium text-textMuted mb-1">Email *</label><input type="email" name="email" id="email" value={formData.email} onChange={handleChange} required className="input-style bg-white text-textBase" /></div>
-                <div><label htmlFor="phone" className="block text-sm font-medium text-textMuted mb-1">Số điện thoại *</label><input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} required className="input-style bg-white text-textBase" /></div>
-              </div>
-              <div><label htmlFor="subject" className="block text-sm font-medium text-textMuted mb-1">Chủ đề *</label><input type="text" name="subject" id="subject" value={formData.subject} onChange={handleChange} required className="input-style bg-white text-textBase" /></div>
-              <div><label htmlFor="message" className="block text-sm font-medium text-textMuted mb-1">Nội dung tin nhắn *</label><textarea name="message" id="message" rows={6} value={formData.message} onChange={handleChange} required className="input-style bg-white text-textBase"></textarea></div>
-              <div><Button type="submit" className="w-full" size="lg">Gửi Tin Nhắn</Button></div>
-            </form>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default ContactPage;
+        <div className="bg-bgBase p-6 md:p-8 rounded-lg shadow-xl border

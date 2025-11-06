@@ -352,7 +352,8 @@ export const FALLBACK_NAV_LOGGED_IN: NavLinkItem[] = [
 
 
 export const GENERIC_PC_BUILD_IMAGE_URL = "https://images.unsplash.com/photo-1627045236365-b153d09a9f28?q=80&w=800&auto=format&fit=crop"; 
-export const PC_COMPONENT_TYPES: Array<string> = [ 'CPU (Vi xử lý)', 'Bo mạch chủ', 'RAM', 'Ổ cứng', 'Card màn hình (VGA)', 'Nguồn máy tính (PSU)', 'Vỏ máy (Case)', 'Tản nhiệt', 'Màn hình', 'Bàn phím', 'Chuột', 'Tai nghe', 'Webcam', 'Microphone', 'Loa máy tính' ];
+// Fix: Changed PC_COMPONENT_TYPES to reflect an array of strings, not string literals.
+export const PC_COMPONENT_TYPES: string[] = [ 'CPU', 'Motherboard', 'RAM', 'GPU', 'SSD', 'PSU', 'Case', 'Tản nhiệt', 'Màn hình', 'Bàn phím', 'Chuột', 'Tai nghe', 'Webcam', 'Microphone', 'Loa máy tính' ];
 export const USE_CASES = ['Chơi Game', 'Học tập', 'Văn phòng', 'Đồ họa - Video', 'Lập trình', 'Giải trí đa phương tiện'];
 export const PRODUCT_CATEGORIES_HIERARCHY: ProductCategoryHierarchy = [
   { name: "Máy tính để bàn (PC)", slug: "may_tinh_de_ban", icon: "fas fa-desktop", subCategories: [ { name: "Máy tính văn phòng", slug: "pc_van_phong" }, {name: "Máy tính Gaming", slug: "pc_gaming"}, {name: "Workstation (Máy trạm)", slug:"pc_workstation"}, { name: "Máy đồng bộ", slug: "pc_dong_bo" }, ] },
@@ -363,7 +364,8 @@ export const PRODUCT_CATEGORIES_HIERARCHY: ProductCategoryHierarchy = [
   { name: "Thiết bị mạng", slug: "thiet_bi_mang", icon: "fas fa-wifi", subCategories: [ { name: "Router WiFi (TP-Link, Asus, UniFi…)", slug: "router_wifi" }, { name: "Switch mạng (PoE, Thường)", slug: "switch_mang" } ] },
   { name: "Phần mềm & dịch vụ", slug: "phan_mem_dich_vu", icon: "fas fa-cogs", subCategories: [ { name: "Bản quyền Windows, Office", slug: "ban_quyen_phan_mem" }, { name: "Dịch vụ cài đặt (Tận nơi / Online)", slug: "dich_vu_cai_dat" } ] },
   { name: "Phụ kiện & thiết bị khác", slug: "phu_kien_khac", icon: "fas fa-plug", subCategories: [ { name: "Cáp chuyển, Hub USB, Docking", slug: "cap_hub_docking" }, { name: "Balo, Túi chống sốc", slug: "balo_tui" } ] },
-  { name: "PC Xây Dựng", slug: "pc_xay_dung", icon: "fas fa-tools", subCategories: [ { name: "Theo Yêu Cầu", slug: "theo_yeu_cau" } ] }
+  // Fix: Change "PC Xây Dựng" to "PC Build"
+  { name: "PC Build", slug: "pc_xay_dung", icon: "fas fa-tools", subCategories: [ { name: "Theo Yêu Cầu", slug: "theo_yeu_cau" } ] }
 ]; 
 export const ARTICLE_CATEGORIES = ["Mẹo vặt", "Hướng dẫn", "So sánh", "Khuyến mãi", "Tin tức công nghệ", "Đánh giá sản phẩm", "Dịch vụ IT", "Bảo mật"];
 export const USER_ROLES_CONST: UserRole[] = ['admin', 'staff', 'customer'];

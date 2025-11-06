@@ -64,9 +64,10 @@ export interface CustomPCBuildCartItem extends Omit<Product, 'imageUrls' | 'main
   imageUrl: string; 
   isCustomBuild: true;
   buildComponents: Record<string, { name: string; price?: number }>; 
-  mainCategory: "PC Xây Dựng";
+  // Fix: Change "PC Xây Dựng" to "PC Build" to resolve type error
+  mainCategory: "PC Build";
   subCategory: "Theo Yêu Cầu";
-  category: "PC Xây Dựng";
+  category: "PC Build";
   imageUrls: [string]; 
   tags: string[];
 }

@@ -345,7 +345,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
                 {/* Fix: Pass a function reference to onClick instead of calling the function directly during render. */}
                 <Button onClick={() => savePayrollRecords(localPayroll)} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* Fix: Pass a function reference to onClick instead of calling the function directly during render. */}
+                {/* Fix: Pass the function reference to onClick instead of calling it directly on render. */}
                 <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">

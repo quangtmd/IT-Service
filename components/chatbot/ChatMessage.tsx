@@ -16,9 +16,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, groundingChunks }) =
   return (
     <div className={`flex mb-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-xs lg:max-w-md rounded-xl shadow overflow-hidden ${
+        className={`max-w-xs lg:max-w-md rounded-xl shadow-sm overflow-hidden ${
           isUser ? 'bg-primary text-white rounded-br-none' : 
-          isBot ? 'bg-gray-700 text-white rounded-bl-none' : 
+          isBot ? 'bg-bgMuted text-textBase rounded-bl-none border border-borderDefault' : 
           'bg-warning-bg text-warning-text text-sm italic text-center w-full border border-warning-border' 
         }`}
       >

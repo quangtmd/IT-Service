@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom'; // useParams and Link are compatible with v6/v7
+import { useParams, Link } from 'react-router-dom'; 
 import { Article } from '../types';
 import Markdown from 'react-markdown';
 import ArticlePreview from '../components/blog/ArticlePreview';

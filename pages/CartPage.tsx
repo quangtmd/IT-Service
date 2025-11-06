@@ -1,7 +1,6 @@
 
-
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
+import { Link, useNavigate } from 'react-router-dom'; 
 import { useCart } from '../hooks/useCart';
 import Button from '../components/ui/Button';
 import { CartItem, CustomPCBuildCartItem } from '../types';
