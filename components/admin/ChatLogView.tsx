@@ -1,39 +1,44 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChatLogSession } from '../../types';
-import * as Constants from '../../constants';
 import ChatMessage from '../chatbot/ChatMessage';
+import { getChatLogs } from '../../services/localDataService';
 
 const ChatLogView: React.FC = () => {
     const [chatLogs, setChatLogs] = useState<ChatLogSession[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string|null>(null);
     const [selectedSession, setSelectedSession] = useState<ChatLogSession | null>(null);
 
     useEffect(() => {
-        const loadLogs = () => {
-            const stored = localStorage.getItem(Constants.CHAT_LOGS_STORAGE_KEY);
-            setChatLogs(stored ? JSON.parse(stored) : []);
+        const loadLogs = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const logs = await getChatLogs();
+                setChatLogs(logs);
+                if (logs.length > 0) {
+                    setSelectedSession(logs[0]);
+                }
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Không thể tải lịch sử chat.');
+            } finally {
+                setIsLoading(false);
+            }
         };
         loadLogs();
-        window.addEventListener('chatLogsUpdated', loadLogs);
-        return () => window.removeEventListener('chatLogsUpdated', loadLogs);
     }, []);
     
-    useEffect(() => {
-        if(chatLogs.length > 0 && !selectedSession) {
-            setSelectedSession(chatLogs[0]);
-        }
-        if (chatLogs.length === 0) {
-            setSelectedSession(null);
-        }
-    }, [chatLogs, selectedSession]);
-
     return (
         <div className="admin-card">
             <div className="admin-card-header">
                 <h3 className="admin-card-title">Lịch sử Chatbot AI</h3>
             </div>
             <div className="admin-card-body">
-                {chatLogs.length === 0 ? (
+                {isLoading ? (
+                    <p className="text-center text-textMuted">Đang tải lịch sử chat...</p>
+                ) : error ? (
+                    <p className="text-center text-danger-text">{error}</p>
+                ) : chatLogs.length === 0 ? (
                     <p className="text-center text-textMuted">Chưa có lịch sử hội thoại nào được ghi lại.</p>
                 ) : (
                     <div className="chat-log-viewer">

@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { AdminPermission } from './contexts/AuthContext';
 
@@ -23,6 +21,7 @@ export interface Product {
   tags: string[]; // Changed from optional to required, default to []
   brandLogoUrl?: string;
   isVisible?: boolean; // New field for product visibility
+  is_featured?: boolean; // Added for featured products
   seoMetaTitle?: string; // New SEO field
   seoMetaDescription?: string; // New SEO field
   slug?: string; // New field for custom URL slug
@@ -94,6 +93,7 @@ export interface ChatMessage {
   text: string;
   sender: 'user' | 'bot' | 'system';
   timestamp: Date;
+  imageUrl?: string;
 }
 
 // New Type for Chat Log Sessions
@@ -168,6 +168,17 @@ export interface GroundingChunkWeb {
 export interface GroundingChunk {
   web: GroundingChunkWeb;
 }
+
+// Fix: Add AdminView type to be shared across components
+export type AdminView = 
+  | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
+  | 'staff' | 'customers' 
+  | 'orders' | 'discounts' | 'chat_logs' 
+  | 'theme_settings' | 'menu_settings' | 'site_settings'
+  | 'notifications_panel'
+  | 'homepage_management'
+  | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard'
+  | 'inventory' | 'service_tickets';
 
 export type UserRole = 'admin' | 'staff' | 'customer';
 export type StaffRole = 'Quản lý Bán hàng' | 'Biên tập Nội dung' | 'Trưởng nhóm Kỹ thuật' | 'Chuyên viên Hỗ trợ' | 'Nhân viên Toàn quyền';
@@ -617,4 +628,29 @@ export interface PayrollRecord {
   finalSalary: number;
   notes: string;
   status: 'Chưa thanh toán' | 'Đã thanh toán';
+}
+// Fix: Add missing ServiceTicket, Inventory, and ServerInfo types.
+export interface ServiceTicket {
+  id: string;
+  ticket_code: string;
+  customer_info: {
+    fullName: string;
+    phone: string;
+  } | null;
+  device_name: string;
+  reported_issue: string;
+  created_at: string; // ISO string date
+  status: 'open' | 'in_progress' | 'awaiting_parts' | 'resolved' | 'closed';
+}
+
+export interface Inventory {
+  product_id: string;
+  warehouse_id: string;
+  product_name: string;
+  warehouse_name: string;
+  quantity: number;
+}
+
+export interface ServerInfo {
+  outboundIp: string;
 }

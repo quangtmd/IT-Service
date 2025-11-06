@@ -4,7 +4,7 @@ import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadPreview from '../ui/ImageUploadPreview';
 import { getProducts, addProduct, updateProduct, deleteProduct } from '../../services/localDataService';
-import MediaLibraryView from './MediaLibraryView'; // Import the MediaLibraryView
+import BackendConnectionError from '../shared/BackendConnectionError';
 
 const PRODUCTS_PER_PAGE = 10;
 
@@ -21,7 +21,8 @@ const ProductManagementView: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const products = await getProducts();
+            // Fetch all products for admin view by setting a high limit
+            const { products } = await getProducts('limit=10000');
             setAllProducts(products);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
@@ -37,8 +38,8 @@ const ProductManagementView: React.FC = () => {
     const filteredProducts = useMemo(() =>
         allProducts.filter(p =>
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.mainCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.subCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.mainCategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.subCategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
         ), [allProducts, searchTerm]);
 
@@ -100,11 +101,8 @@ const ProductManagementView: React.FC = () => {
         if (error) {
             return (
                 <tr>
-                    <td colSpan={6} className="text-center py-8">
-                        <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 max-w-2xl mx-auto">
-                            <h4 className="font-bold text-lg mb-2"><i className="fas fa-exclamation-triangle mr-2"></i>Lỗi Tải Dữ Liệu</h4>
-                            <p className="text-sm">{error}</p>
-                        </div>
+                    <td colSpan={6} className="p-0">
+                        <BackendConnectionError error={error} />
                     </td>
                 </tr>
             );
@@ -204,7 +202,6 @@ interface ProductFormModalProps {
 const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, onSave }) => {
     const [formData, setFormData] = useState<Product>(product || {} as Product);
     const [subCategoryOptions, setSubCategoryOptions] = useState<SubCategoryInfo[]>([]);
-    const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
     useEffect(() => {
         if (formData.mainCategory) {
@@ -240,14 +237,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
         setFormData(prev => ({...prev, specifications: rest}));
     }
 
-    const handleImageSelectFromLibrary = (url: string) => {
-        setFormData(prev => ({
-            ...prev,
-            imageUrls: [...(prev.imageUrls || []), url]
-        }));
-        setIsMediaModalOpen(false);
-    };
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(formData);
@@ -256,7 +245,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
     return (
         <div className="admin-modal-overlay">
             <div className="admin-modal-panel">
-                <form onSubmit={handleSubmit} className="contents">
+                <form onSubmit={handleSubmit} className="flex flex-col h-full">
                     <div className="admin-modal-header">
                         <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Sản phẩm' : 'Thêm Sản phẩm Mới'}</h4>
                         <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
@@ -283,16 +272,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                         </div>
                         <div className="admin-form-group"><label htmlFor="description">Mô tả chi tiết</label><textarea name="description" id="description" rows={5} value={formData.description} onChange={handleChange}></textarea></div>
                         <div className="admin-form-group"><label htmlFor="shortDescription">Mô tả ngắn</label><textarea name="shortDescription" id="shortDescription" rows={2} value={formData.shortDescription || ''} onChange={handleChange}></textarea></div>
-                        
-                        <div className="admin-form-group">
-                            <div className="flex justify-between items-center mb-1">
-                                <label htmlFor="imageUrls">Link ảnh (mỗi link 1 dòng)</label>
-                                <Button type="button" size="sm" variant="outline" onClick={() => setIsMediaModalOpen(true)}>
-                                    <i className="fas fa-photo-video mr-2"></i> Chọn từ Thư viện
-                                </Button>
-                            </div>
-                            <textarea name="imageUrls" id="imageUrls" rows={3} value={(formData.imageUrls || []).join('\n')} onChange={e => setFormData(p => ({...p, imageUrls: e.target.value.split('\n').map(t=>t.trim()).filter(Boolean)}))}></textarea>
-                        </div>
+                        <div className="admin-form-group"><label htmlFor="imageUrls">Link ảnh (mỗi link 1 dòng)</label><textarea name="imageUrls" id="imageUrls" rows={3} value={(formData.imageUrls || []).join('\n')} onChange={e => setFormData(p => ({...p, imageUrls: e.target.value.split('\n').map(t=>t.trim()).filter(Boolean)}))}></textarea></div>
                         
                         {/* --- Pricing & Stock --- */}
                         <div className="admin-form-subsection-title">Giá & Kho hàng</div>
@@ -305,7 +285,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                          {/* --- Specifications --- */}
                          <div className="admin-form-subsection-title">Thông số kỹ thuật</div>
                          <div className="space-y-2">
-                            {Object.entries(formData.specifications).map(([key, value], index) => (
+                            {Object.entries(formData.specifications || {}).map(([key, value], index) => (
                                 <div key={index} className="flex gap-2 items-center">
                                     <input type="text" value={key} onChange={(e) => handleSpecChange(index, 'key', e.target.value)} placeholder="Tên thuộc tính" className="w-1/3" />
                                     <input type="text" value={value} onChange={(e) => handleSpecChange(index, 'value', e.target.value)} placeholder="Giá trị" className="flex-grow" />
@@ -327,13 +307,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ product, onClose, o
                         <Button type="submit" variant="primary">Lưu Sản phẩm</Button>
                     </div>
                 </form>
-                {isMediaModalOpen && (
-                    <MediaLibraryView
-                        isModalMode={true}
-                        onSelect={handleImageSelectFromLibrary}
-                        onClose={() => setIsMediaModalOpen(false)}
-                    />
-                )}
             </div>
         </div>
     );

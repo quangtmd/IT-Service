@@ -152,7 +152,7 @@ const HRMFormModal: React.FC<HRMFormModalProps> = ({ user, onClose, onSave }) =>
     return (
         <div className="admin-modal-overlay">
             <div className="admin-modal-panel">
-                <form onSubmit={handleSubmit} className="contents">
+                <form onSubmit={handleSubmit} className="flex flex-col h-full">
                     <div className="admin-modal-header">
                         <h4 className="admin-modal-title">{formData.id ? 'Chỉnh sửa Hồ sơ Nhân sự' : 'Thêm Nhân viên mới'}</h4>
                         <button type="button" onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>

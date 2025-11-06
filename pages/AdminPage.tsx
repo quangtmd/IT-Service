@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import Button from '../components/ui/Button';
-import { 
-    User, AdminNotification
-} from '../types';
-// Fix: Import AdminPermission from where it is defined.
+import { User, AdminNotification, AdminView } from '../types';
 import { useAuth, AdminPermission } from '../contexts/AuthContext';
 import HRMProfileView from '../components/admin/HRMProfileView';
 import ProductManagementView from '../components/admin/ProductManagementView';
@@ -19,16 +15,10 @@ import MediaLibraryView from '../components/admin/MediaLibraryView';
 import NotificationsView from '../components/admin/NotificationsView';
 import HomepageManagementView from '../components/admin/HomepageManagementView';
 import FinancialManagementView from '../components/admin/FinancialManagementView';
-import DashboardView from '../components/admin/DashboardView'; // Import the new dashboard view
+import DashboardView from '../components/admin/DashboardView'; // Import the new DashboardView
+import InventoryView from '../components/admin/InventoryView';
+import ServiceTicketView from '../components/admin/ServiceTicketView';
 
-type AdminView = 
-  | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
-  | 'staff' | 'customers' 
-  | 'orders' | 'discounts' | 'chat_logs' 
-  | 'theme_settings' | 'menu_settings' | 'site_settings'
-  | 'notifications_panel'
-  | 'homepage_management'
-  | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard';
 
 interface MenuItemConfig {
     id: AdminView | string; 
@@ -41,16 +31,14 @@ interface MenuItemConfig {
 
 
 const AdminPage: React.FC = () => {
-    const { 
-        currentUser,
-        adminNotifications, hasPermission,
-    } = useAuth();
+    const { currentUser, adminNotifications, hasPermission } = useAuth();
     
     const [activeView, setActiveView] = useState<AdminView>('dashboard');
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
         content_management: true, sales_management: true, hrm_management: true,
+        accounting_management: false, settings_management: false,
     });
 
     useEffect(() => {
@@ -67,8 +55,9 @@ const AdminPage: React.FC = () => {
             id: 'sales_management', label: 'Quản Lý Bán Hàng', icon: 'fas fa-chart-line', permission: ['viewSales'],
             children: [
                 { id: 'orders', label: 'Đơn Hàng', icon: 'fas fa-receipt', permission: ['viewOrders'] },
-                { id: 'discounts', label: 'Mã Giảm Giá', icon: 'fas fa-tags', permission: ['manageDiscounts'] },
                 { id: 'customers', label: 'Khách Hàng', icon: 'fas fa-user-friends', permission: ['viewCustomers'] },
+                { id: 'service_tickets', label: 'Dịch vụ Sửa chữa', icon: 'fas fa-tools', permission: ['manageOrders'] },
+                { id: 'discounts', label: 'Mã Giảm Giá', icon: 'fas fa-tags', permission: ['manageDiscounts'] },
                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewOrders'] },
             ]
         },
@@ -83,7 +72,7 @@ const AdminPage: React.FC = () => {
             ]
         },
         { 
-            id: 'hrm_management', label: 'Quản Lý Nhân Sự (HRM)', icon: 'fas fa-users-cog', permission: ['viewHrm'],
+            id: 'hrm_management', label: 'Quản Lý Nhân Sự', icon: 'fas fa-users-cog', permission: ['viewHrm'],
             children: [
                 { id: 'hrm_dashboard', label: 'Hồ Sơ Nhân Sự', icon: 'fas fa-id-card', permission: ['manageEmployees'] },
             ]
@@ -94,8 +83,14 @@ const AdminPage: React.FC = () => {
                 { id: 'accounting_dashboard', label: 'Tổng Quan Tài Chính', icon: 'fas fa-chart-pie', permission: ['viewReports'] },
             ]
         },
+         { 
+            id: 'inventory_management', label: 'Kho & Tồn Kho', icon: 'fas fa-warehouse', permission: ['manageProducts'],
+            children: [
+                { id: 'inventory', label: 'Quản lý Tồn kho', icon: 'fas fa-boxes', permission: ['manageProducts'] },
+            ]
+        },
         {
-            id: 'settings_management', label: 'Danh Mục & Cấu Hình', icon: 'fas fa-cogs', permission: ['viewAppearance'], 
+            id: 'settings_management', label: 'Cấu Hình Hệ Thống', icon: 'fas fa-cogs', permission: ['viewAppearance'], 
             children: [
                 { id: 'site_settings', label: 'Cài Đặt Trang', icon: 'fas fa-cog', permission: ['manageSiteSettings'] }, 
                 { id: 'theme_settings', label: 'Theme Màu', icon: 'fas fa-palette', permission: ['manageTheme'] },
@@ -124,7 +119,7 @@ const AdminPage: React.FC = () => {
         }
 
         switch(activeView) {
-            case 'dashboard': return <DashboardView setActiveView={setActiveView as (view: string) => void} />;
+            case 'dashboard': return <DashboardView setActiveView={setActiveView} />;
             case 'products': return <ProductManagementView />;
             case 'articles': return <ArticleManagementView />;
             case 'orders': return <OrderManagementView />;
@@ -140,7 +135,11 @@ const AdminPage: React.FC = () => {
             case 'menu_settings':
                 return <SiteSettingsView initialTab={activeView} />;
             case 'notifications_panel': return <NotificationsView />;
+
             case 'accounting_dashboard': return <FinancialManagementView />;
+            case 'inventory': return <InventoryView />;
+            case 'service_tickets': return <ServiceTicketView />;
+
             case 'analytics_dashboard': return <div className="admin-card"><div className="admin-card-body">Module Phân tích Báo cáo đang trong kế hoạch phát triển.</div></div>;
 
             default: return <div className="admin-card"><div className="admin-card-body"><h3 className="admin-card-title">{currentMenuItem?.label || 'Chào mừng'}</h3><p>Tính năng này đang được phát triển.</p></div></div>;

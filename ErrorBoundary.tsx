@@ -1,4 +1,5 @@
 import React, { ErrorInfo, ReactNode } from 'react';
+import * as Constants from './constants';
 
 interface Props {
   children: ReactNode;
@@ -11,14 +12,11 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  // Fix: Replaced class property state initialization with a constructor to ensure `this.props` is correctly set up, which resolves the TypeScript error about 'props' not existing.
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      hasError: false,
-      errorMessage: '',
-    };
-  }
+  // Fix: Initialize state as a class property to resolve typing issues with 'this.state' in the constructor.
+  state: State = {
+    hasError: false,
+    errorMessage: '',
+  };
 
   static getDerivedStateFromError(error: Error): State {
     // Update state so the next render will show the fallback UI.
@@ -33,6 +31,7 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
+    // Fix: Access props and state directly from 'this' to resolve TypeScript errors.
     if (this.state.hasError) {
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 

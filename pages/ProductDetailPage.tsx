@@ -6,6 +6,8 @@ import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
 import { getProduct, getProducts } from '../services/localDataService';
+import BackendConnectionError from '../components/shared/BackendConnectionError';
+import { useChatbotContext } from '../contexts/ChatbotContext'; // Import the context hook
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -19,6 +21,18 @@ const ProductDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'description' | 'specs'>('description');
   const { addToCart } = useCart();
   const navigate = useNavigate();
+  const { setCurrentContext } = useChatbotContext(); // Get the context setter
+
+  useEffect(() => {
+    // When the product data is loaded, set the chatbot context.
+    if (product) {
+      setCurrentContext(`Khách hàng đang xem sản phẩm: "${product.name}".`);
+    }
+    // Cleanup function to clear the context when the component unmounts.
+    return () => {
+      setCurrentContext(null);
+    };
+  }, [product, setCurrentContext]);
 
   useEffect(() => {
     const loadProductData = async () => {
@@ -37,16 +51,17 @@ const ProductDetailPage: React.FC = () => {
           setProduct(foundProduct);
           setMainImage(foundProduct.imageUrls?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
           
-          const allProducts = await getProducts();
-          const related = allProducts.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
+          const query = `?subCategory=${foundProduct.subCategory}&limit=4`;
+          const { products: allProducts } = await getProducts(query);
+          const related = allProducts.filter(p => p.id !== foundProduct.id);
           setRelatedProducts(related);
 
         } else {
           setError('Không tìm thấy sản phẩm.');
         }
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu sản phẩm từ Local Storage:", err);
-        setError("Đã xảy ra lỗi khi tải sản phẩm.");
+        console.error("Lỗi khi tải dữ liệu sản phẩm từ API:", err);
+        setError(err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải sản phẩm.");
       } finally {
         setIsLoading(false);
         window.scrollTo(0, 0);
@@ -70,10 +85,18 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  if (error || !product) {
+  if (error) {
+    return (
+        <div className="container mx-auto px-4 py-8">
+            <BackendConnectionError error={error} />
+        </div>
+    );
+  }
+  
+  if (!product) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-semibold text-textBase">{error || 'Không tìm thấy sản phẩm'}</h2>
+        <h2 className="text-2xl font-semibold text-textBase">Không tìm thấy sản phẩm</h2>
         <Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
           Quay lại cửa hàng
         </Link>

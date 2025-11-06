@@ -91,8 +91,8 @@ const CheckoutPage: React.FC = () => {
             setCheckoutStep('payment_details');
         }
     } catch (error) {
-        console.error("Lỗi khi lưu đơn hàng vào Local Storage:", error);
-        alert('Đã xảy ra lỗi không mong muốn khi tạo đơn hàng.');
+        console.error("Lỗi khi tạo đơn hàng:", error);
+        alert('Đã xảy ra lỗi không mong muốn khi tạo đơn hàng. ' + (error instanceof Error ? error.message : ''));
     } finally {
         setIsSubmitting(false);
     }
