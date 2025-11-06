@@ -30,12 +30,11 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
-    const { hasError, errorMessage } = this.state;
-    // Fix: In a React class component, props are accessed via `this.props`, not directly as a `props` variable. Changed `props` to `this.props` to resolve the "Property 'props' does not exist" error.
-    const { children, fallbackMessage } = this.props;
+    // Fix: Destructure props to resolve issue with 'this.props' access.
+    const { fallbackMessage, children } = this.props;
 
-    if (hasError) {
-      const displayMessage = errorMessage || fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
+    if (this.state.hasError) {
+      const displayMessage = this.state.errorMessage || fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
       return (
         <div style={{
@@ -69,6 +68,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
+    // Fix: Return destructured children prop.
     return children;
   }
 }

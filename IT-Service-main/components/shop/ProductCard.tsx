@@ -6,7 +6,6 @@ import { useCart } from '../../hooks/useCart';
 
 interface ProductCardProps {
   product: Product;
-  // Fix: Add the optional 'context' prop to align with its usage in other components.
   context?: 'preview' | 'detail-view'; // Keep context for potential future use, but styling is now unified.
 }
 
