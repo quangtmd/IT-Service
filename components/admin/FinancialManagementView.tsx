@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../ui/Button';
@@ -19,16 +17,11 @@ const getStartOfWeek = (d: Date) => {
     return new Date(date.setDate(diff));
 };
 
-type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll' | 'debts' | 'accounts';
+type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll';
 
 // --- MAIN COMPONENT ---
-// Fix: Add props interface to accept initialTab
-interface FinancialManagementViewProps {
-  initialTab?: FinancialTab;
-}
-
-const FinancialManagementView: React.FC<FinancialManagementViewProps> = ({ initialTab = 'overview' }) => {
-    const [activeTab, setActiveTab] = useState<FinancialTab>(initialTab);
+const FinancialManagementView: React.FC = () => {
+    const [activeTab, setActiveTab] = useState<FinancialTab>('overview');
     const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
     const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -350,7 +343,6 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                {/* FIX: The onClick handler was passing an implicit event argument. Wrapped it in an arrow function. */}
                 <Button onClick={() => savePayrollRecords(localPayroll)} size="sm" variant="outline">Lưu Nháp</Button>
                 {/* FIX: The onClick handler was passing an implicit event argument. Wrapped it in an arrow function. */}
                 <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>

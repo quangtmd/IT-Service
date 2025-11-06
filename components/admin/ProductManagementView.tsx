@@ -3,7 +3,7 @@ import { Product, MainCategoryInfo, SubCategoryInfo } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadPreview from '../ui/ImageUploadPreview';
-import { getProducts, addProduct, updateProduct, deleteProduct } from '../../services/apiService';
+import { getProducts, addProduct, updateProduct, deleteProduct } from '../../services/localDataService';
 import BackendConnectionError from '../shared/BackendConnectionError';
 
 const PRODUCTS_PER_PAGE = 10;

@@ -6,7 +6,7 @@ import SearchBar from '../components/shared/SearchBar';
 import Pagination from '../components/shared/Pagination';
 import * as Constants from '../constants.tsx';
 import CategorySidebar from '../components/shop/CategorySidebar';
-import { getProducts } from '../services/apiService';
+import { getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError';
 import SkeletonProductCard from '../components/shop/SkeletonProductCard';
 

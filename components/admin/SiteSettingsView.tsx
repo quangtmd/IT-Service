@@ -41,29 +41,27 @@ const SiteSettingsView: React.FC<{ initialTab?: SettingsTab }> = ({ initialTab =
     }, [initialTab]);
 
     const handleSave = () => {
-        if (window.confirm('Bạn có chắc chắn muốn lưu các cài đặt này không?')) {
-            setSaveStatus('saving');
-            try {
-                if (activeTab === 'site_settings') {
-                    setLocalStorageItem(Constants.SITE_CONFIG_STORAGE_KEY, siteSettings);
-                    window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
-                } else if (activeTab === 'theme_settings') {
-                    setLocalStorageItem(Constants.THEME_SETTINGS_STORAGE_KEY, themeSettings);
-                    if (typeof window.applyThemeFromLocalStorage === 'function') {
-                        window.applyThemeFromLocalStorage();
-                    }
-                    window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
-                } else if (activeTab === 'menu_settings') {
-                    setLocalStorageItem(Constants.CUSTOM_MENU_STORAGE_KEY, menuLinks);
-                    window.dispatchEvent(new CustomEvent('menuUpdated'));
+        setSaveStatus('saving');
+        try {
+            if (activeTab === 'site_settings') {
+                setLocalStorageItem(Constants.SITE_CONFIG_STORAGE_KEY, siteSettings);
+                window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
+            } else if (activeTab === 'theme_settings') {
+                setLocalStorageItem(Constants.THEME_SETTINGS_STORAGE_KEY, themeSettings);
+                if (typeof window.applyThemeFromLocalStorage === 'function') {
+                    window.applyThemeFromLocalStorage();
                 }
-                setSaveStatus('success');
-            } catch (error) {
-                setSaveStatus('error');
-                console.error("Failed to save settings:", error);
-            } finally {
-                setTimeout(() => setSaveStatus('idle'), 2000);
+                window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
+            } else if (activeTab === 'menu_settings') {
+                setLocalStorageItem(Constants.CUSTOM_MENU_STORAGE_KEY, menuLinks);
+                window.dispatchEvent(new CustomEvent('menuUpdated'));
             }
+            setSaveStatus('success');
+        } catch (error) {
+            setSaveStatus('error');
+            console.error("Failed to save settings:", error);
+        } finally {
+            setTimeout(() => setSaveStatus('idle'), 2000);
         }
     };
     

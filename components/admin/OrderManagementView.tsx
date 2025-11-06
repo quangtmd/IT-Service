@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
-import { getOrders, updateOrderStatus } from '../../services/apiService';
+import { getOrders, updateOrderStatus } from '../../services/localDataService';
 import BackendConnectionError from '../shared/BackendConnectionError';
 
 const getStatusColor = (status: OrderStatus) => {

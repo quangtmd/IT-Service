@@ -5,7 +5,7 @@ import { useCart } from '../hooks/useCart';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants.tsx';
 import { CheckoutFormData, Order, PaymentInfo } from '../types';
-import { addOrder } from '../services/apiService';
+import { addOrder } from '../services/localDataService';
 
 const CheckoutPage: React.FC = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
@@ -73,16 +73,16 @@ const CheckoutPage: React.FC = () => {
             paymentInfo = { method: 'Thanh toán khi nhận hàng (COD)', status: 'Chưa thanh toán' };
         }
         
-        const newOrder: Omit<Order, 'id'> & { id: string } = {
+        const newOrder: Order = {
             id: newOrderId, customerInfo: formData,
             items: cart.map(item => ({ productId: item.id, productName: item.name, quantity: item.quantity, price: item.price })),
             totalAmount: total, orderDate: new Date().toISOString(), status: 'Chờ xử lý', paymentInfo: paymentInfo,
         };
 
-        const createdOrder = await addOrder(newOrder);
+        await addOrder(newOrder);
 
-        addAdminNotification(`Đơn hàng mới #${createdOrder.id.slice(-6)} từ ${formData.fullName} đã được tạo.`, 'success');
-        setSubmittedOrder(createdOrder);
+        addAdminNotification(`Đơn hàng mới #${newOrder.id.slice(-6)} từ ${formData.fullName} đã được tạo.`, 'success');
+        setSubmittedOrder(newOrder);
 
         if (paymentMethod === 'cod') {
             clearCart();

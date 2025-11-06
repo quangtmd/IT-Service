@@ -1,10 +1,7 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../types';
-// Fix: Import getProducts from apiService, which handles API calls, not localDataService.
-import { getProducts } from '../../services/apiService';
+import { getProducts } from '../../services/localDataService';
 
 interface RecentlyViewedProductsProps {
     currentProductId: string;

@@ -12,8 +12,7 @@ import HotProducts from '../components/home/HotProducts';
 import HomeBlogPreviewIts from '../components/home/iqtechnology/HomeBlogPreviewIts';
 import HomeCallToActionIts from '../components/home/iqtechnology/HomeCallToActionIts';
 import HomeContactIts from '../components/home/iqtechnology/HomeContactIts';
-import PricingPlansSectionIts from '../components/services_page_its/PricingPlansSectionIts';
-import * as Constants from '../constants';
+import HomePricingPlansIts from '../components/home/iqtechnology/HomePricingPlansIts';
 
 const HomePage: React.FC = () => {
   return (
@@ -30,12 +29,8 @@ const HomePage: React.FC = () => {
       {/* Additional: Why Choose Us - Logically follows services */}
       <HomeWhyChooseUsIts />
 
-      {/* New: Pricing Plans Section - Replaced faulty component with the better one */}
-      <PricingPlansSectionIts
-        title="Các Gói Dịch Vụ IT Của Chúng Tôi"
-        subtitle="Chọn gói dịch vụ phù hợp nhất với nhu cầu và quy mô của doanh nghiệp bạn. Linh hoạt, hiệu quả và minh bạch."
-        plans={Constants.MOCK_PRICING_PLANS_DATA}
-      />
+      {/* New: Pricing Plans Section */}
+      <HomePricingPlansIts />
 
       {/* 3. Danh mục sản phẩm nổi bật */}
       <HotProducts />

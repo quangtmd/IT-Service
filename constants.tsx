@@ -25,7 +25,6 @@ export const FAQ_STORAGE_KEY = 'siteFAQs_v1';
 export const DISCOUNTS_STORAGE_KEY = 'siteDiscountCodes_v1';
 export const THEME_SETTINGS_STORAGE_KEY = 'siteThemeSettings_v1';
 export const CUSTOM_MENU_STORAGE_KEY = 'siteCustomMenu_v1';
-// These are now fetched from API, but keys can be used for caching if needed
 export const PRODUCTS_STORAGE_KEY = 'siteProducts_v1';
 export const ORDERS_STORAGE_KEY = 'siteOrders_v1';
 export const CHAT_LOGS_STORAGE_KEY = 'siteChatLogs_v1'; // For storing chat logs
@@ -303,8 +302,8 @@ export const INITIAL_FAQS: FaqItem[] = [
 ];
 
 export const INITIAL_DISCOUNT_CODES: DiscountCode[] = [
-  { id: 'dc_welcome', name: 'Chào mừng thành viên mới', code: 'WELCOME10', type: 'percentage', value: 10, description: 'Giảm 10% cho đơn hàng đầu tiên của khách hàng mới.', expiryDate: '2024-12-31', isActive: true, minSpend: 500000, usageLimit: 1, timesUsed: 0 },
-  { id: 'dc_freeship', name: 'Miễn phí vận chuyển', code: 'FREESHIP500K', type: 'fixed_amount', value: 30000, description: 'Miễn phí vận chuyển (tối đa 30k) cho đơn hàng từ 500k.', isActive: true, minSpend: 500000, timesUsed: 0 },
+  { id: 'dc_welcome', code: 'WELCOME10', type: 'percentage', value: 10, description: 'Giảm 10% cho đơn hàng đầu tiên của khách hàng mới.', expiryDate: '2024-12-31', isActive: true, minSpend: 500000, usageLimit: 1, timesUsed: 0 },
+  { id: 'dc_freeship', code: 'FREESHIP500K', type: 'fixed_amount', value: 30000, description: 'Miễn phí vận chuyển (tối đa 30k) cho đơn hàng từ 500k.', isActive: true, minSpend: 500000, timesUsed: 0 },
 ];
 
 export const INITIAL_THEME_SETTINGS: SiteThemeSettings = {
@@ -367,7 +366,7 @@ export const PRODUCT_CATEGORIES_HIERARCHY: ProductCategoryHierarchy = [
 export const ARTICLE_CATEGORIES = ["Mẹo vặt", "Hướng dẫn", "So sánh", "Khuyến mãi", "Tin tức công nghệ", "Đánh giá sản phẩm", "Dịch vụ IT", "Bảo mật"];
 export const USER_ROLES_CONST: UserRole[] = ['admin', 'staff', 'customer'];
 export const STAFF_ROLE_OPTIONS_CONST: StaffRole[] = ['Quản lý Bán hàng', 'Biên tập Nội dung', 'Trưởng nhóm Kỹ thuật', 'Chuyên viên Hỗ trợ', 'Nhân viên Toàn quyền'];
-export const ORDER_STATUSES: Array<import('./types').OrderStatus> = ['Chờ xử lý', 'Đã xác nhận', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'];
+export const ORDER_STATUSES: Array<import('./types').OrderStatus> = ['Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'];
 export const DEFAULT_SITE_LOGO_URL = ''; 
 
 export const MOCK_PRICING_PLANS_DATA: PricingPlan[] = [

@@ -1,8 +1,6 @@
-
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getOrders, getProducts, getArticles, getServerInfo } from '../../services/apiService';
+import { getOrders, getProducts, getArticles, getServerInfo } from '../../services/localDataService';
 import Card from '../ui/Card';
 import { Order, OrderStatus, ServerInfo, Product, Article, AdminView } from '../../types';
 import Button from '../ui/Button';
@@ -207,8 +205,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                             <h4 className="font-semibold text-lg">Đơn hàng gần đây</h4>
                             <Button variant="ghost" size="sm" onClick={() => setActiveView('orders')}>Xem tất cả</Button>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="admin-table text-sm">
+                         <div className="overflow-x-auto">
+                            <table className="admin-table w-full">
                                 <thead>
                                     <tr>
                                         <th>Mã ĐH</th>
@@ -218,48 +216,72 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {recentOrders.map(order => (
-                                        <tr key={order.id}>
-                                            <td><span className="font-mono text-xs">#{order.id.slice(-6)}</span></td>
+                                    {recentOrders.length > 0 ? recentOrders.map(order => (
+                                        <tr key={order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setActiveView('orders')}>
+                                            <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{String(order.id).slice(-6)}</span></td>
                                             <td>{order.customerInfo.fullName}</td>
                                             <td className="font-semibold">{order.totalAmount.toLocaleString('vi-VN')}₫</td>
                                             <td><span className={`status-badge ${getStatusColor(order.status)}`}>{order.status}</span></td>
                                         </tr>
-                                    ))}
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={4} className="text-center py-4 text-gray-500">Chưa có đơn hàng nào.</td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
                     </Card>
                 </div>
-                
-                {/* Side column */}
-                <div className="space-y-6">
-                     <Card className="!p-4">
-                        <h4 className="font-semibold text-lg mb-3">Bài viết mới</h4>
-                        <div className="space-y-3">
-                            {recentArticles.map(article => (
-                                <div key={article.id} className="text-sm">
-                                    <p className="font-medium text-textBase truncate">{article.title}</p>
-                                    <p className="text-xs text-textMuted">{article.category} - {new Date(article.date).toLocaleDateString('vi-VN')}</p>
-                                </div>
-                            ))}
+                 <div className="xl:col-span-1 space-y-6">
+                    {/* Quick Actions */}
+                    <Card className="!p-4">
+                        <h4 className="font-semibold text-lg mb-3">Tác vụ nhanh</h4>
+                        <div className="flex flex-col gap-2">
+                            <Button onClick={() => setActiveView('products')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-plus w-6 mr-2"></i>Thêm sản phẩm</Button>
+                            <Button onClick={() => setActiveView('articles')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-pen w-6 mr-2"></i>Viết bài mới</Button>
+                            <Button onClick={() => setActiveView('discounts')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-tags w-6 mr-2"></i>Tạo mã giảm giá</Button>
+                            <Button onClick={() => setActiveView('hrm_dashboard')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-user-plus w-6 mr-2"></i>Thêm nhân viên</Button>
                         </div>
                     </Card>
 
-                    <Card className="!p-4">
-                        <h4 className="font-semibold text-lg mb-2">Thông tin Server</h4>
-                        {isServerInfoLoading ? <p className="text-sm text-textMuted">Đang tải...</p> : (
-                            <div className="text-sm space-y-2">
-                                <p className="text-textMuted">Outbound IP:</p>
-                                <div className="flex items-center gap-2 font-mono text-xs bg-gray-100 p-2 rounded">
-                                    <span className="truncate">{serverInfo?.outboundIp}</span>
-                                    <button onClick={handleCopyIp} className="text-gray-500 hover:text-primary">
-                                      <i className={`fas ${ipCopied ? 'fa-check' : 'fa-copy'}`}></i>
-                                    </button>
+                    {/* Recent Articles */}
+                     <Card className="!p-4">
+                        <h4 className="font-semibold text-lg mb-3">Bài viết gần đây</h4>
+                        <div className="space-y-3">
+                        {recentArticles.map(article => (
+                            <div key={article.id} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-1 rounded-md" onClick={() => setActiveView('articles')}>
+                                <img src={article.imageUrl || `https://picsum.photos/seed/${article.id}/60/60`} alt={article.title} className="w-12 h-12 rounded-md object-cover flex-shrink-0" />
+                                <div>
+                                    <p className="text-sm font-semibold line-clamp-2 text-textBase">{article.title}</p>
+                                    <p className="text-xs text-textMuted">{article.author} - {new Date(article.date).toLocaleDateString('vi-VN')}</p>
                                 </div>
-                                <p className="text-xs text-textSubtle mt-1">Sử dụng IP này để whitelist cho kết nối database.</p>
                             </div>
-                        )}
+                        ))}
+                        </div>
+                    </Card>
+
+                    {/* System Info Card */}
+                    <Card className="!p-4">
+                        <h4 className="font-semibold text-lg mb-3">Thông tin Hệ thống</h4>
+                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            {isServerInfoLoading ? (
+                                <p className="text-sm text-slate-500">Đang tải thông tin máy chủ...</p>
+                            ) : serverInfo?.outboundIp !== 'Not available' ? (
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm text-slate-600">
+                                        <strong className="block">IP Máy chủ:</strong>
+                                        <span className="font-mono bg-slate-200 text-slate-800 py-1 px-2 rounded">{serverInfo.outboundIp}</span>
+                                    </p>
+                                    <Button size="sm" variant="outline" onClick={handleCopyIp} leftIcon={ipCopied ? <i className="fas fa-check"></i> : <i className="fas fa-copy"></i>}>
+                                        {ipCopied ? 'Đã chép!' : 'Chép'}
+                                    </Button>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-yellow-600">IP máy chủ chỉ hiển thị trên môi trường production (Render).</p>
+                            )}
+                            <p className="text-xs text-slate-400 mt-2">Sử dụng IP này để cho phép (whitelist) kết nối tới DB của bạn (vd: Hostinger).</p>
+                        </div>
                     </Card>
                 </div>
             </div>

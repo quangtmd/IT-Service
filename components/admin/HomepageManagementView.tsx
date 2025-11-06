@@ -44,18 +44,16 @@ const HomepageManagementView: React.FC = () => {
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 
     const handleSave = () => {
-        if (window.confirm('Bạn có chắc chắn muốn lưu tất cả các thay đổi cho nội dung trang chủ không?')) {
-            setSaveStatus('saving');
-            try {
-                localStorage.setItem(Constants.SITE_CONFIG_STORAGE_KEY, JSON.stringify(settings));
-                window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
-                setSaveStatus('success');
-            } catch (error) {
-                setSaveStatus('error');
-                console.error("Failed to save homepage settings:", error);
-            } finally {
-                setTimeout(() => setSaveStatus('idle'), 2000);
-            }
+        setSaveStatus('saving');
+        try {
+            localStorage.setItem(Constants.SITE_CONFIG_STORAGE_KEY, JSON.stringify(settings));
+            window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
+            setSaveStatus('success');
+        } catch (error) {
+            setSaveStatus('error');
+            console.error("Failed to save homepage settings:", error);
+        } finally {
+            setTimeout(() => setSaveStatus('idle'), 2000);
         }
     };
     

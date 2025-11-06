@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom'; // Updated imports for v6/v7
 import { useAuth } from '../../contexts/AuthContext';

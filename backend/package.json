@@ -6,10 +6,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
+    "build": "npm install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "AI Assistant",
+  "author": "",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
