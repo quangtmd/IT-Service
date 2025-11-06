@@ -248,7 +248,8 @@ const ProductDetailPage: React.FC = () => {
             <h2 className="text-2xl font-bold text-textBase mb-6 text-center">Sản phẩm liên quan</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map(relatedProduct => (
-                <ProductCard key={relatedProduct.id} product={relatedProduct} context="detail-view" />
+                // Fix: Removed the 'context' prop as it is not defined in the ProductCardProps interface.
+                <ProductCard key={relatedProduct.id} product={relatedProduct} />
               ))}
             </div>
           </div>
