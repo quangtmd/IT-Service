@@ -1,9 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getOrders, getProducts, getArticles, getServerInfo } from '../../services/localDataService';
 import Card from '../ui/Card';
 import { Order, OrderStatus, ServerInfo, Product, Article, AdminView } from '../../types';
 import Button from '../ui/Button';
+import BackendConnectionError from '../shared/BackendConnectionError';
 
 interface DashboardViewProps {
   setActiveView: (view: AdminView) => void;
@@ -94,11 +96,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
     const [isServerInfoLoading, setIsServerInfoLoading] = useState(true);
     const [ipCopied, setIpCopied] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             setIsLoading(true);
+            setError(null);
             try {
                 const [ordersData, productsData, articlesData] = await Promise.all([
                     getOrders(),
@@ -140,6 +144,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
 
             } catch (error) {
                 console.error("Failed to fetch dashboard data:", error);
+                setError(error instanceof Error ? error.message : "Lỗi khi tải dữ liệu dashboard.");
             } finally {
                 setIsLoading(false);
             }
@@ -152,6 +157,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                 setServerInfo(info);
             } catch (err) {
                  console.error("Failed to fetch server info", err);
+                 // Don't set global error for server info as it's not critical for the entire dashboard
             } finally {
                 setIsServerInfoLoading(false);
             }
@@ -183,6 +189,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
     
     return (
         <div className="space-y-6">
+            {error && <BackendConnectionError error={error} />}
+
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard title="Tổng Đơn Hàng" value={orders.length} icon="fa-receipt" color="bg-blue-500" onClick={() => setActiveView('orders')} />

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom'; // useParams and Link are compatible with v6/v7
 import { Article } from '../types';
@@ -61,7 +62,8 @@ const ArticleDetailPage: React.FC = () => {
   }
   
   if (error) {
-    if (error.includes('Lỗi mạng hoặc server không phản hồi')) {
+    // Check for specific backend connection errors to use the dedicated component
+    if (error.includes('Lỗi API') || error.includes('Lỗi mạng hoặc server không phản hồi')) {
         return <div className="container mx-auto px-4 py-8"><BackendConnectionError error={error} /></div>;
     }
     return (

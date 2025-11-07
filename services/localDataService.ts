@@ -1,3 +1,4 @@
+
 // This service now fetches data from the backend API instead of localStorage.
 
 import { 
@@ -17,9 +18,9 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             // Try to parse error message from backend
             try {
                 const errorData = await response.json();
-                throw new Error(errorData.message || `Lỗi mạng hoặc server không phản hồi (Status: ${response.status})`);
+                throw new Error(errorData.message || `Lỗi API: ${response.status} ${response.statusText}. Vui lòng kiểm tra kết nối server.`);
             } catch (e) {
-                 throw new Error(`Lỗi mạng hoặc server không phản hồi (Status: ${response.status})`);
+                 throw new Error(`Lỗi API: ${response.status} ${response.statusText}. Vui lòng kiểm tra kết nối server.`);
             }
         }
         // Handle 204 No Content for delete operations

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import ArticlePreview from '../components/blog/ArticlePreview';
 import SearchBar from '../components/shared/SearchBar';
@@ -100,7 +101,9 @@ const BlogPage: React.FC = () => {
 
   const renderStatusAndErrors = () => {
      if (pageError) {
-        if (pageError.includes('Lỗi mạng hoặc server không phản hồi') || pageError.includes('Không thể tải danh sách bài viết')) {
+        // Only display BackendConnectionError component if it's a backend specific error.
+        // Other errors (e.g., API_KEY_ERROR_MESSAGE, AI specific errors) can be simpler text.
+        if (pageError.includes('Lỗi API') || pageError.includes('Lỗi mạng hoặc server không phản hồi') || pageError.includes('Không thể tải danh sách bài viết')) {
             return <BackendConnectionError error={pageError} />;
         }
         return (
@@ -152,7 +155,7 @@ const BlogPage: React.FC = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-textMuted">Đang tải bài viết...</p>
          </div>
-      ) : pageError && allArticles.length === 0 && (pageError.includes('Lỗi mạng') || pageError.includes('Không thể tải')) ? (
+      ) : pageError && allArticles.length === 0 && (pageError.includes('Lỗi mạng') || pageError.includes('Không thể tải') || pageError.includes('Lỗi API')) ? (
         null // The error is already displayed by renderStatusAndErrors in its own component
       ) : filteredArticles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
