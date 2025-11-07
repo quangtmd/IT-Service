@@ -23,8 +23,8 @@ import PCBuildSuggestionsPage from './pages/PCBuildSuggestionsPage'; // Import t
 import AdminPage from './pages/AdminPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import ProtectedRoute from './components/auth/ProtectedRoute';
 import CheckoutPage from './pages/CheckoutPage';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 const App: React.FC = () => {
 

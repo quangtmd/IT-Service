@@ -321,7 +321,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             alert('Không có lương để thanh toán cho kỳ này.');
             return;
         }
-        const totalSalaryExpense = recordsToSettle.reduce((sum, r => r.finalSalary), 0);
+        // Fix: Corrected reduce callback syntax
+        const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
         
         try {
             await savePayrollRecords(localPayroll);

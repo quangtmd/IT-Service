@@ -3,8 +3,7 @@ import React, { ErrorInfo, ReactNode } from 'react';
 // Fix: Updated Props interface to correctly use React.PropsWithChildren type.
 // This ensures the `children` prop is correctly recognized and allows TypeScript
 // to properly infer the component's state and props properties.
-interface ErrorBoundaryProps { 
-  children?: ReactNode; // Explicitly define children for broader compatibility
+interface ErrorBoundaryProps extends React.PropsWithChildren {
   fallbackMessage?: string;
 }
 
@@ -14,12 +13,16 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // Fix: Explicitly define state property to resolve TypeScript error regarding 'state' not existing.
+  // This ensures TypeScript correctly infers the `this.state` property.
+  public state: ErrorBoundaryState = {
+    hasError: false,
+    errorMessage: '',
+  };
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = {
-      hasError: false,
-      errorMessage: '',
-    };
+    // state is now initialized as a class property
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
@@ -35,7 +38,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   render() {
-    // Fix: `this.state` and `this.props` are now correctly inferred after fixing the Props interface.
+    // Fix: `this.state` and `this.props` are now correctly inferred after fixing the Props interface
+    // and explicitly defining the state property.
     if (this.state.hasError) {
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
