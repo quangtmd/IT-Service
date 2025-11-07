@@ -343,8 +343,9 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
+                {/* Fix: Changed onClick handler to explicitly be a function that takes no arguments. */}
                 <Button onClick={() => savePayrollRecords(localPayroll)} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* FIX: The onClick handler was passing an implicit event argument. Wrapped it in an arrow function. */}
+                {/* Fix: Changed onClick handler to explicitly be a function that takes no arguments. */}
                 <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">

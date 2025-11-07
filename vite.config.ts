@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react';
 // TypeScript will correctly infer the global 'NodeJS.Process' type.
 
 export default defineConfig(({ mode }) => {
+    // Fix: Removed explicit cast to NodeJS.Process. `process` is globally available in Node.js context.
     const env = loadEnv(mode, process.cwd(), '');
 
     return {
@@ -28,6 +29,7 @@ export default defineConfig(({ mode }) => {
         resolve: {
             alias: {
                 // Fix: Replace __dirname with process.cwd() for ES module compatibility
+                // Also removed explicit cast to NodeJS.Process.
                 '@': path.resolve(process.cwd(), '.'),
             }
         },

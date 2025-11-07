@@ -1,8 +1,7 @@
 import React, { ErrorInfo, ReactNode } from 'react';
 import * as Constants from './constants';
 
-interface Props {
-  children: ReactNode;
+interface Props extends React.PropsWithChildren { // Fix: Added extends React.PropsWithChildren
   fallbackMessage?: string;
 }
 
@@ -12,11 +11,15 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  // Fix: Initialize state as a class property to resolve typing issues with 'this.state' in the constructor.
-  state: State = {
-    hasError: false,
-    errorMessage: '',
-  };
+  // Fix: Moved state initialization to constructor to resolve TypeScript errors related to `this.props`.
+  // This ensures `props` are properly handled by React's constructor chain before state is set.
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      errorMessage: '',
+    };
+  }
 
   static getDerivedStateFromError(error: Error): State {
     // Update state so the next render will show the fallback UI.

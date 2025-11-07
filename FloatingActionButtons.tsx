@@ -5,7 +5,7 @@ import AIChatbot from '../chatbot/AIChatbot';
 import * as ReactRouterDOM from 'react-router-dom';
 
 // Base64 encoded SVG for a simple robot icon
-const ROBOT_ICON_SVG_BASE64 = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iY3VycmVudENvbG9yIj4KICA8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAxOGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4IDguMzU5IDggOC04eiBNOSAxMy41Yy0uODMgMC0xLjUtLjY3LTEuNS0xLjVzLjY3LTEuNSAxLjUtMS41IDEuNS42NyAxLjUgMS41LS42NyAxLjUtMS41IDEuNXptNiAwYy0uODMgMC0xLjUtLjY3LTEuNS0xLjVzLjY3LTEuNSAxLjUtMS41IDEuNS42NyAxLjUgMS41LS42NyAxLjUtMS41IDEuNXpNMTIgMTdjLTIuMzMgMC0zLjM3LTEuMDctMy45Mi0xLjc0LS4xMy0uMTYtLjItLjM2LS4yLS41NiAwLS4yNS4xLS40Ny4yOC0uNjUuMjUtLjI2LjY1LS4zNyAxLjA1LS4yNy40Mi4xLjguMzggMS4xMy43OC4zMy0uNC43MS0uNjggMS4xMy0uNzguNC0uMS44LS4wMSAxLjA1LjI3LjE4LjE4LjI4LjQuMjguNjUgMCAuMi0uMDcuNC0wLjIuNTYtMC41NS42Ny0xLjU5IDEuNzQtMy45MiAxLjc0eiBNMTYgOGgtMWMtLjU1IDAtMSAuNDUtMSAxcy40NSAxIDEgMWgxYy41NSAwIDEtLjQ1IDEtMXMtLjQ1LTEtMS0xeiBNOC4wMDQgOGgtMS4wMDFjLS41NDkgMC0uOTk5LjQ1LS45OTkgMXMuNDUuOTk5Ljk5OS45OTloMS4wMDFjLjU0OSAwLjk5OS0uNDUuOTk5LTEuMDAxcy0uNDUtLjk5OS0uOTk5LS45OTl6Ii8+Cjwvc3ZnPg==`;
+const ROBOT_ICON_SVG_BASE64 = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iY3VycmVudENvbG9yIj4KICA8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAxOGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4IDguMzU5IDggOC04eiBNOSAxMy41Yy0uODMgMC0xLjUtLjY3LTEuNS0xLjVzLjY3LTEuNSAxLjUtMS41IDEuNS42NyAxLjUgMS41LS42NyAxLjUtMS41IDEuNXptNiAwYy0uODMgMC0xLjUtLjY3LTEuNS0xLjVzLjY3LTEuNSAxLjUtMS41IDEuNS42NyAxLjUgMS41LS42NyAxLjUtMS41IDEuNXpNMTIgMTdjLTIuMzMgMC0zLjM3LTEuMDctMy45Mi0xLjc0LS4xMy0uMTYtLjItLjM2LS4yLS41NiAwLS4yNS4xLS40Ny4yOC0uNjUuMjUtLjI2LjY1LS4zNyAxLjA1LS4yNy40Mi4xLjguMzggMS4xMy43OC4zMy0uNC43MS0uNjggMS4xMy0uNzguNC0uMS44LS4wMSAxLjA1LjI3LjE4LjE4LjI4LjQuMjguNjUgMCAuMi0uMDcuNC0uMi41Ni0wLjU1LjY3LTEuNTkgMS43NC0zLjkyIDEuNzR6TTE2IDhoLTFjLS41NSAwLTEgLjQ1LTEgMXMuNDUgMSAxIDFoMWMuNTUgMCAxLS40NSAxLTFzLS40NS0xLTF6TTggOGgtMWMtLjU1IDAtMSAuNDUtMSAxcy40NSAxIDEgMWgxYy41NSAwIDEtLjQ1IDEtMXMtLjQ1LTEtMS0xeiIvPgo8L3N2Zz4=`;
 
 
 const FloatingActionButtons: React.FC = () => {
@@ -13,6 +13,7 @@ const FloatingActionButtons: React.FC = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [showWelcomeBubble, setShowWelcomeBubble] = useState(false);
     const location = ReactRouterDOM.useLocation();
+    const navigate = ReactRouterDOM.useNavigate();
     
     // This check determines if the AI feature is available.
     const isAiEnabled = process.env.API_KEY && process.env.API_KEY !== 'undefined';
@@ -42,7 +43,7 @@ const FloatingActionButtons: React.FC = () => {
               // Delay slightly before opening chat and showing bubble
               const timer = setTimeout(() => {
                 setIsChatOpen(true); // Open the chat panel
-                // Wait for the chat to open briefly, then quickly close it and show the bubble
+                // Wait for the chat to open, then quickly close it and show the bubble
                 setTimeout(() => {
                     setIsChatOpen(false); // Close the chat panel for the bubble to appear next to the button
                     setShowWelcomeBubble(true);
@@ -58,7 +59,7 @@ const FloatingActionButtons: React.FC = () => {
             }
         }
         setShowWelcomeBubble(false); // Ensure bubble is hidden if not on homepage or already shown
-    }, [isAiEnabled, location.pathname]);
+    }, [isAiEnabled, location.pathname, navigate]);
 
     const quickContactCommonClasses = "w-14 h-14 text-white rounded-full p-3.5 shadow-lg transition-all duration-300 flex items-center justify-center text-xl transform hover:scale-110";
     const fabVisibilityClass = isChatOpen ? 'opacity-0 scale-0 pointer-events-none' : 'opacity-100 scale-100';
@@ -67,7 +68,7 @@ const FloatingActionButtons: React.FC = () => {
         <>
             <div className={`fixed bottom-6 right-6 z-[60] flex flex-col items-center space-y-3 transition-all duration-300 ${fabVisibilityClass}`}>
                 {siteSettings.companyPhone && (
-                    <a href={`tel:${siteSettings.companyPhone.replace(/\./g, '')}`} className={`${quickContactCommonClasses} bg-green-500 hover:bg-green-600`} aria-label="Call Now" title={siteSettings.companyPhone}>
+                    <a href={`tel:${siteSettings.companyPhone.replace(/\./g, '')}`} className={`${quickContactCommonClasses} bg-green-500 hover:bg-green-600 animate-subtle-beat`} aria-label="Call Now" title={siteSettings.companyPhone}>
                         <i className="fas fa-phone-alt"></i>
                     </a>
                 )}

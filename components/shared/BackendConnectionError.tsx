@@ -7,9 +7,6 @@ interface BackendConnectionErrorProps {
 
 const BackendConnectionError: React.FC<BackendConnectionErrorProps> = ({ error }) => {
   const is404Error = error && error.includes('404');
-  const isUnknownColumnError = error && error.includes('Cột không tồn tại') && error.includes('lược đồ database');
-  const isMissingTablesError = error && error.includes('Không tìm thấy bảng cần thiết') && error.includes('lược đồ database');
-
 
   const render404Guide = () => (
     <div className="bg-orange-50 border-orange-200 text-orange-800 p-4 rounded-md mb-4 text-sm shadow-inner">
@@ -27,22 +24,6 @@ const BackendConnectionError: React.FC<BackendConnectionErrorProps> = ({ error }
     </div>
   );
   
-  const renderSchemaErrorGuide = () => (
-    <div className="bg-yellow-50 border-yellow-200 text-yellow-800 p-4 rounded-md mb-4 text-sm shadow-inner">
-      <p className="font-bold mb-2 text-base text-yellow-900"><i className="fas fa-database mr-2"></i>Chẩn đoán: Lỗi Lược đồ Cơ sở dữ liệu (Database Schema Mismatch)</p>
-      <p>Backend đã kết nối thành công với database, nhưng cấu trúc bảng của bạn (schema) không khớp với những gì backend mong đợi. Điều này thường xảy ra khi bạn chưa chạy script SQL cập nhật hoặc chạy không thành công.</p>
-      <div className="mt-3 bg-white p-3 rounded border border-yellow-200">
-        <p className="font-semibold">Hành động khắc phục:</p>
-        <ol className="list-decimal list-inside space-y-2 mt-1">
-          <li><strong>Dọn dẹp Database cũ:</strong> Truy cập công cụ quản lý MySQL của bạn (ví dụ: phpMyAdmin, Hostinger Database). <strong>XÓA TẤT CẢ CÁC BẢNG HIỆN CÓ</strong> trong database mà backend đang kết nối. Nếu bạn có thể, hãy xóa cả database và tạo lại một database mới với cùng tên.</li>
-          <li><strong>Chạy lại Script SQL:</strong> Mở tệp <code>README.md</code> trong thư mục gốc của dự án frontend. Copy <strong>TOÀN BỘ</strong> script SQL được cung cấp. Dán và chạy script này trên database MySQL sạch của bạn.</li>
-          <li><strong>Triển khai lại Backend:</strong> Sau khi database được cập nhật, hãy vào dịch vụ <strong>backend</strong> (<code>it-service-backend</code>) trên Render, chọn <strong>"Manual Deploy"</strong> &gt; <strong>"Deploy latest commit"</strong> để khởi động lại backend, đảm bảo nó nhận cấu trúc database mới.</li>
-        </ol>
-      </div>
-    </div>
-  );
-
-
   const renderGeneralGuide = () => (
      <div className="bg-white p-4 rounded-md border border-red-200 text-sm text-gray-700">
       <h4 className="font-semibold text-gray-800 mb-2">Các bước kiểm tra và khắc phục:</h4>
@@ -75,23 +56,15 @@ const BackendConnectionError: React.FC<BackendConnectionErrorProps> = ({ error }
       <div className="flex items-start gap-4">
         <i className="fas fa-server text-4xl text-red-400 mt-1"></i>
         <div>
-          <h3 className="text-xl font-bold text-red-900 mb-2">
-            {is404Error 
-                ? "Lỗi Giao Tiếp Frontend-Backend (404)" 
-                : (isUnknownColumnError || isMissingTablesError ? "Lỗi Cấu trúc Database (Backend)" : "Lỗi Kết Nối Đến Máy Chủ (Backend)")
-            }
-          </h3>
+          <h3 className="text-xl font-bold text-red-900 mb-2">{is404Error ? "Lỗi Giao Tiếp Frontend-Backend (404)" : "Lỗi Kết Nối Đến Máy Chủ (Backend)"}</h3>
           <p className="text-sm text-red-700 mb-4">
             {is404Error 
               ? "Ứng dụng không thể tìm thấy API endpoint được yêu cầu." 
-              : (isUnknownColumnError || isMissingTablesError
-                ? "Backend đã kết nối database nhưng không tìm thấy cấu trúc bảng/cột cần thiết. Database schema không đồng bộ."
-                : "Ứng dụng không thể nhận dữ liệu từ server. Điều này thường xảy ra khi dịch vụ backend trên Render không thể khởi động, phần lớn là do sự cố kết nối tới cơ sở dữ liệu."
-              )
+              : "Ứng dụng không thể nhận dữ liệu từ server. Điều này thường xảy ra khi dịch vụ backend trên Render không thể khởi động, phần lớn là do sự cố kết nối tới cơ sở dữ liệu."
             }
           </p>
           
-          {is404Error ? render404Guide() : (isUnknownColumnError || isMissingTablesError ? renderSchemaErrorGuide() : renderGeneralGuide())}
+          {is404Error ? render404Guide() : renderGeneralGuide()}
 
           <Button 
             variant="outline" 

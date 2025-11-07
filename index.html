@@ -607,6 +607,25 @@
             opacity: 0;
         }
     }
+    
+    /* --- NEW ANIMATIONS FOR CHATBOT BUTTON AND BUBBLE --- */
+    @keyframes subtle-pulse {
+        0%, 100% { transform: scale(1.0); }
+        50% { transform: scale(1.05); }
+    }
+    .animate-subtle-pulse {
+        animation: subtle-pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes fade-in-out {
+        0% { opacity: 0; transform: translateY(10px); }
+        10% { opacity: 1; transform: translateY(0); }
+        90% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(10px); }
+    }
+    .animate-fade-in-out {
+        animation: fade-in-out 5s forwards;
+    }
   </style>
   <script>
     function applyThemeFromLocalStorage() {
