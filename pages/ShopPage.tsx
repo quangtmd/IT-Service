@@ -10,6 +10,8 @@ import CategorySidebar from '../components/shop/CategorySidebar';
 import { getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError';
 import SkeletonProductCard from '../components/shop/SkeletonProductCard';
+import ShopBanner from '../components/shop/ShopBanner'; // New import
+import ShopProductSection from '../components/shop/ShopProductSection'; // New import
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -86,8 +88,20 @@ const ShopPage: React.FC = () => {
       }
     };
     
-    loadProducts();
-  }, [location.search]);
+    // Only load products if there are active filters or a search term, 
+    // otherwise the page will display sections.
+    const hasActiveFilters = Array.from(queryParams.keys()).some(key => 
+      key !== 'page' && key !== 'limit' && queryParams.get(key)
+    );
+    
+    if (hasActiveFilters) {
+        loadProducts();
+    } else {
+        setIsLoading(false); // Not loading filtered products, will show sections
+        setDisplayedProducts([]);
+        setTotalProducts(0);
+    }
+  }, [location.search, queryParams]);
 
 
   const handleScroll = useCallback(() => {
@@ -164,6 +178,17 @@ const ShopPage: React.FC = () => {
     return name;
   };
   
+  const hasActiveFiltersExcludingPage = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    for (const [key, value] of params.entries()) {
+      if (key !== 'page' && key !== 'limit' && value) {
+        return true;
+      }
+    }
+    return false;
+  }, [location.search]);
+
+
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -178,41 +203,65 @@ const ShopPage: React.FC = () => {
         return <BackendConnectionError error={error} />;
     }
     
-    return (
-        <main className="flex-grow w-full min-w-0">
-            <ProductCategoryNav
-                categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
-                activeSlug={currentFilters.mainCategory}
-                onSelect={(slug) => handleFilterChange('mainCategory', slug)}
-            />
-            <div className="flex justify-between items-center mb-6 px-1">
-              <h1 className="text-2xl font-bold text-textBase">{getCurrentCategoryName()}</h1>
-              <span className="text-sm text-textMuted">{totalProducts} sản phẩm</span>
-            </div>
-            {displayedProducts.length > 0 ? (
-            <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-                {displayedProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
-                ))}
+    if (hasActiveFiltersExcludingPage) {
+        // Show filtered products if filters are active
+        return (
+            <main className="flex-grow w-full min-w-0">
+                <div className="flex justify-between items-center mb-6 px-1">
+                <h1 className="text-2xl font-bold text-textBase">{getCurrentCategoryName()}</h1>
+                <span className="text-sm text-textMuted">{totalProducts} sản phẩm</span>
                 </div>
-                {totalPages > 1 && (
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                />
+                {displayedProducts.length > 0 ? (
+                <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+                    {displayedProducts.map(product => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
+                    </div>
+                    {totalPages > 1 && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                    )}
+                </>
+                ) : (
+                <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
+                    <i className="fas fa-search text-5xl text-textSubtle mb-4"></i>
+                    <h3 className="text-xl font-semibold text-textBase mb-2">Không tìm thấy sản phẩm</h3>
+                    <p className="text-textMuted">Vui lòng thử lại với bộ lọc hoặc từ khóa khác.</p>
+                </div>
                 )}
-            </>
-            ) : (
-            <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
-                <i className="fas fa-search text-5xl text-textSubtle mb-4"></i>
-                <h3 className="text-xl font-semibold text-textBase mb-2">Không tìm thấy sản phẩm</h3>
-                <p className="text-textMuted">Vui lòng thử lại với bộ lọc hoặc từ khóa khác.</p>
+            </main>
+        );
+    } else {
+        // Show default sections if no filters are active
+        return (
+            <div className="space-y-10">
+                <ShopBanner />
+                <ShopProductSection 
+                    title="SẢN PHẨM BÁN CHẠY" 
+                    linkToAll="/shop?tags=Bán%20chạy" 
+                    fetchType="featured" 
+                    limit={4} 
+                />
+                <ShopProductSection 
+                    title="MÁY TÍNH XÁCH TAY" 
+                    linkToAll="/shop?mainCategory=laptop" 
+                    fetchParams="mainCategory=laptop" 
+                    limit={4} 
+                />
+                <ShopProductSection 
+                    title="LINH KIỆN MÁY TÍNH" 
+                    linkToAll="/shop?mainCategory=linh_kien_may_tinh" 
+                    fetchParams="mainCategory=linh_kien_may_tinh" 
+                    limit={4} 
+                />
+                {/* You can add more sections here */}
             </div>
-            )}
-        </main>
-    )
+        );
+    }
   }
 
   return (
@@ -239,3 +288,4 @@ const ShopPage: React.FC = () => {
 };
 
 export default ShopPage;
+    
