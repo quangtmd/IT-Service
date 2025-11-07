@@ -6,6 +6,8 @@ import {
     Quotation, User
 } from '../types';
 import { BACKEND_API_BASE_URL } from '../constants';
+import BackendConnectionError from '../components/shared/BackendConnectionError'; // Import this component
+
 
 const API_BASE = BACKEND_API_BASE_URL;
 
@@ -15,23 +17,28 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         const response = await fetch(`${API_BASE}${endpoint}`, options);
         if (!response.ok) {
             // Try to parse error message from backend
+            let errorDetails = {};
             try {
-                const errorData = await response.json();
-                const errorMessage = errorData.message || errorData.error || `Lỗi API: ${response.status} ${response.statusText}. Vui lòng kiểm tra kết nối server.`;
-                 if (response.status === 404) {
-                    throw new Error(`Lỗi API: 404 Not Found. Vui lòng kiểm tra VITE_BACKEND_API_BASE_URL trên frontend.`);
-                }
-                // Specific handling for schema mismatch error
-                if (errorData.errorCode === 'ER_BAD_FIELD_ERROR' || errorMessage.includes("Unknown column")) {
-                    throw new Error(`Lỗi cơ sở dữ liệu: Cột không tồn tại. Có vẻ như lược đồ database của bạn không đồng bộ với backend. Vui lòng chạy lại script SQL từ README.md.`);
-                }
-                throw new Error(errorMessage);
+                errorDetails = await response.json();
             } catch (e) {
-                 if (response.status === 404) {
-                    throw new Error(`Lỗi API: 404 Not Found. Vui lòng kiểm tra VITE_BACKEND_API_BASE_URL trên frontend.`);
-                }
-                 throw new Error(`Lỗi API: ${response.status} ${response.statusText}. Vui lòng kiểm tra kết nối server.`);
+                // If JSON parsing fails, the response body might be plain text or empty
+                errorDetails = { message: response.statusText };
             }
+            const errorMessage = (errorDetails as any).message || (errorDetails as any).error || `Lỗi API: ${response.status} ${response.statusText}. Vui lòng kiểm tra kết nối server.`;
+            
+            // Specific handling for common backend issues
+            if (response.status === 404) {
+                throw new Error(`Lỗi API: 404 Not Found. Vui lòng kiểm tra VITE_BACKEND_API_BASE_URL trên frontend.`);
+            }
+            if ((errorDetails as any).errorCode === 'ER_BAD_FIELD_ERROR' || errorMessage.includes("Unknown column")) {
+                throw new Error(`Lỗi cơ sở dữ liệu: Cột không tồn tại. Có vẻ như lược đồ database của bạn không đồng bộ với backend. Vui lòng chạy lại script SQL từ README.md.`);
+            }
+            if ((errorDetails as any).errorCode === 'MISSING_TABLES') {
+                throw new Error(`Lỗi cơ sở dữ liệu: Không tìm thấy bảng cần thiết. Vui lòng chạy lại script SQL từ README.md để tạo các bảng.`);
+            }
+            
+            throw new Error(errorMessage);
+
         }
         // Handle 204 No Content for delete operations
         if (response.status === 204) {
