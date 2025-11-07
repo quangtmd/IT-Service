@@ -113,13 +113,10 @@ app.get('/api/products/featured', async (req, res) => {
     try {
         const query = `
             SELECT 
-                p.*,
-                c.name as subCategory,
-                mc.name as mainCategory
+                p.*
+                -- Removed category joins and selects due to schema mismatch.
             FROM Products p
-            LEFT JOIN ProductCategories c ON p.category_id = c.id
-            LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id
-            WHERE p.is_featured = TRUE
+            -- Removed WHERE p.is_featured = TRUE temporarily due to schema mismatch.
             ORDER BY RAND()
             LIMIT 4;
         `;
@@ -130,6 +127,7 @@ app.get('/api/products/featured', async (req, res) => {
             specifications: JSON.parse(p.specifications || '{}'),
             tags: JSON.parse(p.tags || '[]'),
             // isVisible: p.is_published, // Removed temporarily
+            // mainCategory and subCategory will be null/undefined for now
         }));
         res.json(deserializedProducts);
     } catch (error) {
@@ -142,12 +140,9 @@ app.get('/api/products/:id', async (req, res) => {
     try {
         const query = `
             SELECT 
-                p.*, 
-                c.name as subCategory, 
-                mc.name as mainCategory 
+                p.* 
+                -- Removed category joins and selects due to schema mismatch.
             FROM Products p
-            LEFT JOIN ProductCategories c ON p.category_id = c.id
-            LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id
             WHERE p.id = ?
         `;
         const [rows] = await pool.query(query, [req.params.id]);
@@ -158,6 +153,7 @@ app.get('/api/products/:id', async (req, res) => {
             product.specifications = JSON.parse(product.specifications || '{}');
             product.tags = JSON.parse(product.tags || '[]');
             // product.isVisible = product.is_published; // Removed temporarily
+            // mainCategory and subCategory will be null/undefined for now
             res.json(product);
         } else {
             res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
@@ -174,16 +170,14 @@ app.get('/api/products', async (req, res) => {
 
         let baseQuery = `
             SELECT 
-                p.*, 
-                c.name as subCategory, 
-                mc.name as mainCategory 
+                p.*
+                -- Removed category joins and selects due to schema mismatch.
             FROM Products p
         `;
         let countQuery = `SELECT COUNT(p.id) as total FROM Products p`;
         
-        const joins = [];
-        joins.push('LEFT JOIN ProductCategories c ON p.category_id = c.id');
-        joins.push('LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id');
+        // Removed joins for ProductCategories due to schema mismatch.
+        const joins = []; 
         
         const joinString = joins.join(' ');
         baseQuery += ` ${joinString}`;
@@ -192,14 +186,15 @@ app.get('/api/products', async (req, res) => {
         const whereClauses = []; // Removed 'p.is_published = TRUE'
         const params = [];
         
-        if (mainCategory) {
-            whereClauses.push('mc.slug = ?');
-            params.push(mainCategory);
-        }
-        if (subCategory) {
-            whereClauses.push('c.slug = ?');
-            params.push(subCategory);
-        }
+        // Removed mainCategory and subCategory filtering due to schema mismatch.
+        // if (mainCategory) {
+        //     whereClauses.push('mc.slug = ?');
+        //     params.push(mainCategory);
+        // }
+        // if (subCategory) {
+        //     whereClauses.push('c.slug = ?');
+        //     params.push(subCategory);
+        // }
          if (q) {
             whereClauses.push('(p.name LIKE ? OR p.brand LIKE ?)');
             params.push(`%${q}%`, `%${q}%`);
@@ -230,6 +225,7 @@ app.get('/api/products', async (req, res) => {
             specifications: JSON.parse(p.specifications || '{}'),
             tags: JSON.parse(p.tags || '[]'),
             // isVisible: p.is_published, // Removed temporarily
+            // mainCategory and subCategory will be null/undefined for now
         }));
         
         res.json({ products: deserializedProducts, totalProducts });
@@ -243,17 +239,18 @@ app.post('/api/products', async (req, res) => {
     try {
         const { mainCategory, subCategory, isVisible, category, ...productData } = req.body;
 
-        let category_id = null;
-        if (mainCategory && subCategory) {
-            const [mainCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', [mainCategory]);
-            if (mainCatRows.length > 0) {
-                const mainCatId = mainCatRows[0].id;
-                const [subCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', [subCategory, mainCatId]);
-                if (subCatRows.length > 0) {
-                    category_id = subCatRows[0].id;
-                }
-            }
-        }
+        // Removed category_id logic due to schema mismatch.
+        // let category_id = null;
+        // if (mainCategory && subCategory) {
+        //     const [mainCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', [mainCategory]);
+        //     if (mainCatRows.length > 0) {
+        //         const mainCatId = mainCatRows[0].id;
+        //         const [subCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', [subCategory, mainCatId]);
+        //         if (subCatRows.length > 0) {
+        //             category_id = subCatRows[0].id;
+        //         }
+        //     }
+        // }
         
         // Build a clean, sanitized object for DB insertion to prevent type errors and unknown column errors.
         const productToDb = {
@@ -276,8 +273,8 @@ app.post('/api/products', async (req, res) => {
             seoMetaDescription: productData.seoMetaDescription || null,
             slug: productData.slug || null,
             // is_published: isVisible === undefined ? true : Boolean(isVisible), // Removed temporarily
-            category_id: category_id,
-            is_featured: Boolean(productData.is_featured),
+            // category_id: category_id, // Removed temporarily
+            // is_featured: Boolean(productData.is_featured), // Removed temporarily
         };
 
         await pool.query('INSERT INTO Products SET ?', productToDb);
@@ -295,17 +292,18 @@ app.put('/api/products/:id', async (req, res) => {
         const { id } = req.params;
         const { mainCategory, subCategory, isVisible, category, ...productData } = req.body;
         
-        let category_id = productData.category_id; // Keep existing if not changed
-        if (mainCategory && subCategory) {
-            const [mainCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', [mainCategory]);
-            if (mainCatRows.length > 0) {
-                const mainCatId = mainCatRows[0].id;
-                const [subCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', [subCategory, mainCatId]);
-                if (subCatRows.length > 0) {
-                    category_id = subCatRows[0].id;
-                }
-            }
-        }
+        // Removed category_id logic due to schema mismatch.
+        // let category_id = productData.category_id; // Keep existing if not changed
+        // if (mainCategory && subCategory) {
+        //     const [mainCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', [mainCategory]);
+        //     if (mainCatRows.length > 0) {
+        //         const mainCatId = mainCatRows[0].id;
+        //         const [subCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', [subCategory, mainCatId]);
+        //         if (subCatRows.length > 0) {
+        //             category_id = subCatRows[0].id;
+        //         }
+        //     }
+        // }
         
         // Build a clean, sanitized object for DB update.
         const fieldsToUpdate = {
@@ -327,8 +325,8 @@ app.put('/api/products/:id', async (req, res) => {
             seoMetaDescription: productData.seoMetaDescription || null,
             slug: productData.slug || null,
             // is_published: isVisible === undefined ? true : Boolean(isVisible), // Removed temporarily
-            category_id: category_id,
-            is_featured: Boolean(productData.is_featured),
+            // category_id: category_id, // Removed temporarily
+            // is_featured: Boolean(productData.is_featured), // Removed temporarily
         };
         
         const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [fieldsToUpdate, id]);
@@ -607,7 +605,7 @@ app.post('/api/financials/payroll', async (req, res) => {
                         `INSERT INTO PayrollRecords (id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, notes, status)
                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                          ON DUPLICATE KEY UPDATE
-                         employeeName = VALUES(employeeName), baseSalary = VALUES(baseSalary), bonus = VALUES(bonus),
+                         employeeName = VALUES(employeeName), baseSalary = VALUES(baseSalary), bonus = VALUES(baseSalary),
                          deduction = VALUES(deduction), finalSalary = VALUES(finalSalary), notes = VALUES(notes), status = VALUES(status)`,
                         [
                             record.id, record.employeeId, record.employeeName, record.payPeriod,

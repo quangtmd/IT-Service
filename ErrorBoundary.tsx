@@ -3,7 +3,8 @@ import React, { ErrorInfo, ReactNode } from 'react';
 // Fix: Updated Props interface to correctly use React.PropsWithChildren type.
 // This ensures the `children` prop is correctly recognized and allows TypeScript
 // to properly infer the component's state and props properties.
-interface ErrorBoundaryProps extends React.PropsWithChildren { 
+interface ErrorBoundaryProps { 
+  children?: ReactNode; // Explicitly define children for broader compatibility
   fallbackMessage?: string;
 }
 

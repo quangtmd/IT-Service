@@ -321,7 +321,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             alert('Không có lương để thanh toán cho kỳ này.');
             return;
         }
-        const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
+        const totalSalaryExpense = recordsToSettle.reduce((sum, r => r.finalSalary), 0);
         
         try {
             await savePayrollRecords(localPayroll);
@@ -354,9 +354,9 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
                 {/* Fix: Changed onClick handler to explicitly be a function that takes no arguments. */}
-                <Button onClick={handleSaveDraftClick} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={() => handleSaveDraftClick()} size="sm" variant="outline">Lưu Nháp</Button>
                 {/* Fix: Changed onClick handler to explicitly be a function that takes no arguments. */}
-                <Button onClick={handleSettlePayrollClick} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={() => handleSettlePayrollClick()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">
