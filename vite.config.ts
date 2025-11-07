@@ -1,8 +1,9 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-// Fix: Import process to provide types for process.cwd()
-import process from 'process';
+// Fix: Removed explicit import of 'process' as it's a global object,
+// which causes a TypeScript error when trying to access 'cwd'.
+// TypeScript will correctly infer the global 'NodeJS.Process' type.
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');

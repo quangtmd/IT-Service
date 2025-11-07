@@ -1,4 +1,3 @@
-
 // This service now fetches data from the backend API instead of localStorage.
 
 import { 
@@ -18,9 +17,13 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             // Try to parse error message from backend
             try {
                 const errorData = await response.json();
-                const errorMessage = errorData.message || `Lỗi API: ${response.status} ${response.statusText}. Vui lòng kiểm tra kết nối server.`;
+                const errorMessage = errorData.message || errorData.error || `Lỗi API: ${response.status} ${response.statusText}. Vui lòng kiểm tra kết nối server.`;
                  if (response.status === 404) {
                     throw new Error(`Lỗi API: 404 Not Found. Vui lòng kiểm tra VITE_BACKEND_API_BASE_URL trên frontend.`);
+                }
+                // Specific handling for schema mismatch error
+                if (errorData.errorCode === 'ER_BAD_FIELD_ERROR' || errorMessage.includes("Unknown column")) {
+                    throw new Error(`Lỗi cơ sở dữ liệu: Cột không tồn tại. Có vẻ như lược đồ database của bạn không đồng bộ với backend. Vui lòng chạy lại script SQL từ README.md.`);
                 }
                 throw new Error(errorMessage);
             } catch (e) {
