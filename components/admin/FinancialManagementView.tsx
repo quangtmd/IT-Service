@@ -321,8 +321,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             alert('Không có lương để thanh toán cho kỳ này.');
             return;
         }
-        // Fix: Corrected reduce syntax
-        const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
+        const totalSalaryExpense = recordsToSettle.reduce((sum, r => r.finalSalary), 0);
         
         try {
             await savePayrollRecords(localPayroll);
@@ -340,14 +339,12 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
     };
     
     // Fix: Changed onClick handler to explicitly be a function that takes no arguments.
-    const handleSaveDraftClick = useCallback((e?: React.MouseEvent) => {
-        e?.stopPropagation(); // Prevent event from bubbling up if necessary
+    const handleSaveDraftClick = useCallback(() => {
         void savePayrollRecords(localPayroll);
     }, [localPayroll]);
 
     // Fix: Changed onClick handler to explicitly be a function that takes no arguments.
-    const handleSettlePayrollClick = useCallback((e?: React.MouseEvent) => {
-        e?.stopPropagation(); // Prevent event from bubbling up if necessary
+    const handleSettlePayrollClick = useCallback(() => {
         void handleSettlePayroll();
     }, [handleSettlePayroll]); // handleSettlePayroll is already memoized by useCallback in its definition
     
@@ -356,10 +353,10 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                {/* Fix: Directly pass the function which now matches MouseEventHandler signature. */}
-                <Button onClick={handleSaveDraftClick} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* Fix: Directly pass the function which now matches MouseEventHandler signature. */}
-                <Button onClick={handleSettlePayrollClick} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                {/* Fix: Changed onClick handler to explicitly be a function that takes no arguments. */}
+                <Button onClick={() => handleSaveDraftClick()} size="sm" variant="outline">Lưu Nháp</Button>
+                {/* Fix: Changed onClick handler to explicitly be a function that takes no arguments. */}
+                <Button onClick={() => handleSettlePayrollClick()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

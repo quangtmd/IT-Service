@@ -1,29 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, AdminNotification, AdminView } from '../../types';
-import { useAuth, AdminPermission } from '../../contexts/AuthContext';
+import { User, AdminNotification, AdminView } from '../types';
+import { useAuth, AdminPermission } from '../contexts/AuthContext';
 
 // Import existing views
-import HRMProfileView from '../../components/admin/HRMProfileView';
-import ProductManagementView from '../../components/admin/ProductManagementView';
-import ArticleManagementView from '../../components/admin/ArticleManagementView';
-import OrderManagementView from '../../components/admin/OrderManagementView';
-import CustomerManagementView from '../../components/admin/CustomerManagementView';
-import DiscountManagementView from '../../components/admin/DiscountManagementView';
-import FaqManagementView from '../../components/admin/FaqManagementView';
-import ChatLogView from '../../components/admin/ChatLogView';
-import SiteSettingsView from '../../components/admin/SiteSettingsView';
-import MediaLibraryView from '../../components/admin/MediaLibraryView';
-import NotificationsView from '../../components/admin/NotificationsView';
-import HomepageManagementView from '../../components/admin/HomepageManagementView';
-import FinancialManagementView from '../../components/admin/FinancialManagementView';
-import DashboardView from '../../components/admin/DashboardView';
-import InventoryView from '../../components/admin/InventoryView';
-import ServiceTicketView from '../../components/admin/ServiceTicketView';
+import HRMProfileView from '../components/admin/HRMProfileView';
+import ProductManagementView from '../components/admin/ProductManagementView';
+import ArticleManagementView from '../components/admin/ArticleManagementView';
+import OrderManagementView from '../components/admin/OrderManagementView';
+import CustomerManagementView from '../components/admin/CustomerManagementView';
+import DiscountManagementView from '../components/admin/DiscountManagementView';
+import FaqManagementView from '../components/admin/FaqManagementView';
+import ChatLogView from '../components/admin/ChatLogView';
+import SiteSettingsView from '../components/admin/SiteSettingsView';
+import MediaLibraryView from '../components/admin/MediaLibraryView';
+import NotificationsView from '../components/admin/NotificationsView';
+import HomepageManagementView from '../components/admin/HomepageManagementView';
+import FinancialManagementView from '../components/admin/FinancialManagementView';
+import DashboardView from '../components/admin/DashboardView';
+import InventoryView from '../components/admin/InventoryView';
+import ServiceTicketView from '../components/admin/ServiceTicketView';
 
 // Import new placeholder/skeleton views
-import QuotationManagementView from '../../components/admin/QuotationManagementView';
-import WarrantyManagementView from '../../components/admin/WarrantyManagementView';
+import QuotationManagementView from '../components/admin/QuotationManagementView';
+import WarrantyManagementView from '../components/admin/WarrantyManagementView';
 
 
 interface MenuItemConfig {
@@ -321,7 +321,7 @@ const AdminHeader: React.FC<{
             <h1 className="admin-page-title">{pageTitle}</h1>
         </div>
          <div className="flex items-center gap-4">
-            {/* Removed the span displaying "Xin chào, {currentUser?.username}" */}
+            <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
             <ReactRouterDOM.Link to="/home">
                 <i className="fas fa-user-circle text-2xl text-admin-textSecondary hover:text-primary"></i>
             </ReactRouterDOM.Link>
