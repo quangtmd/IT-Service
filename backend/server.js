@@ -428,4 +428,219 @@ app.get('/api/orders', async (req, res) => {
             shippingInfo: JSON.parse(o.shippingInfo || '{}')
         }));
         res.json(deserializedOrders);
-    }<ctrl63>
+    } catch (error) {
+        console.error("Lỗi khi truy vấn đơn hàng:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy dữ liệu đơn hàng", error: error.sqlMessage || error.message });
+    }
+});
+
+app.post('/api/orders', async (req, res) => {
+    try {
+        const newOrder = req.body;
+        await pool.query('INSERT INTO Orders SET ?', {
+            id: newOrder.id,
+            customerInfo: JSON.stringify(newOrder.customerInfo),
+            items: JSON.stringify(newOrder.items),
+            totalAmount: newOrder.totalAmount,
+            orderDate: newOrder.orderDate,
+            status: newOrder.status,
+            shippingInfo: JSON.stringify(newOrder.shippingInfo || {}),
+            paymentInfo: JSON.stringify(newOrder.paymentInfo),
+        });
+        res.status(201).json(newOrder);
+    } catch (error) {
+        console.error("Lỗi khi tạo đơn hàng:", error);
+        res.status(500).json({ message: "Lỗi server khi tạo đơn hàng", error: error.sqlMessage || error.message });
+    }
+});
+
+app.put('/api/orders/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const [result] = await pool.query('UPDATE Orders SET status = ? WHERE id = ?', [status, id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng để cập nhật' });
+        }
+        res.json({ id, status });
+    } catch (error) {
+        console.error(`Lỗi khi cập nhật trạng thái đơn hàng ID ${req.params.id}:`, error);
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+
+// --- MEDIA ITEMS API ---
+app.get('/api/media', async (req, res) => {
+    try {
+        const [mediaItems] = await pool.query('SELECT * FROM MediaItems ORDER BY uploadedAt DESC');
+        res.json(mediaItems);
+    } catch (error) {
+        console.error("Lỗi khi truy vấn media items:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy media items", error: error.sqlMessage || error.message });
+    }
+});
+
+app.post('/api/media', async (req, res) => {
+    try {
+        const mediaItem = { ...req.body, id: `media-${Date.now()}` };
+        await pool.query('INSERT INTO MediaItems SET ?', mediaItem);
+        res.status(201).json(mediaItem);
+    } catch (error) {
+        console.error("Lỗi khi thêm media item:", error);
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+app.delete('/api/media/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM MediaItems WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        console.error("Lỗi khi xóa media item:", error);
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+
+// --- CHAT LOGS API ---
+app.get('/api/chatlogs', async (req, res) => {
+    try {
+        const [chatlogs] = await pool.query('SELECT * FROM ChatLogSessions ORDER BY startTime DESC');
+        const deserializedLogs = chatlogs.map(log => ({
+            ...log,
+            messages: JSON.parse(log.messages || '[]')
+        }));
+        res.json(deserializedLogs);
+    } catch (error) {
+        console.error("Lỗi khi truy vấn chat logs:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy chat logs", error: error.sqlMessage || error.message });
+    }
+});
+
+app.post('/api/chatlogs', async (req, res) => {
+    try {
+        const newChatLog = req.body;
+        await pool.query('INSERT INTO ChatLogSessions SET ?', {
+            id: newChatLog.id,
+            userName: newChatLog.userName,
+            userPhone: newChatLog.userPhone,
+            startTime: newChatLog.startTime,
+            messages: JSON.stringify(newChatLog.messages || []),
+        });
+        res.status(201).json(newChatLog);
+    } catch (error) {
+        console.error("Lỗi khi lưu chat log:", error);
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+
+// --- FINANCIALS API ---
+app.get('/api/financials/transactions', async (req, res) => {
+    try {
+        const [transactions] = await pool.query('SELECT * FROM FinancialTransactions ORDER BY date DESC');
+        res.json(transactions);
+    } catch (error) {
+        console.error("Lỗi khi truy vấn giao dịch tài chính:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy giao dịch tài chính", error: error.sqlMessage || error.message });
+    }
+});
+
+app.post('/api/financials/transactions', async (req, res) => {
+    try {
+        const newTransaction = { ...req.body, id: `trans-${Date.now()}` };
+        await pool.query('INSERT INTO FinancialTransactions SET ?', newTransaction);
+        res.status(201).json(newTransaction);
+    } catch (error) {
+        console.error("Lỗi khi thêm giao dịch tài chính:", error);
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+app.put('/api/financials/transactions/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        delete updates.id; // Prevent updating ID
+        await pool.query('UPDATE FinancialTransactions SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...updates });
+    } catch (error) {
+        console.error("Lỗi khi cập nhật giao dịch tài chính:", error);
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+app.delete('/api/financials/transactions/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM FinancialTransactions WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        console.error("Lỗi khi xóa giao dịch tài chính:", error);
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+app.get('/api/financials/payroll', async (req, res) => {
+    try {
+        const [payrollRecords] = await pool.query('SELECT * FROM PayrollRecords ORDER BY payPeriod DESC, employeeName ASC');
+        res.json(payrollRecords);
+    } catch (error) {
+        console.error("Lỗi khi truy vấn hồ sơ lương:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy hồ sơ lương", error: error.sqlMessage || error.message });
+    }
+});
+
+app.post('/api/financials/payroll', async (req, res) => {
+    try {
+        const records = req.body;
+        if (!Array.isArray(records)) {
+            return res.status(400).json({ message: "Yêu cầu phải là một mảng các bản ghi lương." });
+        }
+
+        // Use a transaction to ensure atomicity
+        await pool.getConnection(async connection => {
+            await connection.beginTransaction();
+            try {
+                for (const record of records) {
+                    await connection.query(
+                        `INSERT INTO PayrollRecords (id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, notes, status)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         ON DUPLICATE KEY UPDATE
+                         employeeName = VALUES(employeeName), baseSalary = VALUES(baseSalary), bonus = VALUES(bonus),
+                         deduction = VALUES(deduction), finalSalary = VALUES(finalSalary), notes = VALUES(notes), status = VALUES(status)`,
+                        [
+                            record.id, record.employeeId, record.employeeName, record.payPeriod,
+                            record.baseSalary, record.bonus, record.deduction, record.finalSalary,
+                            record.notes, record.status
+                        ]
+                    );
+                }
+                await connection.commit();
+                res.status(200).json({ message: "Hồ sơ lương đã được lưu thành công." });
+            } catch (innerError) {
+                await connection.rollback();
+                throw innerError;
+            } finally {
+                connection.release();
+            }
+        });
+    } catch (error) {
+        console.error("Lỗi khi lưu hồ sơ lương:", error);
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+
+    app.get('*', (req, res) => {
+        res.sendFile(path.resolve(__dirname, '../../frontend/dist', 'index.html'));
+    });
+}
+
+app.listen(PORT, () => {
+    console.log(`🚀 Backend server đang chạy tại http://localhost:${PORT}`);
+});

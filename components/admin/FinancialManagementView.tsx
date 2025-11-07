@@ -338,15 +338,25 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         }
     };
     
+    // Fix: Changed onClick handler to explicitly be a function that takes no arguments.
+    const handleSaveDraftClick = useCallback(() => {
+        void savePayrollRecords(localPayroll);
+    }, [localPayroll]);
+
+    // Fix: Changed onClick handler to explicitly be a function that takes no arguments.
+    const handleSettlePayrollClick = useCallback(() => {
+        void handleSettlePayroll();
+    }, [handleSettlePayroll]); // handleSettlePayroll is already memoized by useCallback in its definition
+    
     return (
         <div>
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
                 {/* Fix: Changed onClick handler to explicitly be a function that takes no arguments. */}
-                <Button onClick={() => { void savePayrollRecords(localPayroll); }} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={handleSaveDraftClick} size="sm" variant="outline">Lưu Nháp</Button>
                 {/* Fix: Changed onClick handler to explicitly be a function that takes no arguments. */}
-                <Button onClick={() => { void handleSettlePayroll(); }} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={handleSettlePayrollClick} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

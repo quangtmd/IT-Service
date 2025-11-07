@@ -3,17 +3,17 @@ import React, { ErrorInfo, ReactNode } from 'react';
 // Fix: Updated Props interface to correctly use React.PropsWithChildren type.
 // This ensures the `children` prop is correctly recognized and allows TypeScript
 // to properly infer the component's state and props properties.
-type Props = React.PropsWithChildren<{ 
+interface ErrorBoundaryProps extends React.PropsWithChildren { 
   fallbackMessage?: string;
-}>;
+}
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean;
   errorMessage: string;
 }
 
-class ErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
       hasError: false,
@@ -21,7 +21,7 @@ class ErrorBoundary extends React.Component<Props, State> {
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     // Update state so the next render will show the fallback UI.
     // We only store the safe, serializable message string.
     const safeErrorMessage = `${error.name}: ${error.message}`;
