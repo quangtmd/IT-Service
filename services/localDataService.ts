@@ -18,8 +18,15 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             // Try to parse error message from backend
             try {
                 const errorData = await response.json();
-                throw new Error(errorData.message || `Lỗi API: ${response.status} ${response.statusText}. Vui lòng kiểm tra kết nối server.`);
+                const errorMessage = errorData.message || `Lỗi API: ${response.status} ${response.statusText}. Vui lòng kiểm tra kết nối server.`;
+                 if (response.status === 404) {
+                    throw new Error(`Lỗi API: 404 Not Found. Vui lòng kiểm tra VITE_BACKEND_API_BASE_URL trên frontend.`);
+                }
+                throw new Error(errorMessage);
             } catch (e) {
+                 if (response.status === 404) {
+                    throw new Error(`Lỗi API: 404 Not Found. Vui lòng kiểm tra VITE_BACKEND_API_BASE_URL trên frontend.`);
+                }
                  throw new Error(`Lỗi API: ${response.status} ${response.statusText}. Vui lòng kiểm tra kết nối server.`);
             }
         }

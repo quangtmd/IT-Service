@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,7 +10,7 @@ import { addOrder } from '../services/localDataService';
 const CheckoutPage: React.FC = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
   const { currentUser, isAuthenticated, addAdminNotification } = useAuth();
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate();
 
   const [formData, setFormData] = useState<CheckoutFormData>({
     fullName: '', phone: '', address: '', email: '', notes: '',
@@ -109,7 +109,7 @@ const CheckoutPage: React.FC = () => {
         <i className="fas fa-shopping-cart text-6xl text-textSubtle mb-6"></i>
         <h1 className="text-3xl font-semibold text-textBase mb-4">Giỏ hàng của bạn trống</h1>
         <p className="text-textMuted mb-6">Không có gì để thanh toán. Hãy thêm sản phẩm vào giỏ!</p>
-        <Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></Link>
+        <ReactRouterDOM.Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></ReactRouterDOM.Link>
       </div>
     );
   }
@@ -132,8 +132,8 @@ const CheckoutPage: React.FC = () => {
             }
           </p>
           <div className="space-y-3 sm:space-y-0 sm:space-x-3">
-            <Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></Link>
-            <Link to="/home"><Button variant="outline" size="lg">Về trang chủ</Button></Link>
+            <ReactRouterDOM.Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></ReactRouterDOM.Link>
+            <ReactRouterDOM.Link to="/home"><Button variant="outline" size="lg">Về trang chủ</Button></ReactRouterDOM.Link>
           </div>
         </div>
       </div>

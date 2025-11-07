@@ -1,14 +1,14 @@
 
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
+import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
 import { useCart } from '../hooks/useCart';
 import Button from '../components/ui/Button';
 import { CartItem, CustomPCBuildCartItem } from '../types';
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
-  const navigate = useNavigate(); // Changed from useHistory
+  const navigate = ReactRouterDOM.useNavigate(); // Changed from useHistory
 
   const handleCheckout = () => {
     navigate('/checkout'); // Changed from history.push
@@ -20,9 +20,9 @@ const CartPage: React.FC = () => {
         <i className="fas fa-shopping-cart text-6xl text-textSubtle mb-6"></i>
         <h1 className="text-3xl font-semibold text-textBase mb-4">Giỏ hàng của bạn đang trống</h1>
         <p className="text-textMuted mb-6">Hãy khám phá các sản phẩm tuyệt vời của chúng tôi!</p>
-        <Link to="/shop">
+        <ReactRouterDOM.Link to="/shop">
           <Button variant="primary" size="lg">Tiếp tục mua sắm</Button>
-        </Link>
+        </ReactRouterDOM.Link>
       </div>
     );
   }
@@ -43,9 +43,9 @@ const CartPage: React.FC = () => {
                   className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-md mr-4 border border-borderDefault"
                 />
                 <div className="flex-grow">
-                  <Link to={isCustomBuild ? `/pc-builder?load=${item.id}` : `/product/${item.id}`} className="font-semibold text-textBase hover:text-primary text-lg block mb-1">
+                  <ReactRouterDOM.Link to={isCustomBuild ? `/pc-builder?load=${item.id}` : `/product/${item.id}`} className="font-semibold text-textBase hover:text-primary text-lg block mb-1">
                     {item.name}
-                  </Link>
+                  </ReactRouterDOM.Link>
                   {!isCustomBuild && <p className="text-sm text-textMuted">{item.category}</p>}
                   {isCustomBuild && item.buildComponents && (
                     <div className="text-xs text-textMuted mt-1 space-y-0.5">

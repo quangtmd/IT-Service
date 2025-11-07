@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
+import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
@@ -46,7 +46,7 @@ const PCBuilderPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
   const { addAdminNotification } = useAuth();
-  const navigate = useNavigate(); // Changed from useHistory
+  const navigate = ReactRouterDOM.useNavigate(); // Changed from useHistory
 
   const handleComponentChange = useCallback((
     type: BuilderSelectorKey,

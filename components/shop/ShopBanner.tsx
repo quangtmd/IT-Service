@@ -57,4 +57,3 @@ const ShopBanner: React.FC = () => {
 };
 
 export default ShopBanner;
-    

@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants';
@@ -10,12 +9,18 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState<string | null>(null);
   const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate = ReactRouterDOM.useNavigate();
+  const location = ReactRouterDOM.useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/home";
 
   // New, more vibrant technology background image
   const backgroundImage = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+
+  // Debugging logs - REMOVE AFTER FIX
+  useEffect(() => {
+    console.log("LoginPage: location.state", location.state);
+    console.log("LoginPage: 'from' variable resolved to", from);
+  }, [location.state, from]);
 
 
   useEffect(() => {
@@ -64,9 +69,9 @@ const LoginPage: React.FC = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-primary">
             Hoặc{' '}
-            <Link to="/register" className="font-medium hover:text-primary-dark">
+            <ReactRouterDOM.Link to="/register" className="font-medium hover:text-primary-dark">
               đăng ký nếu bạn chưa có tài khoản
-            </Link>
+            </ReactRouterDOM.Link>
           </p>
         </div>
         

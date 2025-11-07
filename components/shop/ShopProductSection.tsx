@@ -99,4 +99,3 @@ const ShopProductSection: React.FC<ShopProductSectionProps> = ({
 };
 
 export default ShopProductSection;
-    

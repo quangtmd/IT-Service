@@ -1,6 +1,7 @@
 
+
 import React from 'react';
-import { Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import * as Constants from '../../constants.tsx';
 import Button from '../ui/Button';
 
@@ -22,18 +23,18 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
         <h2 className="text-lg font-bold sidebar-header-text">DANH MỤC SẢN PHẨM</h2> {/* Bold font */}
       </div>
       <nav className="flex-grow p-3 space-y-1 overflow-y-auto">
-        <Link
+        <ReactRouterDOM.Link
             to="/shop"
             className={`w-full flex items-center py-2 px-3 rounded-md text-sm transition-colors duration-150
                         ${!currentMainCategorySlug && !currentSubCategorySlug ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-gray-100 hover:text-primary'}`}
         >
             <i className="fas fa-th-large mr-3 w-5 text-center"></i>
             <span className="sidebar-item-label">Tất cả sản phẩm</span>
-        </Link>
+        </ReactRouterDOM.Link>
 
         {Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng").map((mainCat) => (
           <div key={mainCat.slug} className="group relative">
-            <Link
+            <ReactRouterDOM.Link
               to={`/shop?mainCategory=${mainCat.slug}`}
               className={`w-full flex items-center justify-between py-2 px-3 rounded-md text-sm transition-colors duration-150
                           ${currentMainCategorySlug === mainCat.slug && !currentSubCategorySlug ? 'bg-primary/10 text-primary font-semibold' : 'text-textMuted hover:bg-gray-100 hover:text-primary'}`}
@@ -45,7 +46,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
               {mainCat.subCategories.length > 0 && (
                 <i className={`fas fa-chevron-right text-xs transition-transform duration-200 lg:group-hover:translate-x-1`}></i>
               )}
-            </Link>
+            </ReactRouterDOM.Link>
             
             {/* Flyout Panel for Desktop */}
             {mainCat.subCategories.length > 0 && (
@@ -54,9 +55,9 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
                 <ul className="space-y-1">
                   {mainCat.subCategories.map(subCat => (
                     <li key={subCat.slug}>
-                      <Link to={`/shop?mainCategory=${mainCat.slug}&subCategory=${subCat.slug}`} className={`block text-sm p-1.5 rounded-md ${currentSubCategorySlug === subCat.slug ? 'text-primary font-semibold' : 'text-textMuted hover:text-primary'}`}>
+                      <ReactRouterDOM.Link to={`/shop?mainCategory=${mainCat.slug}&subCategory=${subCat.slug}`} className={`block text-sm p-1.5 rounded-md ${currentSubCategorySlug === subCat.slug ? 'text-primary font-semibold' : 'text-textMuted hover:text-primary'}`}>
                         {subCat.name}
-                      </Link>
+                      </ReactRouterDOM.Link>
                     </li>
                   ))}
                 </ul>
@@ -65,25 +66,24 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
           </div>
         ))}
          <div className="pt-2 mt-2 border-t border-borderDefault">
-            <Link
+            <ReactRouterDOM.Link
                 to="/shop?tags=Khuyến%20mãi"
                 className="w-full flex items-center py-2 px-3 rounded-md text-sm transition-colors duration-150 text-textMuted hover:bg-gray-100 hover:text-primary"
             >
                 <i className="fas fa-tags mr-3 w-5 text-center text-primary"></i>
                 <span className="sidebar-item-label">Tin Khuyến mãi</span>
-            </Link>
+            </ReactRouterDOM.Link>
         </div>
       </nav>
        <div className="p-4 border-t border-borderDefault"> {/* Increased padding for footer */}
-        <Link to="/shop?tags=Bán%20chạy">
+        <ReactRouterDOM.Link to="/shop?tags=Bán%20chạy">
             <Button variant="primary" className="w-full !py-3 !text-base"> {/* Larger button */}
               <i className="fas fa-fire mr-2"></i> <span className="sidebar-footer-button-text">SẢN PHẨM BÁN CHẠY</span>
             </Button>
-        </Link>
+        </ReactRouterDOM.Link>
       </div>
     </div>
   );
 };
 
 export default CategorySidebar;
-    

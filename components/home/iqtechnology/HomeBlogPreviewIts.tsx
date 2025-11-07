@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { MOCK_ARTICLES } from '../../../data/mockData';
@@ -16,9 +16,9 @@ const BlogItemCard: React.FC<{article: Article, index: number}> = ({article, ind
             className={`modern-card group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col`}
             style={{animationDelay: `${index * 100}ms`}}
         >
-            <Link to={`/article/${article.id}`} className="block aspect-[16/10] overflow-hidden rounded-t-xl">
+            <ReactRouterDOM.Link to={`/article/${article.id}`} className="block aspect-[16/10] overflow-hidden rounded-t-xl">
                 <img src={placeholderImg} alt={article.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-            </Link>
+            </ReactRouterDOM.Link>
             <div className="p-5 md:p-6 flex flex-col flex-grow">
                 <div className="mb-2">
                     <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
@@ -26,15 +26,15 @@ const BlogItemCard: React.FC<{article: Article, index: number}> = ({article, ind
                     </span>
                 </div>
                 <h3 className="text-lg font-semibold text-textBase mb-2 leading-snug hover:text-primary transition-colors">
-                    <Link to={`/article/${article.id}`} className="line-clamp-2">{article.title}</Link>
+                    <ReactRouterDOM.Link to={`/article/${article.id}`} className="line-clamp-2">{article.title}</ReactRouterDOM.Link>
                 </h3>
                  <p className="text-xs text-textSubtle mb-3">
                     Bởi {article.author} vào ngày {new Date(article.date).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
                 <p className="text-sm text-textMuted mb-4 line-clamp-3 flex-grow">{article.summary}</p>
-                <Link to={`/article/${article.id}`} className="modern-card-link mt-auto self-start">
+                <ReactRouterDOM.Link to={`/article/${article.id}`} className="modern-card-link mt-auto self-start">
                     Đọc Bài viết <i className="fas fa-arrow-right text-xs ml-1"></i>
-                </Link>
+                </ReactRouterDOM.Link>
             </div>
         </div>
     );
@@ -134,11 +134,11 @@ const HomeBlogPreviewIts: React.FC<HomeBlogPreviewItsProps> = ({ categoryFilter,
 
         {!categoryFilter && (
             <div className={`text-center mt-12 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`} style={{animationDelay: '0.3s'}}>
-                <Link to="/blog">
+                <ReactRouterDOM.Link to="/blog">
                 <Button variant="primary" size="lg" className="px-10 py-3.5 text-base shadow-lg hover:shadow-primary/40">
                     Xem Blog Của Chúng Tôi <i className="fas fa-arrow-right ml-2 text-sm"></i>
                 </Button>
-                </Link>
+                </ReactRouterDOM.Link>
             </div>
         )}
       </div>

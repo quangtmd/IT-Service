@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
+import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageServiceBenefit } from '../../../types';
@@ -17,15 +17,15 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
           <i className={`${item.iconClass || 'fas fa-check-circle'} modern-card-icon`}></i>
         </div>
         <h3 className="modern-card-title mb-3">
-          <Link to={item.link || '#'} className="line-clamp-2">{item.title}</Link>
+          <ReactRouterDOM.Link to={item.link || '#'} className="line-clamp-2">{item.title}</ReactRouterDOM.Link>
         </h3>
         <p className="modern-card-description mb-5 line-clamp-3 flex-grow">
           {item.description}
         </p>
         <div className="mt-auto">
-            <Link to={item.link || '#'} className="modern-card-link">
+            <ReactRouterDOM.Link to={item.link || '#'} className="modern-card-link">
             Tìm hiểu thêm <i className="fas fa-arrow-right text-xs ml-1"></i>
-            </Link>
+            </ReactRouterDOM.Link>
         </div>
     </div>
   );

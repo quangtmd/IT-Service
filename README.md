@@ -1,3 +1,4 @@
+
 -- =================================================================
 -- BẮT ĐẦU SCRIPT SQL - SAO CHÉP TẤT CẢ MỌI THỨ TỪ ĐÂY XUỐNG DƯỚI
 -- HÃY XÓA SẠCH CÁC CÂU LỆNH CŨ TRƯỚC KHI DÁN VÀ CHẠY SCRIPT NÀY
@@ -368,5 +369,5 @@ INSERT INTO Products (id, name, category_id, price, originalPrice, imageUrls, sh
 ('SCR005', 'Màn hình di động ASUS ZenScreen MB16ACV 15.6 inch FHD IPS', 26, 5500000, NULL, '["https://images.unsplash.com/photo-1587584180293-270561571f37?q=80&w=800&auto=format&fit=crop"]', 'Mở rộng không gian làm việc của bạn mọi lúc mọi nơi với màn hình di động mỏng nhẹ, kết nối chỉ qua một cáp USB-C.', '{"Kích thước": "15.6 inch", "Độ phân giải": "1920x1080 (FHD)", "Kết nối": "USB-C", "Trọng lượng": "0.78kg"}', 22, 'ASUS', '["Màn hình di động", "Linh hoạt"]', false);
 
 -- =================================================================
--- KẾT THÚC SCRIPT SQL - BẠN CHỈ CẦN SAO CHÉP MỌI THỨ Ở TRÊN
+-- KẾT THÚC SCRIPT SQL - BẠN CHỈ CẦU SAO CHÉP MỌI THỨ Ở TRÊN
 -- =================================================================

@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
+import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants.tsx';
@@ -12,7 +11,7 @@ const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate(); // Changed from useHistory
+  const navigate = ReactRouterDOM.useNavigate(); // Changed from useHistory
 
   // New, more vibrant technology background image (same as login page for consistency)
   const backgroundImage = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
@@ -67,17 +66,17 @@ const RegisterPage: React.FC = () => {
       <div className="absolute inset-0 bg-black opacity-60"></div> {/* Dark overlay */}
       <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-md p-10 rounded-xl shadow-xl border border-borderDefault relative z-10">
         <div>
-          <Link to="/home" className="flex justify-center">
+          <ReactRouterDOM.Link to="/home" className="flex justify-center">
              <span className="text-3xl font-bold text-primary">{Constants.COMPANY_NAME}</span>
-          </Link>
+          </ReactRouterDOM.Link>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-textBase">
             Tạo tài khoản mới
           </h2>
           <p className="mt-2 text-center text-sm text-textMuted">
             Hoặc{' '}
-            <Link to="/login" className="font-medium text-primary hover:text-primary-dark">
+            <ReactRouterDOM.Link to="/login" className="font-medium text-primary hover:text-primary-dark">
               đăng nhập nếu bạn đã có tài khoản
-            </Link>
+            </ReactRouterDOM.Link>
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
