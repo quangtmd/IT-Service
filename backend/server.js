@@ -119,7 +119,7 @@ app.get('/api/products/featured', async (req, res) => {
             FROM Products p
             LEFT JOIN ProductCategories c ON p.category_id = c.id
             LEFT JOIN ProductCategories mc ON c.parent_category_id = mc.id
-            WHERE p.is_published = TRUE AND p.is_featured = TRUE
+            WHERE p.is_featured = TRUE
             ORDER BY RAND()
             LIMIT 4;
         `;
@@ -129,7 +129,7 @@ app.get('/api/products/featured', async (req, res) => {
             imageUrls: JSON.parse(p.imageUrls || '[]'),
             specifications: JSON.parse(p.specifications || '{}'),
             tags: JSON.parse(p.tags || '[]'),
-            isVisible: p.is_published,
+            // isVisible: p.is_published, // Removed temporarily
         }));
         res.json(deserializedProducts);
     } catch (error) {
@@ -154,10 +154,10 @@ app.get('/api/products/:id', async (req, res) => {
         const product = rows[0];
         if (product) {
             // Deserialize JSON fields
-            product.imageUrls = JSON.parse(product.imageUrls || '[]'),
-            product.specifications = JSON.parse(product.specifications || '{}'),
-            product.tags = JSON.parse(product.tags || '[]'),
-            product.isVisible = product.is_published;
+            product.imageUrls = JSON.parse(product.imageUrls || '[]');
+            product.specifications = JSON.parse(product.specifications || '{}');
+            product.tags = JSON.parse(product.tags || '[]');
+            // product.isVisible = product.is_published; // Removed temporarily
             res.json(product);
         } else {
             res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
@@ -189,7 +189,7 @@ app.get('/api/products', async (req, res) => {
         baseQuery += ` ${joinString}`;
         countQuery += ` ${joinString}`;
         
-        const whereClauses = ['p.is_published = TRUE'];
+        const whereClauses = []; // Removed 'p.is_published = TRUE'
         const params = [];
         
         if (mainCategory) {
@@ -229,7 +229,7 @@ app.get('/api/products', async (req, res) => {
             imageUrls: JSON.parse(p.imageUrls || '[]'),
             specifications: JSON.parse(p.specifications || '{}'),
             tags: JSON.parse(p.tags || '[]'),
-            isVisible: p.is_published,
+            // isVisible: p.is_published, // Removed temporarily
         }));
         
         res.json({ products: deserializedProducts, totalProducts });
@@ -275,7 +275,7 @@ app.post('/api/products', async (req, res) => {
             seoMetaTitle: productData.seoMetaTitle || null,
             seoMetaDescription: productData.seoMetaDescription || null,
             slug: productData.slug || null,
-            is_published: isVisible === undefined ? true : Boolean(isVisible),
+            // is_published: isVisible === undefined ? true : Boolean(isVisible), // Removed temporarily
             category_id: category_id,
             is_featured: Boolean(productData.is_featured),
         };
@@ -326,7 +326,7 @@ app.put('/api/products/:id', async (req, res) => {
             seoMetaTitle: productData.seoMetaTitle || null,
             seoMetaDescription: productData.seoMetaDescription || null,
             slug: productData.slug || null,
-            is_published: isVisible === undefined ? true : Boolean(isVisible),
+            // is_published: isVisible === undefined ? true : Boolean(isVisible), // Removed temporarily
             category_id: category_id,
             is_featured: Boolean(productData.is_featured),
         };
@@ -428,215 +428,4 @@ app.get('/api/orders', async (req, res) => {
             shippingInfo: JSON.parse(o.shippingInfo || '{}')
         }));
         res.json(deserializedOrders);
-    } catch (error) {
-        console.error("Lỗi khi truy vấn đơn hàng:", error);
-        res.status(500).json({ message: "Lỗi server khi lấy đơn hàng", error: error.sqlMessage || error.message });
-    }
-});
-
-app.post('/api/orders', async (req, res) => {
-    try {
-        const orderData = req.body;
-        const newOrder = {
-            id: orderData.id,
-            customerInfo: orderData.customerInfo, // Pass as object
-            items: orderData.items, // Pass as array
-            totalAmount: orderData.totalAmount,
-            orderDate: orderData.orderDate,
-            status: orderData.status,
-            paymentInfo: orderData.paymentInfo, // Pass as object
-            shippingInfo: orderData.shippingInfo || {}, // Pass as object
-        };
-
-        // The mysql2 driver will automatically stringify the JSON fields
-        await pool.query('INSERT INTO Orders SET ?', newOrder);
-        res.status(201).json(orderData);
-    } catch (error) {
-        console.error("Lỗi khi tạo đơn hàng:", error);
-        res.status(500).json({ message: "Đã xảy ra lỗi không mong muốn khi tạo đơn hàng.", error: error.sqlMessage || error.message });
-    }
-});
-
-app.put('/api/orders/:id/status', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status } = req.body;
-        if (!status) {
-            return res.status(400).json({ message: 'Trạng thái mới là bắt buộc.' });
-        }
-        const [result] = await pool.query('UPDATE Orders SET status = ? WHERE id = ?', [status, id]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Không tìm thấy đơn hàng.' });
-        }
-        res.json({ message: 'Cập nhật trạng thái thành công.' });
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
-    }
-});
-
-// --- CHAT LOGS API ---
-app.get('/api/chatlogs', async (req, res) => {
-    try {
-        const [logs] = await pool.query('SELECT * FROM ChatLogSessions ORDER BY startTime DESC LIMIT 50');
-        const deserialized = logs.map(log => ({ ...log, messages: JSON.parse(log.messages || '[]') }));
-        res.json(deserialized);
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server khi lấy lịch sử chat', error: error.message });
-    }
-});
-
-app.post('/api/chatlogs', async (req, res) => {
-    try {
-        const session = req.body;
-        const query = `
-            INSERT INTO ChatLogSessions (id, userName, userPhone, startTime, messages)
-            VALUES (?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE messages = VALUES(messages);
-        `;
-        await pool.query(query, [session.id, session.userName, session.userPhone, session.startTime, JSON.stringify(session.messages)]);
-        res.status(200).json({ message: 'Đã lưu lịch sử chat' });
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server khi lưu lịch sử chat', error: error.message });
-    }
-});
-
-// --- MEDIA LIBRARY API ---
-app.get('/api/media', async (req, res) => {
-    try {
-        const [items] = await pool.query('SELECT * FROM MediaItems ORDER BY uploadedAt DESC');
-        res.json(items);
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server khi lấy media', error: error.message });
-    }
-});
-
-app.post('/api/media', async (req, res) => {
-    try {
-        const item = { ...req.body, id: `media-${Date.now()}` };
-        await pool.query('INSERT INTO MediaItems SET ?', item);
-        res.status(201).json(item);
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server khi thêm media', error: error.message });
-    }
-});
-
-app.delete('/api/media/:id', async (req, res) => {
-    try {
-        await pool.query('DELETE FROM MediaItems WHERE id = ?', [req.params.id]);
-        res.status(204).send();
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server khi xóa media', error: error.message });
-    }
-});
-
-// --- FINANCIALS API ---
-app.get('/api/financials/transactions', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM FinancialTransactions ORDER BY date DESC');
-        res.json(rows);
-    } catch (error) { res.status(500).json({ message: 'Lỗi server', error: error.message }); }
-});
-
-app.post('/api/financials/transactions', async (req, res) => {
-    try {
-        const data = { ...req.body, id: `trans-${Date.now()}` };
-        await pool.query('INSERT INTO FinancialTransactions SET ?', data);
-        res.status(201).json(data);
-    } catch (error) { res.status(500).json({ message: 'Lỗi server', error: error.message }); }
-});
-
-app.put('/api/financials/transactions/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const data = req.body;
-        delete data.id;
-        await pool.query('UPDATE FinancialTransactions SET ? WHERE id = ?', [data, id]);
-        res.json({ id, ...data });
-    } catch (error) { res.status(500).json({ message: 'Lỗi server', error: error.message }); }
-});
-
-app.delete('/api/financials/transactions/:id', async (req, res) => {
-    try {
-        await pool.query('DELETE FROM FinancialTransactions WHERE id = ?', [req.params.id]);
-        res.status(204).send();
-    } catch (error) { res.status(500).json({ message: 'Lỗi server', error: error.message }); }
-});
-
-// --- PAYROLL API ---
-app.get('/api/financials/payroll', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM PayrollRecords');
-        res.json(rows);
-    } catch (error) { res.status(500).json({ message: 'Lỗi server', error: error.message }); }
-});
-
-app.post('/api/financials/payroll', async (req, res) => {
-    try {
-        const records = req.body;
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
-        try {
-            for (const record of records) {
-                const query = `
-                    INSERT INTO PayrollRecords (id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, notes, status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON DUPLICATE KEY UPDATE baseSalary=VALUES(baseSalary), bonus=VALUES(bonus), deduction=VALUES(deduction), finalSalary=VALUES(finalSalary), notes=VALUES(notes), status=VALUES(status);
-                `;
-                await connection.query(query, [record.id, record.employeeId, record.employeeName, record.payPeriod, record.baseSalary, record.bonus, record.deduction, record.finalSalary, record.notes, record.status]);
-            }
-            await connection.commit();
-            res.status(200).json({ message: "Đã cập nhật bảng lương" });
-        } catch (err) {
-            await connection.rollback();
-            throw err;
-        } finally {
-            connection.release();
-        }
-    } catch (error) { res.status(500).json({ message: 'Lỗi server khi lưu bảng lương', error: error.message }); }
-});
-
-
-// --- CATCH-ALL ROOT ---
-app.get('/', (req, res) => {
-    // Get the host from the request headers
-    const host = req.get('host');
-    // For Render, we should respect the X-Forwarded-Proto header to show https correctly
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const fullUrl = `${protocol}://${host}`;
-
-    res.status(200).send(`
-        <!DOCTYPE html>
-        <html lang="vi">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Backend Server - IQ Technology</title>
-            <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f0f2f5; color: #333; }
-                .container { text-align: center; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 700px; margin: 20px; }
-                h1 { color: #16a34a; }
-                p { line-height: 1.6; }
-                code { background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 1.1em; color: #1e293b; }
-                .success { border: 2px solid #16a34a; }
-                .info-box { text-align: left; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 20px; }
-            </style>
-        </head>
-        <body>
-            <div class="container success">
-                <h1>✅ Backend Server Đang Hoạt Động!</h1>
-                <p>Dịch vụ này đang chạy và sẵn sàng xử lý các yêu cầu API từ ứng dụng frontend.</p>
-                <div class="info-box">
-                    <p><strong>URL Backend hiện tại của bạn là:</strong></p>
-                    <p><code>${fullUrl}</code></p>
-                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
-                    <p>Đây chính là giá trị bạn cần đặt cho biến môi trường <code>VITE_BACKEND_API_BASE_URL</code> trong dịch vụ <strong>frontend</strong> trên Render.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-    `);
-});
-
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Backend server đang chạy tại http://localhost:${PORT}`);
-});
+    }<ctrl63>

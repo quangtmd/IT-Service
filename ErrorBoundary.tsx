@@ -1,9 +1,11 @@
 import React, { ErrorInfo, ReactNode } from 'react';
-import * as Constants from './constants';
 
-interface Props extends React.PropsWithChildren { // Fix: Added extends React.PropsWithChildren
+// Fix: Updated Props interface to correctly use React.PropsWithChildren type.
+// This ensures the `children` prop is correctly recognized and allows TypeScript
+// to properly infer the component's state and props properties.
+type Props = React.PropsWithChildren<{ 
   fallbackMessage?: string;
-}
+}>;
 
 interface State {
   hasError: boolean;
@@ -11,8 +13,6 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  // Fix: Moved state initialization to constructor to resolve TypeScript errors related to `this.props`.
-  // This ensures `props` are properly handled by React's constructor chain before state is set.
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -34,7 +34,7 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
-    // Fix: Access props and state directly from 'this' to resolve TypeScript errors.
+    // Fix: `this.state` and `this.props` are now correctly inferred after fixing the Props interface.
     if (this.state.hasError) {
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
@@ -70,6 +70,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
+    // Fix: `this.props` is now correctly inferred.
     return this.props.children;
   }
 }
