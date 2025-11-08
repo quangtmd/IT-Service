@@ -787,11 +787,62 @@ app.delete('/api/quotations/:id', async (req, res) => {
     }
 });
 
+// FIX: Add missing endpoints for Returns.
+// Return Tickets
+app.get('/api/returns', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM ReturnTickets ORDER BY createdAt DESC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.delete('/api/returns/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM ReturnTickets WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// FIX: Add missing endpoints for Suppliers.
+// Suppliers
+app.get('/api/suppliers', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Suppliers ORDER BY name ASC');
+        res.json(rows.map(s => ({...s, contactInfo: JSON.parse(s.contactInfo || '{}')})));
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.delete('/api/suppliers/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM Suppliers WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+
 // Service Tickets
 app.get('/api/service-tickets', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM ServiceTickets ORDER BY createdAt DESC');
         res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// FIX: Add missing DELETE endpoint for service tickets.
+app.delete('/api/service-tickets/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM ServiceTickets WHERE id = ?', [req.params.id]);
+        res.status(204).send();
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }

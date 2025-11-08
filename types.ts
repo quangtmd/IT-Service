@@ -278,7 +278,8 @@ export interface OrderItem {
   price: number;
 }
 
-export type OrderStatus = 'Chờ xử lý' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy';
+// FIX: Add 'Đang xác nhận' to OrderStatus type to fix type error.
+export type OrderStatus = 'Chờ xử lý' | 'Đang xác nhận' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy' | 'Đã xác nhận';
 
 export interface ShippingInfo {
   carrier?: string;
@@ -287,7 +288,7 @@ export interface ShippingInfo {
 }
 
 export interface PaymentInfo {
-  method: 'Thanh toán khi nhận hàng (COD)' | 'Chuyển khoản ngân hàng';
+  method: 'Thanh toán khi nhận hàng (COD)' | 'Chuyển khoản ngân hàng' | 'Tiền mặt';
   status: 'Chưa thanh toán' | 'Đã thanh toán' | 'Đã cọc';
   transactionId?: string; // Optional: For online gateway transaction IDs
   amountToPay?: number; // Optional: To store deposit/full amount to be paid
@@ -665,19 +666,6 @@ export interface PayrollRecord {
   notes: string;
   status: 'Chưa thanh toán' | 'Đã thanh toán';
 }
-// Fix: Add missing ServiceTicket, Inventory, and ServerInfo types.
-export interface ServiceTicket {
-  id: string;
-  ticket_code: string;
-  customer_info: {
-    fullName: string;
-    phone: string;
-  } | null;
-  device_name: string;
-  reported_issue: string;
-  created_at: string; // ISO string date
-  status: 'open' | 'in_progress' | 'awaiting_parts' | 'resolved' | 'closed';
-}
 
 export interface Inventory {
   product_id: string;
@@ -723,4 +711,42 @@ export interface WarrantyClaim {
     reported_issue: string;
     status: 'Đang tiếp nhận' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Từ chối';
     created_at: string; // ISO
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contactInfo: {
+    email?: string;
+    phone?: string;
+    address?: string;
+  };
+  paymentTerms?: string;
+}
+
+export type ReturnTicketStatus = 'Đang chờ' | 'Đã duyệt' | 'Đã từ chối';
+export interface ReturnTicket {
+  id: string;
+  orderId: string;
+  reason?: string;
+  status: ReturnTicketStatus;
+  refundAmount?: number;
+  createdAt: string; // ISO
+}
+
+export type ServiceTicketStatus = 'Mới' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Đã đóng';
+export interface ServiceTicket {
+  id: string;
+  ticket_code: string;
+  customer_info?: {
+    fullName: string;
+    phone: string;
+  };
+  customerId?: string;
+  deviceName: string;
+  reported_issue: string;
+  createdAt: string; // ISO string date
+  status: ServiceTicketStatus;
+  assigneeId?: string;
+  rating?: 1 | 2 | 3 | 4 | 5;
 }

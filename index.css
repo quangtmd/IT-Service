@@ -291,7 +291,7 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
 }
 .admin-main-content.collapsed { margin-left: 80px; width: calc(100% - 80px); }
 
-@media (max-width: 768px) {
+@media (max-width: 1023px) { /* Changed from 768px to lg breakpoint */
   .admin-sidebar { transform: translateX(-100%); }
   .admin-sidebar.open { transform: translateX(0); }
   .admin-main-content { margin-left: 0; width: 100%; }
@@ -643,4 +643,64 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
 }
 .animate-subtle-beat {
     animation: subtle-beat 5s infinite ease-out;
+}
+
+/* PRINT STYLES */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact; /* Chrome, Safari */
+    color-adjust: exact; /* Firefox */
+  }
+
+  .no-print,
+  header,
+  footer,
+  .admin-sidebar,
+  .admin-page-header,
+  .admin-modal-footer,
+  button,
+  .admin-tabs,
+  input,
+  textarea,
+  select {
+    display: none !important;
+  }
+
+  .admin-main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .admin-card, .admin-card-body, .admin-modal-panel, .admin-modal-body {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+  
+  .print-container {
+    padding: 1rem;
+  }
+  
+  .print-table {
+    border: 1px solid #ccc;
+    border-collapse: collapse;
+    width: 100%;
+  }
+  .print-table th, .print-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+  }
+  .print-table th {
+    background-color: #f2f2f2;
+  }
 }

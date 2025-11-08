@@ -4,40 +4,44 @@ import { User, AdminNotification, AdminView } from '../types';
 import { useAuth, AdminPermission } from '../contexts/AuthContext';
 
 // Import existing views
-import HRMProfileView from '../components/admin/HRMProfileView';
-import ProductManagementView from '../components/admin/ProductManagementView';
-import ArticleManagementView from '../components/admin/ArticleManagementView';
-import OrderManagementView from '../components/admin/OrderManagementView';
-import CustomerManagementView from '../components/admin/CustomerManagementView';
-import DiscountManagementView from '../components/admin/DiscountManagementView';
-import FaqManagementView from '../components/admin/FaqManagementView';
-import ChatLogView from '../components/admin/ChatLogView';
-import SiteSettingsView from '../components/admin/SiteSettingsView';
-import MediaLibraryView from '../components/admin/MediaLibraryView';
-import NotificationsView from '../components/admin/NotificationsView';
-import HomepageManagementView from '../components/admin/HomepageManagementView';
-import FinancialManagementView from '../components/admin/FinancialManagementView';
-import DashboardView from '../components/admin/DashboardView';
-import InventoryView from '../components/admin/InventoryView';
-import ServiceTicketView from '../components/admin/ServiceTicketView';
+import HRMProfileView from '../../components/admin/HRMProfileView';
+import ProductManagementView from '../../components/admin/ProductManagementView';
+import ArticleManagementView from '../../components/admin/ArticleManagementView';
+import OrderManagementView from '../../components/admin/OrderManagementView';
+import CustomerManagementView from '../../components/admin/CustomerManagementView';
+import DiscountManagementView from '../../components/admin/DiscountManagementView';
+import FaqManagementView from '../../components/admin/FaqManagementView';
+import ChatLogView from '../../components/admin/ChatLogView';
+import SiteSettingsView from '../../components/admin/SiteSettingsView';
+import MediaLibraryView from '../../components/admin/MediaLibraryView';
+import NotificationsView from '../../components/admin/NotificationsView';
+import HomepageManagementView from '../../components/admin/HomepageManagementView';
+import FinancialManagementView from '../../components/admin/FinancialManagementView';
+import DashboardView from '../../components/admin/DashboardView';
+import InventoryView from '../../components/admin/InventoryView';
+import ServiceTicketView from '../../components/admin/ServiceTicketView';
 
 // Import new form pages
-import ProductFormPage from './admin/ProductFormPage';
-import UserFormPage from './admin/UserFormPage';
-import ArticleFormPage from './admin/ArticleFormPage';
-import DiscountFormPage from './admin/DiscountFormPage';
-import FaqFormPage from './admin/FaqFormPage';
-import TransactionFormPage from './admin/TransactionFormPage';
-import QuotationFormPage from './admin/QuotationFormPage';
-import CustomerFormPage from './admin/CustomerFormPage';
-import CustomerProfilePage from './admin/CustomerProfilePage';
+import ProductFormPage from './ProductFormPage';
+import UserFormPage from './UserFormPage';
+import ArticleFormPage from './ArticleFormPage';
+import DiscountFormPage from './DiscountFormPage';
+import FaqFormPage from './FaqFormPage';
+import TransactionFormPage from './TransactionFormPage';
+import QuotationFormPage from './QuotationFormPage';
+import CustomerFormPage from './CustomerFormPage';
+import CustomerProfilePage from './CustomerProfilePage';
+import OrderFormPage from './OrderFormPage';
+import ReturnFormPage from './ReturnFormPage';
+import SupplierFormPage from './SupplierFormPage';
+import ServiceTicketFormPage from './ServiceTicketFormPage';
 
 
 // Import new placeholder/skeleton views
-import QuotationManagementView from '../components/admin/QuotationManagementView';
-import WarrantyManagementView from '../components/admin/WarrantyManagementView';
-import ReturnManagementView from '../components/admin/ReturnManagementView';
-import SupplierManagementView from '../components/admin/SupplierManagementView';
+import QuotationManagementView from '../../components/admin/QuotationManagementView';
+import WarrantyManagementView from '../../components/admin/WarrantyManagementView';
+import ReturnManagementView from '../../components/admin/ReturnManagementView';
+import SupplierManagementView from '../../components/admin/SupplierManagementView';
 
 
 interface MenuItemConfig {
@@ -84,7 +88,6 @@ const AdminPage: React.FC = () => {
                 { id: 'discounts', label: 'Mã Giảm Giá', icon: 'fas fa-tags', permission: ['manageDiscounts'] },
                 { id: 'returns', label: 'Hoàn Trả', icon: 'fas fa-undo-alt', permission: ['manageOrders'] },
                 { id: 'suppliers', label: 'Nhà Cung Cấp', icon: 'fas fa-truck-loading', permission: ['viewSuppliers'] },
-                { id: 'service_tickets', label: 'Ticket Hỗ Trợ (Helpdesk)', icon: 'fas fa-headset', permission: ['manageServiceTickets'] },
             ]
         },
         // II. Service & Warranty
@@ -168,20 +171,15 @@ const AdminPage: React.FC = () => {
         }
 
         const viewCandidates = [
-            'products/new', 'products/edit',
-            'hrm_dashboard/new', 'hrm_dashboard/edit',
-            'articles/new', 'articles/edit',
-            'discounts/new', 'discounts/edit',
-            'faqs/new', 'faqs/edit',
-            'accounting_dashboard/transactions/new', 'accounting_dashboard/transactions/edit',
-            'quotations/new', 'quotations/edit',
-            'customers/new', 'customers/edit', 'customers/view',
+            'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
+            'accounting_dashboard', 'quotations', 'customers', 'orders', 
+            'returns', 'suppliers', 'service_tickets'
         ];
 
         let foundView = null;
         for (const candidate of viewCandidates) {
-            if(path.includes(`/admin/${candidate}`)) {
-                foundView = candidate.split('/')[0];
+            if(path.startsWith(`/admin/${candidate}`)) {
+                foundView = candidate;
                 break;
             }
         }
@@ -271,6 +269,14 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/customers/new')) return 'Thêm Khách hàng Mới';
         if (path.startsWith('/admin/customers/edit/')) return 'Chỉnh sửa Khách hàng';
         if (path.startsWith('/admin/customers/view/')) return 'Hồ sơ Khách hàng';
+        if (path.startsWith('/admin/orders/new')) return 'Tạo Đơn hàng Mới';
+        if (path.startsWith('/admin/orders/edit/')) return 'Chỉnh sửa Đơn hàng';
+        if (path.startsWith('/admin/returns/new')) return 'Tạo Phiếu Hoàn Trả';
+        if (path.startsWith('/admin/returns/edit/')) return 'Chỉnh sửa Phiếu Hoàn Trả';
+        if (path.startsWith('/admin/suppliers/new')) return 'Thêm Nhà Cung Cấp';
+        if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
+        if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
+        if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
 
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
@@ -317,6 +323,14 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
                         <ReactRouterDOM.Route path="/quotations/new" element={<QuotationFormPage />} />
                         <ReactRouterDOM.Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
+                        <ReactRouterDOM.Route path="/orders/new" element={<OrderFormPage />} />
+                        <ReactRouterDOM.Route path="/orders/edit/:orderId" element={<OrderFormPage />} />
+                        <ReactRouterDOM.Route path="/returns/new" element={<ReturnFormPage />} />
+                        <ReactRouterDOM.Route path="/returns/edit/:returnId" element={<ReturnFormPage />} />
+                        <ReactRouterDOM.Route path="/suppliers/new" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
+                        <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
                         
                         {/* Generic route for views */}
                         <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />

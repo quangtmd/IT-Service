@@ -3,7 +3,7 @@
 import { 
     Product, Order, Article, OrderStatus, MediaItem, ServerInfo, 
     ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
-    Quotation, User, WarrantyClaim
+    Quotation, User, WarrantyClaim, ReturnTicket, Supplier
 } from '../types';
 import { BACKEND_API_BASE_URL } from '../constants';
 
@@ -278,6 +278,11 @@ export const getServiceTickets = async (): Promise<ServiceTicket[]> => {
     return fetchFromApi<ServiceTicket[]>('/api/service-tickets');
 };
 
+// FIX: Add missing deleteServiceTicket function.
+export const deleteServiceTicket = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/service-tickets/${id}`, { method: 'DELETE' });
+};
+
 // --- Inventory Service ---
 export const getInventory = async (): Promise<Inventory[]> => {
     return fetchFromApi<Inventory[]>('/api/inventory');
@@ -287,6 +292,27 @@ export const getInventory = async (): Promise<Inventory[]> => {
 export const getWarrantyClaims = async (): Promise<WarrantyClaim[]> => {
     return fetchFromApi<WarrantyClaim[]>('/api/warranty-claims');
 };
+
+// FIX: Add missing functions for Return Tickets.
+// --- Return Ticket Service ---
+export const getReturns = async (): Promise<ReturnTicket[]> => {
+    return fetchFromApi<ReturnTicket[]>('/api/returns');
+};
+
+export const deleteReturn = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/returns/${id}`, { method: 'DELETE' });
+};
+
+// FIX: Add missing functions for Suppliers.
+// --- Supplier Service ---
+export const getSuppliers = async (): Promise<Supplier[]> => {
+    return fetchFromApi<Supplier[]>('/api/suppliers');
+};
+
+export const deleteSupplier = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/suppliers/${id}`, { method: 'DELETE' });
+};
+
 
 // --- Misc Services ---
 export const getServerInfo = async (): Promise<ServerInfo> => {
