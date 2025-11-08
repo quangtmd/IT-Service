@@ -5,7 +5,7 @@ import AIChatbot from '../chatbot/AIChatbot';
 import * as ReactRouterDOM from 'react-router-dom';
 
 // Base64 encoded SVG for a simple robot icon
-const ROBOT_ICON_SVG_BASE64 = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iY3VycmVudENvbG9yIj4KICA8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAxOGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4IDguMzU5IDggOC04eiBNOSAxMy41Yy0uODMgMC0xLjUtLjY3LTEuNS0xLjVzLjY3LTEuNSAxLjUtMS41IDEuNS42NyAxLjUgMS41LS42NyAxLjUtMS41IDEuNXptNiAwYy0uODMgMC0xLjUtLjY3LTEuNS0xLjVzLjY3LTEuNSAxLjUtMS41IDEuNS42NyAxLjUgMS41LS42NyAxLjUtMS41IDEuNXpNMTIgMTdjLTIuMzMgMC0zLjM3LTEuMDctMy45Mi0xLjc0LS4xMy0uMTYtLjItLjM2LS4yLS41NiAwLS4yNS4xLS40Ny4yOC0uNjUuMjUtLjI2LjY1LS4zNyAxLjA1LS4yNy40Mi4xLjguMzggMS4xMy43OC4zMy0uNC43MS0uNjggMS4xMy0uNzguNC0uMS44LS4wMSAxLjA1LjI3LjE4LjE4LjI4LjQuMjguNjUgMCAuMi0uMDcuNC0wLjIuNTYtMC41NS42Ny0xLjU5IDEuNzQtMy45MiAxLjc0eiBNMTYgOGgtMWMtLjU1IDAtMSAuNDUtMSAxcy40NSAxIDEgMWgxYy41NSAwIDEtLjQ1IDEtMXMtLjQ1LTEtMS0xeiBNOC4wMDQgOGgtMS4wMDFjLS41NDkgMC0uOTk5LjQ1LS45OTkgMXMuNDUuOTk5Ljk5OS45OTloMS4wMDFjLjU0OSAwLjk5OS0uNDUuOTk5LTEuMDAxcy0uNDUtLjk5OS0uOTk5LS45OTl6Ii8+Cjwvc3ZnPg==`;
+const ROBOT_ICON_SVG_BASE64 = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iY3VycmVudENvbG9yIj4KICA8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAxOGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4IDguMzU5IDggOC04eiBNOSAxMy41Yy0uODMgMC0xLjUtLjY3LTEuNS0xLjVzLjY3LTEuNSAxLjUtMS41IDEuNS42NyAxLjUgMS41LS42NyAxLjUtMS41IDEuNXptNiAwYy0uODMgMC0xLjUtLjY3LTEuNS0xLjVzLjY3LTEuNSAxLjUtMS41IDEuNS42NyAxLjUgMS41LS42NyAxLjUtMS41IDEuNXpNMTIgMTdjLTIuMzMgMC0zLjM3LTEuMDctMy45Mi0xLjc0LS4xMy0uMTYtLjItLjM2LS4yLS41NiAwLS4yNS4xLS40Ny4yOC0uNjUuMjUtLjI2LjY1LS4zNyAxLjA1LS4yNy40Mi4xLjguMzggMS4xMy43OC4zMy0uNC43MS0uNjggMS4xMy0uNzguNC0uMS44LS4wMSAxLjA1LjI3LjE4LjE4LjI4LjQuMjguNjUgMCAuMi0uMDcuNC0uMi41Ni0wLjU1LjY3LTEuNTkgMS43NC0zLjkyIDEuNzR6TTE2IDhoLTFjLS41NSAwLTEgLjQ1LTEgMXMuNDUgMSAxIDFoMWMuNTUgMCAxLS40NSAxLTFzLS40NS0xLTF6TTguMDA0IDhoLTEuMDAxYy0uNTQ5IDAtLjk5OS40NS0uOTk5IDFzLjQ1Ljk5OS45OTkuOTk5aDEuMDAxYy41NDkgMC45OTkuOTk5LS40NS45OTktMS4wMDFzLS40NS0uOTk5LS45OTktLjk5OXoiLz4KPC9zdmc+`;
 
 
 const FloatingActionButtons: React.FC = () => {
@@ -35,30 +35,36 @@ const FloatingActionButtons: React.FC = () => {
     }, [loadSiteSettings]);
     
     useEffect(() => {
-        // Only auto-open and show bubble on the homepage and if AI is enabled
-        if (isAiEnabled && location.pathname === '/home') { 
-            const alreadyOpened = sessionStorage.getItem(Constants.CHATBOT_AUTO_OPENED_KEY); // Using sessionStorage to reset on tab close
-            if (!alreadyOpened) {
-              // Delay slightly before opening chat and showing bubble
-              const timer = setTimeout(() => {
-                setIsChatOpen(true); // Open the chat panel
-                // Wait for the chat to open briefly, then quickly close it and show the bubble
-                setTimeout(() => {
-                    setIsChatOpen(false); // Close the chat panel for the bubble to appear next to the button
-                    setShowWelcomeBubble(true);
-                    sessionStorage.setItem(Constants.CHATBOT_AUTO_OPENED_KEY, 'true'); // Mark as shown for this session
+        let showTimer: number;
+        let hideTimer: number;
 
-                    // Hide the bubble after some time
-                    setTimeout(() => {
+        // Only show bubble on the homepage and if AI is enabled
+        if (isAiEnabled && (location.pathname === '/home' || location.pathname === '/')) {
+            const alreadyShown = sessionStorage.getItem(Constants.CHATBOT_AUTO_OPENED_KEY);
+            if (!alreadyShown) {
+                // Show the welcome bubble after a delay
+                showTimer = window.setTimeout(() => {
+                    setShowWelcomeBubble(true);
+                    sessionStorage.setItem(Constants.CHATBOT_AUTO_OPENED_KEY, 'true');
+
+                    // Hide the bubble after it has been shown for a while
+                    hideTimer = window.setTimeout(() => {
                         setShowWelcomeBubble(false);
                     }, 5000); // Show for 5 seconds
-                }, 100); // Short delay after opening chat
-              }, 1000); // Initial delay before showing anything
-              return () => clearTimeout(timer);
+                }, 1500); // Initial delay before showing bubble
             }
+        } else {
+            // If not on the homepage, ensure the bubble is not shown
+            setShowWelcomeBubble(false);
         }
-        setShowWelcomeBubble(false); // Ensure bubble is hidden if not on homepage or already shown
+
+        // Cleanup function to clear timeouts if component unmounts or location changes
+        return () => {
+            clearTimeout(showTimer);
+            clearTimeout(hideTimer);
+        };
     }, [isAiEnabled, location.pathname]);
+
 
     const quickContactCommonClasses = "w-14 h-14 text-white rounded-full p-3.5 shadow-lg transition-all duration-300 flex items-center justify-center text-xl transform hover:scale-110";
     const fabVisibilityClass = isChatOpen ? 'opacity-0 scale-0 pointer-events-none' : 'opacity-100 scale-100';

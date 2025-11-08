@@ -212,6 +212,9 @@ export type UserStatus = 'Đang hoạt động' | 'Tạm nghỉ' | 'Đã nghỉ 
 export const USER_STATUS_OPTIONS: UserStatus[] = ['Đang hoạt động', 'Tạm nghỉ', 'Đã nghỉ việc'];
 
 
+// Fix: Add DebtStatus type and CRM fields to User interface to resolve multiple TypeScript errors in CustomerFormPage.
+export type DebtStatus = 'Không có' | 'Có nợ' | 'Quá hạn';
+
 export interface User {
   id: string;
   username: string;
@@ -228,6 +231,13 @@ export interface User {
   address?: string;
   joinDate?: string; // ISO string date
   status?: UserStatus;
+  
+  // CRM Fields (for customers)
+  dateOfBirth?: string;
+  origin?: string;
+  loyaltyPoints?: number;
+  debtStatus?: DebtStatus;
+  assignedStaffId?: string;
 }
 
 export interface Project {

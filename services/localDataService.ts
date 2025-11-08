@@ -3,7 +3,7 @@
 import { 
     Product, Order, Article, OrderStatus, MediaItem, ServerInfo, 
     ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
-    Quotation, User
+    Quotation, User, WarrantyClaim
 } from '../types';
 import { BACKEND_API_BASE_URL } from '../constants';
 
@@ -22,7 +22,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
                     throw new Error(`Lỗi API: 404 Not Found. Vui lòng kiểm tra VITE_BACKEND_API_BASE_URL trên frontend.`);
                 }
                 // Specific handling for schema mismatch error
-                if (errorData.errorCode === 'ER_BAD_FIELD_ERROR' || errorMessage.includes("Unknown column")) {
+                if (errorData.errorCode === 'ER_BAD_FIELD_ERROR' || (errorMessage && errorMessage.includes("Unknown column"))) {
                     throw new Error(`Lỗi cơ sở dữ liệu: Cột không tồn tại. Có vẻ như lược đồ database của bạn không đồng bộ với backend. Vui lòng chạy lại script SQL từ README.md.`);
                 }
                 throw new Error(errorMessage);
@@ -42,7 +42,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         console.error(`API call failed for endpoint ${endpoint}:`, error);
         // Re-throw a more user-friendly error message
         if (error instanceof TypeError) { // This often indicates a network failure
-            throw new Error('Lỗi mạng hoặc server không phản hồi');
+            throw new Error('Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra logs của backend.');
         }
         throw error;
     }
@@ -117,7 +117,6 @@ export const getArticles = async (): Promise<Article[]> => {
 };
 
 export const getArticle = async (id: string): Promise<Article | null> => {
-    // AI articles are not in the DB, they are in localStorage
     if (id.startsWith('ai-')) {
         const aiArticlesRaw = localStorage.getItem('aiGeneratedArticles_v1');
         const aiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
@@ -125,7 +124,6 @@ export const getArticle = async (id: string): Promise<Article | null> => {
         if (aiArticle) return Promise.resolve(aiArticle);
     }
     
-    // Fetch from backend if not an AI article
     try {
         return await fetchFromApi<Article>(`/api/articles/${id}`);
     } catch (error) {
@@ -213,43 +211,84 @@ export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void
     });
 };
 
+// --- Auth & User Service ---
+export const loginUser = async (credentials: { email: string; password?: string }): Promise<User> => {
+    return fetchFromApi<User>('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+    });
+};
+
+export const getUsers = async (): Promise<User[]> => {
+    return fetchFromApi<User[]>('/api/users');
+};
+
+export const addUser = async (user: Omit<User, 'id'>): Promise<User> => {
+    return fetchFromApi<User>('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user),
+    });
+};
+
+export const updateUser = async (id: string, updates: Partial<User>): Promise<User> => {
+    return fetchFromApi<User>(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+    });
+};
+
+export const deleteUser = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/users/${id}`, { method: 'DELETE' });
+};
+
+// --- Quotation Service ---
+export const getQuotations = async (): Promise<Quotation[]> => {
+    return fetchFromApi<Quotation[]>('/api/quotations');
+};
+
+export const addQuotation = async (quote: Omit<Quotation, 'id'>): Promise<Quotation> => {
+    const newQuote = { ...quote, id: `quote-${Date.now()}` };
+    return fetchFromApi<Quotation>('/api/quotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newQuote),
+    });
+};
+export const updateQuotation = async (id: string, updates: Partial<Quotation>): Promise<Quotation> => {
+    return fetchFromApi<Quotation>(`/api/quotations/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+    });
+};
+
+export const deleteQuotation = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/quotations/${id}`, { method: 'DELETE' });
+};
+
+// --- Service Ticket Service ---
+export const getServiceTickets = async (): Promise<ServiceTicket[]> => {
+    return fetchFromApi<ServiceTicket[]>('/api/service-tickets');
+};
+
+// --- Inventory Service ---
+export const getInventory = async (): Promise<Inventory[]> => {
+    return fetchFromApi<Inventory[]>('/api/inventory');
+};
+
+// --- Warranty Claim Service ---
+export const getWarrantyClaims = async (): Promise<WarrantyClaim[]> => {
+    return fetchFromApi<WarrantyClaim[]>('/api/warranty-claims');
+};
 
 // --- Misc Services ---
 export const getServerInfo = async (): Promise<ServerInfo> => {
-    // This is a placeholder, as the backend doesn't expose this directly.
-    // The health check is a better diagnostic tool.
     return Promise.resolve({ outboundIp: 'Not available' });
 };
 
 export const checkBackendHealth = async () => {
     return fetchFromApi<{ status: string; database: string; errorCode?: string; message?: string }>('/api/health');
 };
-
-// --- Local Storage Services (for modules not yet in backend) ---
-const getLocal = <T,>(key: string, def: T): T => { try { const i = localStorage.getItem(key); return i ? JSON.parse(i) : def; } catch (e) { return def; }};
-const setLocal = <T,>(key: string, val: T) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.error(e); }};
-
-// This is still local as backend doesn't support it yet.
-export const getUsers = async (): Promise<User[]> => Promise.resolve(getLocal('siteUsers_v1_local', []));
-
-export const getQuotations = async (): Promise<Quotation[]> => Promise.resolve(getLocal('siteQuotations_v1', []));
-export const addQuotation = async (quote: Omit<Quotation, 'id'>): Promise<Quotation> => {
-    const items = await getQuotations();
-    const newItem = { ...quote, id: `quote-${Date.now()}` };
-    setLocal('siteQuotations_v1', [newItem, ...items]);
-    return newItem;
-};
-export const updateQuotation = async (id: string, updates: Partial<Quotation>): Promise<boolean> => {
-    const items = await getQuotations();
-    setLocal('siteQuotations_v1', items.map(i => i.id === id ? { ...i, ...updates } : i));
-    return true;
-};
-export const deleteQuotation = async (id: string): Promise<boolean> => {
-    const items = await getQuotations();
-    setLocal('siteQuotations_v1', items.filter(i => i.id !== id));
-    return true;
-};
-
-
-export const getServiceTickets = async (): Promise<ServiceTicket[]> => Promise.resolve(getLocal('serviceTickets_v1', []));
-export const getInventory = async (): Promise<Inventory[]> => Promise.resolve(getLocal('inventory_v1', []));

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+// Fix: Import DebtStatus type to correctly type DEBT_STATUS_OPTIONS and resolve type errors.
 import { User, DebtStatus } from '../../types';
 import Button from '../../components/ui/Button';
 import ImageUploadInput from '../../components/ui/ImageUploadInput';
 import { useAuth } from '../../contexts/AuthContext';
 import * as ReactRouterDOM from 'react-router-dom';
 
-const DEBT_STATUS_OPTIONS: DebtStatus[] = ['Không có', 'Có nợ', 'Quá hạn'];
+const DEBT_STATUS_OPTIONS: Array<DebtStatus> = ['Không có', 'Có nợ', 'Quá hạn'];
 const CUSTOMER_ORIGIN_OPTIONS: string[] = ['Website', 'Facebook Ads', 'Giới thiệu', 'Khác'];
 
 const CustomerFormPage: React.FC = () => {
@@ -14,7 +15,7 @@ const CustomerFormPage: React.FC = () => {
     const { users, addUser, updateUser, hasPermission } = useAuth();
     const isEditing = !!customerId;
 
-    const [formData, setFormData] = useState<User | null>(null);
+    const [formData, setFormData] = useState<Partial<User> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [staffUsers, setStaffUsers] = useState<User[]>([]);
@@ -43,10 +44,9 @@ const CustomerFormPage: React.FC = () => {
                 setIsLoading(false);
             } else {
                 setFormData({
-                    id: '',
                     username: '',
                     email: '',
-                    password: 'password123', // Default password for new customer, should be changed
+                    password: 'password123',
                     role: 'customer',
                     phone: '',
                     address: '',
@@ -68,19 +68,13 @@ const CustomerFormPage: React.FC = () => {
         const { name, value, type } = e.target;
         const checked = (e.target as HTMLInputElement).checked;
 
-        setFormData(prev => prev ? ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }) : null);
+        setFormData(prev => prev ? ({ ...prev, [name]: type === 'checkbox' ? checked : value }) : null);
     };
     
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!formData) return;
         const { name, value } = e.target;
-        setFormData(prev => prev ? ({
-            ...prev,
-            [name]: value === '' ? undefined : Number(value)
-        }) : null);
+        setFormData(prev => prev ? ({...prev, [name]: value === '' ? 0 : Number(value) }) : null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -90,11 +84,10 @@ const CustomerFormPage: React.FC = () => {
         try {
             if (isEditing) {
                 const { id, ...updates } = formData;
-                await updateUser(id, updates);
+                await updateUser(id as string, updates);
                 alert('Cập nhật thông tin khách hàng thành công!');
             } else {
-                const { id, ...dto } = formData;
-                await addUser(dto);
+                await addUser(formData as Omit<User, 'id'>);
                 alert('Thêm khách hàng mới thành công!');
             }
             navigate('/admin/customers');
@@ -137,7 +130,6 @@ const CustomerFormPage: React.FC = () => {
                 </div>
                 <div className="admin-card-body admin-product-form-page-body">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Left Column: Avatar & Status */}
                         <div className="md:col-span-1 space-y-6">
                             <div className="admin-card !p-4">
                                 <h4 className="admin-form-subsection-title !mt-0">Ảnh đại diện & Trạng thái</h4>
@@ -154,7 +146,6 @@ const CustomerFormPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Right Column: Details */}
                         <div className="md:col-span-2 space-y-6">
                             <div className="admin-card !p-4">
                                 <h4 className="admin-form-subsection-title !mt-0">Thông tin cơ bản</h4>

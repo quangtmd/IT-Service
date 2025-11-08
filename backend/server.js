@@ -107,29 +107,30 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
+// --- Helper to deserialize product rows ---
+const deserializeProduct = (p) => ({
+    ...p,
+    imageUrls: JSON.parse(p.imageUrls || '[]'),
+    specifications: JSON.parse(p.specifications || '{}'),
+    tags: JSON.parse(p.tags || '[]'),
+    isVisible: p.is_published,
+});
+
 // --- PRODUCTS API ---
 
 app.get('/api/products/featured', async (req, res) => {
     try {
         const query = `
-            SELECT 
-                p.*
-                -- Removed category joins and selects due to schema mismatch.
+            SELECT p.*, c.name as subCategory, mc.name as mainCategory
             FROM Products p
-            -- Removed WHERE p.is_featured = TRUE temporarily due to schema mismatch.
+            LEFT JOIN ProductCategories c ON p.categoryId = c.id
+            LEFT JOIN ProductCategories mc ON c.parentId = mc.id
+            WHERE JSON_CONTAINS(p.tags, '"Nổi bật"') AND p.isVisible = TRUE
             ORDER BY RAND()
             LIMIT 4;
         `;
         const [products] = await pool.query(query);
-         const deserializedProducts = products.map(p => ({
-            ...p,
-            imageUrls: JSON.parse(p.imageUrls || '[]'),
-            specifications: JSON.parse(p.specifications || '{}'),
-            tags: JSON.parse(p.tags || '[]'),
-            // isVisible: p.is_published, // Removed temporarily
-            // mainCategory and subCategory will be null/undefined for now
-        }));
-        res.json(deserializedProducts);
+        res.json(products.map(deserializeProduct));
     } catch (error) {
         console.error("Lỗi khi truy vấn sản phẩm nổi bật:", error);
         res.status(500).json({ message: "Lỗi server khi lấy sản phẩm nổi bật", error: error.sqlMessage || error.message });
@@ -139,22 +140,13 @@ app.get('/api/products/featured', async (req, res) => {
 app.get('/api/products/:id', async (req, res) => {
     try {
         const query = `
-            SELECT 
-                p.* 
-                -- Removed category joins and selects due to schema mismatch.
+            SELECT p.*
             FROM Products p
             WHERE p.id = ?
         `;
         const [rows] = await pool.query(query, [req.params.id]);
-        const product = rows[0];
-        if (product) {
-            // Deserialize JSON fields
-            product.imageUrls = JSON.parse(product.imageUrls || '[]');
-            product.specifications = JSON.parse(product.specifications || '{}');
-            product.tags = JSON.parse(product.tags || '[]');
-            // product.isVisible = product.is_published; // Removed temporarily
-            // mainCategory and subCategory will be null/undefined for now
-            res.json(product);
+        if (rows.length > 0) {
+            res.json(deserializeProduct(rows[0]));
         } else {
             res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
         }
@@ -166,36 +158,22 @@ app.get('/api/products/:id', async (req, res) => {
 
 app.get('/api/products', async (req, res) => {
     try {
-        const { mainCategory, subCategory, brand, status, tags, q, limit = 12, page = 1 } = req.query;
+        const { mainCategory, subCategory, q, tags, limit = 12, page = 1 } = req.query;
 
-        let baseQuery = `
-            SELECT 
-                p.*
-                -- Removed category joins and selects due to schema mismatch.
-            FROM Products p
-        `;
-        let countQuery = `SELECT COUNT(p.id) as total FROM Products p`;
+        let baseQuery = `FROM Products p`;
         
-        // Removed joins for ProductCategories due to schema mismatch.
-        const joins = []; 
-        
-        const joinString = joins.join(' ');
-        baseQuery += ` ${joinString}`;
-        countQuery += ` ${joinString}`;
-        
-        const whereClauses = []; // Removed 'p.is_published = TRUE'
+        const whereClauses = ['p.isVisible = TRUE'];
         const params = [];
         
-        // Removed mainCategory and subCategory filtering due to schema mismatch.
-        // if (mainCategory) {
-        //     whereClauses.push('mc.slug = ?');
-        //     params.push(mainCategory);
-        // }
-        // if (subCategory) {
-        //     whereClauses.push('c.slug = ?');
-        //     params.push(subCategory);
-        // }
-         if (q) {
+        if (mainCategory) {
+            whereClauses.push('p.mainCategory = (SELECT name FROM ProductCategories WHERE slug = ?)');
+            params.push(mainCategory);
+        }
+        if (subCategory) {
+            whereClauses.push('p.subCategory = (SELECT name FROM ProductCategories WHERE slug = ?)');
+            params.push(subCategory);
+        }
+        if (q) {
             whereClauses.push('(p.name LIKE ? OR p.brand LIKE ?)');
             params.push(`%${q}%`, `%${q}%`);
         }
@@ -204,81 +182,63 @@ app.get('/api/products', async (req, res) => {
             params.push(JSON.stringify(tags));
         }
 
-        if (whereClauses.length > 0) {
-            const whereString = ' WHERE ' + whereClauses.join(' AND ');
-            baseQuery += whereString;
-            countQuery += whereString;
-        }
+        const whereString = ' WHERE ' + whereClauses.join(' AND ');
         
+        const countQuery = `SELECT COUNT(p.id) as total ${baseQuery} ${whereString}`;
         const [countRows] = await pool.query(countQuery, params);
         const totalProducts = countRows[0].total;
         
         const offset = (Number(page) - 1) * Number(limit);
-        baseQuery += ` ORDER BY p.id DESC LIMIT ? OFFSET ?`;
-        params.push(Number(limit), offset);
+        const productQuery = `SELECT p.* ${baseQuery} ${whereString} ORDER BY p.id DESC LIMIT ? OFFSET ?`;
+        const productParams = [...params, Number(limit), offset];
 
-        const [products] = await pool.query(baseQuery, params);
+        const [products] = await pool.query(productQuery, productParams);
         
-        const deserializedProducts = products.map(p => ({
-            ...p,
-            imageUrls: JSON.parse(p.imageUrls || '[]'),
-            specifications: JSON.parse(p.specifications || '{}'),
-            tags: JSON.parse(p.tags || '[]'),
-            // isVisible: p.is_published, // Removed temporarily
-            // mainCategory and subCategory will be null/undefined for now
-        }));
-        
-        res.json({ products: deserializedProducts, totalProducts });
+        res.json({ products: products.map(deserializeProduct), totalProducts });
     } catch (error) {
         console.error("Lỗi khi truy vấn sản phẩm:", error);
         res.status(500).json({ message: "Lỗi server khi lấy dữ liệu sản phẩm", error: error.sqlMessage || error.message });
     }
 });
 
+const getCategoryId = async (mainCategoryName, subCategoryName) => {
+    if (!mainCategoryName || !subCategoryName) return null;
+    const [mainCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parentId IS NULL', [mainCategoryName]);
+    if (mainCatRows.length > 0) {
+        const mainCatId = mainCatRows[0].id;
+        const [subCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parentId = ?', [subCategoryName, mainCatId]);
+        if (subCatRows.length > 0) {
+            return subCatRows[0].id;
+        }
+    }
+    return null;
+}
+
 app.post('/api/products', async (req, res) => {
     try {
-        const { mainCategory, subCategory, isVisible, category, ...productData } = req.body;
+        const { isVisible, ...productData } = req.body;
+        const categoryId = await getCategoryId(productData.mainCategory, productData.subCategory);
 
-        // Removed category_id logic due to schema mismatch.
-        // let category_id = null;
-        // if (mainCategory && subCategory) {
-        //     const [mainCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', [mainCategory]);
-        //     if (mainCatRows.length > 0) {
-        //         const mainCatId = mainCatRows[0].id;
-        //         const [subCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', [subCategory, mainCatId]);
-        //         if (subCatRows.length > 0) {
-        //             category_id = subCatRows[0].id;
-        //         }
-        //     }
-        // }
-        
-        // Build a clean, sanitized object for DB insertion to prevent type errors and unknown column errors.
         const productToDb = {
             id: productData.id || `prod-${Date.now()}`,
             name: productData.name,
+            categoryId: categoryId,
+            mainCategory: productData.mainCategory,
+            subCategory: productData.subCategory,
             price: Number(productData.price) || 0,
-            originalPrice: (productData.originalPrice && Number(productData.originalPrice)) ? Number(productData.originalPrice) : null,
+            originalPrice: productData.originalPrice ? Number(productData.originalPrice) : null,
             imageUrls: JSON.stringify(productData.imageUrls || []),
             description: productData.description || null,
             shortDescription: productData.shortDescription || null,
             specifications: JSON.stringify(productData.specifications || {}),
             stock: Number(productData.stock) || 0,
             status: productData.status || null,
-            rating: (productData.rating && Number(productData.rating)) ? Number(productData.rating) : null,
-            reviews: (productData.reviews && Number(productData.reviews)) ? Number(productData.reviews) : null,
             brand: productData.brand || null,
             tags: JSON.stringify(productData.tags || []),
-            brandLogoUrl: productData.brandLogoUrl || null,
-            seoMetaTitle: productData.seoMetaTitle || null,
-            seoMetaDescription: productData.seoMetaDescription || null,
-            slug: productData.slug || null,
-            // is_published: isVisible === undefined ? true : Boolean(isVisible), // Removed temporarily
-            // category_id: category_id, // Removed temporarily
-            // is_featured: Boolean(productData.is_featured), // Removed temporarily
+            isVisible: isVisible === undefined ? true : Boolean(isVisible)
         };
 
         await pool.query('INSERT INTO Products SET ?', productToDb);
-        
         const responseProduct = { ...req.body, id: productToDb.id };
         res.status(201).json(responseProduct);
     } catch (error) {
@@ -290,43 +250,35 @@ app.post('/api/products', async (req, res) => {
 app.put('/api/products/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { mainCategory, subCategory, isVisible, category, ...productData } = req.body;
+        const { isVisible, ...productData } = req.body;
         
-        // Removed category_id logic due to schema mismatch.
-        // let category_id = productData.category_id; // Keep existing if not changed
-        // if (mainCategory && subCategory) {
-        //     const [mainCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id IS NULL', [mainCategory]);
-        //     if (mainCatRows.length > 0) {
-        //         const mainCatId = mainCatRows[0].id;
-        //         const [subCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parent_category_id = ?', [subCategory, mainCatId]);
-        //         if (subCatRows.length > 0) {
-        //             category_id = subCatRows[0].id;
-        //         }
-        //     }
-        // }
+        const [existingProduct] = await pool.query('SELECT categoryId FROM Products WHERE id = ?', [id]);
+        if (existingProduct.length === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+        }
         
-        // Build a clean, sanitized object for DB update.
+        let categoryId = existingProduct[0].categoryId;
+        if (productData.mainCategory && productData.subCategory) {
+            const newCatId = await getCategoryId(productData.mainCategory, productData.subCategory);
+            if(newCatId) categoryId = newCatId;
+        }
+        
         const fieldsToUpdate = {
             name: productData.name,
+            categoryId: categoryId,
+            mainCategory: productData.mainCategory,
+            subCategory: productData.subCategory,
             price: Number(productData.price) || 0,
-            originalPrice: (productData.originalPrice && Number(productData.originalPrice)) ? Number(productData.originalPrice) : null,
+            originalPrice: productData.originalPrice ? Number(productData.originalPrice) : null,
             imageUrls: JSON.stringify(productData.imageUrls || []),
             description: productData.description || null,
             shortDescription: productData.shortDescription || null,
             specifications: JSON.stringify(productData.specifications || {}),
             stock: Number(productData.stock) || 0,
             status: productData.status || null,
-            rating: (productData.rating && Number(productData.rating)) ? Number(productData.rating) : null,
-            reviews: (productData.reviews && Number(productData.reviews)) ? Number(productData.reviews) : null,
             brand: productData.brand || null,
             tags: JSON.stringify(productData.tags || []),
-            brandLogoUrl: productData.brandLogoUrl || null,
-            seoMetaTitle: productData.seoMetaTitle || null,
-            seoMetaDescription: productData.seoMetaDescription || null,
-            slug: productData.slug || null,
-            // is_published: isVisible === undefined ? true : Boolean(isVisible), // Removed temporarily
-            // category_id: category_id, // Removed temporarily
-            // is_featured: Boolean(productData.is_featured), // Removed temporarily
+            isVisible: isVisible === undefined ? true : Boolean(isVisible),
         };
         
         const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [fieldsToUpdate, id]);
@@ -348,7 +300,7 @@ app.delete('/api/products/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy sản phẩm để xóa' });
         }
-        res.status(204).send(); // No content
+        res.status(204).send();
     } catch (error) {
         console.error("Lỗi khi xóa sản phẩm:", error);
         res.status(500).json({ message: "Lỗi server", error: error.sqlMessage || error.message });
@@ -369,9 +321,9 @@ app.get('/api/articles', async (req, res) => {
 
 app.get('/api/articles/:id', async (req, res) => {
     try {
-        const [article] = await pool.query('SELECT * FROM Articles WHERE id = ?', [req.params.id]);
-        if (article.length > 0) {
-            res.json(article[0]);
+        const [rows] = await pool.query('SELECT * FROM Articles WHERE id = ?', [req.params.id]);
+        if (rows.length > 0) {
+            res.json(rows[0]);
         } else {
             res.status(404).json({ message: 'Không tìm thấy bài viết' });
         }
@@ -383,7 +335,7 @@ app.get('/api/articles/:id', async (req, res) => {
 
 app.post('/api/articles', async (req, res) => {
     try {
-        const article = { ...req.body, id: `article-${Date.now()}` };
+        const article = { ...req.body, id: req.body.id || `article-${Date.now()}` };
         await pool.query('INSERT INTO Articles SET ?', article);
         res.status(201).json(article);
     } catch (error) {
@@ -417,7 +369,6 @@ app.delete('/api/articles/:id', async (req, res) => {
 app.get('/api/orders', async (req, res) => {
     try {
         const [orders] = await pool.query('SELECT * FROM Orders ORDER BY orderDate DESC');
-        // Deserialize JSON fields
         const deserializedOrders = orders.map(o => ({
             ...o,
             customerInfo: JSON.parse(o.customerInfo || '{}'),
@@ -468,10 +419,89 @@ app.put('/api/orders/:id/status', async (req, res) => {
 });
 
 
+// --- AUTH & USERS API ---
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email và mật khẩu là bắt buộc.' });
+        }
+        const [rows] = await pool.query('SELECT * FROM Users WHERE email = ?', [email]);
+        if (rows.length === 0) {
+            return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+        }
+        const user = rows[0];
+        // In a real app, compare hashed passwords. Here we do a plain text comparison.
+        if (user.password !== password) {
+            return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+        }
+        // Remove password before sending user data to client
+        delete user.password;
+        res.json(user);
+    } catch (error) {
+        console.error("Lỗi khi đăng nhập:", error);
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.get('/api/users', async (req, res) => {
+    try {
+        const [users] = await pool.query('SELECT id, username, email, password, role, staffRole, imageUrl, isLocked, position, phone, address, joinDate, status, dateOfBirth, origin, loyaltyPoints, debtStatus, assignedStaffId FROM Users');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.post('/api/users', async (req, res) => {
+    try {
+        const user = { ...req.body, id: `user-${Date.now()}` };
+        // In a real app, hash the password here
+        await pool.query('INSERT INTO Users SET ?', user);
+        delete user.password;
+        res.status(201).json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.put('/api/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        delete updates.id;
+        delete updates.email; // Do not allow email change
+        if (updates.password) {
+            // Hash password if it's being changed
+        }
+        const [result] = await pool.query('UPDATE Users SET ? WHERE id = ?', [updates, id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+        }
+        res.json({ id, ...updates });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [result] = await pool.query('DELETE FROM Users WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+        }
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+
 // --- MEDIA ITEMS API ---
 app.get('/api/media', async (req, res) => {
     try {
-        const [mediaItems] = await pool.query('SELECT * FROM MediaItems ORDER BY uploadedAt DESC');
+        const [mediaItems] = await pool.query('SELECT * FROM MediaLibrary ORDER BY uploadedAt DESC');
         res.json(mediaItems);
     } catch (error) {
         console.error("Lỗi khi truy vấn media items:", error);
@@ -481,8 +511,8 @@ app.get('/api/media', async (req, res) => {
 
 app.post('/api/media', async (req, res) => {
     try {
-        const mediaItem = { ...req.body, id: `media-${Date.now()}` };
-        await pool.query('INSERT INTO MediaItems SET ?', mediaItem);
+        const mediaItem = { ...req.body, id: `media-${Date.now()}`, uploadedAt: new Date() };
+        await pool.query('INSERT INTO MediaLibrary SET ?', mediaItem);
         res.status(201).json(mediaItem);
     } catch (error) {
         console.error("Lỗi khi thêm media item:", error);
@@ -492,7 +522,7 @@ app.post('/api/media', async (req, res) => {
 
 app.delete('/api/media/:id', async (req, res) => {
     try {
-        await pool.query('DELETE FROM MediaItems WHERE id = ?', [req.params.id]);
+        await pool.query('DELETE FROM MediaLibrary WHERE id = ?', [req.params.id]);
         res.status(204).send();
     } catch (error) {
         console.error("Lỗi khi xóa media item:", error);
@@ -519,7 +549,7 @@ app.get('/api/chatlogs', async (req, res) => {
 app.post('/api/chatlogs', async (req, res) => {
     try {
         const newChatLog = req.body;
-        await pool.query('INSERT INTO ChatLogSessions SET ?', {
+        await pool.query('INSERT INTO ChatLogSessions SET ? ON DUPLICATE KEY UPDATE messages = VALUES(messages)', {
             id: newChatLog.id,
             userName: newChatLog.userName,
             userPhone: newChatLog.userPhone,
@@ -537,7 +567,7 @@ app.post('/api/chatlogs', async (req, res) => {
 // --- FINANCIALS API ---
 app.get('/api/financials/transactions', async (req, res) => {
     try {
-        const [transactions] = await pool.query('SELECT * FROM FinancialTransactions ORDER BY date DESC');
+        const [transactions] = await pool.query('SELECT * FROM FinancialTransactions ORDER BY transactionDate DESC');
         res.json(transactions);
     } catch (error) {
         console.error("Lỗi khi truy vấn giao dịch tài chính:", error);
@@ -560,7 +590,7 @@ app.put('/api/financials/transactions/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const updates = req.body;
-        delete updates.id; // Prevent updating ID
+        delete updates.id;
         await pool.query('UPDATE FinancialTransactions SET ? WHERE id = ?', [updates, id]);
         res.json({ id, ...updates });
     } catch (error) {
@@ -595,37 +625,113 @@ app.post('/api/financials/payroll', async (req, res) => {
         if (!Array.isArray(records)) {
             return res.status(400).json({ message: "Yêu cầu phải là một mảng các bản ghi lương." });
         }
-
-        // Use a transaction to ensure atomicity
-        await pool.getConnection(async connection => {
-            await connection.beginTransaction();
-            try {
-                for (const record of records) {
-                    await connection.query(
-                        `INSERT INTO PayrollRecords (id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, notes, status)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                         ON DUPLICATE KEY UPDATE
-                         employeeName = VALUES(employeeName), baseSalary = VALUES(baseSalary), bonus = VALUES(baseSalary),
-                         deduction = VALUES(deduction), finalSalary = VALUES(finalSalary), notes = VALUES(notes), status = VALUES(status)`,
-                        [
-                            record.id, record.employeeId, record.employeeName, record.payPeriod,
-                            record.baseSalary, record.bonus, record.deduction, record.finalSalary,
-                            record.notes, record.status
-                        ]
-                    );
-                }
-                await connection.commit();
-                res.status(200).json({ message: "Hồ sơ lương đã được lưu thành công." });
-            } catch (innerError) {
-                await connection.rollback();
-                throw innerError;
-            } finally {
-                connection.release();
+        
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        try {
+            for (const record of records) {
+                await connection.query(
+                    `INSERT INTO PayrollRecords (id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, notes, status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     ON DUPLICATE KEY UPDATE
+                     employeeName = VALUES(employeeName), baseSalary = VALUES(baseSalary), bonus = VALUES(bonus),
+                     deduction = VALUES(deduction), finalSalary = VALUES(finalSalary), notes = VALUES(notes), status = VALUES(status)`,
+                    [
+                        record.id, record.employeeId, record.employeeName, record.payPeriod,
+                        record.baseSalary, record.bonus, record.deduction, record.finalSalary,
+                        record.notes, record.status
+                    ]
+                );
             }
-        });
+            await connection.commit();
+            res.status(200).json({ message: "Hồ sơ lương đã được lưu thành công." });
+        } catch (innerError) {
+            await connection.rollback();
+            throw innerError;
+        } finally {
+            connection.release();
+        }
     } catch (error) {
         console.error("Lỗi khi lưu hồ sơ lương:", error);
         res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+// --- NEW APIs ---
+
+// Quotations
+app.get('/api/quotations', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Quotations ORDER BY creation_date DESC');
+        res.json(rows.map(r => ({...r, items: JSON.parse(r.items || '[]'), customerInfo: JSON.parse(r.customerInfo || '{}')})));
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.post('/api/quotations', async (req, res) => {
+    try {
+        const quote = { ...req.body, items: JSON.stringify(req.body.items || []), customerInfo: JSON.stringify(req.body.customerInfo || {}) };
+        await pool.query('INSERT INTO Quotations SET ?', quote);
+        res.status(201).json(req.body);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.put('/api/quotations/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body, items: JSON.stringify(req.body.items || []), customerInfo: JSON.stringify(req.body.customerInfo || {}) };
+        delete updates.id;
+        await pool.query('UPDATE Quotations SET ? WHERE id = ?', [updates, id]);
+        res.json(req.body);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.delete('/api/quotations/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM Quotations WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Service Tickets
+app.get('/api/service-tickets', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM ServiceTickets ORDER BY createdAt DESC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Inventory
+app.get('/api/inventory', async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT i.quantity, p.name as product_name, w.name as warehouse_name, i.productId as product_id, i.warehouseId as warehouse_id
+            FROM Inventory i
+            JOIN Products p ON i.productId = p.id
+            JOIN Warehouses w ON i.warehouseId = w.id
+        `);
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Warranty Claims
+app.get('/api/warranty-claims', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM WarrantyTickets ORDER BY createdAt DESC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 

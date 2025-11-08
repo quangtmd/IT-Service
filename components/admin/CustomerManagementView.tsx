@@ -1,12 +1,13 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { User } from '../../types';
 import Button from '../ui/Button';
+import * as ReactRouterDOM from 'react-router-dom';
 
 const CustomerManagementView: React.FC = () => {
     const { users, updateUser } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const navigate = ReactRouterDOM.useNavigate();
 
     const customerUsers = useMemo(() =>
         users.filter(u => u.role === 'customer')
@@ -24,10 +25,21 @@ const CustomerManagementView: React.FC = () => {
         }
     };
 
+    const handleAddNewCustomer = () => {
+        navigate('/admin/customers/new');
+    };
+    
+    const handleEditCustomer = (customerId: string) => {
+        navigate(`/admin/customers/edit/${customerId}`);
+    };
+
     return (
         <div className="admin-card">
-            <div className="admin-card-header">
+            <div className="admin-card-header flex justify-between items-center">
                 <h3 className="admin-card-title">Quản lý Khách hàng ({customerUsers.length})</h3>
+                <Button onClick={handleAddNewCustomer} size="sm" leftIcon={<i className="fas fa-plus"></i>}>
+                    Thêm Khách hàng
+                </Button>
             </div>
             <div className="admin-card-body">
                 <input
@@ -63,15 +75,20 @@ const CustomerManagementView: React.FC = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <Button
-                                            onClick={() => handleToggleLock(user)}
-                                            size="sm"
-                                            variant="outline"
-                                            className={user.isLocked ? 'text-green-600 border-green-300' : 'text-red-600 border-red-300'}
-                                        >
-                                            <i className={`fas ${user.isLocked ? 'fa-unlock' : 'fa-lock'} mr-2`}></i>
-                                            {user.isLocked ? 'Mở khóa' : 'Khóa'}
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button size="sm" variant="outline" onClick={() => handleEditCustomer(user.id)}>
+                                                <i className="fas fa-edit"></i>
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleToggleLock(user)}
+                                                size="sm"
+                                                variant="outline"
+                                                className={user.isLocked ? 'text-green-600 border-green-300' : 'text-red-600 border-red-300'}
+                                                title={user.isLocked ? 'Mở khóa' : 'Khóa'}
+                                            >
+                                                <i className={`fas ${user.isLocked ? 'fa-unlock' : 'fa-lock'}`}></i>
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

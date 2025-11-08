@@ -1,13 +1,13 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User, UserRole, AdminNotification, StaffRole } from '../types'; 
 import * as Constants from '../constants';
-import { MOCK_STAFF_USERS } from '../data/mockData';
+import { getUsers, addUser as apiAddUser, updateUser as apiUpdateUser, deleteUser as apiDeleteUser, loginUser } from '../services/localDataService';
 
 export type AdminPermission = 
   // General
   | 'viewDashboard' | 'viewNotifications'
   // Sales & CRM
-  | 'viewSales' | 'viewCustomers' | 'viewQuotations' | 'viewOrders' | 'manageOrders' | 'manageDiscounts' | 'viewSuppliers' | 'viewHelpdesk'
+  | 'viewSales' | 'viewCustomers' | 'manageCustomers' | 'viewQuotations' | 'viewOrders' | 'manageOrders' | 'manageDiscounts' | 'viewSuppliers' | 'viewHelpdesk'
   // Service
   | 'viewService' | 'manageServiceTickets' | 'manageWarranty' | 'viewChatLogs'
   // Content
@@ -48,8 +48,7 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
-const USERS_STORAGE_KEY = 'siteUsers_v1_local';
-const CURRENT_USER_SESSION_KEY = 'currentUserSession_v1_local';
+const CURRENT_USER_SESSION_KEY = 'currentUserSession_v1';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try {
@@ -73,98 +72,71 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, setCurrentUser] = useState<User | null>(() => getSessionStorageItem(CURRENT_USER_SESSION_KEY, null));
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!currentUser);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [users, setUsers] = useState<User[]>(() => getLocalStorageItem(USERS_STORAGE_KEY, []));
+  const [users, setUsers] = useState<User[]>([]);
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>(() => getLocalStorageItem(ADMIN_NOTIFICATIONS_STORAGE_KEY, []));
 
   useEffect(() => {
-    const initializeUsers = () => {
-        const storedUsers = getLocalStorageItem<User[]>(USERS_STORAGE_KEY, []);
-        if (storedUsers.length === 0) {
-            const adminUser: User = {
-                id: 'admin001',
-                username: 'Admin Quang',
-                email: Constants.ADMIN_EMAIL,
-                password: 'password123', // In a real app, this should be hashed.
-                role: 'admin',
-                staffRole: 'Nhân viên Toàn quyền',
-            };
-            const initialUsers = [adminUser, ...MOCK_STAFF_USERS];
-            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
-            setUsers(initialUsers);
-        } else {
-            setUsers(storedUsers);
+    const initializeAuth = async () => {
+        setIsLoading(true);
+        try {
+            const usersFromApi = await getUsers();
+            setUsers(usersFromApi);
+            
+            const sessionUser = getSessionStorageItem<User | null>(CURRENT_USER_SESSION_KEY, null);
+            if (sessionUser) {
+                // Verify session user still exists in the database
+                if (usersFromApi.some(u => u.id === sessionUser.id)) {
+                    setCurrentUser(sessionUser);
+                    setIsAuthenticated(true);
+                } else {
+                    // Stale session, log out
+                    setCurrentUser(null);
+                    setIsAuthenticated(false);
+                    sessionStorage.removeItem(CURRENT_USER_SESSION_KEY);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to initialize user data from API:", error);
+            // In case of API failure, can decide to fallback or show error
+        } finally {
+            setIsLoading(false);
         }
-        
-        const sessionUser = getSessionStorageItem<User | null>(CURRENT_USER_SESSION_KEY, null);
-        if (sessionUser) {
-            setCurrentUser(sessionUser);
-            setIsAuthenticated(true);
-        }
-        setIsLoading(false);
     };
-    initializeUsers();
+    initializeAuth();
   }, []);
-
-  const saveUsers = (updatedUsers: User[]) => {
-    setUsers(updatedUsers);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-  }
 
   const login = async (credentials: { email: string; password?: string }): Promise<void> => {
     setIsLoading(true);
-    return new Promise((resolve, reject) => {
-      setTimeout(() => { // Simulate network delay
-        const user = users.find(u => u.email === credentials.email && u.password === credentials.password);
-        if (user) {
-          const { password, ...userToStore } = user;
-          setCurrentUser(userToStore as User);
-          setIsAuthenticated(true);
-          sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(userToStore));
-          setIsLoading(false);
-          resolve();
-        } else {
-          setIsLoading(false);
-          reject(new Error('Email hoặc mật khẩu không đúng.'));
-        }
-      }, 500);
-    });
+    try {
+        const user = await loginUser(credentials);
+        // The backend has verified the password and returned the user object (without password)
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+        sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(user));
+    } catch (error) {
+        // The error from fetchFromApi is already user-friendly
+        throw error;
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const register = async (details: { username: string; email: string; password?: string, role?: UserRole }): Promise<User | null> => {
-    setIsLoading(true);
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            if (users.some(u => u.email === details.email)) {
-                setIsLoading(false);
-                reject(new Error('Email đã được sử dụng.'));
-                return null;
-            }
-
-            const newUser: User = {
-                id: `user-${Date.now()}`,
-                username: details.username,
-                email: details.email,
-                password: details.password,
-                role: details.role || 'customer',
-                joinDate: new Date().toISOString(),
-                status: 'Đang hoạt động',
-            };
-            
-            const updatedUsers = [...users, newUser];
-            saveUsers(updatedUsers);
-
-            addAdminNotification(`Người dùng mới '${newUser.username}' (${newUser.email}) đã đăng ký.`, 'info');
-            
-            // Auto-login after registration
-            const { password, ...userToStore } = newUser;
-            setCurrentUser(userToStore as User);
-            setIsAuthenticated(true);
-            sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(userToStore));
-            
-            setIsLoading(false);
-            resolve(newUser);
-        }, 500);
-    });
+      // For now, this still uses the local addUser function to simulate registration
+      // which now calls the backend.
+      const newUser = await addUser({
+          ...details,
+          role: details.role || 'customer',
+          joinDate: new Date().toISOString(),
+          status: 'Đang hoạt động',
+      });
+      if (newUser) {
+          const { password, ...userToStore } = newUser;
+          setCurrentUser(userToStore as User);
+          setIsAuthenticated(true);
+          sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(userToStore));
+      }
+      return newUser;
   };
 
   const logout = async () => {
@@ -174,17 +146,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addUser = async (userDto: Omit<User, 'id'>): Promise<User | null> => {
-    const newUser = { ...userDto, id: `user-${Date.now()}`};
-    saveUsers([...users, newUser]);
-    addAdminNotification(`Quản trị viên đã thêm hồ sơ: ${newUser.username}.`, 'success');
+    const newUser = await apiAddUser(userDto);
+    if(newUser) {
+        setUsers(prev => [...prev, newUser]);
+        addAdminNotification(`Quản trị viên đã thêm hồ sơ: ${newUser.username}.`, 'success');
+    }
     return newUser;
   };
 
   const updateUser = async (userId: string, updates: Partial<User>): Promise<boolean> => {
-    const updatedUsers = users.map(u => u.id === userId ? { ...u, ...updates } : u);
-    saveUsers(updatedUsers);
-    addAdminNotification(`Thông tin người dùng đã được cập nhật.`, 'info');
-    return true;
+    try {
+        await apiUpdateUser(userId, updates);
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+        addAdminNotification(`Thông tin người dùng đã được cập nhật.`, 'info');
+        return true;
+    } catch(e) {
+        console.error("Failed to update user:", e);
+        return false;
+    }
   };
 
   const deleteUser = async (userId: string): Promise<boolean> => {
@@ -192,9 +171,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addAdminNotification("Không thể xóa tài khoản quản trị viên chính.", "error");
         return false;
      }
-     saveUsers(users.filter(u => u.id !== userId));
-     addAdminNotification(`Hồ sơ người dùng đã bị xóa.`, 'warning');
-     return true;
+     try {
+        await apiDeleteUser(userId);
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        addAdminNotification(`Hồ sơ người dùng đã bị xóa.`, 'warning');
+        return true;
+     } catch(e) {
+        console.error("Failed to delete user:", e);
+        return false;
+     }
   };
   
   const saveNotifications = (notifications: AdminNotification[]) => {
@@ -228,7 +213,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const currentStaffRoleCleaned = currentUser.staffRole.trim() as StaffRole;
         
         const allPermissions: AdminPermission[] = [
-          'viewDashboard', 'viewNotifications', 'viewSales', 'viewCustomers', 'viewQuotations', 
+          'viewDashboard', 'viewNotifications', 'viewSales', 'viewCustomers', 'manageCustomers', 'viewQuotations', 
           'viewOrders', 'manageOrders', 'manageDiscounts', 'viewSuppliers', 'viewHelpdesk', 
           'viewService', 'manageServiceTickets', 'manageWarranty', 'viewChatLogs', 
           'viewContent', 'viewProducts', 'manageProducts', 'viewArticles', 'manageArticles', 'manageMedia', 'manageFaqs',
@@ -238,7 +223,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ];
         
         const staffPermissionsMap: Record<StaffRole, AdminPermission[]> = {
-            'Quản lý Bán hàng': ['viewDashboard', 'viewSales', 'viewCustomers', 'viewQuotations', 'viewOrders', 'manageOrders', 'manageDiscounts', 'viewSuppliers', 'viewHelpdesk', 'viewService', 'viewInventory', 'viewNotifications'],
+            'Quản lý Bán hàng': ['viewDashboard', 'viewSales', 'viewCustomers', 'manageCustomers', 'viewQuotations', 'viewOrders', 'manageOrders', 'manageDiscounts', 'viewSuppliers', 'viewHelpdesk', 'viewService', 'viewInventory', 'viewNotifications'],
             'Biên tập Nội dung': ['viewDashboard', 'viewContent', 'viewArticles', 'manageArticles', 'manageFaqs', 'manageMedia', 'manageSiteSettings', 'viewNotifications'],
             'Trưởng nhóm Kỹ thuật': ['viewDashboard', 'viewService', 'manageServiceTickets', 'manageWarranty', 'viewInventory', 'manageInventory', 'viewOrders', 'viewProducts', 'viewNotifications'], 
             'Chuyên viên Hỗ trợ': ['viewDashboard', 'viewHelpdesk', 'manageServiceTickets', 'viewOrders', 'viewCustomers', 'viewChatLogs', 'viewNotifications'], 
