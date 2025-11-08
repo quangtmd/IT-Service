@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, AdminNotification, AdminView } from '../types';
@@ -21,7 +20,16 @@ import FinancialManagementView from '../components/admin/FinancialManagementView
 import DashboardView from '../components/admin/DashboardView';
 import InventoryView from '../components/admin/InventoryView';
 import ServiceTicketView from '../components/admin/ServiceTicketView';
-import ProductFormPage from './admin/ProductFormPage'; // Import the new product form page
+
+// Import new form pages
+import ProductFormPage from './admin/ProductFormPage';
+import UserFormPage from './admin/UserFormPage';
+import ArticleFormPage from './admin/ArticleFormPage';
+import DiscountFormPage from './admin/DiscountFormPage';
+import FaqFormPage from './admin/FaqFormPage';
+import TransactionFormPage from './admin/TransactionFormPage';
+import QuotationFormPage from './admin/QuotationFormPage';
+
 
 // Import new placeholder/skeleton views
 import QuotationManagementView from '../components/admin/QuotationManagementView';
@@ -29,7 +37,7 @@ import WarrantyManagementView from '../components/admin/WarrantyManagementView';
 
 
 interface MenuItemConfig {
-    id: AdminView | string; 
+    id: AdminView | string;
     label: string;
     icon: string;
     permission: AdminPermission[];
@@ -41,7 +49,7 @@ interface MenuItemConfig {
 const AdminPage: React.FC = () => {
     const { currentUser, adminNotifications, hasPermission } = useAuth();
     const location = ReactRouterDOM.useLocation();
-    
+
     const [activeView, setActiveView] = useState<AdminView>('dashboard');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -147,14 +155,32 @@ const AdminPage: React.FC = () => {
     // Determine the active view based on URL path
     useEffect(() => {
         const path = location.pathname;
-        if (path.startsWith('/admin/products/new')) {
-            setActiveView('products'); // Highlight 'Sản Phẩm' for new product form
-        } else if (path.startsWith('/admin/products/edit/')) {
-            setActiveView('products'); // Highlight 'Sản Phẩm' for edit product form
-        } else {
+        const parts = path.split('/');
+        const adminIndex = parts.indexOf('admin');
+        if (adminIndex === -1) {
+            setActiveView('dashboard');
+            return;
+        }
+
+        // Check for specific form pages
+        if (path.startsWith('/admin/products/new') || path.startsWith('/admin/products/edit/')) {
+            setActiveView('products');
+        } else if (path.startsWith('/admin/hrm_dashboard/new') || path.startsWith('/admin/hrm_dashboard/edit/')) {
+            setActiveView('hrm_dashboard');
+        } else if (path.startsWith('/admin/articles/new') || path.startsWith('/admin/articles/edit/')) {
+            setActiveView('articles');
+        } else if (path.startsWith('/admin/discounts/new') || path.startsWith('/admin/discounts/edit/')) {
+            setActiveView('discounts');
+        } else if (path.startsWith('/admin/faqs/new') || path.startsWith('/admin/faqs/edit/')) {
+            setActiveView('faqs');
+        } else if (path.startsWith('/admin/accounting_dashboard/transactions/new') || path.startsWith('/admin/accounting_dashboard/transactions/edit/')) {
+            setActiveView('accounting_dashboard');
+        } else if (path.startsWith('/admin/quotations/new') || path.startsWith('/admin/quotations/edit/')) {
+            setActiveView('quotations');
+        }
+        else {
             // Find a direct match for the path segment
-            const pathSegments = path.split('/');
-            const lastSegment = pathSegments[pathSegments.length - 1];
+            const lastSegment = parts[adminIndex + 1]; // e.g., 'products', 'articles'
             const matchingItem = MENU_CONFIG.flatMap(m => m.children ? m.children : m).find(item => item.id === lastSegment);
             if (matchingItem) {
                 setActiveView(matchingItem.id as AdminView);
@@ -173,19 +199,60 @@ const AdminPage: React.FC = () => {
             setIsMobileSidebarOpen(false);
             // Navigate programmatically if it's a direct view
             const targetPath = `/admin/${viewId}`;
-            if (location.pathname !== targetPath) {
-                ReactRouterDOM.useNavigate()(targetPath);
-            }
+            ReactRouterDOM.useNavigate()(targetPath); // Use useNavigate hook
         }
     };
-    
+
     const renderContent = () => {
         // Handle routes that are full pages but still logically belong to an AdminView
+        // Product Forms
         if (location.pathname.startsWith('/admin/products/new')) {
             return <ProductFormPage />;
         }
         if (location.pathname.startsWith('/admin/products/edit/')) {
             return <ProductFormPage />;
+        }
+        // User Forms
+        if (location.pathname.startsWith('/admin/hrm_dashboard/new')) {
+            return <UserFormPage />;
+        }
+        if (location.pathname.startsWith('/admin/hrm_dashboard/edit/')) {
+            return <UserFormPage />;
+        }
+        // Article Forms
+        if (location.pathname.startsWith('/admin/articles/new')) {
+            return <ArticleFormPage />;
+        }
+        if (location.pathname.startsWith('/admin/articles/edit/')) {
+            return <ArticleFormPage />;
+        }
+        // Discount Forms
+        if (location.pathname.startsWith('/admin/discounts/new')) {
+            return <DiscountFormPage />;
+        }
+        if (location.pathname.startsWith('/admin/discounts/edit/')) {
+            return <DiscountFormPage />;
+        }
+        // FAQ Forms
+        if (location.pathname.startsWith('/admin/faqs/new')) {
+            return <FaqFormPage />;
+        }
+        if (location.pathname.startsWith('/admin/faqs/edit/')) {
+            return <FaqFormPage />;
+        }
+        // Transaction Forms (nested under accounting_dashboard)
+        if (location.pathname.startsWith('/admin/accounting_dashboard/transactions/new')) {
+            return <TransactionFormPage />;
+        }
+        if (location.pathname.startsWith('/admin/accounting_dashboard/transactions/edit/')) {
+            return <TransactionFormPage />;
+        }
+        // Quotation Forms
+        if (location.pathname.startsWith('/admin/quotations/new')) {
+            return <QuotationFormPage />;
+        }
+        if (location.pathname.startsWith('/admin/quotations/edit/')) {
+            return <QuotationFormPage />;
         }
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
@@ -222,7 +289,7 @@ const AdminPage: React.FC = () => {
             // New Views (Skeletons/Placeholders)
             case 'quotations': return <QuotationManagementView />;
             case 'warranty_claims': return <WarrantyManagementView />;
-            
+
             // Default placeholder for all other new views
             default: return (
                 <div className="admin-card">
@@ -235,11 +302,24 @@ const AdminPage: React.FC = () => {
             );
         }
     };
-    
+
     const getPageTitle = useMemo(() => {
         const path = location.pathname;
         if (path === '/admin/products/new') return 'Thêm Sản phẩm Mới';
         if (path.startsWith('/admin/products/edit/')) return 'Chỉnh sửa Sản phẩm';
+        if (path === '/admin/hrm_dashboard/new') return 'Thêm Nhân viên Mới';
+        if (path.startsWith('/admin/hrm_dashboard/edit/')) return 'Chỉnh sửa Hồ sơ Nhân sự';
+        if (path === '/admin/articles/new') return 'Thêm Bài viết Mới';
+        if (path.startsWith('/admin/articles/edit/')) return 'Chỉnh sửa Bài viết';
+        if (path === '/admin/discounts/new') return 'Thêm Mã giảm giá Mới';
+        if (path.startsWith('/admin/discounts/edit/')) return 'Chỉnh sửa Mã giảm giá';
+        if (path === '/admin/faqs/new') return 'Thêm FAQ Mới';
+        if (path.startsWith('/admin/faqs/edit/')) return 'Chỉnh sửa FAQ';
+        if (path === '/admin/accounting_dashboard/transactions/new') return 'Thêm Giao dịch Mới';
+        if (path.startsWith('/admin/accounting_dashboard/transactions/edit/')) return 'Chỉnh sửa Giao dịch';
+        if (path === '/admin/quotations/new') return 'Tạo Báo giá Mới';
+        if (path.startsWith('/admin/quotations/edit/')) return 'Chỉnh sửa Báo giá';
+
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
         return allMenuItems.find(i => i.id === activeView)?.label || "Tổng Quan";
@@ -248,7 +328,7 @@ const AdminPage: React.FC = () => {
 
     return (
         <div className="admin-wrapper">
-            <AdminSidebar 
+            <AdminSidebar
                 isOpen={isMobileSidebarOpen}
                 isCollapsed={isSidebarCollapsed}
                 onClose={() => setIsMobileSidebarOpen(false)}
@@ -260,7 +340,7 @@ const AdminPage: React.FC = () => {
                 authContext={{ currentUser, hasPermission }}
             />
             <main className={`admin-main-content ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-                <AdminHeader 
+                <AdminHeader
                     onMobileMenuOpen={() => setIsMobileSidebarOpen(true)}
                     pageTitle={getPageTitle} // Use dynamic page title
                     currentUser={currentUser}
@@ -268,11 +348,44 @@ const AdminPage: React.FC = () => {
                 <div className="admin-content-area">
                     <ReactRouterDOM.Routes>
                         <ReactRouterDOM.Route path="/" element={renderContent()} /> {/* Default route renders content based on activeView */}
+
+                        {/* Product Management Routes */}
+                        <ReactRouterDOM.Route path="/products" element={renderContent()} />
                         <ReactRouterDOM.Route path="/products/new" element={<ProductFormPage />} />
                         <ReactRouterDOM.Route path="/products/edit/:productId" element={<ProductFormPage />} />
-                        <ReactRouterDOM.Route path="/products" element={renderContent()} /> {/* Explicit route for product list */}
-                        {/* Add other specific routes if needed */}
-                        <ReactRouterDOM.Route path="*" element={renderContent()} /> {/* Fallback for other admin views */}
+
+                        {/* HRM Management Routes */}
+                        <ReactRouterDOM.Route path="/hrm_dashboard" element={renderContent()} />
+                        <ReactRouterDOM.Route path="/hrm_dashboard/new" element={<UserFormPage />} />
+                        <ReactRouterDOM.Route path="/hrm_dashboard/edit/:userId" element={<UserFormPage />} />
+
+                        {/* Article Management Routes */}
+                        <ReactRouterDOM.Route path="/articles" element={renderContent()} />
+                        <ReactRouterDOM.Route path="/articles/new" element={<ArticleFormPage />} />
+                        <ReactRouterDOM.Route path="/articles/edit/:articleId" element={<ArticleFormPage />} />
+
+                        {/* Discount Management Routes */}
+                        <ReactRouterDOM.Route path="/discounts" element={renderContent()} />
+                        <ReactRouterDOM.Route path="/discounts/new" element={<DiscountFormPage />} />
+                        <ReactRouterDOM.Route path="/discounts/edit/:discountId" element={<DiscountFormPage />} />
+
+                        {/* FAQ Management Routes */}
+                        <ReactRouterDOM.Route path="/faqs" element={renderContent()} />
+                        <ReactRouterDOM.Route path="/faqs/new" element={<FaqFormPage />} />
+                        <ReactRouterDOM.Route path="/faqs/edit/:faqId" element={<FaqFormPage />} />
+
+                        {/* Financial Transactions Routes (nested under accounting_dashboard) */}
+                        <ReactRouterDOM.Route path="/accounting_dashboard" element={renderContent()} />
+                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/new" element={<TransactionFormPage />} />
+                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
+
+                        {/* Quotation Management Routes */}
+                        <ReactRouterDOM.Route path="/quotations" element={renderContent()} />
+                        <ReactRouterDOM.Route path="/quotations/new" element={<QuotationFormPage />} />
+                        <ReactRouterDOM.Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
+
+                        {/* Fallback for other admin views */}
+                        <ReactRouterDOM.Route path="*" element={renderContent()} />
                     </ReactRouterDOM.Routes>
                 </div>
             </main>
@@ -289,17 +402,17 @@ const AdminSidebar: React.FC<{
     menuConfig: MenuItemConfig[];
     authContext: { currentUser: User | null; hasPermission: (p: AdminPermission[]) => boolean; };
 }> = ({ isOpen, isCollapsed, onClose, onToggleCollapse, activeView, openMenus, onMenuClick, menuConfig, authContext }) => {
-    
+
     const renderSidebarItem = (item: MenuItemConfig) => {
         if (!authContext.hasPermission(item.permission)) return null;
 
         const isParentOpen = !!item.children && !!openMenus[item.id];
-        
+
         if (item.children) {
              const hasActiveChild = item.children.some(child => activeView === child.id);
             return (
                 <div key={item.id}>
-                    <button 
+                    <button
                         className={`w-full flex items-center justify-between p-3 my-1 rounded-md transition-colors text-sm font-semibold
                                     ${hasActiveChild ? 'text-white' : 'text-gray-400 hover:bg-slate-700 hover:text-white'}`}
                         onClick={() => onMenuClick(item.id, true)}
@@ -319,24 +432,24 @@ const AdminSidebar: React.FC<{
 
         return renderChildItem(item); // Render as a child item if it has no children
     };
-    
+
     const renderChildItem = (item: MenuItemConfig) => {
         if (!authContext.hasPermission(item.permission)) return null;
         const isActive = activeView === item.id;
         return (
-             <button key={item.id} 
-                className={`w-full flex items-center p-2.5 my-0.5 rounded-md transition-colors text-sm ${isActive ? 'bg-primary/90 text-white font-semibold shadow-inner' : 'text-gray-300 hover:bg-slate-700 hover:text-white'}`} 
+             <button key={item.id}
+                className={`w-full flex items-center p-2.5 my-0.5 rounded-md transition-colors text-sm ${isActive ? 'bg-primary/90 text-white font-semibold shadow-inner' : 'text-gray-300 hover:bg-slate-700 hover:text-white'}`}
                 onClick={() => onMenuClick(item.id, false)}
             >
                 <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
                 <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
-                {!isCollapsed && item.count !== undefined && item.count > 0 && 
+                {!isCollapsed && item.count !== undefined && item.count > 0 &&
                     <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{item.count > 9 ? '9+' : item.count}</span>
                 }
             </button>
         );
     };
-    
+
     return (
         <>
             <div className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>

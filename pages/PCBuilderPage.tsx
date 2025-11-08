@@ -54,8 +54,9 @@ export const PCBuilderPage: React.FC = () => {
     setSelectedComponents(prev => ({ ...prev, [type]: value }));
   }, []);
 
-  // Fix: Add explicit Promise<void> return type to `getAIRecommendation` function to clarify its non-component nature and resolve TypeScript error.
-  const getAIRecommendation = useCallback(async (): Promise<void> => {
+  // Fix: Explicitly typed useCallback for getAIRecommendation to ensure correct type inference,
+  // addressing a peculiar TypeScript error where the function was being incorrectly assigned to FC{{}}.
+  const getAIRecommendation = React.useCallback<() => Promise<void>>(async (): Promise<void> => {
     // This check is now secondary; the primary error handling is in the service.
     // However, it provides a fast failure path without a service call.
     if (!process.env.API_KEY || process.env.API_KEY === 'undefined') {

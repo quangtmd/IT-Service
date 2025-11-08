@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../ui/Card';
-import { 
+import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
     getPayrollRecords, savePayrollRecords as originalSavePayrollRecords // Fix: Alias the imported function to avoid potential naming conflicts.
 } from '../../services/localDataService';
+import * as ReactRouterDOM from 'react-router-dom';
 
 // --- HELPER FUNCTIONS ---
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
@@ -27,6 +27,7 @@ const FinancialManagementView: React.FC = () => {
     const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = ReactRouterDOM.useNavigate();
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
@@ -58,13 +59,13 @@ const FinancialManagementView: React.FC = () => {
             alert("Lỗi khi thêm giao dịch.");
         }
     };
-    
+
     const renderTabContent = () => {
         if (isLoading) return <div className="text-center p-8">Đang tải dữ liệu tài chính...</div>;
         if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
 
         switch (activeTab) {
-            case 'transactions': return <TransactionsTab transactions={transactions} onDataChange={loadData} />;
+            case 'transactions': return <TransactionsTab transactions={transactions} onDataChange={loadData} navigate={navigate} />;
             case 'reports': return <ReportsTab transactions={transactions} />;
             case 'payroll': return <PayrollTab payrollRecords={payrollRecords} onDataChange={loadData} onAddTransaction={addTransaction} />;
             case 'overview':
@@ -133,25 +134,14 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
     );
 };
 
-const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void }> = ({ transactions, onDataChange }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
+const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: ReactRouterDOM.NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
 
-    const handleSave = async (data: Omit<FinancialTransaction, 'id'> & { id?: string }) => {
-        try {
-            if (data.id) {
-                const { id, ...updates } = data;
-                await updateFinancialTransaction(id, updates);
-            } else {
-                await addFinancialTransaction(data);
-            }
-            onDataChange();
-        } catch (error) {
-            alert("Lỗi khi lưu giao dịch.");
-        } finally {
-            setIsModalOpen(false);
-            setEditingTransaction(null);
-        }
+    const handleAddNewTransaction = () => {
+        navigate('/admin/accounting_dashboard/transactions/new');
+    };
+
+    const handleEditTransaction = (transactionId: string) => {
+        navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
     };
 
     const handleDelete = async (id: string) => {
@@ -168,7 +158,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
     return (
         <div>
             <div className="flex justify-end mb-4">
-                <Button onClick={() => { setEditingTransaction(null); setIsModalOpen(true); }} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
+                <Button onClick={handleAddNewTransaction} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
             </div>
              <div className="overflow-x-auto">
                 <table className="admin-table">
@@ -183,7 +173,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
                                 <td className={`font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{t.amount.toLocaleString('vi-VN')}₫</td>
                                 <td>
                                     <div className="flex gap-1">
-                                        <Button onClick={() => { setEditingTransaction(t); setIsModalOpen(true); }} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
+                                        <Button onClick={() => handleEditTransaction(t.id)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
                                         <Button onClick={() => handleDelete(t.id)} size="sm" variant="ghost" className="text-red-500"><i className="fas fa-trash"></i></Button>
                                     </div>
                                 </td>
@@ -192,7 +182,6 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
                     </tbody>
                 </table>
             </div>
-            {isModalOpen && <TransactionModal transaction={editingTransaction} onSave={handleSave} onClose={() => setIsModalOpen(false)} />}
         </div>
     );
 };
@@ -200,7 +189,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
 const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
     const [startDate, setStartDate] = useState<string>(formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
     const [endDate, setEndDate] = useState<string>(formatDate(new Date()));
-    
+
     const setDateRange = (period: 'week' | 'month' | 'year') => {
         const today = new Date();
         if (period === 'week') {
@@ -214,12 +203,12 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
             setEndDate(formatDate(today));
         }
     };
-    
+
     const filteredTransactions = useMemo(() => {
         const start = new Date(startDate);
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999); // Include entire end day
-        
+
         return transactions.filter(t => {
             const tDate = new Date(t.date);
             return tDate >= start && tDate <= end;
@@ -257,7 +246,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
                     <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="admin-form-group" />
                 </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <Card className="!p-4"><h5 className="text-sm">Tổng Thu</h5><p className="text-2xl font-bold text-green-600">{summary.income.toLocaleString('vi-VN')}₫</p></Card>
                 <Card className="!p-4"><h5 className="text-sm">Tổng Chi</h5><p className="text-2xl font-bold text-red-600">{summary.expense.toLocaleString('vi-VN')}₫</p></Card>
@@ -313,7 +302,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             return [updatedRecord, ...otherRecords];
         });
     };
-    
+
     // Fix: Wrapped handleSettlePayroll in useCallback with correct dependencies
     const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
@@ -325,10 +314,10 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         }
         // Fix: Corrected the reduce callback function to sum 'finalSalary' properties.
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
-        
+
         try {
             // FIX: Pass localPayroll to originalSavePayrollRecords
-            await originalSavePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod)); 
+            await originalSavePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod));
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -341,7 +330,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             alert('Lỗi khi chốt lương.');
         }
     }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
-    
+
     // Fix: Wrapped handleSaveDraftClick in useCallback to directly pass it to onClick
     const handleSaveDraft = useCallback(async () => {
         // FIX: Pass localPayroll to originalSavePayrollRecords
@@ -352,7 +341,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
     // Fix: Used the memoized handleSettlePayroll directly
     const handleSettlePayrollClick = handleSettlePayroll;
     const handleSaveDraftClick = handleSaveDraft;
-    
+
     return (
         <div>
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
@@ -383,64 +372,6 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                         })}
                     </tbody>
                 </table>
-            </div>
-        </div>
-    );
-};
-
-// --- MODAL COMPONENT ---
-interface TransactionModalProps {
-    transaction: FinancialTransaction | null;
-    onClose: () => void;
-    onSave: (data: Omit<FinancialTransaction, 'id'> & { id?: string }) => void;
-}
-const TRANSACTION_CATEGORIES: Record<TransactionType, TransactionCategory[]> = {
-    'income': ['Doanh thu Bán hàng', 'Thu nội bộ'],
-    'expense': ['Chi phí Nhà Cung Cấp', 'Chi phí Lương', 'Chi phí Vận hành', 'Chi phí Marketing', 'Chi phí Khác'],
-};
-
-const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClose, onSave }) => {
-    const [formData, setFormData] = useState<Partial<FinancialTransaction>>(transaction || {
-        date: new Date().toISOString().split('T')[0], type: 'expense', amount: 0
-    });
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        let newFormData = { ...formData, [name]: value };
-        if (name === 'type') {
-            newFormData.category = undefined; // Reset category when type changes
-        }
-        setFormData(newFormData);
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSave(formData as FinancialTransaction);
-    };
-
-    const type = formData.type || 'expense';
-
-    return (
-         <div className="admin-modal-overlay">
-            <div className="admin-modal-panel max-w-lg">
-                <form onSubmit={handleSubmit}>
-                    <div className="admin-modal-header"><h4 className="admin-modal-title">{formData.id ? 'Sửa Giao dịch' : 'Thêm Giao dịch'}</h4><button type="button" onClick={onClose}>&times;</button></div>
-                    <div className="admin-modal-body grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="admin-form-group"><label>Ngày *</label><input type="date" name="date" value={formData.date ? formData.date.split('T')[0] : ''} onChange={handleChange} required/></div>
-                        <div className="admin-form-group"><label>Loại *</label><select name="type" value={type} onChange={handleChange}><option value="income">Thu</option><option value="expense">Chi</option></select></div>
-                        <div className="admin-form-group sm:col-span-2"><label>Danh mục *</label>
-                            <select name="category" value={formData.category || ''} onChange={handleChange} required>
-                                <option value="">-- Chọn --</option>
-                                {TRANSACTION_CATEGORIES[type].map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
-                        </div>
-                        <div className="admin-form-group sm:col-span-2"><label>Số tiền (VNĐ) *</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required/></div>
-                        <div className="admin-form-group sm:col-span-2"><label>Mô tả *</label><textarea name="description" value={formData.description || ''} onChange={handleChange} required rows={3}></textarea></div>
-                        <div className="admin-form-group"><label>Đối tượng liên quan</label><input type="text" name="relatedEntity" value={formData.relatedEntity || ''} onChange={handleChange} /></div>
-                        <div className="admin-form-group"><label>Mã hóa đơn</label><input type="text" name="invoiceNumber" value={formData.invoiceNumber || ''} onChange={handleChange} /></div>
-                    </div>
-                    <div className="admin-modal-footer"><Button type="button" variant="outline" onClick={onClose}>Hủy</Button><Button type="submit">Lưu</Button></div>
-                </form>
             </div>
         </div>
     );
