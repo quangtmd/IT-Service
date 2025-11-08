@@ -33,6 +33,10 @@ const CustomerManagementView: React.FC = () => {
         navigate(`/admin/customers/edit/${customerId}`);
     };
 
+    const handleViewCustomer = (customerId: string) => {
+        navigate(`/admin/customers/view/${customerId}`);
+    };
+
     return (
         <div className="admin-card">
             <div className="admin-card-header flex justify-between items-center">
@@ -79,7 +83,10 @@ const CustomerManagementView: React.FC = () => {
                                         </td>
                                         <td>
                                             <div className="flex items-center gap-2">
-                                                <Button size="sm" variant="outline" onClick={() => handleEditCustomer(user.id)}>
+                                                <Button size="sm" variant="outline" onClick={() => handleViewCustomer(user.id)} title="Xem hồ sơ">
+                                                    <i className="fas fa-eye"></i>
+                                                </Button>
+                                                <Button size="sm" variant="outline" onClick={() => handleEditCustomer(user.id)} title="Chỉnh sửa">
                                                     <i className="fas fa-edit"></i>
                                                 </Button>
                                                 <Button

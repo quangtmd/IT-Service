@@ -400,6 +400,7 @@ app.post('/api/orders', async (req, res) => {
         const newOrder = req.body;
         await pool.query('INSERT INTO Orders SET ?', {
             id: newOrder.id,
+            userId: newOrder.userId || null,
             customerInfo: JSON.stringify(newOrder.customerInfo),
             items: JSON.stringify(newOrder.items),
             totalAmount: newOrder.totalAmount,
@@ -511,25 +512,34 @@ app.put('/api/users/:id', async (req, res) => {
     try {
         await connection.beginTransaction();
 
+        const [userRows] = await connection.query('SELECT role FROM Users WHERE id = ?', [id]);
+        if (userRows.length === 0) {
+            throw new Error('Không tìm thấy người dùng');
+        }
+        const userRole = userRows[0].role;
+
         const userColumns = ['username', 'password', 'role', 'staffRole', 'imageUrl', 'isLocked', 'phone', 'address', 'status', 'dateOfBirth', 'origin', 'loyaltyPoints', 'debtStatus', 'assignedStaffId'];
-        const updates = req.body;
-        
-        const userUpdates = filterObject(updates, userColumns);
+        const userUpdates = filterObject(req.body, userColumns);
+
         if (Object.keys(userUpdates).length > 0) {
-            const [result] = await connection.query('UPDATE Users SET ? WHERE id = ?', [userUpdates, id]);
-            if (result.affectedRows === 0) {
-                throw new Error('Không tìm thấy người dùng');
-            }
+            await connection.query('UPDATE Users SET ? WHERE id = ?', [userUpdates, id]);
         }
 
-        const employeeColumns = ['position', 'joinDate', 'salary'];
-        const employeeUpdates = filterObject(updates, employeeColumns);
-        if (Object.keys(employeeUpdates).length > 0) {
-            await connection.query('INSERT INTO Employees SET ? ON DUPLICATE KEY UPDATE ?', [{ userId: id, ...employeeUpdates }, employeeUpdates]);
+        if (userRole === 'staff' || userRole === 'admin') {
+            const employeeColumns = ['position', 'joinDate', 'salary'];
+            const employeeUpdates = filterObject(req.body, employeeColumns);
+            if (Object.keys(employeeUpdates).length > 0) {
+                const [empRows] = await connection.query('SELECT userId FROM Employees WHERE userId = ?', [id]);
+                if (empRows.length > 0) {
+                    await connection.query('UPDATE Employees SET ? WHERE userId = ?', [employeeUpdates, id]);
+                } else {
+                    await connection.query('INSERT INTO Employees SET ?', { userId: id, ...employeeUpdates });
+                }
+            }
         }
         
         await connection.commit();
-        res.json({ id, ...updates });
+        res.json({ id, ...req.body });
 
     } catch (error) {
         await connection.rollback();
@@ -543,7 +553,6 @@ app.put('/api/users/:id', async (req, res) => {
     }
 });
 
-
 app.delete('/api/users/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -553,6 +562,24 @@ app.delete('/api/users/:id', async (req, res) => {
         }
         res.status(204).send();
     } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.get('/api/users/:id/orders', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [orders] = await pool.query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [id]);
+        const deserializedOrders = orders.map(o => ({
+            ...o,
+            customerInfo: JSON.parse(o.customerInfo || '{}'),
+            items: JSON.parse(o.items || '[]'),
+            paymentInfo: JSON.parse(o.paymentInfo || '{}'),
+            shippingInfo: JSON.parse(o.shippingInfo || '{}')
+        }));
+        res.json(deserializedOrders);
+    } catch (error) {
+        console.error(`Lỗi khi lấy đơn hàng cho user ID ${req.params.id}:`, error);
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });

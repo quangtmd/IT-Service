@@ -244,6 +244,10 @@ export const deleteUser = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/users/${id}`, { method: 'DELETE' });
 };
 
+export const getCustomerOrders = async (userId: string): Promise<Order[]> => {
+    return fetchFromApi<Order[]>(`/api/users/${userId}/orders`);
+};
+
 // --- Quotation Service ---
 export const getQuotations = async (): Promise<Quotation[]> => {
     return fetchFromApi<Quotation[]>('/api/quotations');

@@ -74,7 +74,9 @@ const CheckoutPage: React.FC = () => {
         }
         
         const newOrder: Order = {
-            id: newOrderId, customerInfo: formData,
+            id: newOrderId,
+            userId: currentUser?.id, // Add userId if user is logged in
+            customerInfo: formData,
             items: cart.map(item => ({ productId: item.id, productName: item.name, quantity: item.quantity, price: item.price })),
             totalAmount: total, orderDate: new Date().toISOString(), status: 'Chờ xử lý', paymentInfo: paymentInfo,
         };

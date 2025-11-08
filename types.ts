@@ -295,6 +295,7 @@ export interface PaymentInfo {
 
 export interface Order {
   id: string;
+  userId?: string; // Link to the user who placed the order
   customerInfo: CheckoutFormData;
   items: OrderItem[];
   totalAmount: number;
