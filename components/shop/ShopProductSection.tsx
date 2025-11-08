@@ -1,11 +1,12 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../types';
 import ProductCard from './ProductCard';
 import Button from '../ui/Button';
 import SkeletonProductCard from './SkeletonProductCard';
-import BackendConnectionError from '../shared/BackendConnectionError';
+import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 import { getProducts } from '../../services/localDataService';
 import { getFeaturedProducts } from '../../services/localDataService'; // Import for featured products
 

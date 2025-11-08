@@ -1,10 +1,11 @@
 
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import { getOrders, updateOrderStatus } from '../../services/localDataService';
-import BackendConnectionError from '../shared/BackendConnectionError';
+import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 
 const getStatusColor = (status: OrderStatus) => {
     switch (status) {

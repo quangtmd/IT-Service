@@ -13,6 +13,12 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // Fix: Explicitly declare props and state with their types to resolve potential TypeScript inference issues.
+  // Although inherited from React.Component, some environments might require this explicit declaration
+  // if the compiler is struggling to infer them from React.Component itself.
+  public readonly props: ErrorBoundaryProps;
+  public state: ErrorBoundaryState;
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -34,7 +40,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   render() {
-    // Fix: `this.state` and `this.props` are now correctly inferred after fixing the Props interface.
     if (this.state.hasError) {
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 

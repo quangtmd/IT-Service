@@ -1,11 +1,12 @@
 
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Article } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import ImageUploadInput from '../ui/ImageUploadInput';
 import { getArticles, addArticle, updateArticle, deleteArticle } from '../../services/localDataService';
-import BackendConnectionError from '../shared/BackendConnectionError';
+import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 
 const ArticleManagementView: React.FC = () => {
     const [articles, setArticles] = useState<Article[]>([]);

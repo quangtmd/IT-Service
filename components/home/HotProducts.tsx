@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Product } from '../../types';
@@ -6,7 +5,7 @@ import ProductCard from '../shop/ProductCard';
 import Button from '../ui/Button';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 import { getFeaturedProducts } from '../../services/localDataService';
-import BackendConnectionError from '../shared/BackendConnectionError';
+import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 
 const HotProducts: React.FC = () => {
   const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../ui/Button';
@@ -5,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Card from '../ui/Card';
 import { 
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
-    getPayrollRecords, savePayrollRecords
+    getPayrollRecords, savePayrollRecords as originalSavePayrollRecords // Fix: Alias the imported function to avoid potential naming conflicts.
 } from '../../services/localDataService';
 
 // --- HELPER FUNCTIONS ---
@@ -227,7 +228,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
 
     const summary = useMemo(() => {
         const income = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-        const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+        const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
         const net = income - expense;
 
         const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce((acc, t) => {
@@ -313,7 +314,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
     
-    const handleSettlePayroll = async () => {
+    // Fix: Wrapped handleSettlePayroll in useCallback with correct dependencies
+    const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -325,7 +327,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
         
         try {
-            await savePayrollRecords(localPayroll);
+            // FIX: Pass localPayroll to originalSavePayrollRecords
+            await originalSavePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod)); 
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -337,29 +340,28 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         } catch (error) {
             alert('Lỗi khi chốt lương.');
         }
-    };
+    }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
     
-    // Fix: Changed onClick handler to explicitly be a function that takes no arguments.
-    const handleSaveDraftClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation(); // Stop propagation of the event
-        void savePayrollRecords(localPayroll);
-    }, [localPayroll]);
+    // Fix: Wrapped handleSaveDraftClick in useCallback to directly pass it to onClick
+    const handleSaveDraft = useCallback(async () => {
+        // FIX: Pass localPayroll to originalSavePayrollRecords
+        await originalSavePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod));
+        alert('Đã lưu nháp lương thành công!');
+    }, [localPayroll, payPeriod]);
 
-    // Fix: Changed onClick handler to explicitly be a function that takes no arguments.
-    const handleSettlePayrollClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation(); // Stop propagation of the event
-        void handleSettlePayroll();
-    }, [handleSettlePayroll]); // handleSettlePayroll is already memoized by useCallback in its definition
+    // Fix: Used the memoized handleSettlePayroll directly
+    const handleSettlePayrollClick = handleSettlePayroll;
+    const handleSaveDraftClick = handleSaveDraft;
     
     return (
         <div>
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                {/* Fix: Changed onClick handler to explicitly be a function that takes no arguments. */}
-                <Button onClick={() => handleSaveDraftClick()} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* Fix: Changed onClick handler to explicitly be a function that takes no arguments. */}
-                <Button onClick={() => handleSettlePayrollClick()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                {/* Fix: Directly used memoized function for onClick */}
+                <Button onClick={handleSaveDraftClick} size="sm" variant="outline">Lưu Nháp</Button>
+                {/* Fix: Directly used memoized function for onClick */}
+                <Button onClick={handleSettlePayrollClick} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

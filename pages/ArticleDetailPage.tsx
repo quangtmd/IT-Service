@@ -1,11 +1,12 @@
 
+
 import React, { useEffect, useState, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom'; // useParams and Link are compatible with v6/v7
 import { Article } from '../types';
 import Markdown from 'react-markdown';
 import ArticlePreview from '../components/blog/ArticlePreview';
 import { getArticle, getArticles } from '../services/localDataService';
-import BackendConnectionError from '../components/shared/BackendConnectionError';
+import BackendConnectionError from '../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 
 const ArticleDetailPage: React.FC = () => {
   const { articleId } = ReactRouterDOM.useParams<{ articleId: string }>();

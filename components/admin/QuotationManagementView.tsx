@@ -1,10 +1,11 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Quotation, QuotationItem, User, Product } from '../../types';
 import Button from '../ui/Button';
 import { getQuotations, addQuotation, updateQuotation, deleteQuotation } from '../../services/localDataService';
 import { getUsers, getProducts } from '../../services/localDataService'; // Assuming these exist
-import BackendConnectionError from '../shared/BackendConnectionError';
+import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 
 const getStatusColor = (status: Quotation['status']) => {
     switch (status) {
@@ -137,7 +138,7 @@ const QuotationManagementView: React.FC = () => {
                     </table>
                 </div>
             </div>
-            {isModalOpen && <QuotationFormModal quotation={editingQuotation} customers={customers} products={products} quotations={quotations} onClose={closeModal} onSave={handleSave} />}
+            <QuotationFormModal quotation={editingQuotation} customers={customers} products={products} quotations={quotations} onClose={closeModal} onSave={handleSave} />
         </div>
     );
 };

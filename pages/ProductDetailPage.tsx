@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Product } from '../types';
@@ -7,7 +8,7 @@ import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
 import { getProduct, getProducts } from '../services/localDataService';
-import BackendConnectionError from '../components/shared/BackendConnectionError';
+import BackendConnectionError from '../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 import { useChatbotContext } from '../contexts/ChatbotContext'; // Import the context hook
 
 const ProductDetailPage: React.FC = () => {

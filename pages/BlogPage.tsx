@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import ArticlePreview from '../components/blog/ArticlePreview';
 import SearchBar from '../components/shared/SearchBar';
@@ -6,7 +7,7 @@ import { Article } from '../types';
 import geminiService from '../services/geminiService';
 import { getArticles } from '../services/localDataService';
 import * as Constants from '../constants';
-import BackendConnectionError from '../components/shared/BackendConnectionError';
+import BackendConnectionError from '../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 
 const AI_ARTICLES_KEY = 'aiGeneratedArticles_v1';
 const AI_LAST_FETCHED_KEY = 'aiArticlesLastFetched_v1';

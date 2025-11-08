@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import ProductCard from '../components/shop/ProductCard';
@@ -8,7 +9,7 @@ import Pagination from '../components/shared/Pagination';
 import * as Constants from '../constants.tsx';
 import CategorySidebar from '../components/shop/CategorySidebar';
 import { getProducts } from '../services/localDataService';
-import BackendConnectionError from '../components/shared/BackendConnectionError';
+import BackendConnectionError from '../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 import SkeletonProductCard from '../components/shop/SkeletonProductCard';
 import ShopBanner from '../components/shop/ShopBanner'; // New import
 import ShopProductSection from '../components/shop/ShopProductSection'; // New import

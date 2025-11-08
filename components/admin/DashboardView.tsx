@@ -1,11 +1,12 @@
 
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getOrders, getProducts, getArticles, getServerInfo } from '../../services/localDataService';
 import Card from '../ui/Card';
 import { Order, OrderStatus, ServerInfo, Product, Article, AdminView } from '../../types';
 import Button from '../ui/Button';
-import BackendConnectionError from '../shared/BackendConnectionError';
+import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 
 interface DashboardViewProps {
   setActiveView: (view: AdminView) => void;

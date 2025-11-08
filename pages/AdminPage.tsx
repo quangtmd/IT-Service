@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, AdminNotification, AdminView } from '../types';
@@ -20,6 +21,7 @@ import FinancialManagementView from '../components/admin/FinancialManagementView
 import DashboardView from '../components/admin/DashboardView';
 import InventoryView from '../components/admin/InventoryView';
 import ServiceTicketView from '../components/admin/ServiceTicketView';
+import ProductFormPage from './admin/ProductFormPage'; // Import the new product form page
 
 // Import new placeholder/skeleton views
 import QuotationManagementView from '../components/admin/QuotationManagementView';
@@ -38,6 +40,7 @@ interface MenuItemConfig {
 
 const AdminPage: React.FC = () => {
     const { currentUser, adminNotifications, hasPermission } = useAuth();
+    const location = ReactRouterDOM.useLocation();
     
     const [activeView, setActiveView] = useState<AdminView>('dashboard');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
@@ -141,16 +144,50 @@ const AdminPage: React.FC = () => {
         { id: 'notifications_panel', label: 'Thông Báo', icon: 'fas fa-bell', count: unreadNotificationCount, permission: ['viewNotifications'] },
     ], [unreadNotificationCount]);
 
+    // Determine the active view based on URL path
+    useEffect(() => {
+        const path = location.pathname;
+        if (path.startsWith('/admin/products/new')) {
+            setActiveView('products'); // Highlight 'Sản Phẩm' for new product form
+        } else if (path.startsWith('/admin/products/edit/')) {
+            setActiveView('products'); // Highlight 'Sản Phẩm' for edit product form
+        } else {
+            // Find a direct match for the path segment
+            const pathSegments = path.split('/');
+            const lastSegment = pathSegments[pathSegments.length - 1];
+            const matchingItem = MENU_CONFIG.flatMap(m => m.children ? m.children : m).find(item => item.id === lastSegment);
+            if (matchingItem) {
+                setActiveView(matchingItem.id as AdminView);
+            } else {
+                setActiveView('dashboard'); // Default to dashboard if no direct match
+            }
+        }
+    }, [location.pathname, MENU_CONFIG]);
+
+
     const handleMenuClick = (viewId: AdminView | string, isParent: boolean) => {
         if (isParent) {
             setOpenMenus(prev => ({ ...prev, [viewId]: !prev[viewId] }));
         } else {
             setActiveView(viewId as AdminView);
             setIsMobileSidebarOpen(false);
+            // Navigate programmatically if it's a direct view
+            const targetPath = `/admin/${viewId}`;
+            if (location.pathname !== targetPath) {
+                ReactRouterDOM.useNavigate()(targetPath);
+            }
         }
     };
     
     const renderContent = () => {
+        // Handle routes that are full pages but still logically belong to an AdminView
+        if (location.pathname.startsWith('/admin/products/new')) {
+            return <ProductFormPage />;
+        }
+        if (location.pathname.startsWith('/admin/products/edit/')) {
+            return <ProductFormPage />;
+        }
+
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
         const currentMenuItem = allMenuItems.find(i => i.id === activeView);
 
@@ -198,6 +235,16 @@ const AdminPage: React.FC = () => {
             );
         }
     };
+    
+    const getPageTitle = useMemo(() => {
+        const path = location.pathname;
+        if (path === '/admin/products/new') return 'Thêm Sản phẩm Mới';
+        if (path.startsWith('/admin/products/edit/')) return 'Chỉnh sửa Sản phẩm';
+
+        const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
+        return allMenuItems.find(i => i.id === activeView)?.label || "Tổng Quan";
+    }, [activeView, location.pathname, MENU_CONFIG]);
+
 
     return (
         <div className="admin-wrapper">
@@ -215,11 +262,18 @@ const AdminPage: React.FC = () => {
             <main className={`admin-main-content ${isSidebarCollapsed ? 'collapsed' : ''}`}>
                 <AdminHeader 
                     onMobileMenuOpen={() => setIsMobileSidebarOpen(true)}
-                    pageTitle={MENU_CONFIG.flatMap(m => m.children ? m.children : m).find(i => i.id === activeView)?.label || "Tổng Quan"}
+                    pageTitle={getPageTitle} // Use dynamic page title
                     currentUser={currentUser}
                 />
                 <div className="admin-content-area">
-                    {renderContent()}
+                    <ReactRouterDOM.Routes>
+                        <ReactRouterDOM.Route path="/" element={renderContent()} /> {/* Default route renders content based on activeView */}
+                        <ReactRouterDOM.Route path="/products/new" element={<ProductFormPage />} />
+                        <ReactRouterDOM.Route path="/products/edit/:productId" element={<ProductFormPage />} />
+                        <ReactRouterDOM.Route path="/products" element={renderContent()} /> {/* Explicit route for product list */}
+                        {/* Add other specific routes if needed */}
+                        <ReactRouterDOM.Route path="*" element={renderContent()} /> {/* Fallback for other admin views */}
+                    </ReactRouterDOM.Routes>
                 </div>
             </main>
         </div>
