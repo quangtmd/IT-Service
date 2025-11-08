@@ -55,20 +55,31 @@ export interface CartItem extends Product {
   buildComponents?: Record<string, { name: string; price?: number }>; 
 }
 
-export interface CustomPCBuildCartItem extends Omit<Product, 'imageUrls' | 'mainCategory' | 'subCategory' | 'category' | 'specifications' | 'stock' | 'status' | 'brand' | 'tags' | 'description' | 'shortDescription' | 'isVisible' | 'seoMetaTitle' | 'seoMetaDescription' | 'slug'> {
+// FIX: Modified CustomPCBuildCartItem to extend Product directly and explicitly define its properties.
+// This ensures it correctly implements all Product properties (including `specifications` and `stock`)
+// while also adding custom build-specific fields, resolving type compatibility issues with `addToCart`.
+export interface CustomPCBuildCartItem extends Product {
   id: string;
   name: string; 
   price: number;
   quantity: number;
   description: string; 
-  imageUrl: string; 
+  imageUrl: string; // For CustomPCBuildCartItem, this will usually be a single generic image.
   isCustomBuild: true;
   buildComponents: Record<string, { name: string; price?: number }>; 
   mainCategory: "PC Xây Dựng";
   subCategory: "Theo Yêu Cầu";
   category: "PC Xây Dựng";
-  imageUrls: [string]; 
+  imageUrls: [string]; // Override Product's string[] to a single-element tuple for custom builds
   tags: string[];
+
+  // Explicitly defining specifications and stock to satisfy Product interface,
+  // even if they are empty or default for a custom build.
+  specifications: Record<string, string>;
+  stock: number; 
+
+  // Other optional Product fields can be implicitly inherited or set to undefined
+  // if not relevant for a custom build product representation.
 }
 
 
@@ -456,7 +467,7 @@ export interface HomepageStatsCounterSettings {
   sectionTitleIconUrl?: string; 
 }
 
-export interface HomepageFeaturedProjectItem { 
+export interface HomepageFeaturedProjectsItem { 
   id: string; 
   displayOrder: number;
 }
