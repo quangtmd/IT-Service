@@ -137,61 +137,78 @@ const CustomerFormPage: React.FC = () => {
                 </div>
                 <div className="admin-card-body admin-product-form-page-body">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="md:col-span-1">
-                            <ImageUploadInput
-                                label="Ảnh đại diện"
-                                value={formData.imageUrl || ''}
-                                onChange={value => setFormData(p => p ? ({ ...p, imageUrl: value }) : null)}
-                                showPreview={true}
-                            />
+                        {/* Left Column: Avatar & Status */}
+                        <div className="md:col-span-1 space-y-6">
+                            <div className="admin-card !p-4">
+                                <h4 className="admin-form-subsection-title !mt-0">Ảnh đại diện & Trạng thái</h4>
+                                <ImageUploadInput
+                                    label="Ảnh đại diện"
+                                    value={formData.imageUrl || ''}
+                                    onChange={value => setFormData(p => p ? ({ ...p, imageUrl: value }) : null)}
+                                    showPreview={true}
+                                />
+                                <div className="admin-form-group-checkbox items-center mt-4">
+                                    <input type="checkbox" name="isLocked" id="isLocked" checked={formData.isLocked || false} onChange={handleChange} className="w-4 h-4" />
+                                    <label htmlFor="isLocked" className="!mb-0 !ml-2">Khóa tài khoản</label>
+                                </div>
+                            </div>
                         </div>
-                        <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="admin-form-group">
-                                <label htmlFor="username">Tên khách hàng *</label>
-                                <input type="text" name="username" id="username" value={formData.username || ''} onChange={handleChange} required />
+
+                        {/* Right Column: Details */}
+                        <div className="md:col-span-2 space-y-6">
+                            <div className="admin-card !p-4">
+                                <h4 className="admin-form-subsection-title !mt-0">Thông tin cơ bản</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="admin-form-group">
+                                        <label htmlFor="username">Tên khách hàng *</label>
+                                        <input type="text" name="username" id="username" value={formData.username || ''} onChange={handleChange} required />
+                                    </div>
+                                    <div className="admin-form-group">
+                                        <label htmlFor="email">Email *</label>
+                                        <input type="email" name="email" id="email" value={formData.email || ''} onChange={handleChange} required disabled={isEditing} />
+                                    </div>
+                                    <div className="admin-form-group">
+                                        <label htmlFor="phone">Số điện thoại</label>
+                                        <input type="tel" name="phone" id="phone" value={formData.phone || ''} onChange={handleChange} />
+                                    </div>
+                                    <div className="admin-form-group">
+                                        <label htmlFor="dateOfBirth">Ngày sinh</label>
+                                        <input type="date" name="dateOfBirth" id="dateOfBirth" value={formData.dateOfBirth ? formData.dateOfBirth.split('T')[0] : ''} onChange={handleChange} />
+                                    </div>
+                                    <div className="admin-form-group sm:col-span-2">
+                                        <label htmlFor="address">Địa chỉ</label>
+                                        <input type="text" name="address" id="address" value={formData.address || ''} onChange={handleChange} />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="admin-form-group">
-                                <label htmlFor="email">Email *</label>
-                                <input type="email" name="email" id="email" value={formData.email || ''} onChange={handleChange} required disabled={isEditing} />
-                            </div>
-                            <div className="admin-form-group">
-                                <label htmlFor="phone">Số điện thoại</label>
-                                <input type="tel" name="phone" id="phone" value={formData.phone || ''} onChange={handleChange} />
-                            </div>
-                            <div className="admin-form-group">
-                                <label htmlFor="dateOfBirth">Ngày sinh</label>
-                                <input type="date" name="dateOfBirth" id="dateOfBirth" value={formData.dateOfBirth ? formData.dateOfBirth.split('T')[0] : ''} onChange={handleChange} />
-                            </div>
-                            <div className="admin-form-group sm:col-span-2">
-                                <label htmlFor="address">Địa chỉ</label>
-                                <input type="text" name="address" id="address" value={formData.address || ''} onChange={handleChange} />
-                            </div>
-                            <div className="admin-form-group">
-                                <label htmlFor="origin">Nguồn gốc</label>
-                                <select name="origin" id="origin" value={formData.origin || ''} onChange={handleChange}>
-                                    {CUSTOMER_ORIGIN_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                </select>
-                            </div>
-                            <div className="admin-form-group">
-                                <label htmlFor="loyaltyPoints">Điểm tích lũy</label>
-                                <input type="number" name="loyaltyPoints" id="loyaltyPoints" value={formData.loyaltyPoints || ''} onChange={handleNumberChange} />
-                            </div>
-                            <div className="admin-form-group">
-                                <label htmlFor="debtStatus">Trạng thái công nợ</label>
-                                <select name="debtStatus" id="debtStatus" value={formData.debtStatus || 'Không có'} onChange={handleChange}>
-                                    {DEBT_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                </select>
-                            </div>
-                            <div className="admin-form-group">
-                                <label htmlFor="assignedStaffId">Nhân viên phụ trách</label>
-                                <select name="assignedStaffId" id="assignedStaffId" value={formData.assignedStaffId || ''} onChange={handleChange}>
-                                    <option value="">-- Chọn nhân viên --</option>
-                                    {staffUsers.map(staff => <option key={staff.id} value={staff.id}>{staff.username}</option>)}
-                                </select>
-                            </div>
-                            <div className="admin-form-group-checkbox items-center md:col-span-2">
-                                <input type="checkbox" name="isLocked" id="isLocked" checked={formData.isLocked || false} onChange={handleChange} className="w-4 h-4" />
-                                <label htmlFor="isLocked" className="!mb-0 !ml-2">Khóa tài khoản</label>
+
+                            <div className="admin-card !p-4">
+                                 <h4 className="admin-form-subsection-title !mt-0">Thông tin CRM & Bán hàng</h4>
+                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="admin-form-group">
+                                        <label htmlFor="origin">Nguồn gốc</label>
+                                        <select name="origin" id="origin" value={formData.origin || ''} onChange={handleChange}>
+                                            {CUSTOMER_ORIGIN_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="admin-form-group">
+                                        <label htmlFor="loyaltyPoints">Điểm tích lũy</label>
+                                        <input type="number" name="loyaltyPoints" id="loyaltyPoints" value={formData.loyaltyPoints === undefined ? '' : formData.loyaltyPoints} onChange={handleNumberChange} />
+                                    </div>
+                                    <div className="admin-form-group">
+                                        <label htmlFor="debtStatus">Trạng thái công nợ</label>
+                                        <select name="debtStatus" id="debtStatus" value={formData.debtStatus || 'Không có'} onChange={handleChange}>
+                                            {DEBT_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="admin-form-group">
+                                        <label htmlFor="assignedStaffId">Nhân viên phụ trách</label>
+                                        <select name="assignedStaffId" id="assignedStaffId" value={formData.assignedStaffId || ''} onChange={handleChange}>
+                                            <option value="">-- Chọn nhân viên --</option>
+                                            {staffUsers.map(staff => <option key={staff.id} value={staff.id}>{staff.username}</option>)}
+                                        </select>
+                                    </div>
+                                 </div>
                             </div>
                         </div>
                     </div>

@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Card from '../ui/Card';
 import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
-    getPayrollRecords, savePayrollRecords as originalSavePayrollRecords // Fix: Alias the imported function to avoid potential naming conflicts.
+    getPayrollRecords, savePayrollRecords
 } from '../../services/localDataService';
 import * as ReactRouterDOM from 'react-router-dom';
 
@@ -316,8 +316,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
 
         try {
-            // FIX: Pass localPayroll to originalSavePayrollRecords
-            await originalSavePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod));
+            // Fix: Removed import alias and used original function name.
+            await savePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod));
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -333,8 +333,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
     // Fix: Wrapped handleSaveDraftClick in useCallback to directly pass it to onClick
     const handleSaveDraft = useCallback(async () => {
-        // FIX: Pass localPayroll to originalSavePayrollRecords
-        await originalSavePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod));
+        // Fix: Removed import alias and used original function name.
+        await savePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod));
         alert('Đã lưu nháp lương thành công!');
     }, [localPayroll, payPeriod]);
 
