@@ -125,7 +125,7 @@ const deserializeProduct = (p) => ({
     imageUrls: JSON.parse(p.imageUrls || '[]'),
     specifications: JSON.parse(p.specifications || '{}'),
     tags: JSON.parse(p.tags || '[]'),
-    isVisible: p.is_published,
+    isVisible: p.isVisible, // Use isVisible directly
 });
 
 // --- PRODUCTS API ---
@@ -133,10 +133,8 @@ const deserializeProduct = (p) => ({
 app.get('/api/products/featured', async (req, res) => {
     try {
         const query = `
-            SELECT p.*, c.name as subCategory, mc.name as mainCategory
+            SELECT p.*
             FROM Products p
-            LEFT JOIN ProductCategories c ON p.categoryId = c.id
-            LEFT JOIN ProductCategories mc ON c.parentId = mc.id
             WHERE JSON_CONTAINS(p.tags, '"Nổi bật"') AND p.isVisible = TRUE
             ORDER BY RAND()
             LIMIT 4;
@@ -178,11 +176,11 @@ app.get('/api/products', async (req, res) => {
         const params = [];
         
         if (mainCategory) {
-            whereClauses.push('p.mainCategory = (SELECT name FROM ProductCategories WHERE slug = ?)');
+            whereClauses.push('p.mainCategory = ?');
             params.push(mainCategory);
         }
         if (subCategory) {
-            whereClauses.push('p.subCategory = (SELECT name FROM ProductCategories WHERE slug = ?)');
+            whereClauses.push('p.subCategory = ?');
             params.push(subCategory);
         }
         if (q) {
@@ -200,7 +198,6 @@ app.get('/api/products', async (req, res) => {
         const [countRows] = await pool.query(countQuery, params);
         const totalProducts = countRows[0].total;
         
-        const offset = (Number(page) - 1) * Number(limit);
         const productQuery = `SELECT p.* ${baseQuery} ${whereString} ORDER BY p.id DESC LIMIT ? OFFSET ?`;
         const productParams = [...params, Number(limit), offset];
 
@@ -213,28 +210,13 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-const getCategoryId = async (mainCategoryName, subCategoryName) => {
-    if (!mainCategoryName || !subCategoryName) return null;
-    const [mainCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parentId IS NULL', [mainCategoryName]);
-    if (mainCatRows.length > 0) {
-        const mainCatId = mainCatRows[0].id;
-        const [subCatRows] = await pool.query('SELECT id FROM ProductCategories WHERE name = ? AND parentId = ?', [subCategoryName, mainCatId]);
-        if (subCatRows.length > 0) {
-            return subCatRows[0].id;
-        }
-    }
-    return null;
-}
-
 app.post('/api/products', async (req, res) => {
     try {
         const { isVisible, ...productData } = req.body;
-        const categoryId = await getCategoryId(productData.mainCategory, productData.subCategory);
 
         const productToDb = {
             id: productData.id || `prod-${Date.now()}`,
             name: productData.name,
-            categoryId: categoryId,
             mainCategory: productData.mainCategory,
             subCategory: productData.subCategory,
             price: Number(productData.price) || 0,
@@ -244,7 +226,7 @@ app.post('/api/products', async (req, res) => {
             shortDescription: productData.shortDescription || null,
             specifications: JSON.stringify(productData.specifications || {}),
             stock: Number(productData.stock) || 0,
-            status: productData.status || null,
+            status: productData.status || 'Mới',
             brand: productData.brand || null,
             tags: JSON.stringify(productData.tags || []),
             isVisible: isVisible === undefined ? true : Boolean(isVisible)
@@ -264,20 +246,8 @@ app.put('/api/products/:id', async (req, res) => {
         const { id } = req.params;
         const { isVisible, ...productData } = req.body;
         
-        const [existingProduct] = await pool.query('SELECT categoryId FROM Products WHERE id = ?', [id]);
-        if (existingProduct.length === 0) {
-            return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
-        }
-        
-        let categoryId = existingProduct[0].categoryId;
-        if (productData.mainCategory && productData.subCategory) {
-            const newCatId = await getCategoryId(productData.mainCategory, productData.subCategory);
-            if(newCatId) categoryId = newCatId;
-        }
-        
         const fieldsToUpdate = {
             name: productData.name,
-            categoryId: categoryId,
             mainCategory: productData.mainCategory,
             subCategory: productData.subCategory,
             price: Number(productData.price) || 0,
@@ -416,7 +386,6 @@ app.post('/api/orders', async (req, res) => {
     }
 });
 
-// FIX: Add missing PUT /api/orders/:id endpoint
 app.put('/api/orders/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -459,7 +428,6 @@ app.put('/api/orders/:id/status', async (req, res) => {
     }
 });
 
-// FIX: Add missing deleteOrder endpoint
 app.delete('/api/orders/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -760,17 +728,26 @@ app.post('/api/financials/payroll', async (req, res) => {
         await connection.beginTransaction();
         try {
             for (const record of records) {
+                const payrollRecordForDb = {
+                    id: record.id,
+                    employeeId: record.employeeId,
+                    employeeName: record.employeeName,
+                    payPeriod: record.payPeriod,
+                    baseSalary: record.baseSalary || 0,
+                    bonus: record.bonus || 0,
+                    deduction: record.deduction || 0,
+                    finalSalary: record.finalSalary || 0,
+                    notes: record.notes || '',
+                    status: record.status || 'Chưa thanh toán'
+                };
+                
                 await connection.query(
                     `INSERT INTO PayrollRecords (id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, notes, status)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                      ON DUPLICATE KEY UPDATE
                      employeeName = VALUES(employeeName), baseSalary = VALUES(baseSalary), bonus = VALUES(bonus),
                      deduction = VALUES(deduction), finalSalary = VALUES(finalSalary), notes = VALUES(notes), status = VALUES(status)`,
-                    [
-                        record.id, record.employeeId, record.employeeName, record.payPeriod,
-                        record.baseSalary, record.bonus, record.deduction, record.finalSalary,
-                        record.notes, record.status
-                    ]
+                    Object.values(payrollRecordForDb)
                 );
             }
             await connection.commit();
@@ -830,11 +807,10 @@ app.delete('/api/quotations/:id', async (req, res) => {
     }
 });
 
-// FIX: Add missing endpoints for Returns.
 // Return Tickets
 app.get('/api/returns', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM ReturnTickets ORDER BY createdAt DESC');
+        const [rows] = await pool.query('SELECT * FROM Returns ORDER BY createdAt DESC');
         res.json(rows);
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
@@ -844,7 +820,7 @@ app.get('/api/returns', async (req, res) => {
 app.post('/api/returns', async (req, res) => {
     try {
         const ticket = { ...req.body, id: `ret-${Date.now()}`, createdAt: new Date() };
-        await pool.query('INSERT INTO ReturnTickets SET ?', ticket);
+        await pool.query('INSERT INTO Returns SET ?', ticket);
         res.status(201).json(ticket);
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
@@ -857,7 +833,7 @@ app.put('/api/returns/:id', async (req, res) => {
         const updates = req.body;
         delete updates.id;
         delete updates.createdAt;
-        await pool.query('UPDATE ReturnTickets SET ? WHERE id = ?', [updates, id]);
+        await pool.query('UPDATE Returns SET ? WHERE id = ?', [updates, id]);
         res.json({ id, ...req.body });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
@@ -866,14 +842,13 @@ app.put('/api/returns/:id', async (req, res) => {
 
 app.delete('/api/returns/:id', async (req, res) => {
     try {
-        await pool.query('DELETE FROM ReturnTickets WHERE id = ?', [req.params.id]);
+        await pool.query('DELETE FROM Returns WHERE id = ?', [req.params.id]);
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
-// FIX: Add missing endpoints for Suppliers.
 // Suppliers
 app.get('/api/suppliers', async (req, res) => {
     try {
@@ -950,7 +925,6 @@ app.put('/api/service-tickets/:id', async (req, res) => {
     }
 });
 
-// FIX: Add missing DELETE endpoint for service tickets.
 app.delete('/api/service-tickets/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM ServiceTickets WHERE id = ?', [req.params.id]);
@@ -988,7 +962,7 @@ app.get('/api/warranty-claims', async (req, res) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-    const projectRoot = path.resolve(__dirname, '..', '..');
+    const projectRoot = path.resolve(__dirname, '..');
     const frontendDistPath = path.join(projectRoot, 'dist');
     
     console.log(`[Static Files] Server __dirname: ${__dirname}`);

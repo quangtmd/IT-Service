@@ -102,7 +102,6 @@ export const addOrder = async (order: Order): Promise<Order> => {
     });
 };
 
-// FIX: Add missing updateOrder function
 export const updateOrder = async (id: string, updates: Partial<Order>): Promise<Order> => {
      return fetchFromApi<Order>(`/api/orders/${id}`, { 
         method: 'PUT', 
@@ -119,7 +118,6 @@ export const updateOrderStatus = async (id: string, status: OrderStatus): Promis
     });
 };
 
-// FIX: Add missing deleteOrder function
 export const deleteOrder = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/orders/${id}`, { method: 'DELETE' });
 };
@@ -308,7 +306,6 @@ export const updateServiceTicket = async (id: string, updates: Partial<ServiceTi
     });
 };
 
-// FIX: Add missing deleteServiceTicket function.
 export const deleteServiceTicket = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/service-tickets/${id}`, { method: 'DELETE' });
 };
@@ -323,7 +320,6 @@ export const getWarrantyClaims = async (): Promise<WarrantyClaim[]> => {
     return fetchFromApi<WarrantyClaim[]>('/api/warranty-claims');
 };
 
-// FIX: Add missing functions for Return Tickets.
 // --- Return Ticket Service ---
 export const getReturns = async (): Promise<ReturnTicket[]> => {
     return fetchFromApi<ReturnTicket[]>('/api/returns');
@@ -349,7 +345,6 @@ export const deleteReturn = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/returns/${id}`, { method: 'DELETE' });
 };
 
-// FIX: Add missing functions for Suppliers.
 // --- Supplier Service ---
 export const getSuppliers = async (): Promise<Supplier[]> => {
     return fetchFromApi<Supplier[]>('/api/suppliers');

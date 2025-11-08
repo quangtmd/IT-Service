@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Card from '../ui/Card';
 import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
-    getPayrollRecords, savePayrollRecords as originalSavePayrollRecords // Fix: Alias the imported function to avoid potential naming conflicts.
+    getPayrollRecords, savePayrollRecords
 } from '../../services/localDataService';
 import * as ReactRouterDOM from 'react-router-dom';
 
@@ -303,7 +303,6 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
-    // Fix: Wrapped handleSettlePayroll in useCallback with correct dependencies
     const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
@@ -312,12 +311,14 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             alert('Không có lương để thanh toán cho kỳ này.');
             return;
         }
-        // Fix: Corrected the reduce callback function to sum 'finalSalary' properties.
+        
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
 
         try {
-            // FIX: Pass localPayroll to originalSavePayrollRecords
-            await originalSavePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod));
+            // FIX: Explicitly create a variable for the records to be saved.
+            // This can help TypeScript's type inference in complex callback scenarios.
+            const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+            await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -331,26 +332,23 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         }
     }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
 
-    // Fix: Wrapped handleSaveDraft in useCallback to directly pass it to onClick
     const handleSaveDraft = useCallback(async () => {
-        // FIX: Pass localPayroll to originalSavePayrollRecords
-        await originalSavePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod));
+        // FIX: Explicitly create a variable for the records to be saved.
+        // This can help TypeScript's type inference in complex callback scenarios.
+        const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+        await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
-    }, [localPayroll, payPeriod]);
+        onDataChange();
+    }, [localPayroll, payPeriod, onDataChange]);
 
-    // Fix: Removed incorrect function calls. Assign the function reference directly.
-    const handleSettlePayrollClick = handleSettlePayroll;
-    const handleSaveDraftClick = handleSaveDraft;
 
     return (
         <div>
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                {/* Fix: Directly used memoized function for onClick */}
-                <Button onClick={handleSaveDraftClick} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* Fix: Directly used memoized function for onClick */}
-                <Button onClick={handleSettlePayrollClick} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={handleSaveDraft} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">
