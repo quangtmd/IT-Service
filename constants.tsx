@@ -318,7 +318,7 @@ export const INITIAL_THEME_SETTINGS: SiteThemeSettings = {
 export const PC_BUILDER_PATH = '/pc-builder'; 
 
 export const NAVIGATION_LINKS_BASE: Omit<CustomMenuLink, 'order' | 'isVisible' | 'originalPath' | 'id'>[] = [
-  { label: 'Trang chủ', path: '/home', icon: 'fas fa-home' },
+  { label: 'Trang chủ', path: '/', icon: 'fas fa-home' },
   { label: 'Sản phẩm', path: '/shop', icon: 'fas fa-store' },
   { label: 'Xây dựng PC', path: PC_BUILDER_PATH, icon: 'fas fa-tools'}, 
   { label: 'Gợi ý Cấu hình', path: '/pc-build-suggestions', icon: 'fas fa-magic' },
