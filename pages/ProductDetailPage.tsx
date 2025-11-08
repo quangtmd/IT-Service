@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Product } from '../types';
@@ -205,6 +204,16 @@ const ProductDetailPage: React.FC = () => {
                 <Button onClick={handleBuyNow} size="lg" className="w-full text-lg py-3.5" variant="primary" disabled={product.stock <=0}><i className="fas fa-bolt mr-2"></i> Mua ngay</Button>
                 <Button onClick={handleAddToCart} size="lg" className="w-full text-lg py-3.5" variant="outline" disabled={product.stock <=0}><i className="fas fa-cart-plus mr-2"></i> Thêm vào giỏ hàng</Button>
               </div>
+
+              {/* New stock display */}
+              <p className="text-sm text-textMuted mb-4">
+                <span className="font-semibold text-textBase">Số lượng tồn kho: </span>
+                {product.stock > 0 ? (
+                  <span className="text-green-600 font-bold">{product.stock} sản phẩm</span>
+                ) : (
+                  <span className="text-danger-text font-bold">Hết hàng</span>
+                )}
+              </p>
               
                <div className="p-4 border-2 border-dashed border-red-300 bg-red-50 rounded-lg">
                   <h3 className="font-bold text-red-700 mb-2"><i className="fas fa-gift mr-2"></i> Khuyến mãi đặc biệt</h3>
