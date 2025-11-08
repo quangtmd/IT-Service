@@ -63,7 +63,8 @@ const OrderFormPage: React.FC = () => {
                         items: [],
                         totalAmount: 0,
                         status: 'Phiếu tạm',
-                        customerInfo: { fullName: '', phone: '', address: '', email: '' },
+                        // Fix: Add missing 'notes' property to satisfy CheckoutFormData type.
+                        customerInfo: { fullName: '', phone: '', address: '', email: '', notes: '' },
                         paymentInfo: { method: 'Tiền mặt', status: 'Chưa thanh toán' },
                     });
                 }

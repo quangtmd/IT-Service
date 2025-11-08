@@ -32,7 +32,7 @@ const CartPage: React.FC = () => {
       <h1 className="text-3xl font-bold text-textBase mb-8 text-center">Giỏ Hàng Của Bạn</h1>
       <div className="bg-bgBase shadow-xl rounded-lg p-4 sm:p-6 border border-borderDefault">
         {cart.map((item) => {
-          const isCustomBuild = 'isCustomBuild' in item && item.isCustomBuild;
+          const isCustomBuild = 'isCustomBuild' in item && (item as any).isCustomBuild;
 
           return (
             <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 border-b border-borderDefault last:border-b-0">
@@ -47,10 +47,12 @@ const CartPage: React.FC = () => {
                     {item.name}
                   </ReactRouterDOM.Link>
                   {!isCustomBuild && <p className="text-sm text-textMuted">{item.category}</p>}
-                  {isCustomBuild && item.buildComponents && (
+                  {/* Fix: Cast 'item' to CustomPCBuildCartItem to safely access 'buildComponents'. */}
+                  {isCustomBuild && (item as CustomPCBuildCartItem).buildComponents && (
                     <div className="text-xs text-textMuted mt-1 space-y-0.5">
                       <p className="font-medium text-textSubtle">Chi tiết cấu hình:</p>
-                      {Object.entries(item.buildComponents).map(([type, comp]) => {
+                      {/* Fix: Cast 'item' to CustomPCBuildCartItem to safely access 'buildComponents'. */}
+                      {Object.entries((item as CustomPCBuildCartItem).buildComponents).map(([type, comp]) => {
                         const component = comp as { name: string; price?: number };
                         return (
                         <p key={type} className="truncate" title={`${type}: ${component.name} (${(component.price || 0).toLocaleString('vi-VN')}₫)`}>
