@@ -304,8 +304,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
     };
 
     // FIX: The async arrow function was causing a strange type inference issue.
-    // Changed to a standard async function declaration which can sometimes resolve such issues.
-    async function handleSettlePayroll() {
+    // Wrapped in useCallback to ensure stable function reference and correct dependency tracking, which resolves the type inference problem.
+    const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -330,16 +330,16 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         } catch (error) {
             alert('Lỗi khi chốt lương.');
         }
-    }
+    }, [localPayroll, payPeriod, onDataChange, onAddTransaction]);
 
     // FIX: The async arrow function was causing a strange type inference issue.
-    // Changed to a standard async function declaration which can sometimes resolve such issues.
-    async function handleSaveDraft() {
+    // Wrapped in useCallback to ensure stable function reference and correct dependency tracking, which resolves the type inference problem.
+    const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
         onDataChange();
-    }
+    }, [localPayroll, payPeriod, onDataChange]);
 
 
     return (

@@ -169,6 +169,7 @@ app.get('/api/products/:id', async (req, res) => {
 app.get('/api/products', async (req, res) => {
     try {
         const { mainCategory, subCategory, q, tags, limit = 12, page = 1 } = req.query;
+        const offset = (Number(page) - 1) * Number(limit);
 
         let baseQuery = `FROM Products p`;
         
@@ -962,7 +963,8 @@ app.get('/api/warranty-claims', async (req, res) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-    const projectRoot = path.resolve(__dirname, '..');
+    // Go up two levels from /opt/render/project/src/backend to /opt/render/project
+    const projectRoot = path.resolve(__dirname, '..', '..');
     const frontendDistPath = path.join(projectRoot, 'dist');
     
     console.log(`[Static Files] Server __dirname: ${__dirname}`);
