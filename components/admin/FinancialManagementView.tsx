@@ -312,7 +312,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             alert('Không có lương để thanh toán cho kỳ này.');
             return;
         }
-        // Fix: Corrected the reduce callback function to sum 'finalSalary' properties.
+        // Fix: Corrected the reduce callback function to sum 'finalSalary' properties by adding an initial value.
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
 
         try {
@@ -338,19 +338,15 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         alert('Đã lưu nháp lương thành công!');
     }, [localPayroll, payPeriod]);
 
-    // Fix: Used the memoized handleSettlePayroll directly
-    const handleSettlePayrollClick = handleSettlePayroll;
-    const handleSaveDraftClick = handleSaveDraft;
-
     return (
         <div>
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                {/* Fix: Directly used memoized function for onClick */}
-                <Button onClick={handleSaveDraftClick} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* Fix: Directly used memoized function for onClick */}
-                <Button onClick={handleSettlePayrollClick} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                {/* Fix: Directly used memoized function for onClick and removed intermediate click handler variables */}
+                <Button onClick={handleSaveDraft} size="sm" variant="outline">Lưu Nháp</Button>
+                {/* Fix: Directly used memoized function for onClick and removed intermediate click handler variables */}
+                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

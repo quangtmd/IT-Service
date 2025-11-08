@@ -1,13 +1,13 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { User, UserRole, AdminNotification, StaffRole } from '../types'; 
+import { User, UserRole, AdminNotification, StaffRole, DebtStatus } from '../types'; 
 import * as Constants from '../constants';
-import { MOCK_STAFF_USERS } from '../data/mockData';
+import { MOCK_STAFF_USERS, MOCK_CUSTOMER_USERS } from '../data/mockData';
 
 export type AdminPermission = 
   // General
   | 'viewDashboard' | 'viewNotifications'
   // Sales & CRM
-  | 'viewSales' | 'viewCustomers' | 'viewQuotations' | 'viewOrders' | 'manageOrders' | 'manageDiscounts' | 'viewSuppliers' | 'viewHelpdesk'
+  | 'viewSales' | 'viewCustomers' | 'manageCustomers' | 'viewQuotations' | 'viewOrders' | 'manageOrders' | 'manageDiscounts' | 'viewSuppliers' | 'viewHelpdesk'
   // Service
   | 'viewService' | 'manageServiceTickets' | 'manageWarranty' | 'viewChatLogs'
   // Content
@@ -87,8 +87,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 password: 'password123', // In a real app, this should be hashed.
                 role: 'admin',
                 staffRole: 'Nhân viên Toàn quyền',
+                phone: '0911855055', // Example admin phone
+                joinDate: '2023-01-01',
+                status: 'Đang hoạt động',
             };
-            const initialUsers = [adminUser, ...MOCK_STAFF_USERS];
+            const initialUsers = [adminUser, ...MOCK_STAFF_USERS, ...MOCK_CUSTOMER_USERS];
             localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
             setUsers(initialUsers);
         } else {
@@ -148,6 +151,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 role: details.role || 'customer',
                 joinDate: new Date().toISOString(),
                 status: 'Đang hoạt động',
+                loyaltyPoints: 0, // Default for new customers
+                debtStatus: 'Không có', // Default for new customers
             };
             
             const updatedUsers = [...users, newUser];
@@ -228,7 +233,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const currentStaffRoleCleaned = currentUser.staffRole.trim() as StaffRole;
         
         const allPermissions: AdminPermission[] = [
-          'viewDashboard', 'viewNotifications', 'viewSales', 'viewCustomers', 'viewQuotations', 
+          'viewDashboard', 'viewNotifications', 'viewSales', 'viewCustomers', 'manageCustomers', 'viewQuotations', 
           'viewOrders', 'manageOrders', 'manageDiscounts', 'viewSuppliers', 'viewHelpdesk', 
           'viewService', 'manageServiceTickets', 'manageWarranty', 'viewChatLogs', 
           'viewContent', 'viewProducts', 'manageProducts', 'viewArticles', 'manageArticles', 'manageMedia', 'manageFaqs',
@@ -238,7 +243,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ];
         
         const staffPermissionsMap: Record<StaffRole, AdminPermission[]> = {
-            'Quản lý Bán hàng': ['viewDashboard', 'viewSales', 'viewCustomers', 'viewQuotations', 'viewOrders', 'manageOrders', 'manageDiscounts', 'viewSuppliers', 'viewHelpdesk', 'viewService', 'viewInventory', 'viewNotifications'],
+            'Quản lý Bán hàng': ['viewDashboard', 'viewSales', 'viewCustomers', 'manageCustomers', 'viewQuotations', 'viewOrders', 'manageOrders', 'manageDiscounts', 'viewSuppliers', 'viewHelpdesk', 'viewService', 'viewInventory', 'viewNotifications'],
             'Biên tập Nội dung': ['viewDashboard', 'viewContent', 'viewArticles', 'manageArticles', 'manageFaqs', 'manageMedia', 'manageSiteSettings', 'viewNotifications'],
             'Trưởng nhóm Kỹ thuật': ['viewDashboard', 'viewService', 'manageServiceTickets', 'manageWarranty', 'viewInventory', 'manageInventory', 'viewOrders', 'viewProducts', 'viewNotifications'], 
             'Chuyên viên Hỗ trợ': ['viewDashboard', 'viewHelpdesk', 'manageServiceTickets', 'viewOrders', 'viewCustomers', 'viewChatLogs', 'viewNotifications'], 
