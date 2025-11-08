@@ -211,7 +211,6 @@ export const STAFF_ROLE_OPTIONS: StaffRole[] = ['Quản lý Bán hàng', 'Biên 
 export type UserStatus = 'Đang hoạt động' | 'Tạm nghỉ' | 'Đã nghỉ việc';
 export const USER_STATUS_OPTIONS: UserStatus[] = ['Đang hoạt động', 'Tạm nghỉ', 'Đã nghỉ việc'];
 
-export type DebtStatus = 'Không có' | 'Có nợ' | 'Quá hạn'; // New type for debt status
 
 export interface User {
   id: string;
@@ -229,17 +228,6 @@ export interface User {
   address?: string;
   joinDate?: string; // ISO string date
   status?: UserStatus;
-
-  // New Customer Fields
-  dateOfBirth?: string; // ISO string date
-  origin?: string; // e.g., 'Website', 'Giới thiệu', 'Facebook'
-  loyaltyPoints?: number;
-  debtStatus?: DebtStatus;
-  assignedStaffId?: string; // ID of the staff member assigned to this customer
-
-  // For Customer Detail/History
-  lastOrderDate?: string; // ISO string date of their last order
-  totalSpent?: number;
 }
 
 export interface Project {

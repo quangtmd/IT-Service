@@ -1,4 +1,4 @@
-import { Service, Testimonial, PCComponent, Project, User, Order, AdminNotification, UserRole, StaffRole, Article, DebtStatus } from '../types';
+import { Service, Testimonial, PCComponent, Project, User, Order, AdminNotification, UserRole, StaffRole, Article } from '../types';
 import React from 'react'; 
 import { ADMIN_EMAIL } from '../constants';
 
@@ -183,38 +183,10 @@ export const MOCK_PROJECTS: Project[] = [
 ];
 
 export const MOCK_STAFF_USERS: User[] = [
-  { id: 'staff001', username: 'Nhân Viên Sales', email: 'sales01@iqtech.com', role: 'staff', staffRole: 'Quản lý Bán hàng', password: 'password123', phone: '0912345678', position: 'Quản lý bán hàng' },
-  { id: 'staff002', username: 'Kỹ Thuật Viên', email: 'tech01@iqtech.com', role: 'staff', staffRole: 'Trưởng nhóm Kỹ thuật', password: 'password123', phone: '0912345679', position: 'Trưởng nhóm kỹ thuật' },
-  { id: 'staff003', username: 'Biên Tập Viên', email: 'content01@iqtech.com', role: 'staff', staffRole: 'Biên tập Nội dung', password: 'password123', phone: '0912345680', position: 'Biên tập viên' },
+  { id: 'staff001', username: 'Nhân Viên Sales', email: 'sales01@iqtech.com', role: 'staff', staffRole: 'Quản lý Bán hàng', password: 'password123' },
+  { id: 'staff002', username: 'Kỹ Thuật Viên', email: 'tech01@iqtech.com', role: 'staff', staffRole: 'Trưởng nhóm Kỹ thuật', password: 'password123' },
+  { id: 'staff003', username: 'Biên Tập Viên', email: 'content01@iqtech.com', role: 'staff', staffRole: 'Biên tập Nội dung', password: 'password123' },
 ];
-
-export const MOCK_CUSTOMER_USERS: User[] = [
-    {
-        id: 'customer001', username: 'Nguyễn Thị Hà', email: 'ha.nguyen@example.com', password: 'password123', role: 'customer',
-        dateOfBirth: '1990-05-15', phone: '0901234567', address: '123 Đường Trần Phú, Đà Nẵng', origin: 'Website',
-        loyaltyPoints: 150, debtStatus: 'Không có', assignedStaffId: 'staff001',
-        lastOrderDate: '2024-07-20T10:30:00Z', totalSpent: 15000000,
-    },
-    {
-        id: 'customer002', username: 'Trần Văn Long', email: 'long.tran@example.com', password: 'password123', role: 'customer',
-        dateOfBirth: '1988-11-22', phone: '0907654321', address: '456 Đường Lê Lợi, TP.HCM', origin: 'Facebook Ads',
-        loyaltyPoints: 300, debtStatus: 'Có nợ', assignedStaffId: 'staff001',
-        lastOrderDate: '2024-07-25T14:00:00Z', totalSpent: 32000000,
-    },
-    {
-        id: 'customer003', username: 'Lê Thanh Thảo', email: 'thao.le@example.com', password: 'password123', role: 'customer',
-        dateOfBirth: '1995-03-08', phone: '0912233445', address: '789 Đường Hai Bà Trưng, Hà Nội', origin: 'Giới thiệu',
-        loyaltyPoints: 80, debtStatus: 'Không có', assignedStaffId: 'staff002',
-        lastOrderDate: '2024-06-10T09:00:00Z', totalSpent: 8000000,
-    },
-    {
-        id: 'customer004', username: 'Phạm Minh Đức', email: 'duc.pham@example.com', password: 'password123', role: 'customer',
-        dateOfBirth: '1992-07-01', phone: '0988777666', address: '101 Đường Hoàng Diệu, Cần Thơ', origin: 'Website',
-        loyaltyPoints: 20, debtStatus: 'Quá hạn', assignedStaffId: 'staff001',
-        lastOrderDate: '2024-05-01T11:00:00Z', totalSpent: 2500000,
-    },
-];
-
 
 export const MOCK_ADMIN_NOTIFICATIONS: AdminNotification[] = [
     {

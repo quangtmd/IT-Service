@@ -1,25 +1,25 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, AdminNotification, AdminView } from '../../types';
-import { useAuth, AdminPermission } from '../../contexts/AuthContext';
+import { User, AdminNotification, AdminView } from '../types';
+import { useAuth, AdminPermission } from '../contexts/AuthContext';
 
 // Import existing views
-import HRMProfileView from '../../components/admin/HRMProfileView';
-import ProductManagementView from '../../components/admin/ProductManagementView';
-import ArticleManagementView from '../../components/admin/ArticleManagementView';
-import OrderManagementView from '../../components/admin/OrderManagementView';
-import CustomerManagementView from '../../components/admin/CustomerManagementView';
-import DiscountManagementView from '../../components/admin/DiscountManagementView';
-import FaqManagementView from '../../components/admin/FaqManagementView';
-import ChatLogView from '../../components/admin/ChatLogView';
-import SiteSettingsView from '../../components/admin/SiteSettingsView';
-import MediaLibraryView from '../../components/admin/MediaLibraryView';
-import NotificationsView from '../../components/admin/NotificationsView';
-import HomepageManagementView from '../../components/admin/HomepageManagementView';
-import FinancialManagementView from '../../components/admin/FinancialManagementView';
-import DashboardView from '../../components/admin/DashboardView';
-import InventoryView from '../../components/admin/InventoryView';
-import ServiceTicketView from '../../components/admin/ServiceTicketView';
+import HRMProfileView from '../components/admin/HRMProfileView';
+import ProductManagementView from '../components/admin/ProductManagementView';
+import ArticleManagementView from '../components/admin/ArticleManagementView';
+import OrderManagementView from '../components/admin/OrderManagementView';
+import CustomerManagementView from '../components/admin/CustomerManagementView';
+import DiscountManagementView from '../components/admin/DiscountManagementView';
+import FaqManagementView from '../components/admin/FaqManagementView';
+import ChatLogView from '../components/admin/ChatLogView';
+import SiteSettingsView from '../components/admin/SiteSettingsView';
+import MediaLibraryView from '../components/admin/MediaLibraryView';
+import NotificationsView from '../components/admin/NotificationsView';
+import HomepageManagementView from '../components/admin/HomepageManagementView';
+import FinancialManagementView from '../components/admin/FinancialManagementView';
+import DashboardView from '../components/admin/DashboardView';
+import InventoryView from '../components/admin/InventoryView';
+import ServiceTicketView from '../components/admin/ServiceTicketView';
 
 // Import new form pages
 import ProductFormPage from './admin/ProductFormPage';
@@ -29,11 +29,11 @@ import DiscountFormPage from './admin/DiscountFormPage';
 import FaqFormPage from './admin/FaqFormPage';
 import TransactionFormPage from './admin/TransactionFormPage';
 import QuotationFormPage from './admin/QuotationFormPage';
-import CustomerFormPage from './admin/CustomerFormPage'; // NEW
+
 
 // Import new placeholder/skeleton views
-import QuotationManagementView from '../../components/admin/QuotationManagementView';
-import WarrantyManagementView from '../../components/admin/WarrantyManagementView';
+import QuotationManagementView from '../components/admin/QuotationManagementView';
+import WarrantyManagementView from '../components/admin/WarrantyManagementView';
 
 
 interface MenuItemConfig {
@@ -177,8 +177,6 @@ const AdminPage: React.FC = () => {
             setActiveView('accounting_dashboard');
         } else if (path.startsWith('/admin/quotations/new') || path.startsWith('/admin/quotations/edit/')) {
             setActiveView('quotations');
-        } else if (path.startsWith('/admin/customers/new') || path.startsWith('/admin/customers/edit/')) { // NEW
-            setActiveView('customers');
         }
         else {
             // Find a direct match for the path segment
@@ -256,13 +254,6 @@ const AdminPage: React.FC = () => {
         if (location.pathname.startsWith('/admin/quotations/edit/')) {
             return <QuotationFormPage />;
         }
-        // Customer Forms (NEW)
-        if (location.pathname.startsWith('/admin/customers/new')) {
-            return <CustomerFormPage />;
-        }
-        if (location.pathname.startsWith('/admin/customers/edit/')) {
-            return <CustomerFormPage />;
-        }
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
         const currentMenuItem = allMenuItems.find(i => i.id === activeView);
@@ -328,8 +319,6 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/accounting_dashboard/transactions/edit/')) return 'Chỉnh sửa Giao dịch';
         if (path === '/admin/quotations/new') return 'Tạo Báo giá Mới';
         if (path.startsWith('/admin/quotations/edit/')) return 'Chỉnh sửa Báo giá';
-        if (path === '/admin/customers/new') return 'Thêm Khách hàng Mới'; // NEW
-        if (path.startsWith('/admin/customers/edit/')) return 'Chỉnh sửa Thông tin Khách hàng'; // NEW
 
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
@@ -394,11 +383,6 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/quotations" element={renderContent()} />
                         <ReactRouterDOM.Route path="/quotations/new" element={<QuotationFormPage />} />
                         <ReactRouterDOM.Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
-                        
-                        {/* Customer Management Routes (NEW) */}
-                        <ReactRouterDOM.Route path="/customers" element={renderContent()} />
-                        <ReactRouterDOM.Route path="/customers/new" element={<CustomerFormPage />} />
-                        <ReactRouterDOM.Route path="/customers/edit/:customerId" element={<CustomerFormPage />} />
 
                         {/* Fallback for other admin views */}
                         <ReactRouterDOM.Route path="*" element={renderContent()} />
