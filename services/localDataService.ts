@@ -102,6 +102,15 @@ export const addOrder = async (order: Order): Promise<Order> => {
     });
 };
 
+// FIX: Add missing updateOrder function
+export const updateOrder = async (id: string, updates: Partial<Order>): Promise<Order> => {
+     return fetchFromApi<Order>(`/api/orders/${id}`, { 
+        method: 'PUT', 
+        body: JSON.stringify(updates), 
+        headers: {'Content-Type': 'application/json'} 
+    });
+};
+
 export const updateOrderStatus = async (id: string, status: OrderStatus): Promise<void> => {
     return fetchFromApi<void>(`/api/orders/${id}/status`, {
         method: 'PUT',

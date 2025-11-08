@@ -279,7 +279,7 @@ export interface OrderItem {
 }
 
 // FIX: Add 'Đang xác nhận' to OrderStatus type to fix type error.
-export type OrderStatus = 'Chờ xử lý' | 'Đang xác nhận' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy' | 'Đã xác nhận';
+export type OrderStatus = 'Chờ xử lý' | 'Đang xác nhận' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy' | 'Đã xác nhận' | 'Phiếu tạm';
 
 export interface ShippingInfo {
   carrier?: string;

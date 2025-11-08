@@ -416,6 +416,34 @@ app.post('/api/orders', async (req, res) => {
     }
 });
 
+// FIX: Add missing PUT /api/orders/:id endpoint
+app.put('/api/orders/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        // Serialize JSON fields before updating
+        const updatesForDb = {
+            ...updates,
+            customerInfo: JSON.stringify(updates.customerInfo || {}),
+            items: JSON.stringify(updates.items || []),
+            paymentInfo: JSON.stringify(updates.paymentInfo || {}),
+            shippingInfo: JSON.stringify(updates.shippingInfo || {}),
+        };
+        // remove id from updates object
+        delete updatesForDb.id;
+
+        const [result] = await pool.query('UPDATE Orders SET ? WHERE id = ?', [updatesForDb, id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng để cập nhật' });
+        }
+        res.json({ id, ...req.body }); // Return original updates object
+    } catch (error) {
+        console.error(`Lỗi khi cập nhật đơn hàng ID ${req.params.id}:`, error);
+        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
 app.put('/api/orders/:id/status', async (req, res) => {
     try {
         const { id } = req.params;

@@ -92,7 +92,7 @@ const SupplierFormPage: React.FC = () => {
                         <input type="text" name="name" value={formData.name || ''} onChange={handleChange} required />
                     </div>
                      <div className="admin-form-subsection-title">Thông tin liên hệ</div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="admin-form-group">
                             <label>Email</label>
                             <input type="email" name="email" value={formData.contactInfo?.email || ''} onChange={handleContactChange} />
@@ -101,7 +101,7 @@ const SupplierFormPage: React.FC = () => {
                             <label>Số điện thoại</label>
                             <input type="tel" name="phone" value={formData.contactInfo?.phone || ''} onChange={handleContactChange} />
                         </div>
-                        <div className="admin-form-group md:col-span-2">
+                        <div className="admin-form-group sm:col-span-2">
                             <label>Địa chỉ</label>
                             <input type="text" name="address" value={formData.contactInfo?.address || ''} onChange={handleContactChange} />
                         </div>

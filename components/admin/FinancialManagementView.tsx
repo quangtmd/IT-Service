@@ -331,14 +331,14 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         }
     }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
 
-    // Fix: Wrapped handleSaveDraftClick in useCallback to directly pass it to onClick
+    // Fix: Wrapped handleSaveDraft in useCallback to directly pass it to onClick
     const handleSaveDraft = useCallback(async () => {
         // FIX: Pass localPayroll to originalSavePayrollRecords
         await originalSavePayrollRecords(localPayroll.filter(p => p.payPeriod === payPeriod));
         alert('Đã lưu nháp lương thành công!');
     }, [localPayroll, payPeriod]);
 
-    // Fix: Used the memoized handleSettlePayroll directly
+    // Fix: Removed incorrect function calls. Assign the function reference directly.
     const handleSettlePayrollClick = handleSettlePayroll;
     const handleSaveDraftClick = handleSaveDraft;
 
