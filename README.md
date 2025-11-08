@@ -8,6 +8,7 @@
 -- 1. CREATE TABLES (IF THEY DON'T EXIST)
 -- =================================================================
 
+-- Bảng `Users` giờ đây đã có đầy đủ các cột CRM cho khách hàng
 CREATE TABLE IF NOT EXISTS `Users` (
   `id` varchar(255) NOT NULL,
   `username` varchar(255) NOT NULL,
@@ -199,12 +200,15 @@ ALTER TABLE `AuditLogs` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 -- 3. INITIAL DATA INSERTION (Sẽ bỏ qua nếu dữ liệu đã tồn tại)
 -- =================================================================
 
-INSERT IGNORE INTO `Users` (`id`, `username`, `email`, `password`, `role`, `staffRole`, `status`, `isLocked`, `phone`, `address`) VALUES
-('cust001', 'Nguyễn Văn An', 'an.nguyen@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 0, '0905123456', '123 Nguyễn Văn Linh, Đà Nẵng'),
-('cust002', 'Trần Thị Bích', 'bich.tran@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 0, '0935987654', '45 Lê Duẩn, Đà Nẵng'),
-('staff001', 'Lê Hùng', 'hung.le@iqtech.com', 'password123', 'staff', 'Trưởng nhóm Kỹ thuật', 'Đang hoạt động', 0, '0911855055', 'Văn phòng IQ Tech'),
-('staff002', 'Nguyễn Thị Lan', 'lan.nguyen@iqtech.com', 'password123', 'staff', 'Quản lý Bán hàng', 'Đang hoạt động', 0, '0911855056', 'Văn phòng IQ Tech'),
-('user001', 'Quang Trần', 'quangtmdit@gmail.com', 'password123', 'admin', 'Nhân viên Toàn quyền', 'Đang hoạt động', 0, '0911855055', 'Văn phòng IQ Tech');
+INSERT IGNORE INTO `Users` (`id`, `username`, `email`, `password`, `role`, `staffRole`, `status`, `isLocked`, `phone`, `address`, `dateOfBirth`, `origin`, `loyaltyPoints`, `debtStatus`, `assignedStaffId`) VALUES
+('cust001', 'Nguyễn Văn An', 'an.nguyen@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 0, '0905123456', '123 Nguyễn Văn Linh, Đà Nẵng', '1990-05-15', 'Website', 150, 'Không có', 'staff002'),
+('cust002', 'Trần Thị Bích', 'bich.tran@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 0, '0935987654', '45 Lê Duẩn, Đà Nẵng', '1995-11-20', 'Facebook Ads', 20, 'Có nợ', 'staff002'),
+('cust003', 'Lê Hoàng Long', 'long.le@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 0, '0978111222', 'K12/3 Phan Châu Trinh, Đà Nẵng', '1988-01-30', 'Giới thiệu', 500, 'Không có', 'staff002'),
+('cust004', 'Phạm Thị Mai', 'mai.pham@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 0, '0945333444', '78 Hùng Vương, Đà Nẵng', '2001-03-10', 'Website', 0, 'Không có', NULL),
+('cust005', 'Võ Thành Trung', 'trung.vo@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 1, '0988555666', '34/5 Hoàng Diệu, Đà Nẵng', '1999-07-25', 'Khác', 80, 'Quá hạn', 'staff002'),
+('staff001', 'Lê Hùng', 'hung.le@iqtech.com', 'password123', 'staff', 'Trưởng nhóm Kỹ thuật', 'Đang hoạt động', 0, '0911855055', 'Văn phòng IQ Tech', NULL, NULL, NULL, NULL, NULL),
+('staff002', 'Nguyễn Thị Lan', 'lan.nguyen@iqtech.com', 'password123', 'staff', 'Quản lý Bán hàng', 'Đang hoạt động', 0, '0911855056', 'Văn phòng IQ Tech', NULL, NULL, NULL, NULL, NULL),
+('user001', 'Quang Trần', 'quangtmdit@gmail.com', 'password123', 'admin', 'Nhân viên Toàn quyền', 'Đang hoạt động', 0, '0911855055', 'Văn phòng IQ Tech', NULL, NULL, NULL, NULL, NULL);
 
 INSERT IGNORE INTO `ProductCategories` (`id`, `name`, `slug`, `parentId`, `icon`) VALUES
 ('may_tinh_de_ban', 'Máy tính để bàn (PC)', 'may_tinh_de_ban', NULL, 'fas fa-desktop'),

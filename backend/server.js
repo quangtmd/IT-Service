@@ -27,6 +27,18 @@ const dbConfig = {
 
 let pool;
 
+// Helper function to filter an object based on allowed keys
+const filterObject = (obj, allowedKeys) => {
+    if (!obj) return {};
+    return Object.keys(obj)
+        .filter(key => allowedKeys.includes(key) && obj[key] !== undefined)
+        .reduce((newObj, key) => {
+            newObj[key] = obj[key];
+            return newObj;
+        }, {});
+};
+
+
 (async () => {
     try {
         pool = mysql.createPool(dbConfig);
@@ -446,43 +458,91 @@ app.post('/api/login', async (req, res) => {
 
 app.get('/api/users', async (req, res) => {
     try {
-        const [users] = await pool.query('SELECT id, username, email, password, role, staffRole, imageUrl, isLocked, position, phone, address, joinDate, status, dateOfBirth, origin, loyaltyPoints, debtStatus, assignedStaffId FROM Users');
+        const [users] = await pool.query(`
+            SELECT u.id, u.username, u.email, u.password, u.role, u.staffRole, u.imageUrl, u.isLocked, 
+                   u.phone, u.address, u.status, u.dateOfBirth, u.origin, u.loyaltyPoints, u.debtStatus, u.assignedStaffId,
+                   e.position, e.joinDate
+            FROM Users u
+            LEFT JOIN Employees e ON u.id = e.userId
+        `);
         res.json(users);
     } catch (error) {
+        console.error("Lỗi khi lấy danh sách người dùng:", error);
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
 app.post('/api/users', async (req, res) => {
+    const connection = await pool.getConnection();
     try {
-        const user = { ...req.body, id: `user-${Date.now()}` };
-        // In a real app, hash the password here
-        await pool.query('INSERT INTO Users SET ?', user);
-        delete user.password;
-        res.status(201).json(user);
+        await connection.beginTransaction();
+
+        const userColumns = ['username', 'email', 'password', 'role', 'staffRole', 'imageUrl', 'isLocked', 'phone', 'address', 'status', 'dateOfBirth', 'origin', 'loyaltyPoints', 'debtStatus', 'assignedStaffId'];
+        const userData = { ...req.body, id: `user-${Date.now()}` };
+        const userForDb = filterObject(userData, [...userColumns, 'id']);
+        if (!userForDb.password) userForDb.password = 'password123'; // Default password
+
+        await connection.query('INSERT INTO Users SET ?', userForDb);
+
+        if (userForDb.role === 'staff' || userForDb.role === 'admin') {
+            const employeeColumns = ['position', 'joinDate', 'salary'];
+            const employeeData = filterObject(req.body, employeeColumns);
+            if (Object.keys(employeeData).length > 0) {
+                await connection.query('INSERT INTO Employees SET ?', { userId: userForDb.id, ...employeeData });
+            }
+        }
+        
+        await connection.commit();
+        delete userForDb.password;
+        res.status(201).json(userForDb);
+
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error: error.message });
+        await connection.rollback();
+        console.error("Lỗi khi tạo người dùng:", error);
+        res.status(500).json({ message: 'Lỗi server khi tạo người dùng', error: error.message });
+    } finally {
+        connection.release();
     }
 });
 
 app.put('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+    const connection = await pool.getConnection();
     try {
-        const { id } = req.params;
+        await connection.beginTransaction();
+
+        const userColumns = ['username', 'password', 'role', 'staffRole', 'imageUrl', 'isLocked', 'phone', 'address', 'status', 'dateOfBirth', 'origin', 'loyaltyPoints', 'debtStatus', 'assignedStaffId'];
         const updates = req.body;
-        delete updates.id;
-        delete updates.email; // Do not allow email change
-        if (updates.password) {
-            // Hash password if it's being changed
+        
+        const userUpdates = filterObject(updates, userColumns);
+        if (Object.keys(userUpdates).length > 0) {
+            const [result] = await connection.query('UPDATE Users SET ? WHERE id = ?', [userUpdates, id]);
+            if (result.affectedRows === 0) {
+                throw new Error('Không tìm thấy người dùng');
+            }
         }
-        const [result] = await pool.query('UPDATE Users SET ? WHERE id = ?', [updates, id]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+
+        const employeeColumns = ['position', 'joinDate', 'salary'];
+        const employeeUpdates = filterObject(updates, employeeColumns);
+        if (Object.keys(employeeUpdates).length > 0) {
+            await connection.query('INSERT INTO Employees SET ? ON DUPLICATE KEY UPDATE ?', [{ userId: id, ...employeeUpdates }, employeeUpdates]);
         }
+        
+        await connection.commit();
         res.json({ id, ...updates });
+
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error: error.message });
+        await connection.rollback();
+        console.error("Lỗi khi cập nhật người dùng:", error);
+        if (error.message === 'Không tìm thấy người dùng') {
+            return res.status(404).json({ message: error.message });
+        }
+        res.status(500).json({ message: 'Lỗi server khi cập nhật người dùng', error: error.message });
+    } finally {
+        connection.release();
     }
 });
+
 
 app.delete('/api/users/:id', async (req, res) => {
     try {
@@ -738,27 +798,22 @@ app.get('/api/warranty-claims', async (req, res) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-    // The path should be relative from /backend to the root /dist
-    const projectRoot = path.resolve(__dirname, '..');
+    const projectRoot = path.resolve(__dirname, '..', '..');
     const frontendDistPath = path.join(projectRoot, 'dist');
     
-    // ================== DEBUG LOGS ==================
     console.log(`[Static Files] Server __dirname: ${__dirname}`);
     console.log(`[Static Files] Resolved Project Root: ${projectRoot}`);
     console.log(`[Static Files] Attempting to serve static files from: ${frontendDistPath}`);
-    // ================================================
 
     app.use(express.static(frontendDistPath));
 
     app.get('*', (req, res, next) => {
-        // Ignore API routes
         if (req.path.startsWith('/api/')) {
             return next();
         }
         const indexPath = path.resolve(frontendDistPath, 'index.html');
         res.sendFile(indexPath, (err) => {
             if (err) {
-                // Log the error if sendFile fails, this will appear in Render logs
                 console.error(`Error sending file ${indexPath}:`, err);
                 res.status(500).send("Không thể tải ứng dụng frontend. Chi tiết: " + err.message);
             }
