@@ -321,7 +321,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             alert('Không có lương để thanh toán cho kỳ này.');
             return;
         }
-        // Fix: Corrected reduce callback syntax
+        // Fix: Corrected the reduce callback function to sum 'finalSalary' properties.
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
         
         try {
@@ -340,12 +340,14 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
     };
     
     // Fix: Changed onClick handler to explicitly be a function that takes no arguments.
-    const handleSaveDraftClick = useCallback(() => {
+    const handleSaveDraftClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation(); // Stop propagation of the event
         void savePayrollRecords(localPayroll);
     }, [localPayroll]);
 
     // Fix: Changed onClick handler to explicitly be a function that takes no arguments.
-    const handleSettlePayrollClick = useCallback(() => {
+    const handleSettlePayrollClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation(); // Stop propagation of the event
         void handleSettlePayroll();
     }, [handleSettlePayroll]); // handleSettlePayroll is already memoized by useCallback in its definition
     

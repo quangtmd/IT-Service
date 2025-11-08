@@ -32,6 +32,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Condensed:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
   <style>
+    /* Global Reset & Scrolling Fix */
+    *, ::before, ::after {
+      box-sizing: border-box; /* Ensures padding and border are included in the element's total width and height */
+    }
+    html, body {
+      overflow-x: hidden; /* Prevent horizontal scrolling globally */
+      scroll-behavior: smooth; /* Smooth scrolling for anchor links */
+    }
+
     /* Custom CSS for animations and advanced styling */
     @keyframes ken-burns {
       0% { transform: scale(1.1) rotate(1deg) translate(-2%, -2%); }
@@ -342,6 +351,7 @@
     .admin-form-group input[type="color"],
     .admin-form-group textarea,
     .admin-form-group select {
+      box-sizing: border-box; /* Ensure padding and border are included in the element's total width and height */
       width: 100%;
       padding: 0.65rem 0.75rem;
       border: 1px solid #cbd5e1; /* slate-300 */
@@ -477,6 +487,7 @@
       animation: modal-fade-in 0.3s ease-out forwards;
     }
     .admin-modal-panel {
+      box-sizing: border-box; /* Explicitly set box-sizing */
       position: fixed;
       top: 50%;
       left: 50%;
@@ -493,6 +504,7 @@
       animation: modal-fade-in 0.3s ease-out forwards, modal-slide-in 0.3s ease-out forwards;
     }
     .admin-modal-header {
+      box-sizing: border-box; /* Explicitly set box-sizing */
       padding: 1rem 1.5rem;
       border-bottom: 1px solid #e2e8f0; /* slate-200 */
       display: flex;
@@ -502,12 +514,15 @@
     }
     .admin-modal-title { font-size: 1.25rem; font-weight: 600; color: #1e293b; }
     .admin-modal-body {
+      box-sizing: border-box; /* Explicitly set box-sizing */
       padding: 1.5rem;
       overflow-y: auto;
       flex-grow: 1;
       min-height: 0; /* Fix for flexbox scrolling */
+      flex-shrink: 1; /* Explicitly allow shrinking */
     }
     .admin-modal-footer {
+      box-sizing: border-box; /* Explicitly set box-sizing */
       padding: 1rem 1.5rem;
       border-top: 1px solid #e2e8f0; /* slate-200 */
       background-color: #fff;
@@ -725,11 +740,6 @@
                 dark: '#ea580c', // orange-600
             },
             'pricing-bg': '#F0F2FE',
-          },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            roboto: ['Roboto', 'sans-serif'],
-            condensed: ['Roboto Condensed', 'sans-serif'],
           }
         }
       }
