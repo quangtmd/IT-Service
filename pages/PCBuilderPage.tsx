@@ -180,6 +180,8 @@ export const PCBuilderPage: React.FC = () => {
       price: totalPrice,
       quantity: 1,
       description: buildDescription,
+// Fix: Add the required 'imageUrl' property to satisfy the CustomPCBuildCartItem type.
+      imageUrl: Constants.GENERIC_PC_BUILD_IMAGE_URL,
       // For imageUrl, ensure it matches imageUrls: [string] from the updated type.
       imageUrls: [Constants.GENERIC_PC_BUILD_IMAGE_URL], // Explicitly set as an array of one string
       isCustomBuild: true,

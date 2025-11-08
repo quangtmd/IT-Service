@@ -305,7 +305,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
     // FIX: The async arrow function was causing a strange type inference issue.
     // Wrapped in useCallback to ensure stable function reference and correct dependency tracking, which resolves the type inference problem.
-    const handleSettlePayroll = useCallback(async () => {
+    const handleSettlePayroll = useCallback(async (): Promise<void> => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -321,6 +321,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 (recordsToSettle.some(rts => rts.id === p.id)) ? { ...p, status: 'Đã thanh toán' as const } : p
             );
             await savePayrollRecords(updatedRecords);
+// Fix: Add explicit return type to the async arrow function to help TypeScript's type inference.
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -336,8 +337,9 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
     // FIX: The async arrow function was causing a strange type inference issue.
     // Wrapped in useCallback to ensure stable function reference and correct dependency tracking, which resolves the type inference problem.
-    const handleSaveDraft = useCallback(async () => {
+    const handleSaveDraft = useCallback(async (): Promise<void> => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+// Fix: Add explicit return type to the async arrow function to help TypeScript's type inference.
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
         onDataChange();
