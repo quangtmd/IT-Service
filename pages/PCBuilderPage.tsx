@@ -195,7 +195,7 @@ export const PCBuilderPage: React.FC = () => {
       
       // Optional Product properties can be set or left undefined
       shortDescription: buildDescription,
-      status: 'Mới',
+      // Fix: Removed 'status' property as it does not exist on the Product type.
       brand: 'IQ Technology Custom Build',
       isVisible: true,
       is_featured: false,

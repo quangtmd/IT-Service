@@ -662,3 +662,9 @@ export interface Supplier {
   };
   paymentTerms?: string;
 }
+
+// Fix: Add ServerInfo interface for use in DashboardView
+export interface ServerInfo {
+    outboundIp: string;
+    message: string;
+}
