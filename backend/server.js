@@ -431,6 +431,21 @@ app.put('/api/orders/:id/status', async (req, res) => {
     }
 });
 
+// FIX: Add missing deleteOrder endpoint
+app.delete('/api/orders/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [result] = await pool.query('DELETE FROM Orders WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng để xóa' });
+        }
+        res.status(204).send();
+    } catch (error) {
+        console.error("Lỗi khi xóa đơn hàng:", error);
+        res.status(500).json({ message: "Lỗi server", error: error.sqlMessage || error.message });
+    }
+});
+
 
 // --- AUTH & USERS API ---
 app.post('/api/login', async (req, res) => {
@@ -798,6 +813,29 @@ app.get('/api/returns', async (req, res) => {
     }
 });
 
+app.post('/api/returns', async (req, res) => {
+    try {
+        const ticket = { ...req.body, id: `ret-${Date.now()}`, createdAt: new Date() };
+        await pool.query('INSERT INTO ReturnTickets SET ?', ticket);
+        res.status(201).json(ticket);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.put('/api/returns/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        delete updates.id;
+        delete updates.createdAt;
+        await pool.query('UPDATE ReturnTickets SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
 app.delete('/api/returns/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM ReturnTickets WHERE id = ?', [req.params.id]);
@@ -818,6 +856,28 @@ app.get('/api/suppliers', async (req, res) => {
     }
 });
 
+app.post('/api/suppliers', async (req, res) => {
+    try {
+        const supplier = { ...req.body, id: `sup-${Date.now()}`, contactInfo: JSON.stringify(req.body.contactInfo || {}) };
+        await pool.query('INSERT INTO Suppliers SET ?', supplier);
+        res.status(201).json({ ...req.body, id: supplier.id });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.put('/api/suppliers/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body, contactInfo: JSON.stringify(req.body.contactInfo || {}) };
+        delete updates.id;
+        await pool.query('UPDATE Suppliers SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
 app.delete('/api/suppliers/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM Suppliers WHERE id = ?', [req.params.id]);
@@ -832,7 +892,31 @@ app.delete('/api/suppliers/:id', async (req, res) => {
 app.get('/api/service-tickets', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM ServiceTickets ORDER BY createdAt DESC');
-        res.json(rows);
+        res.json(rows.map(t => ({...t, customer_info: JSON.parse(t.customer_info || '{}')})));
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.post('/api/service-tickets', async (req, res) => {
+    try {
+        const ticket = { ...req.body, id: `st-${Date.now()}`, ticket_code: `ST-${Date.now()}`, createdAt: new Date(), customer_info: JSON.stringify(req.body.customer_info || {}) };
+        await pool.query('INSERT INTO ServiceTickets SET ?', ticket);
+        res.status(201).json(ticket);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.put('/api/service-tickets/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body, customer_info: JSON.stringify(req.body.customer_info || {}) };
+        delete updates.id;
+        delete updates.createdAt;
+        delete updates.ticket_code;
+        await pool.query('UPDATE ServiceTickets SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...req.body });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }

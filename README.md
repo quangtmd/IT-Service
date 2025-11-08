@@ -318,8 +318,9 @@ INSERT IGNORE INTO `LeaveRequests` (`id`, `employeeId`, `startDate`, `endDate`, 
 INSERT IGNORE INTO `Debts` (`id`, `entityId`, `entityType`, `type`, `amount`, `dueDate`, `status`) VALUES
 ('DEBT001', 'cust002', 'customer', 'receivable', 5000000.00, '2025-11-15', 'Chưa thanh toán');
 
-INSERT IGNORE INTO `Returns` (`id`, `orderId`, `reason`, `status`, `refundAmount`) VALUES
-('RET001', 'ORD001', 'Sản phẩm lỗi', 'Đã duyệt', 15990000.00);
+INSERT IGNORE INTO `Returns` (`id`, `orderId`, `reason`, `status`, `refundAmount`, `createdAt`) VALUES
+('RET001', 'ORD001', 'Sản phẩm lỗi card màn hình, không lên hình', 'Đã duyệt', 15990000.00, '2025-10-10 10:00:00'),
+('RET002', 'ORD002', 'Khách đổi ý, muốn nâng cấp lên sản phẩm khác', 'Đang chờ', 0.00, '2025-10-11 14:00:00');
 
 INSERT IGNORE INTO `Products` (`id`, `name`, `price`, `originalPrice`, `stock`, `categoryId`, `mainCategory`, `subCategory`, `brand`, `shortDescription`, `specifications`, `tags`, `isVisible`) VALUES
 ('PCVP001', 'PC Văn Phòng IQ Office Standard', 7590000.00, 8500000.00, 50, 'pc_van_phong', 'Máy tính để bàn (PC)', 'Máy tính văn phòng', 'IQ Tech', 'Cấu hình tối ưu cho công việc văn phòng, học tập online. Mượt mà với các tác vụ Word, Excel, lướt web.', '{\"CPU\": \"Intel Core i3-12100\", \"RAM\": \"8GB DDR4 3200MHz\", \"SSD\": \"256GB NVMe\", \"Mainboard\": \"H610M\"}', '[\"Văn phòng\", \"Học tập\"]', 1),
@@ -368,14 +369,15 @@ INSERT IGNORE INTO `Faqs` (`id`, `question`, `answer`, `category`, `isVisible`) 
 ('faq002', 'Có hỗ trợ lắp đặt tận nơi không?', 'Có, chúng tôi hỗ trợ lắp đặt tại Đà Nẵng.', 'Dịch vụ', 1);
 
 INSERT IGNORE INTO `Orders` (`id`, `userId`, `customerInfo`, `items`, `totalAmount`, `status`, `paymentInfo`, `orderDate`) VALUES
-('ORD001', 'cust001', '{\"fullName\":\"Nguyễn Văn An\",\"phone\":\"0905123456\",\"address\":\"123 Nguyễn Văn Linh, Đà Nẵng\",\"email\":\"an.nguyen@email.com\"}', '[{\"productId\":\"PCGM001\",\"productName\":\"PC Gaming IQ Eagle\",\"quantity\":1,\"price\":15990000}]', 15990000.00, 'Hoàn thành', '{\"method\":\"Chuyển khoản ngân hàng\",\"status\":\"Đã thanh toán\"}', '2025-10-02 14:30:00');
+('ORD001', 'cust001', '{\"fullName\":\"Nguyễn Văn An\",\"phone\":\"0905123456\",\"address\":\"123 Nguyễn Văn Linh, Đà Nẵng\",\"email\":\"an.nguyen@email.com\"}', '[{\"productId\":\"PCGM001\",\"productName\":\"PC Gaming IQ Eagle\",\"quantity\":1,\"price\":15990000}]', 15990000.00, 'Hoàn thành', '{\"method\":\"Chuyển khoản ngân hàng\",\"status\":\"Đã thanh toán\"}', '2025-10-02 14:30:00'),
+('ORD002', 'cust002', '{\"fullName\":\"Trần Thị Bích\",\"phone\":\"0935987654\",\"address\":\"45 Lê Duẩn, Đà Nẵng\",\"email\":\"bich.tran@email.com\"}', '[{\"productId\":\"LTGM001\",\"productName\":\"Laptop Gaming Acer Nitro 5 Eagle\",\"quantity\":1,\"price\":21500000}]', 21500000.00, 'Đang giao', '{\"method\":\"Thanh toán khi nhận hàng (COD)\",\"status\":\"Chưa thanh toán\"}', '2025-10-10 09:00:00');
 
 INSERT IGNORE INTO `Invoices` (`id`, `orderId`, `amount`, `status`, `dueDate`) VALUES
 ('INV001', 'ORD001', 15990000.00, 'paid', '2025-10-02');
 
-INSERT IGNORE INTO `ServiceTickets` (`id`, `ticket_code`, `customerId`, `deviceName`, `reported_issue`, `status`, `createdAt`, `assigneeId`, `rating`) VALUES
-('TCK001', 'TCK-001', 'cust002', 'Laptop Dell Inspiron', 'Máy không lên nguồn', 'Mới', '2025-10-08 09:00:00', 'staff001', NULL),
-('TCK002', 'TCK-002', 'cust003', 'PC Gaming', 'Máy tính tự khởi động lại khi chơi game', 'Đang xử lý', '2025-10-09 11:00:00', 'staff001', NULL);
+INSERT IGNORE INTO `ServiceTickets` (`id`, `ticket_code`, `customerId`, `deviceName`, `reported_issue`, `status`, `createdAt`, `assigneeId`, `rating`, `customer_info`) VALUES
+('TCK001', 'TCK-001', 'cust002', 'Laptop Dell Inspiron', 'Máy không lên nguồn', 'Mới', '2025-10-08 09:00:00', 'staff001', NULL, '{\"fullName\": \"Trần Thị Bích\", \"phone\": \"0935987654\"}'),
+('TCK002', 'TCK-002', 'cust003', 'PC Gaming', 'Máy tính tự khởi động lại khi chơi game', 'Đang xử lý', '2025-10-09 11:00:00', 'staff001', NULL, '{\"fullName\": \"Lê Hoàng Long\", \"phone\": \"0978111222\"}');
 
 INSERT IGNORE INTO `WarrantyTickets` (`id`, `orderId`, `productId`, `issueDescription`, `status`, `createdAt`) VALUES
 ('WAR001', 'ORD001', 'PCGM001', 'Card màn hình không xuất hình', 'Đang tiếp nhận', '2025-10-08 10:00:00');

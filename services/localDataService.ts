@@ -110,6 +110,11 @@ export const updateOrderStatus = async (id: string, status: OrderStatus): Promis
     });
 };
 
+// FIX: Add missing deleteOrder function
+export const deleteOrder = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/orders/${id}`, { method: 'DELETE' });
+};
+
 
 // --- Article Service ---
 export const getArticles = async (): Promise<Article[]> => {
@@ -278,6 +283,22 @@ export const getServiceTickets = async (): Promise<ServiceTicket[]> => {
     return fetchFromApi<ServiceTicket[]>('/api/service-tickets');
 };
 
+export const addServiceTicket = async (ticket: Omit<ServiceTicket, 'id' | 'createdAt' | 'ticket_code'>): Promise<ServiceTicket> => {
+    return fetchFromApi<ServiceTicket>('/api/service-tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticket),
+    });
+};
+
+export const updateServiceTicket = async (id: string, updates: Partial<ServiceTicket>): Promise<ServiceTicket> => {
+    return fetchFromApi<ServiceTicket>(`/api/service-tickets/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+    });
+};
+
 // FIX: Add missing deleteServiceTicket function.
 export const deleteServiceTicket = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/service-tickets/${id}`, { method: 'DELETE' });
@@ -299,6 +320,22 @@ export const getReturns = async (): Promise<ReturnTicket[]> => {
     return fetchFromApi<ReturnTicket[]>('/api/returns');
 };
 
+export const addReturn = async (ticket: Omit<ReturnTicket, 'id' | 'createdAt'>): Promise<ReturnTicket> => {
+    return fetchFromApi<ReturnTicket>('/api/returns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticket),
+    });
+};
+
+export const updateReturn = async (id: string, updates: Partial<ReturnTicket>): Promise<ReturnTicket> => {
+    return fetchFromApi<ReturnTicket>(`/api/returns/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+    });
+};
+
 export const deleteReturn = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/returns/${id}`, { method: 'DELETE' });
 };
@@ -307,6 +344,22 @@ export const deleteReturn = async (id: string): Promise<void> => {
 // --- Supplier Service ---
 export const getSuppliers = async (): Promise<Supplier[]> => {
     return fetchFromApi<Supplier[]>('/api/suppliers');
+};
+
+export const addSupplier = async (supplier: Omit<Supplier, 'id'>): Promise<Supplier> => {
+    return fetchFromApi<Supplier>('/api/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(supplier),
+    });
+};
+
+export const updateSupplier = async (id: string, updates: Partial<Supplier>): Promise<Supplier> => {
+    return fetchFromApi<Supplier>(`/api/suppliers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+    });
 };
 
 export const deleteSupplier = async (id: string): Promise<void> => {

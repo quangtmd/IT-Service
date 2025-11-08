@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
-import { getOrders, updateOrderStatus } from '../../services/localDataService';
+import { getOrders, updateOrderStatus, deleteOrder } from '../../services/localDataService';
 import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 import * as ReactRouterDOM from 'react-router-dom';
 
@@ -60,6 +60,17 @@ const OrderManagementView: React.FC = () => {
     const handleEditOrder = (orderId: string) => {
         navigate(`/admin/orders/edit/${orderId}`);
     };
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm('Bạn có chắc muốn xóa đơn hàng này? Hành động này không thể hoàn tác.')) {
+            try {
+                await deleteOrder(id);
+                loadOrders();
+            } catch (err) {
+                alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi xóa.');
+            }
+        }
+    };
     
     return (
         <div className="admin-card">
@@ -104,7 +115,10 @@ const OrderManagementView: React.FC = () => {
                                         <td className="font-semibold text-primary">{order.totalAmount.toLocaleString('vi-VN')}₫</td>
                                         <td><span className={`status-badge ${getStatusColor(order.status)}`}>{order.status}</span></td>
                                         <td>
-                                            <Button onClick={() => handleEditOrder(order.id)} size="sm" variant="outline">Sửa</Button>
+                                            <div className="flex gap-2">
+                                                <Button onClick={() => handleEditOrder(order.id)} size="sm" variant="outline" title="Sửa"><i className="fas fa-edit"></i></Button>
+                                                <Button onClick={() => handleDelete(order.id)} size="sm" variant="ghost" className="text-red-500" title="Xóa"><i className="fas fa-trash"></i></Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
