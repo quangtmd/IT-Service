@@ -19,7 +19,7 @@ const RegisterPage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/home'); // Changed from history.push
+      navigate('/'); // Changed from history.push
     }
   }, [isAuthenticated, navigate]);
 
@@ -48,7 +48,7 @@ const RegisterPage: React.FC = () => {
     try {
         const user = await register({ username, email, password });
         if (user) {
-          navigate('/home');
+          navigate('/');
         } else {
           setError('Đăng ký không thành công. Vui lòng thử lại.');
         }
@@ -66,7 +66,7 @@ const RegisterPage: React.FC = () => {
       <div className="absolute inset-0 bg-black opacity-60"></div> {/* Dark overlay */}
       <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-md p-10 rounded-xl shadow-xl border border-borderDefault relative z-10">
         <div>
-          <ReactRouterDOM.Link to="/home" className="flex justify-center">
+          <ReactRouterDOM.Link to="/" className="flex justify-center">
              <span className="text-3xl font-bold text-primary">{Constants.COMPANY_NAME}</span>
           </ReactRouterDOM.Link>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-textBase">

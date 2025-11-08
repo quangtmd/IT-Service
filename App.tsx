@@ -20,7 +20,7 @@ import FloatingActionButtons from './components/shared/FloatingActionButtons';
 import PCBuildSuggestionsPage from './pages/PCBuildSuggestionsPage'; // Import the new page
 
 // Auth and Admin
-import AdminPage from './pages/AdminPage';
+import AdminPage from './pages/admin/AdminPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -35,8 +35,7 @@ const App: React.FC = () => {
         <Header />
         <main className="flex-grow pt-[168px]">
           <ReactRouterDOM.Routes> {/* Replaced Switch with Routes */}
-            <ReactRouterDOM.Route path="/" element={<ReactRouterDOM.Navigate to="/home" replace />} />
-            <ReactRouterDOM.Route path="/home" element={<HomePage />} />
+            <ReactRouterDOM.Route path="/" element={<HomePage />} />
             <ReactRouterDOM.Route path="/shop" element={<ShopPage />} />
             <ReactRouterDOM.Route path="/product/:productId" element={<ProductDetailPage />} />
             <ReactRouterDOM.Route path="/services" element={<ServicesPage />} />

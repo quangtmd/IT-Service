@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, AdminNotification, AdminView } from '../types';
-import { useAuth, AdminPermission } from '../contexts/AuthContext';
+import { User, AdminNotification, AdminView } from '../../types';
+import { useAuth, AdminPermission } from '../../contexts/AuthContext';
 
 // Import existing views
 import HRMProfileView from '../../components/admin/HRMProfileView';
@@ -404,7 +404,7 @@ const AdminSidebar: React.FC<{
             <div className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
             <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`}>
                 <div className="admin-sidebar-header justify-between">
-                    {!isCollapsed && <ReactRouterDOM.Link to="/home"><span className="text-xl font-bold text-white">IQ Technology</span></ReactRouterDOM.Link>}
+                    {!isCollapsed && <ReactRouterDOM.Link to="/"><span className="text-xl font-bold text-white">IQ Technology</span></ReactRouterDOM.Link>}
                     <button onClick={onToggleCollapse} className="hidden lg:block text-slate-400 hover:text-white text-lg">
                         <i className={`fas ${isCollapsed ? 'fa-align-right' : 'fa-align-left'}`}></i>
                     </button>
@@ -416,7 +416,7 @@ const AdminSidebar: React.FC<{
                     {menuConfig.map(item => renderSidebarItem(item))}
                 </nav>
                 <div className="admin-sidebar-footer">
-                    <ReactRouterDOM.Link to="/home" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
+                    <ReactRouterDOM.Link to="/" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
                         <i className="fas fa-globe w-6 text-center mr-3"></i>
                         {!isCollapsed && <span className="text-sm">Về trang chủ</span>}
                     </ReactRouterDOM.Link>
@@ -438,7 +438,7 @@ const AdminHeader: React.FC<{
         </div>
          <div className="flex items-center gap-4">
             <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
-            <ReactRouterDOM.Link to="/home">
+            <ReactRouterDOM.Link to="/">
                 <i className="fas fa-user-circle text-2xl text-admin-textSecondary hover:text-primary"></i>
             </ReactRouterDOM.Link>
         </div>

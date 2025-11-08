@@ -11,7 +11,7 @@ const LoginPage: React.FC = () => {
   const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
   const navigate = ReactRouterDOM.useNavigate();
   const location = ReactRouterDOM.useLocation();
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/home";
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
 
   // New, more vibrant technology background image
   const backgroundImage = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
@@ -32,7 +32,7 @@ const LoginPage: React.FC = () => {
       } else {
         // For regular customers, go back to the page they were on, or to the homepage.
         // Avoids a redirect loop if 'from' is the login page itself.
-        navigate(from === '/login' ? '/home' : from, { replace: true });
+        navigate(from === '/login' ? '/' : from, { replace: true });
       }
     }
   }, [isAuthenticated, currentUser, navigate, from]);

@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom'; // useParams and Link are compatible with v6/v7
 import { Article } from '../types';
@@ -123,7 +121,7 @@ Kết luận, ${article.summary.toLowerCase()}
       <article className="bg-bgBase p-6 md:p-10 rounded-lg shadow-xl border border-borderDefault">
         <header className="mb-8">
           <nav aria-label="breadcrumb" className="text-sm text-textMuted mb-2">
-            <ReactRouterDOM.Link to="/home" className="hover:text-primary">Trang chủ</ReactRouterDOM.Link>
+            <ReactRouterDOM.Link to="/" className="hover:text-primary">Trang chủ</ReactRouterDOM.Link>
             <span className="mx-1">/</span>
             <ReactRouterDOM.Link to="/blog" className="hover:text-primary">Blog</ReactRouterDOM.Link>
             <span className="mx-1">/</span>
