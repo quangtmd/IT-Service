@@ -35,6 +35,7 @@ import OrderFormPage from './OrderFormPage';
 import ReturnFormPage from './ReturnFormPage';
 import SupplierFormPage from './SupplierFormPage';
 import ServiceTicketFormPage from './ServiceTicketFormPage';
+import WarrantyFormPage from './WarrantyFormPage';
 
 
 // Import new placeholder/skeleton views
@@ -331,6 +332,8 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_claims/new" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_claims/edit/:warrantyId" element={<WarrantyFormPage />} />
                         
                         {/* Generic route for views */}
                         <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />

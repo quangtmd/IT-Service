@@ -83,6 +83,7 @@ export const MOCK_ARTICLES: Article[] = [
         author: 'Admin',
         date: '2024-07-10T11:00:00Z',
         category: 'So sánh',
+        content: 'Nội dung chi tiết về so sánh card đồ họa...'
     },
     {
         id: 'it005',
@@ -175,7 +176,7 @@ export const MOCK_PROJECTS: Project[] = [
         title: 'Xây Dựng Hệ Thống Lưu Trữ NAS Cho Studio Thiết Kế Đồ Họa',
         client: 'Pixel Perfect Studio',
         description: 'Cung cấp giải pháp lưu trữ tập trung NAS Synology, dung lượng 20TB. Cấu hình RAID, phân quyền người dùng, backup tự động cho các máy trạm thiết kế. Đảm bảo an toàn dữ liệu và truy cập nhanh chóng.',
-        imageUrl: 'https://images.unsplash.com/photo-1626244243254-d3d6061352ca?q=80&w=600&auto=format&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1626243254-d3d6061352ca?q=80&w=600&auto=format&fit=crop',
         technologiesUsed: ['NAS Synology', 'Cấu hình RAID', 'Giải pháp Sao lưu Dữ liệu', 'Kiểm soát Truy cập Người dùng'],
         completionDate: '01-04-2024',
         category: 'Lưu trữ dữ liệu & Sao lưu'

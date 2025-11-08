@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
-import * as Constants from '../constants.tsx';
+import * as Constants from '../constants';
 import { AIBuildResponse, PCComponent, AIRecommendedComponent, CustomPCBuildCartItem } from '../types';
 import geminiService from '../services/geminiService';
 import Card from '../components/ui/Card';
@@ -110,7 +110,9 @@ export const PCBuilderPage: React.FC = () => {
         for (const [key, value] of Object.entries(customBuild.buildComponents)) {
           // Ensure the key is a valid BuilderSelectorKey
           if (BUILDER_SELECTABLE_KEYS.includes(key as BuilderSelectorKey)) {
-            components[key as BuilderSelectorKey] = value.name;
+            // Fix: Cast 'value' to its expected type to resolve the 'unknown' type error.
+            const componentValue = value as { name: string; price?: number };
+            components[key as BuilderSelectorKey] = componentValue.name;
           }
         }
         setSelectedComponents(components);
@@ -179,13 +181,12 @@ export const PCBuilderPage: React.FC = () => {
       quantity: 1,
       description: buildDescription,
       // For imageUrl, ensure it matches imageUrls: [string] from the updated type.
-      imageUrl: Constants.GENERIC_PC_BUILD_IMAGE_URL, // Single image URL for the custom build
+      imageUrls: [Constants.GENERIC_PC_BUILD_IMAGE_URL], // Explicitly set as an array of one string
       isCustomBuild: true,
       buildComponents: buildComponents,
       mainCategory: "PC Xây Dựng",
       subCategory: "Theo Yêu Cầu",
       category: "PC Xây Dựng",
-      imageUrls: [Constants.GENERIC_PC_BUILD_IMAGE_URL], // Explicitly set as a tuple/array of one string
       tags: ["custom-build", useCase.toLowerCase().replace(' ', '-')],
       
       // Required Product properties that need default values for a custom build

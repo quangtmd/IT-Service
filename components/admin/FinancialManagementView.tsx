@@ -317,8 +317,10 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
 
         try {
-            const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-            await savePayrollRecords(recordsToSave);
+            const updatedRecords = localPayroll.map(p => 
+                (recordsToSettle.some(rts => rts.id === p.id)) ? { ...p, status: 'Đã thanh toán' as const } : p
+            );
+            await savePayrollRecords(updatedRecords);
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,

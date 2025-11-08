@@ -1,326 +1,263 @@
-import React from 'react';
-import { AdminPermission } from './contexts/AuthContext';
+// types.ts
+
+// --- CORE ENTITIES ---
 
 export interface Product {
-  id: string;
-  name: string;
-  mainCategory: string; 
-  subCategory: string;  
-  category: string; 
-  price: number;
-  originalPrice?: number;
-  imageUrls: string[]; 
-  description: string; // Detailed description
-  shortDescription?: string; // New field for short description
-  specifications: Record<string, string>;
-  stock: number;
-  status?: 'Mới' | 'Cũ' | 'Like new';
-  rating?: number;
-  reviews?: number;
-  brand?: string;
-  tags: string[]; // Changed from optional to required, default to []
-  brandLogoUrl?: string;
-  isVisible?: boolean; // New field for product visibility
-  is_featured?: boolean; // Added for featured products
-  seoMetaTitle?: string; // New SEO field
-  seoMetaDescription?: string; // New SEO field
-  slug?: string; // New field for custom URL slug
+    id: string;
+    name: string;
+    mainCategory: string;
+    subCategory: string;
+    category: string; // This might be redundant, but seems to be used. Let's keep it.
+    description: string;
+    shortDescription?: string;
+    price: number;
+    originalPrice?: number;
+    stock: number;
+    imageUrls?: string[];
+    brand?: string;
+    tags?: string[];
+    specifications: Record<string, string>;
+    rating?: number;
+    reviews?: number;
+    isVisible?: boolean;
+    is_featured?: boolean;
 }
 
 export interface Service {
-  id: string;
-  name: string;
-  description: string;
-  icon: string; // FontAwesome class string
-  imageUrl: string; 
-  slug: string;     
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    imageUrl: string;
+    slug: string;
+}
+
+export interface Project {
+    id: string;
+    title: string;
+    client: string;
+    description: string;
+    imageUrl: string;
+    technologiesUsed: string[];
+    completionDate: string;
+    category: string;
 }
 
 export interface Article {
-  id: string;
-  title: string;
-  summary: string;
-  imageUrl: string;
-  author: string;
-  date: string;
-  category: string; 
-  content?: string; 
-  isAIGenerated?: boolean; // New field to mark AI-generated articles
-  imageSearchQuery?: string; // New field for AI-suggested image search term
+    id: string;
+    title: string;
+    summary: string;
+    imageUrl: string;
+    author: string;
+    date: string; // ISO date string
+    category: string;
+    content: string;
+    isAIGenerated?: boolean;
+    imageSearchQuery?: string;
 }
 
+// --- USER & AUTH ---
+export type UserRole = 'admin' | 'staff' | 'customer';
+export type StaffRole = 'Quản lý Bán hàng' | 'Biên tập Nội dung' | 'Trưởng nhóm Kỹ thuật' | 'Chuyên viên Hỗ trợ' | 'Nhân viên Toàn quyền';
+export const STAFF_ROLE_OPTIONS: StaffRole[] = ['Quản lý Bán hàng', 'Biên tập Nội dung', 'Trưởng nhóm Kỹ thuật', 'Chuyên viên Hỗ trợ', 'Nhân viên Toàn quyền'];
+
+export type UserStatus = 'Đang hoạt động' | 'Tạm khóa';
+export const USER_STATUS_OPTIONS: UserStatus[] = ['Đang hoạt động', 'Tạm khóa'];
+export type DebtStatus = 'Không có' | 'Có nợ' | 'Quá hạn';
+
+export interface User {
+    id: string;
+    username: string;
+    email: string;
+    password?: string;
+    role: UserRole;
+    staffRole?: StaffRole;
+    imageUrl?: string;
+    phone?: string;
+    address?: string;
+    joinDate?: string;
+    status?: UserStatus;
+    position?: string;
+    isLocked?: boolean;
+    dateOfBirth?: string;
+    origin?: string;
+    loyaltyPoints?: number;
+    debtStatus?: DebtStatus;
+    assignedStaffId?: string;
+}
+
+export interface AdminNotification {
+    id: string;
+    message: string;
+    type: 'info' | 'warning' | 'success' | 'error';
+    timestamp: string;
+    isRead: boolean;
+}
+
+// --- CART & ORDER ---
 export interface CartItem extends Product {
-  quantity: number;
-  isCustomBuild?: boolean; 
-  buildComponents?: Record<string, { name: string; price?: number }>; 
+    quantity: number;
 }
 
-// FIX: Modified CustomPCBuildCartItem to extend Product directly and explicitly define its properties.
-// This ensures it correctly implements all Product properties (including `specifications` and `stock`)
-// while also adding custom build-specific fields, resolving type compatibility issues with `addToCart`.
-export interface CustomPCBuildCartItem extends Product {
-  id: string;
-  name: string; 
-  price: number;
-  quantity: number;
-  description: string; 
-  imageUrl: string; // For CustomPCBuildCartItem, this will usually be a single generic image.
-  isCustomBuild: true;
-  buildComponents: Record<string, { name: string; price?: number }>; 
-  mainCategory: "PC Xây Dựng";
-  subCategory: "Theo Yêu Cầu";
-  category: "PC Xây Dựng";
-  imageUrls: [string]; // Override Product's string[] to a single-element tuple for custom builds
-  tags: string[];
-
-  // Explicitly defining specifications and stock to satisfy Product interface,
-  // even if they are empty or default for a custom build.
-  specifications: Record<string, string>;
-  stock: number; 
-
-  // Other optional Product fields can be implicitly inherited or set to undefined
-  // if not relevant for a custom build product representation.
+export interface CustomPCBuildCartItem extends CartItem {
+    isCustomBuild: true;
+    buildComponents: Record<string, { name: string; price?: number }>;
+    imageUrl: string; // Overwrite to be required string for custom build.
 }
 
-
-export interface Testimonial {
-  id: string;
-  name: string;
-  quote: string;
-  avatarUrl: string;
-  role?: string;
+export interface CheckoutFormData {
+    fullName: string;
+    phone: string;
+    address: string;
+    email: string;
+    notes: string;
 }
 
-export interface NavLinkItem {
-  label: string;
-  path: string;
-  icon?: React.ReactNode; 
-  authRequired?: boolean;
-  hideWhenAuth?: boolean; 
+export interface OrderItem {
+    productId: string;
+    productName: string;
+    quantity: number;
+    price: number;
 }
 
-export interface ChatMessage {
-  id: string;
-  text: string;
-  sender: 'user' | 'bot' | 'system';
-  timestamp: Date;
-  imageUrl?: string;
+export interface PaymentInfo {
+    method: 'Thanh toán khi nhận hàng (COD)' | 'Chuyển khoản ngân hàng' | 'Tiền mặt';
+    status: 'Chưa thanh toán' | 'Đã thanh toán';
+    amountToPay?: number;
 }
 
-// New Type for Chat Log Sessions
-export interface ChatLogSession {
-  id: string; // Unique ID for the session
-  userName: string;
-  userPhone: string;
-  startTime: string; // ISO string date
-  messages: ChatMessage[];
-  // Optionally, add end time, duration, etc.
+export type OrderStatus = 'Phiếu tạm' | 'Chờ xử lý' | 'Đã xác nhận' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy';
+
+export interface Order {
+    id: string;
+    userId?: string;
+    customerInfo: CheckoutFormData;
+    items: OrderItem[];
+    totalAmount: number;
+    orderDate: string;
+    status: OrderStatus;
+    paymentInfo: PaymentInfo;
 }
 
 
+// --- PC BUILDER & AI ---
 export interface PCComponent {
-  type: 'CPU' | 'Motherboard' | 'RAM' | 'GPU' | 'SSD' | 'PSU' | 'Case' | string; 
-  name: string;
-  price?: number;
-  imageUrl?: string;
-  details?: string;
-}
-
-export interface PCBuildConfiguration {
-  cpu?: PCComponent;
-  motherboard?: PCComponent;
-  ram?: PCComponent;
-  gpu?: PCComponent;
-  ssd?: PCComponent;
-  psu?: PCComponent;
-  case?: PCComponent;
+    type: string;
+    name: string;
+    price: number;
+    details: string;
 }
 
 export interface AIRecommendedComponent {
-  name: string;
-  reasoning: string;
-}
-export interface AIBuildResponse {
-  cpu?: AIRecommendedComponent;
-  motherboard?: AIRecommendedComponent;
-  ram?: AIRecommendedComponent;
-  gpu?: AIRecommendedComponent;
-  ssd?: AIRecommendedComponent;
-  psu?: AIRecommendedComponent;
-  case?: AIRecommendedComponent;
-  error?: string;
+    name: string;
+    reasoning: string;
 }
 
-export interface SuggestedComponent {
-  CPU: string;
-  GPU: string;
-  RAM: string;
-  Motherboard: string;
-  SSD: string;
-  PSU: string;
-  Case: string;
+export interface AIBuildResponse {
+    cpu?: AIRecommendedComponent;
+    motherboard?: AIRecommendedComponent;
+    ram?: AIRecommendedComponent;
+    gpu?: AIRecommendedComponent;
+    ssd?: AIRecommendedComponent;
+    psu?: AIRecommendedComponent;
+    case?: AIRecommendedComponent;
+    error?: string;
 }
 
 export interface PCBuildSuggestion {
   name: string;
   total_price: number;
   reasoning: string;
-  components: SuggestedComponent;
+  components: {
+    CPU: string;
+    GPU: string;
+    RAM: string;
+    Motherboard: string;
+    SSD: string;
+    PSU: string;
+    Case: string;
+  };
 }
 
 export interface AIBuildSuggestionsResponse {
   suggestions: PCBuildSuggestion[];
 }
 
-export interface GroundingChunkWeb {
-  uri: string;
-  title: string;
+
+// --- CHATBOT ---
+export interface ChatMessage {
+    id: string;
+    text: string;
+    sender: 'user' | 'bot' | 'system';
+    timestamp: Date;
+    imageUrl?: string;
 }
+
 export interface GroundingChunk {
-  web: GroundingChunkWeb;
+    web: {
+        uri: string;
+        title: string;
+    };
 }
 
-// Updated AdminView to include all new modules
-export type AdminView = 
-  | 'dashboard'
-  // Sales & CRM
-  | 'customers' | 'quotations' | 'orders' | 'discounts' | 'returns' | 'suppliers' | 'helpdesk_tickets'
-  // Service & Warranty
-  | 'service_tickets' | 'warranty_claims' | 'chat_logs'
-  // CMS & Marketing
-  | 'products' | 'articles' | 'media_library' | 'email_marketing' | 'seo_management'
-  // Inventory & Logistics
-  | 'inventory' | 'stock_receipts' | 'stock_issues' | 'shipping' | 'stock_transfers'
-  // Finance & Accounting
-  | 'accounting_dashboard' | 'invoices' | 'expenses' | 'debt_management' | 'cashflow_forecast' | 'payment_approval'
-  // Procurement
-  | 'purchase_requests' | 'purchase_orders' | 'procurement_approval'
-  // System & HR
-  | 'hrm_dashboard' | 'user_permissions' | 'site_settings' | 'activity_log' | 'contract_management' | 'asset_management' | 'kpi_management'
-  // Analytics & Automation
-  | 'workflows' | 'notification_center' | 'ai_forecast' | 'branch_reports' | 'system_backup'
-  // Multi-branch
-  | 'branch_list' | 'branch_permissions' | 'reports_by_branch'
-  // Old/Misc that need to be categorized
-  | 'faqs' | 'theme_settings' | 'menu_settings' | 'notifications_panel' | 'homepage_management'
-  ;
-
-export type UserRole = 'admin' | 'staff' | 'customer';
-export type StaffRole = 'Quản lý Bán hàng' | 'Biên tập Nội dung' | 'Trưởng nhóm Kỹ thuật' | 'Chuyên viên Hỗ trợ' | 'Nhân viên Toàn quyền';
-export const STAFF_ROLE_OPTIONS: StaffRole[] = ['Quản lý Bán hàng', 'Biên tập Nội dung', 'Trưởng nhóm Kỹ thuật', 'Chuyên viên Hỗ trợ', 'Nhân viên Toàn quyền'];
-export type UserStatus = 'Đang hoạt động' | 'Tạm nghỉ' | 'Đã nghỉ việc';
-export const USER_STATUS_OPTIONS: UserStatus[] = ['Đang hoạt động', 'Tạm nghỉ', 'Đã nghỉ việc'];
-
-
-// Fix: Add DebtStatus type and CRM fields to User interface to resolve multiple TypeScript errors in CustomerFormPage.
-export type DebtStatus = 'Không có' | 'Có nợ' | 'Quá hạn';
-
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  password?: string; 
-  role: UserRole;
-  staffRole?: StaffRole; 
-  imageUrl?: string; 
-  isLocked?: boolean; // Added for user locking
-
-  // HRM Fields
-  position?: string;
-  phone?: string;
-  address?: string;
-  joinDate?: string; // ISO string date
-  status?: UserStatus;
-  
-  // CRM Fields (for customers)
-  dateOfBirth?: string;
-  origin?: string;
-  loyaltyPoints?: number;
-  debtStatus?: DebtStatus;
-  assignedStaffId?: string;
+export interface ChatLogSession {
+    id: string;
+    userName: string;
+    userPhone: string;
+    startTime: string; // ISO string
+    messages: ChatMessage[];
 }
 
-export interface Project {
-  id: string;
-  title: string;
-  client?: string;
-  description: string;
-  imageUrl: string;
-  technologiesUsed?: string[];
-  completionDate?: string;
-  category?: string; 
-}
+// --- SITE CONFIG & UI ---
 
-export interface CheckoutFormData {
-  fullName: string;
-  phone: string;
-  address: string;
-  email: string;
-  notes?: string;
+export interface NavLinkItem {
+  label: string;
+  path: string;
+  icon?: string;
+  authRequired?: boolean;
 }
 
 export interface SubCategoryInfo {
-  name: string;
-  slug: string;
+    name: string;
+    slug: string;
 }
+
 export interface MainCategoryInfo {
-  name: string;
-  slug: string;
-  icon: string; 
-  subCategories: SubCategoryInfo[];
+    name: string;
+    slug: string;
+    icon: string;
+    subCategories: SubCategoryInfo[];
 }
+
 export type ProductCategoryHierarchy = MainCategoryInfo[];
 
-export interface OrderItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
+export interface Testimonial {
+    id: string;
+    name: string;
+    quote: string;
+    avatarUrl: string;
+    role: string;
 }
 
-// FIX: Add 'Đang xác nhận' to OrderStatus type to fix type error.
-export type OrderStatus = 'Chờ xử lý' | 'Đang xác nhận' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy' | 'Đã xác nhận' | 'Phiếu tạm';
-
-export interface ShippingInfo {
-  carrier?: string;
-  trackingNumber?: string;
-  shippingStatus?: 'Chưa giao' | 'Đang lấy hàng' | 'Đang giao' | 'Đã giao' | 'Gặp sự cố';
-}
-
-export interface PaymentInfo {
-  method: 'Thanh toán khi nhận hàng (COD)' | 'Chuyển khoản ngân hàng' | 'Tiền mặt';
-  status: 'Chưa thanh toán' | 'Đã thanh toán' | 'Đã cọc';
-  transactionId?: string; // Optional: For online gateway transaction IDs
-  amountToPay?: number; // Optional: To store deposit/full amount to be paid
-}
-
-export interface Order {
+export interface TeamMember {
   id: string;
-  userId?: string; // Link to the user who placed the order
-  customerInfo: CheckoutFormData;
-  items: OrderItem[];
-  totalAmount: number;
-  orderDate: string; 
-  status: OrderStatus;
-  shippingInfo?: ShippingInfo; // Added for shipping management
-  paymentInfo: PaymentInfo;
+  name: string;
+  role: string;
+  quote: string;
+  imageUrl: string;
+}
+export interface StoreImage {
+    id: string;
+    url: string;
+    caption: string;
 }
 
-export interface AdminNotification {
-  id: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'error';
-  timestamp: string; 
-  isRead: boolean;
-}
-
-// New types for Admin Panel Expansion
 export interface FaqItem {
   id: string;
   question: string;
-  answer: string; 
-  category?: string;
-  isVisible?: boolean;
+  answer: string;
+  category: string;
+  isVisible: boolean;
 }
 
 export interface DiscountCode {
@@ -329,11 +266,11 @@ export interface DiscountCode {
   type: 'percentage' | 'fixed_amount';
   value: number;
   description?: string;
-  expiryDate?: string; 
+  expiryDate?: string;
   isActive: boolean;
   minSpend?: number;
-  usageLimit?: number; 
-  timesUsed?: number;  
+  usageLimit?: number; // per user
+  timesUsed: number;
 }
 
 export interface SiteThemeSettings {
@@ -346,84 +283,73 @@ export interface SiteThemeSettings {
 }
 
 export interface CustomMenuLink {
-  id: string; 
+  id: string;
   label: string;
   path: string;
   order: number;
-  icon?: string; 
   isVisible: boolean;
-  originalPath?: string; 
-}
-
-export interface TeamMember {
-    id: string;
-    name: string;
-    role: string;
-    quote: string;
-    imageUrl: string;
-}
-
-export interface StoreImage {
-    id: string;
-    url: string; 
-    caption?: string;
+  originalPath: string; // to prevent editing of core paths
+  icon?: string;
 }
 
 export interface PricingPlan {
-  id: string;
-  name: string;
-  price: string;
-  originalPrice?: string;
-  saveText?: string;
-  period: string;
-  features: string[];
-  isPopular?: boolean;
-  buttonText?: string;
-  buttonLink?: string;
+    id: string;
+    name: string;
+    price: string;
+    period: string;
+    isPopular: boolean;
+    features: string[];
+    buttonText: string;
+    buttonLink: string;
+    saveText?: string;
+    originalPrice?: string;
 }
 
-// --- Homepage Content Specific Types ---
-export interface HomepageBannerSettings { // Renamed from SiteBanner to HomepageBannerSettings for clarity
-  id: string; 
-  preTitle?: string;
-  title: string;
-  subtitle: string;
-  backgroundImageUrl: string; 
-  rightColumnImageUrl?: string; 
-  primaryButtonText: string;
-  primaryButtonLink: string;
-  secondaryButtonText?: string;
-  secondaryButtonLink?: string;
-  imageAltText?: string;
-  decorTopLeftImageUrl?: string; 
-  decorBottomRightImageUrl?: string;
-  decorExtraImageUrl?: string; 
-  decorExtraText?: string;
-  sectionTitleIconUrl?: string; 
-  order: number; // Added for managing multiple banners
-  isActive: boolean; // Added for managing multiple banners
+export interface MediaItem {
+  id: string;
+  url: string;
+  name: string;
+  type: string;
+  uploadedAt: string;
+}
+
+// --- HOMEPAGE SPECIFIC SETTINGS ---
+export interface HomepageBannerSettings {
+    id: string;
+    preTitle: string;
+    title: string;
+    subtitle: string;
+    backgroundImageUrl: string;
+    primaryButtonText: string;
+    primaryButtonLink: string;
+    secondaryButtonText?: string;
+    secondaryButtonLink?: string;
+    order: number;
+    isActive: boolean;
+    decorTopLeftImageUrl?: string;
+    decorBottomRightImageUrl?: string;
 }
 
 export interface HomepageAboutFeature {
   id: string;
-  icon: string; 
+  icon: string;
   title: string;
   description: string;
   link?: string;
 }
+
 export interface HomepageAboutSettings {
   enabled: boolean;
-  preTitle?: string;
+  preTitle: string;
   title: string;
   description: string;
-  imageUrl: string; 
-  imageDetailUrl?: string; 
-  imageDetailAltText?: string;
-  imageAltText?: string;
+  imageUrl: string;
+  imageDetailUrl: string;
+  imageAltText: string;
+  imageDetailAltText: string;
   features: HomepageAboutFeature[];
   buttonText: string;
   buttonLink: string;
-  sectionTitleIconUrl?: string; 
 }
 
 export interface HomepageServiceBenefit {
@@ -432,15 +358,15 @@ export interface HomepageServiceBenefit {
   title: string;
   description: string;
   link: string;
-  bgImageUrlSeed?: string;
   order: number;
 }
+
 export interface HomepageServicesBenefitsSettings {
   enabled: boolean;
-  preTitle?: string;
+  preTitle: string;
   title: string;
   benefits: HomepageServiceBenefit[];
-  sectionTitleIconUrl?: string; 
+  sectionTitleIconUrl?: string; // Optional
 }
 
 export interface HomepageWhyChooseUsFeature {
@@ -449,21 +375,20 @@ export interface HomepageWhyChooseUsFeature {
   title: string;
   description: string;
 }
+
 export interface HomepageWhyChooseUsSettings {
   enabled: boolean;
-  preTitle?: string;
+  preTitle: string;
   title: string;
   description: string;
-  mainImageUrl: string; 
-  experienceStatNumber?: string; 
-  experienceStatLabel?: string; 
+  mainImageUrl: string;
+  experienceStatNumber: string;
+  experienceStatLabel: string;
   features: HomepageWhyChooseUsFeature[];
   contactButtonText: string;
   contactButtonLink: string;
-  contactSectionText?: string; 
-  decorTopLeftImageUrl?: string;
-  decorBottomRightImageUrl?: string;
-  sectionTitleIconUrl?: string; 
+  contactSectionText?: string; // Optional
+  sectionTitleIconUrl?: string; // Optional
 }
 
 export interface HomepageStatItem {
@@ -473,132 +398,109 @@ export interface HomepageStatItem {
   label: string;
   order: number;
 }
+
 export interface HomepageStatsCounterSettings {
   enabled: boolean;
   stats: HomepageStatItem[];
-  sectionTitleIconUrl?: string; 
 }
 
-export interface HomepageFeaturedProjectsItem { 
-  id: string; 
-  displayOrder: number;
-}
 export interface HomepageFeaturedProjectsSettings {
-  enabled: boolean;
-  preTitle?: string;
-  title: string;
-  buttonText: string;
-  buttonLink: string;
-  featuredServiceIds: string[]; 
-  sectionTitleIconUrl?: string; 
+    enabled: boolean;
+    preTitle: string;
+    title: string;
+    buttonText: string;
+    buttonLink: string;
+    featuredServiceIds: string[];
+    sectionTitleIconUrl?: string;
 }
 
-export interface HomepageTestimonialItem extends Testimonial { 
+export interface HomepageTestimonialItem {
+    id: string;
+    name: string;
+    quote: string;
+    avatarUrl: string;
+    role: string;
     order: number;
 }
 export interface HomepageTestimonialsSettings {
-  enabled: boolean;
-  preTitle?: string;
-  title: string;
-  testimonials: HomepageTestimonialItem[];
-  sectionTitleIconUrl?: string; 
+    enabled: boolean;
+    preTitle: string;
+    title: string;
+    testimonials: HomepageTestimonialItem[];
+    sectionTitleIconUrl?: string;
 }
 
 export interface HomepageBrandLogo {
-  id: string;
-  name: string;
-  logoUrl: string; 
-  order: number;
+    id: string;
+    name: string;
+    logoUrl: string;
+    order: number;
 }
 export interface HomepageBrandLogosSettings {
-  enabled: boolean;
-  logos: HomepageBrandLogo[];
-  sectionTitleIconUrl?: string; 
+    enabled: boolean;
+    logos: HomepageBrandLogo[];
 }
 
 export interface HomepageProcessStep {
-  id: string;
-  stepNumber: string; 
-  title: string;
-  description: string;
-  imageUrlSeed: string; 
-  shapeUrlSeed?: string; 
-  alignRight?: boolean;
-  order: number;
+    id: string;
+    stepNumber: string;
+    title: string;
+    description: string;
+    imageUrlSeed: string;
+    alignRight?: boolean;
+    order: number;
 }
 export interface HomepageProcessSettings {
-  enabled: boolean;
-  preTitle?: string;
-  title: string;
-  steps: HomepageProcessStep[];
-  sectionTitleIconUrl?: string; 
+    enabled: boolean;
+    preTitle: string;
+    title: string;
+    steps: HomepageProcessStep[];
+    sectionTitleIconUrl?: string;
 }
 
 export interface HomepageCallToActionSettings {
-  enabled: boolean;
-  title: string;
-  description: string;
-  buttonText: string;
-  buttonLink: string;
-  backgroundImageUrl?: string; 
-  sectionTitleIconUrl?: string; 
+    enabled: boolean;
+    title: string;
+    description: string;
+    buttonText: string;
+    buttonLink: string;
+    backgroundImageUrl?: string;
 }
 
 export interface HomepageBlogPreviewSettings {
-  enabled: boolean;
-  preTitle?: string;
-  title: string;
-  featuredArticleId?: string; 
-  otherArticleIds: string[]; 
-  sectionTitleIconUrl?: string; 
+    enabled: boolean;
+    preTitle: string;
+    title: string;
+    featuredArticleId?: string;
+    otherArticleIds: string[];
+    sectionTitleIconUrl?: string;
 }
 
 export interface HomepageContactSectionSettings {
-  enabled: boolean;
-  preTitle?: string;
-  title: string;
-  sectionTitleIconUrl?: string; 
+    enabled: boolean;
+    preTitle: string;
+    title: string;
+    sectionTitleIconUrl?: string;
 }
 
-export interface SMTPSettings {
-  host: string;
-  port: number;
-  user: string;
-  pass: string; // Consider secure storage for this if it were a real app
-  secure: boolean; // true for 465, false for other ports
-}
-export interface PaymentGatewaySettings {
-  momoEnabled: boolean;
-  vnPayEnabled: boolean;
-  paypalEnabled: boolean;
-  momoApiKey?: string; // Example, real app would have more complex config
-  vnPayApiKey?: string;
-  paypalClientId?: string;
-}
-export interface MediaItem {
-  id: string;
-  url: string; // dataURL or external URL
-  name: string;
-  type: string; // e.g., 'image/jpeg', 'image/png'
-  uploadedAt: string;
-}
+// --- SITE SETTINGS (Master Object) ---
+export interface SMTPSettings { host: string; port: number; user: string; pass: string; secure: boolean; }
+export interface PaymentGatewaySettings { momoEnabled: boolean; vnPayEnabled: boolean; paypalEnabled: boolean; }
 
-// --- Main Site Settings ---
 export interface SiteSettings {
   companyName: string;
   companySlogan: string;
   companyPhone: string;
   companyEmail: string;
   companyAddress: string;
-  
-  siteLogoUrl: string; 
-  siteFaviconUrl: string; 
+
+  siteLogoUrl: string;
+  siteFaviconUrl: string;
 
   defaultMetaTitle: string;
   defaultMetaDescription: string;
-  defaultMetaKeywords: string; 
+  defaultMetaKeywords: string;
 
-  // About Page Specific
   aboutPageTitle: string;
   aboutPageSubtitle: string;
   ourStoryContentMarkdown: string;
@@ -607,89 +509,128 @@ export interface SiteSettings {
   teamMembers: TeamMember[];
   storeImages: StoreImage[];
 
-  // Contact Page Specific
   contactPageTitle: string;
   contactPageSubtitle: string;
   workingHours: string;
-  mapEmbedUrl: string; 
+  mapEmbedUrl: string;
 
   socialFacebookUrl: string;
   socialZaloUrl: string;
   socialYoutubeUrl: string;
-  socialInstagramUrl?: string;
-  socialTwitterUrl?: string;
+  socialInstagramUrl: string;
+  socialTwitterUrl: string;
 
-  // Homepage Content Sections
-  homepageBanners: HomepageBannerSettings[]; // Changed to array for multiple banners
+  // Homepage sections
+  homepageBanners: HomepageBannerSettings[];
   homepageAbout: HomepageAboutSettings;
   homepageServicesBenefits: HomepageServicesBenefitsSettings;
   homepageWhyChooseUs: HomepageWhyChooseUsSettings;
   homepageStatsCounter: HomepageStatsCounterSettings;
-  homepageFeaturedProjects: HomepageFeaturedProjectsSettings; 
+  homepageFeaturedProjects: HomepageFeaturedProjectsSettings;
   homepageTestimonials: HomepageTestimonialsSettings;
   homepageBrandLogos: HomepageBrandLogosSettings;
   homepageProcess: HomepageProcessSettings;
   homepageCallToAction: HomepageCallToActionSettings;
   homepageBlogPreview: HomepageBlogPreviewSettings;
   homepageContactSection: HomepageContactSectionSettings;
-
-  // System Settings
+  
+  // Advanced settings
   smtpSettings: SMTPSettings;
   paymentGateways: PaymentGatewaySettings;
   siteMediaLibrary: MediaItem[];
 }
 
-// --- NEW FINANCIAL TYPES ---
+// ADMIN & ERP TYPES
+
+export type AdminView = 'dashboard' | 'products' | 'articles' | 'orders' | 'customers' | 'discounts' | 'faqs' | 'chat_logs' | 'site_settings' | 'media_library' | 'homepage_management' | 'notifications_panel' | 'hrm_dashboard' | 'theme_settings' | 'menu_settings' | 'accounting_dashboard' | 'inventory' | 'service_tickets' | 'quotations' | 'warranty_claims' | 'returns' | 'suppliers';
+
+export type AdminPermission = 
+  // General
+  | 'viewDashboard' | 'viewNotifications'
+  // Sales & CRM
+  | 'viewSales' | 'viewCustomers' | 'manageCustomers' | 'viewQuotations' | 'viewOrders' | 'manageOrders' | 'manageDiscounts' | 'viewSuppliers' | 'viewHelpdesk'
+  // Service
+  | 'viewService' | 'manageServiceTickets' | 'manageWarranty' | 'viewChatLogs'
+  // Content
+  | 'viewContent' | 'viewProducts' | 'manageProducts' | 'viewArticles' | 'manageArticles' | 'manageMedia' | 'manageFaqs'
+  // Inventory
+  | 'viewInventory' | 'manageInventory'
+  // Finance
+  | 'viewAccounting' | 'manageTransactions' | 'managePayroll'
+  // Procurement
+  | 'viewProcurement'
+  // HR & System
+  | 'viewSystem' | 'viewHrm' | 'manageEmployees' | 'manageSiteSettings' | 'manageTheme' | 'manageMenu'
+  // Analytics
+  | 'viewAnalytics'
+  // Multi-branch
+  | 'viewBranches';
+
+
+export interface ServiceTicket {
+  id: string;
+  ticket_code?: string;
+  customer_info?: { fullName: string; phone: string; address: string };
+  deviceName: string;
+  deviceType: string;
+  serialNumber?: string;
+  reportedIssue: string;
+  status: 'Mới' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Đã đóng';
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
+  assignedTo?: string; // staff user id
+  notes?: string;
+  cost?: number;
+}
+
+export interface Inventory {
+  id: string;
+  product_id: string;
+  product_name?: string;
+  warehouse_id: string;
+  warehouse_name?: string;
+  quantity: number;
+  last_updated: string;
+}
+
 export type TransactionType = 'income' | 'expense';
 export type TransactionCategory = 'Doanh thu Bán hàng' | 'Thu nội bộ' | 'Chi phí Nhà Cung Cấp' | 'Chi phí Lương' | 'Chi phí Vận hành' | 'Chi phí Marketing' | 'Chi phí Khác';
 
 export interface FinancialTransaction {
   id: string;
-  date: string; // ISO string date
-  amount: number;
+  date: string; // ISO
   type: TransactionType;
   category: TransactionCategory;
+  amount: number;
   description: string;
-  relatedEntity?: string; // e.g., Supplier Name, Customer Name, Employee Name
+  relatedEntity?: string; // e.g., customer id, supplier id
   invoiceNumber?: string;
 }
 
 export interface PayrollRecord {
-  id: string; // e.g., 'payroll-2024-08-user001'
+  id: string;
   employeeId: string;
   employeeName: string;
-  payPeriod: string; // e.g., '2024-08'
+  payPeriod: string; // YYYY-MM
   baseSalary: number;
   bonus: number;
   deduction: number;
   finalSalary: number;
-  notes: string;
   status: 'Chưa thanh toán' | 'Đã thanh toán';
+  notes?: string;
 }
 
-export interface Inventory {
-  product_id: string;
-  warehouse_id: string;
-  product_name: string;
-  warehouse_name: string;
-  quantity: number;
-}
-
-export interface ServerInfo {
-  outboundIp: string;
-}
-
-// --- NEW CRM & SALES TYPES ---
 export interface QuotationItem {
   productId: string;
   productName: string;
   quantity: number;
   price: number;
 }
+
 export interface Quotation {
   id: string;
   customer_id?: string;
-  customerInfo?: { name: string, email: string }; // Denormalized for display
+  customerInfo?: { name: string; email: string };
   creation_date: string; // ISO
   expiry_date?: string; // ISO
   items: QuotationItem[];
@@ -697,56 +638,27 @@ export interface Quotation {
   discount_amount?: number;
   tax_amount?: number;
   total_amount: number;
-  status: 'Nháp' | 'Đã gửi' | 'Đã chấp nhận' | 'Đã hủy' | 'Hết hạn';
+  status: 'Nháp' | 'Đã gửi' | 'Đã chấp nhận' | 'Hết hạn' | 'Đã hủy';
   terms?: string;
 }
 
-export interface WarrantyClaim {
-    id: string;
-    claim_code: string;
-    order_id: string;
-    product_id: string;
-    product_name: string;
-    customer_name: string;
-    reported_issue: string;
-    status: 'Đang tiếp nhận' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Từ chối';
-    created_at: string; // ISO
+
+export interface ReturnTicket {
+  id: string;
+  orderId: string;
+  reason: string;
+  status: 'Đang chờ' | 'Đã duyệt' | 'Đã từ chối';
+  refundAmount?: number;
+  createdAt: string; // ISO
 }
 
 export interface Supplier {
   id: string;
   name: string;
-  contactInfo: {
+  contactInfo?: {
     email?: string;
     phone?: string;
     address?: string;
   };
   paymentTerms?: string;
-}
-
-export type ReturnTicketStatus = 'Đang chờ' | 'Đã duyệt' | 'Đã từ chối';
-export interface ReturnTicket {
-  id: string;
-  orderId: string;
-  reason?: string;
-  status: ReturnTicketStatus;
-  refundAmount?: number;
-  createdAt: string; // ISO
-}
-
-export type ServiceTicketStatus = 'Mới' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Đã đóng';
-export interface ServiceTicket {
-  id: string;
-  ticket_code: string;
-  customer_info?: {
-    fullName: string;
-    phone: string;
-  };
-  customerId?: string;
-  deviceName: string;
-  reported_issue: string;
-  createdAt: string; // ISO string date
-  status: ServiceTicketStatus;
-  assigneeId?: string;
-  rating?: 1 | 2 | 3 | 4 | 5;
 }
