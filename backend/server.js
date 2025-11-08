@@ -739,13 +739,30 @@ app.get('/api/warranty-claims', async (req, res) => {
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
     // The path should be relative from /backend to the root /dist
-    const frontendDistPath = path.join(__dirname, '../dist');
+    const projectRoot = path.resolve(__dirname, '..');
+    const frontendDistPath = path.join(projectRoot, 'dist');
     
+    // ================== DEBUG LOGS ==================
+    console.log(`[Static Files] Server __dirname: ${__dirname}`);
+    console.log(`[Static Files] Resolved Project Root: ${projectRoot}`);
+    console.log(`[Static Files] Attempting to serve static files from: ${frontendDistPath}`);
+    // ================================================
+
     app.use(express.static(frontendDistPath));
 
-    app.get('*', (req, res) => {
-        // Any request that isn't an API route should serve the frontend's entry point
-        res.sendFile(path.resolve(frontendDistPath, 'index.html'));
+    app.get('*', (req, res, next) => {
+        // Ignore API routes
+        if (req.path.startsWith('/api/')) {
+            return next();
+        }
+        const indexPath = path.resolve(frontendDistPath, 'index.html');
+        res.sendFile(indexPath, (err) => {
+            if (err) {
+                // Log the error if sendFile fails, this will appear in Render logs
+                console.error(`Error sending file ${indexPath}:`, err);
+                res.status(500).send("Không thể tải ứng dụng frontend. Chi tiết: " + err.message);
+            }
+        });
     });
 }
 
