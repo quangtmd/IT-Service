@@ -738,10 +738,14 @@ app.get('/api/warranty-claims', async (req, res) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+    // The path should be relative from /backend to the root /dist
+    const frontendDistPath = path.join(__dirname, '../dist');
+    
+    app.use(express.static(frontendDistPath));
 
     app.get('*', (req, res) => {
-        res.sendFile(path.resolve(__dirname, '../../frontend/dist', 'index.html'));
+        // Any request that isn't an API route should serve the frontend's entry point
+        res.sendFile(path.resolve(frontendDistPath, 'index.html'));
     });
 }
 
