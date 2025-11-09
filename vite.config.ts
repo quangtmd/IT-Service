@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
 
     return {
         build: {
-            // outDir is removed to default to the standard 'dist' at the project root.
+            outDir: 'backend/dist',
             emptyOutDir: true,
         },
         server: {

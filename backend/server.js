@@ -16,11 +16,9 @@ app.use(express.json({ limit: '50mb' })); // Increase limit for media uploads
 // --- Static Files Setup ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, '..');
-const staticFilesPath = path.join(projectRoot, 'dist');
+const staticFilesPath = path.join(__dirname, 'dist');
 
 console.log(`[Static Files] Server __dirname: ${__dirname}`);
-console.log(`[Static Files] Resolved Project Root: ${projectRoot}`);
 console.log(`[Static Files] Attempting to serve static files from: ${staticFilesPath}`);
 
 app.use(express.static(staticFilesPath));
