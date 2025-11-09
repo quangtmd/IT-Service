@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
     return {
         build: {
-            outDir: 'backend/dist', // Output build files to backend/dist
+            // outDir is removed to default to the standard 'dist' at the project root.
             emptyOutDir: true,
         },
         plugins: [react()],
