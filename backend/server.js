@@ -373,14 +373,13 @@ apiRouter.delete('/suppliers/:id', async (req, res) => {
     res.status(204).send();
 });
 
-// Mount the API router
+// CORRECT MIDDLEWARE ORDER TO FIX 404 ERRORS
+// 1. Mount the API router to handle all /api requests first.
 app.use('/api', apiRouter);
 
-
-// --- Static Files Setup ---
+// 2. Serve static files for the frontend.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// Resolve the absolute path to the 'dist' folder at the project root
 const staticFilesPath = path.resolve(__dirname, '..', 'dist');
 
 console.log(`[Static Files] Server __dirname: ${__dirname}`);
@@ -389,14 +388,13 @@ console.log(`[Static Files] Attempting to serve static files from: ${staticFiles
 
 app.use(express.static(staticFilesPath));
 
-
-// Fallback for SPA: This should be the last route.
+// 3. Fallback for Single Page Application routing. This MUST be the last route.
+// It catches any request that didn't match an API route or a static file, and serves the main HTML file.
 app.get('*', (req, res) => {
   const indexPath = path.resolve(staticFilesPath, 'index.html');
   res.sendFile(indexPath, (err) => {
     if (err) {
       console.error(`Error sending file ${indexPath} :`, err);
-      // Don't expose internal error details to the client
       if (!res.headersSent) {
         res.status(404).send("Could not find the application entry point.");
       }
@@ -410,7 +408,7 @@ app.listen(PORT, async () => {
     const connection = await pool.getConnection();
     connection.release();
     console.log(`🚀 Backend server đang chạy tại http://localhost:${PORT}`);
-    console.log('✅ Kết nối tới database MySQL thành công!');
+    console.log('✅ Kết nối tới database MySQL thành công!`);
   } catch (error) {
     console.error('❌ Không thể kết nối tới database MySQL:', error);
   }
