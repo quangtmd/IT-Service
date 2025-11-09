@@ -3,10 +3,11 @@ import {
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus
 } from '../types';
 
-const API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "/api";
-
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+    // All API endpoints are prefixed with /api on the server.
+    // The URL is now relative, relying on proxy/rewrite rules.
+    const url = `/api${endpoint}`;
+    
     try {
         const response = await fetch(url, {
             headers: {
@@ -18,7 +19,11 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            throw new Error(errorData.message || `Lỗi API: ${response.status}`);
+            // Updated error message to be more relevant to the new setup.
+            const errorMessage = response.status === 404
+                ? `Lỗi API: 404 Not Found. Endpoint không được tìm thấy. Vui lòng kiểm tra cấu hình rewrite/proxy trên server.`
+                : errorData.message || `Lỗi API: ${response.status}`;
+            throw new Error(errorMessage);
         }
         
         // Handle cases where the response might be empty (e.g., DELETE requests)

@@ -15,8 +15,6 @@ import {
 export const ADMIN_EMAIL = "quangtmdit@gmail.com"; 
 
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
-// In development, this will be an empty string to use the Vite proxy. In production, it will be the deployed backend URL.
-export const BACKEND_API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || ""; 
 
 // --- STORAGE KEYS ---
 export const SITE_LOGO_STORAGE_KEY = "siteLogoUrl_v1";
