@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Order, OrderItem, User, Product, OrderStatus, SiteSettings } from '../../types';
@@ -64,8 +63,7 @@ const OrderFormPage: React.FC = () => {
                         items: [],
                         totalAmount: 0,
                         status: 'Phiếu tạm',
-                        // Fix: Add missing 'notes' property to satisfy CheckoutFormData type.
-                        customerInfo: { fullName: '', phone: '', address: '', email: '', notes: '' },
+                        customerInfo: { fullName: '', phone: '', address: '', email: '' },
                         paymentInfo: { method: 'Tiền mặt', status: 'Chưa thanh toán' },
                     });
                 }

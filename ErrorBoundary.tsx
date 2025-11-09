@@ -25,8 +25,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       hasError: false,
       errorMessage: '',
     };
-    // Fix: Explicitly bind props to this instance
-    this.props = props;
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {

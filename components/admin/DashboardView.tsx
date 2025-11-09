@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getOrders, getProducts, getArticles, getServerInfo } from '../../services/localDataService';
 import Card from '../ui/Card';
-import { Order, OrderStatus, Product, Article, AdminView } from '../../types';
+import { Order, OrderStatus, ServerInfo, Product, Article, AdminView } from '../../types';
 import Button from '../ui/Button';
 import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 
@@ -93,8 +93,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
     const [totalProducts, setTotalProducts] = useState(0);
     const [recentArticles, setRecentArticles] = useState<Article[]>([]);
     const [revenueData, setRevenueData] = useState<{ day: string; revenue: number }[]>([]);
-    // Fix: Changed ServerInfo to any because it is not exported from types.ts
-    const [serverInfo, setServerInfo] = useState<any | null>(null);
+    const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null);
     const [isServerInfoLoading, setIsServerInfoLoading] = useState(true);
     const [ipCopied, setIpCopied] = useState(false);
     const [isLoading, setIsLoading] = useState(true);

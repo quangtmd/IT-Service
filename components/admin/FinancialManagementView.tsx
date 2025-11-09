@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../ui/Button';
@@ -276,7 +275,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => void, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void> }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
+const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => void, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => void }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
     const { users } = useAuth();
     const staff = users.filter(u => u.role === 'admin' || u.role === 'staff');
     const [payPeriod, setPayPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
@@ -304,8 +303,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
-    // Fix: Updated function signature to accept the MouseEvent from onClick.
-    const handleSettlePayroll = useCallback(async (_event: React.MouseEvent): Promise<void> => {
+    const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -317,10 +315,10 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
 
         try {
-            const updatedRecords = localPayroll.map(p => 
-                (recordsToSettle.some(rts => rts.id === p.id)) ? { ...p, status: 'Đã thanh toán' as const } : p
-            );
-            await savePayrollRecords(updatedRecords);
+            // FIX: Explicitly create a variable for the records to be saved.
+            // This can help TypeScript's type inference in complex callback scenarios.
+            const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+            await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -332,10 +330,11 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         } catch (error) {
             alert('Lỗi khi chốt lương.');
         }
-    }, [localPayroll, payPeriod, onDataChange, onAddTransaction]);
+    }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
 
-    // Fix: Updated function signature to accept the MouseEvent from onClick.
-    const handleSaveDraft = useCallback(async (_event: React.MouseEvent): Promise<void> => {
+    const handleSaveDraft = useCallback(async () => {
+        // FIX: Explicitly create a variable for the records to be saved.
+        // This can help TypeScript's type inference in complex callback scenarios.
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');

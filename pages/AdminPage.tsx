@@ -35,7 +35,6 @@ import OrderFormPage from './admin/OrderFormPage';
 import ReturnFormPage from './admin/ReturnFormPage';
 import SupplierFormPage from './admin/SupplierFormPage';
 import ServiceTicketFormPage from './admin/ServiceTicketFormPage';
-import WarrantyFormPage from './admin/WarrantyFormPage';
 
 
 // Import new placeholder/skeleton views
@@ -278,8 +277,6 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
         if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
         if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
-        if (path.startsWith('/admin/warranty_claims/new')) return 'Tạo Phiếu Bảo Hành';
-        if (path.startsWith('/admin/warranty_claims/edit/')) return 'Chỉnh sửa Phiếu Bảo Hành';
 
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
@@ -334,8 +331,6 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
-                        <ReactRouterDOM.Route path="/warranty_claims/new" element={<WarrantyFormPage />} />
-                        <ReactRouterDOM.Route path="/warranty_claims/edit/:warrantyId" element={<WarrantyFormPage />} />
                         
                         {/* Generic route for views */}
                         <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />

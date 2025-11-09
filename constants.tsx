@@ -15,6 +15,8 @@ import {
 export const ADMIN_EMAIL = "quangtmdit@gmail.com"; 
 
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
+// In development, this will be an empty string to use the Vite proxy. In production, it will be the deployed backend URL.
+export const BACKEND_API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || ""; 
 
 // --- STORAGE KEYS ---
 export const SITE_LOGO_STORAGE_KEY = "siteLogoUrl_v1";
@@ -316,7 +318,7 @@ export const INITIAL_THEME_SETTINGS: SiteThemeSettings = {
 export const PC_BUILDER_PATH = '/pc-builder'; 
 
 export const NAVIGATION_LINKS_BASE: Omit<CustomMenuLink, 'order' | 'isVisible' | 'originalPath' | 'id'>[] = [
-  { label: 'Trang chủ', path: '/', icon: 'fas fa-home' },
+  { label: 'Trang chủ', path: '/home', icon: 'fas fa-home' },
   { label: 'Sản phẩm', path: '/shop', icon: 'fas fa-store' },
   { label: 'Xây dựng PC', path: PC_BUILDER_PATH, icon: 'fas fa-tools'}, 
   { label: 'Gợi ý Cấu hình', path: '/pc-build-suggestions', icon: 'fas fa-magic' },

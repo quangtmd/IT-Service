@@ -71,7 +71,7 @@ const FloatingActionButtons: React.FC = () => {
 
     return (
         <>
-            <div className={`fixed bottom-6 right-6 z-[60] flex flex-col items-center space-y-3 transition-all duration-300 ${fabVisibilityClass} no-print`}>
+            <div className={`fixed bottom-6 right-6 z-[60] flex flex-col items-center space-y-3 transition-all duration-300 ${fabVisibilityClass}`}>
                 {siteSettings.companyPhone && (
                     <a href={`tel:${siteSettings.companyPhone.replace(/\./g, '')}`} className={`${quickContactCommonClasses} bg-green-500 hover:bg-green-600`} aria-label="Call Now" title={siteSettings.companyPhone}>
                         <i className="fas fa-phone-alt"></i>

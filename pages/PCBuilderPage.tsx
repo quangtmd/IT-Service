@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
-import * as Constants from '../constants';
+import * as Constants from '../constants.tsx';
 import { AIBuildResponse, PCComponent, AIRecommendedComponent, CustomPCBuildCartItem } from '../types';
 import geminiService from '../services/geminiService';
 import Card from '../components/ui/Card';
@@ -110,9 +110,7 @@ export const PCBuilderPage: React.FC = () => {
         for (const [key, value] of Object.entries(customBuild.buildComponents)) {
           // Ensure the key is a valid BuilderSelectorKey
           if (BUILDER_SELECTABLE_KEYS.includes(key as BuilderSelectorKey)) {
-            // Fix: Cast 'value' to its expected type to resolve the 'unknown' type error.
-            const componentValue = value as { name: string; price?: number };
-            components[key as BuilderSelectorKey] = componentValue.name;
+            components[key as BuilderSelectorKey] = value.name;
           }
         }
         setSelectedComponents(components);
@@ -180,15 +178,14 @@ export const PCBuilderPage: React.FC = () => {
       price: totalPrice,
       quantity: 1,
       description: buildDescription,
-// Fix: Add the required 'imageUrl' property to satisfy the CustomPCBuildCartItem type.
-      imageUrl: Constants.GENERIC_PC_BUILD_IMAGE_URL,
       // For imageUrl, ensure it matches imageUrls: [string] from the updated type.
-      imageUrls: [Constants.GENERIC_PC_BUILD_IMAGE_URL], // Explicitly set as an array of one string
+      imageUrl: Constants.GENERIC_PC_BUILD_IMAGE_URL, // Single image URL for the custom build
       isCustomBuild: true,
       buildComponents: buildComponents,
       mainCategory: "PC Xây Dựng",
       subCategory: "Theo Yêu Cầu",
       category: "PC Xây Dựng",
+      imageUrls: [Constants.GENERIC_PC_BUILD_IMAGE_URL], // Explicitly set as a tuple/array of one string
       tags: ["custom-build", useCase.toLowerCase().replace(' ', '-')],
       
       // Required Product properties that need default values for a custom build
@@ -197,7 +194,7 @@ export const PCBuilderPage: React.FC = () => {
       
       // Optional Product properties can be set or left undefined
       shortDescription: buildDescription,
-      // Fix: Removed 'status' property as it does not exist on the Product type.
+      status: 'Mới',
       brand: 'IQ Technology Custom Build',
       isVisible: true,
       is_featured: false,
