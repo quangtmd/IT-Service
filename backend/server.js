@@ -408,7 +408,7 @@ app.listen(PORT, async () => {
     const connection = await pool.getConnection();
     connection.release();
     console.log(`🚀 Backend server đang chạy tại http://localhost:${PORT}`);
-    console.log('✅ Kết nối tới database MySQL thành công!`);
+    console.log('✅ Kết nối tới database MySQL thành công!');
   } catch (error) {
     console.error('❌ Không thể kết nối tới database MySQL:', error);
     // Even if DB fails, the server still starts, but API calls will fail.
