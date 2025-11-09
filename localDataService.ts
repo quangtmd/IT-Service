@@ -4,11 +4,10 @@ import {
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus
 } from './types';
 
-// The base URL for the backend. In development, this is an empty string,
-// and requests are proxied by Vite. In production, this will be the
-// full URL of the deployed backend service (e.g., https://my-backend.onrender.com).
-// Fix: Use process.env which is populated by Vite's `define` config.
-const API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
+// The base URL is now an empty string. This assumes the frontend is served
+// from the same domain as the backend, which simplifies deployment.
+// All API requests will be relative, e.g., /api/users.
+const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // All API endpoints are prefixed with /api on the server.
@@ -27,10 +26,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            // Provide a more specific error for 404s, which are common with misconfigurations.
-            const errorMessage = response.status === 404
-                ? `Không tìm thấy API endpoint. Vui lòng kiểm tra lại cấu hình. (Lỗi API: ${response.status})`
-                : errorData.message || `Lỗi API: ${response.status}`;
+            // Simplified, more robust error message for a monolithic setup.
+            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
             throw new Error(errorMessage);
         }
         
@@ -40,8 +37,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            // This is a network error
-            throw new Error('Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra kết nối và cấu hình backend.');
+            // This now more clearly indicates a server-down issue.
+            throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động.');
         }
         // Re-throw other errors (like the custom one from response.ok check)
         throw error;
