@@ -10,9 +10,6 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, (process as any).cwd(), '');
 
     return {
-        build: {
-          outDir: 'backend/dist',
-        },
         server: {
             port: 3000,
             host: '0.0.0.0',
