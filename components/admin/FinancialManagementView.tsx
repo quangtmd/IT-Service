@@ -305,10 +305,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
-    // FIX: The async arrow function was causing a type inference issue with the onClick handler.
-    // The handler passes an event argument which is not used here.
-    // Removing the argument from the function signature resolves the type error.
-    const handleSettlePayroll = useCallback(async (): Promise<void> => {
+    // Fix: The async arrow function was causing a type inference issue with the onClick handler. The handler passes an event argument, so the signature is updated to accept it.
+    const handleSettlePayroll = useCallback(async (_event: React.MouseEvent): Promise<void> => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -337,10 +335,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         }
     }, [localPayroll, payPeriod, onDataChange, onAddTransaction]);
 
-    // FIX: The async arrow function was causing a type inference issue with the onClick handler.
-    // The handler passes an event argument which is not used here.
-    // Removing the argument from the function signature resolves the type error.
-    const handleSaveDraft = useCallback(async (): Promise<void> => {
+    // Fix: The async arrow function was causing a type inference issue with the onClick handler. The handler passes an event argument, so the signature is updated to accept it.
+    const handleSaveDraft = useCallback(async (_event: React.MouseEvent): Promise<void> => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
