@@ -13,6 +13,10 @@ const PORT = process.env.PORT || 10000;
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increase limit for media uploads
 
+// API router - DEFINE BEFORE STATIC FILES
+const apiRouter = express.Router();
+app.use('/api', apiRouter);
+
 // --- Static Files Setup ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,10 +28,6 @@ console.log(`[Static Files] Resolved Project Root: ${path.resolve(__dirname, '..
 console.log(`[Static Files] Attempting to serve static files from: ${staticFilesPath}`);
 
 app.use(express.static(staticFilesPath));
-
-// API router
-const apiRouter = express.Router();
-app.use('/api', apiRouter);
 
 // --- API Endpoints ---
 

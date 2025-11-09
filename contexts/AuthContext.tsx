@@ -109,12 +109,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
         const user = await loginUser(credentials);
-        // The backend has verified the password and returned the user object (without password)
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-        sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(user));
+        if (user && user.id) { // Check if a valid user object was returned
+            setCurrentUser(user);
+            setIsAuthenticated(true);
+            sessionStorage.setItem(CURRENT_USER_SESSION_KEY, JSON.stringify(user));
+        } else {
+            // This handles cases where the API might return a 200 OK with a null/empty body
+            throw new Error("Phản hồi đăng nhập không hợp lệ từ máy chủ.");
+        }
     } catch (error) {
-        // The error from fetchFromApi is already user-friendly
+        // The error from fetchFromApi is already user-friendly, or we throw a new one
         throw error;
     } finally {
         setIsLoading(false);

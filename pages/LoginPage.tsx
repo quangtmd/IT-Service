@@ -16,13 +16,6 @@ const LoginPage: React.FC = () => {
   // New, more vibrant technology background image
   const backgroundImage = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
 
-  // Debugging logs - REMOVE AFTER FIX
-  useEffect(() => {
-    console.log("LoginPage: location.state", location.state);
-    console.log("LoginPage: 'from' variable resolved to", from);
-  }, [location.state, from]);
-
-
   useEffect(() => {
     // This effect is the single source of truth for navigation after authentication.
     if (isAuthenticated && currentUser) {
