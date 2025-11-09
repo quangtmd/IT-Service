@@ -197,6 +197,8 @@ app.get('/api/products', async (req, res) => {
         const countQuery = `SELECT COUNT(p.id) as total ${baseQuery} ${whereString}`;
         const [countRows] = await pool.query(countQuery, params);
         const totalProducts = countRows[0].total;
+
+        const offset = (Number(page) - 1) * Number(limit);
         
         const productQuery = `SELECT p.* ${baseQuery} ${whereString} ORDER BY p.id DESC LIMIT ? OFFSET ?`;
         const productParams = [...params, Number(limit), offset];

@@ -65,7 +65,8 @@ CREATE TABLE `Products` (
   `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`tags`)),
   `isVisible` tinyint(1) DEFAULT 1,
   `rating` float DEFAULT NULL,
-  `reviews` int(11) DEFAULT NULL
+  `reviews` int(11) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'Mới'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `Orders` (
@@ -74,7 +75,7 @@ CREATE TABLE `Orders` (
   `customerInfo` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`customerInfo`)),
   `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`items`)),
   `totalAmount` decimal(15,2) NOT NULL,
-  `status` enum('Chờ xử lý','Đã xác nhận','Đang chuẩn bị','Đang giao','Hoàn thành','Đã hủy') NOT NULL,
+  `status` enum('Chờ xử lý','Đang xác nhận','Đã xác nhận','Đang chuẩn bị','Đang giao','Hoàn thành','Đã hủy','Phiếu tạm') NOT NULL,
   `paymentInfo` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`paymentInfo`)),
   `shippingInfo` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`shippingInfo`)),
   `orderDate` datetime NOT NULL,
@@ -107,12 +108,15 @@ CREATE TABLE `FinancialTransactions` (
   `category` varchar(255) DEFAULT NULL,
   `amount` decimal(15,2) NOT NULL,
   `description` text,
-  `transactionDate` date NOT NULL
+  `transactionDate` date NOT NULL,
+  `relatedEntity` varchar(255) DEFAULT NULL,
+  `invoiceNumber` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `PayrollRecords` (
   `id` varchar(255) NOT NULL,
   `employeeId` varchar(255) NOT NULL,
+  `employeeName` varchar(255) DEFAULT NULL,
   `payPeriod` varchar(7) NOT NULL,
   `baseSalary` decimal(15,2) DEFAULT NULL,
   `bonus` decimal(15,2) DEFAULT NULL,
@@ -286,9 +290,9 @@ INSERT IGNORE INTO `Employees` (`userId`, `position`, `joinDate`, `salary`) VALU
 ('staff002', 'Quản lý Bán hàng', '2021-08-20', 22000000.00),
 ('user001', 'Giám đốc', '2020-01-01', 35000000.00);
 
-INSERT IGNORE INTO `PayrollRecords` (`id`, `employeeId`, `payPeriod`, `baseSalary`, `bonus`, `deduction`, `finalSalary`, `status`, `notes`) VALUES
-('PAY-2025-09-staff001', 'staff001', '2025-09', 18000000.00, 1000000.00, 0.00, 19000000.00, 'Đã thanh toán', 'Thưởng hoàn thành tốt dự án'),
-('PAY-2025-09-staff002', 'staff002', '2025-09', 22000000.00, 5000000.00, 0.00, 27000000.00, 'Đã thanh toán', 'Thưởng doanh số vượt chỉ tiêu');
+INSERT IGNORE INTO `PayrollRecords` (`id`, `employeeId`, `employeeName`, `payPeriod`, `baseSalary`, `bonus`, `deduction`, `finalSalary`, `status`, `notes`) VALUES
+('PAY-2025-09-staff001', 'staff001', 'Lê Hùng', '2025-09', 18000000.00, 1000000.00, 0.00, 19000000.00, 'Đã thanh toán', 'Thưởng hoàn thành tốt dự án'),
+('PAY-2025-09-staff002', 'staff002', 'Nguyễn Thị Lan', '2025-09', 22000000.00, 5000000.00, 0.00, 27000000.00, 'Đã thanh toán', 'Thưởng doanh số vượt chỉ tiêu');
 
 INSERT IGNORE INTO `DiscountCodes` (`id`, `code`, `type`, `value`, `description`, `expiryDate`, `isActive`) VALUES
 ('DC001', 'WELCOME10', 'percentage', 10.00, 'Giảm 10% cho khách hàng mới', '2025-12-31', 1),
