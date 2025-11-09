@@ -16,10 +16,11 @@ app.use(express.json({ limit: '50mb' })); // Increase limit for media uploads
 // --- Static Files Setup ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// Point to the 'dist' folder at the project root, one level up from 'backend'
-const staticFilesPath = path.join(__dirname, '../dist');
+// Resolve the absolute path to the 'dist' folder at the project root
+const staticFilesPath = path.resolve(__dirname, '..', 'dist');
 
 console.log(`[Static Files] Server __dirname: ${__dirname}`);
+console.log(`[Static Files] Resolved Project Root: ${path.resolve(__dirname, '..')}`);
 console.log(`[Static Files] Attempting to serve static files from: ${staticFilesPath}`);
 
 app.use(express.static(staticFilesPath));
@@ -388,13 +389,16 @@ apiRouter.delete('/suppliers/:id', async (req, res) => {
 });
 
 
-// Fallback for SPA
+// Fallback for SPA: This should be the last route.
 app.get('*', (req, res) => {
-  const indexPath = path.join(staticFilesPath, 'index.html');
+  const indexPath = path.resolve(staticFilesPath, 'index.html');
   res.sendFile(indexPath, (err) => {
     if (err) {
-      console.error('Error sending file', indexPath, ':', err);
-      res.status(500).send(err);
+      console.error(`Error sending file ${indexPath} :`, err);
+      // Don't expose internal error details to the client
+      if (!res.headersSent) {
+        res.status(404).send("Could not find the application entry point.");
+      }
     }
   });
 });

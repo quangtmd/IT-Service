@@ -10,12 +10,12 @@
     "start": "vite preview --host"
   },
   "dependencies": {
-    "react-dom": "^19.1.1",
     "@google/genai": "^1.16.0",
+    "firebase": "^12.4.0",
     "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.8.2",
-    "firebase": "^12.4.0"
+    "react-router-dom": "^7.8.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
