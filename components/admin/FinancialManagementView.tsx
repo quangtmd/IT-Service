@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../ui/Button';
@@ -305,7 +304,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
-    // Fix: The async arrow function was causing a type inference issue with the onClick handler. The handler passes an event argument, so the signature is updated to accept it.
+    // Fix: Updated function signature to accept the MouseEvent from onClick.
     const handleSettlePayroll = useCallback(async (_event: React.MouseEvent): Promise<void> => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
@@ -335,7 +334,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         }
     }, [localPayroll, payPeriod, onDataChange, onAddTransaction]);
 
-    // Fix: The async arrow function was causing a type inference issue with the onClick handler. The handler passes an event argument, so the signature is updated to accept it.
+    // Fix: Updated function signature to accept the MouseEvent from onClick.
     const handleSaveDraft = useCallback(async (_event: React.MouseEvent): Promise<void> => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);

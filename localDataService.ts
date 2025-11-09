@@ -1,11 +1,13 @@
+// Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus
-} from '../types';
+} from './types';
 
 // The base URL for the backend. In development, this is an empty string,
 // and requests are proxied by Vite. In production, this will be the
 // full URL of the deployed backend service (e.g., https://my-backend.onrender.com).
+// Fix: Use process.env which is populated by Vite's `define` config.
 const API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

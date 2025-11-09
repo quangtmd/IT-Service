@@ -1,12 +1,20 @@
+// Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus
 } from '../types';
 
+// The base URL for the backend. In development, this is an empty string,
+// and requests are proxied by Vite. In production, this will be the
+// full URL of the deployed backend service (e.g., https://my-backend.onrender.com).
+// Fix: Use process.env which is populated by Vite's `define` config.
+const API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
+
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // All API endpoints are prefixed with /api on the server.
-    // The URL is now relative, relying on proxy/rewrite rules.
-    const url = `/api${endpoint}`;
+    // This ensures the correct path is always used.
+    const fullEndpoint = `/api${endpoint}`;
+    const url = `${API_BASE_URL}${fullEndpoint}`;
     
     try {
         const response = await fetch(url, {
@@ -21,7 +29,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
             // Updated error message to be more relevant to the new setup.
             const errorMessage = response.status === 404
-                ? `Lỗi API: 404 Not Found. Endpoint không được tìm thấy. Vui lòng kiểm tra cấu hình rewrite/proxy trên server.`
+                ? `Lỗi API: 404 Not Found. Endpoint không được tìm thấy. Vui lòng kiểm tra biến môi trường VITE_BACKEND_API_BASE_URL trên dịch vụ Frontend và đảm bảo backend đang chạy.`
                 : errorData.message || `Lỗi API: ${response.status}`;
             throw new Error(errorMessage);
         }

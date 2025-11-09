@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import pool from './db.js';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -373,34 +373,34 @@ apiRouter.delete('/suppliers/:id', async (req, res) => {
     res.status(204).send();
 });
 
-// CORRECT MIDDLEWARE ORDER TO FIX 404 ERRORS
-// 1. Mount the API router to handle all /api requests first.
+// --- Middleware & Serving Logic ---
+
+// 1. API Routes: Handle all requests prefixed with /api.
+// This MUST come before serving static files.
 app.use('/api', apiRouter);
 
-// 2. Serve static files for the frontend.
+// 2. Static Files: Serve the built React application from the 'dist' directory.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const staticFilesPath = path.resolve(__dirname, '..', 'dist');
+const projectRoot = path.resolve(__dirname, '..'); // Goes up from /backend to the project root
+app.use(express.static(path.join(projectRoot, 'dist')));
 
-console.log(`[Static Files] Server __dirname: ${__dirname}`);
-console.log(`[Static Files] Resolved Project Root: ${path.resolve(__dirname, '..')}`);
-console.log(`[Static Files] Attempting to serve static files from: ${staticFilesPath}`);
-
-app.use(express.static(staticFilesPath));
-
-// 3. Fallback for Single Page Application routing. This MUST be the last route.
-// It catches any request that didn't match an API route or a static file, and serves the main HTML file.
+// 3. SPA Fallback: For any request that doesn't match an API route or a static file,
+// serve the main index.html file. This is essential for client-side routing to work.
 app.get('*', (req, res) => {
-  const indexPath = path.resolve(staticFilesPath, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error(`Error sending file ${indexPath} :`, err);
-      if (!res.headersSent) {
-        res.status(404).send("Could not find the application entry point.");
-      }
-    }
+    res.sendFile(path.join(projectRoot, 'dist', 'index.html'));
+});
+
+// --- Global Error Handler ---
+app.use((err, req, res, next) => {
+  console.error('Unhandled API Error:', err);
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.status(500).json({
+    message: 'Đã xảy ra lỗi ở phía máy chủ.',
+    error: isProduction ? 'Vui lòng kiểm tra log của server để biết chi tiết.' : err.message,
   });
 });
+
 
 // --- Server Start ---
 app.listen(PORT, async () => {
@@ -408,8 +408,11 @@ app.listen(PORT, async () => {
     const connection = await pool.getConnection();
     connection.release();
     console.log(`🚀 Backend server đang chạy tại http://localhost:${PORT}`);
-    console.log('✅ Kết nối tới database MySQL thành công!');
+    console.log('✅ Kết nối tới database MySQL thành công!`);
   } catch (error) {
     console.error('❌ Không thể kết nối tới database MySQL:', error);
+    // Even if DB fails, the server still starts, but API calls will fail.
+    // The global error handler will catch these failures.
+    console.log(`🚀 Backend server đang chạy tại http://localhost:${PORT}, nhưng không có kết nối DB.`);
   }
 });
