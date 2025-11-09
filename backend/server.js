@@ -16,6 +16,7 @@ app.use(express.json({ limit: '50mb' })); // Increase limit for media uploads
 // --- Static Files Setup ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+// Point to the 'dist' folder at the project root, one level up from 'backend'
 const staticFilesPath = path.join(__dirname, '../dist');
 
 console.log(`[Static Files] Server __dirname: ${__dirname}`);

@@ -1,15 +1,12 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-// Fix: Removed explicit import of 'process' as it's a global object,
-// which causes a TypeScript error when trying to access 'cwd'.
-// TypeScript will correctly infer the global 'NodeJS.Process' type.
 
 export default defineConfig(({ mode }) => {
-    // Fix: Cast process to any to resolve TypeScript error regarding 'cwd'.
-    const env = loadEnv(mode, (process as any).cwd(), '');
+    const env = loadEnv(mode, process.cwd(), '');
 
     return {
+        // By not specifying build.outDir, Vite will default to 'dist' at the project root.
         server: {
             port: 3000,
             host: '0.0.0.0',
@@ -28,9 +25,7 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                // Fix: Replace __dirname with process.cwd() for ES module compatibility
-                // Cast process to any to resolve TypeScript error regarding 'cwd'.
-                '@': path.resolve((process as any).cwd(), '.'),
+                '@': path.resolve(process.cwd(), '.'),
             }
         },
         define: {

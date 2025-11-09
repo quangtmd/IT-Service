@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
     return {
+        // By not specifying build.outDir, Vite will default to 'dist' at the project root.
         plugins: [react()],
         server: {
             proxy: {
