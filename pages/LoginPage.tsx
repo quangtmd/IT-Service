@@ -42,7 +42,6 @@ const LoginPage: React.FC = () => {
         await login({ email, password });
         // On success, the useEffect hook above will handle navigation.
     } catch (err) {
-        console.error("Login page caught error:", err);
         const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định.';
         setError(errorMessage);
     }

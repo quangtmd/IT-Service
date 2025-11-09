@@ -13,23 +13,8 @@ const PORT = process.env.PORT || 10000;
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increase limit for media uploads
 
-// API router - DEFINE BEFORE STATIC FILES
-const apiRouter = express.Router();
-app.use('/api', apiRouter);
-
-// --- Static Files Setup ---
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-// Resolve the absolute path to the 'dist' folder at the project root
-const staticFilesPath = path.resolve(__dirname, '..', 'dist');
-
-console.log(`[Static Files] Server __dirname: ${__dirname}`);
-console.log(`[Static Files] Resolved Project Root: ${path.resolve(__dirname, '..')}`);
-console.log(`[Static Files] Attempting to serve static files from: ${staticFilesPath}`);
-
-app.use(express.static(staticFilesPath));
-
 // --- API Endpoints ---
+const apiRouter = express.Router();
 
 async function query(sql, params) {
   const connection = await pool.getConnection();
@@ -387,6 +372,22 @@ apiRouter.delete('/suppliers/:id', async (req, res) => {
     await query('DELETE FROM Suppliers WHERE id = ?', [req.params.id]);
     res.status(204).send();
 });
+
+// Mount the API router
+app.use('/api', apiRouter);
+
+
+// --- Static Files Setup ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Resolve the absolute path to the 'dist' folder at the project root
+const staticFilesPath = path.resolve(__dirname, '..', 'dist');
+
+console.log(`[Static Files] Server __dirname: ${__dirname}`);
+console.log(`[Static Files] Resolved Project Root: ${path.resolve(__dirname, '..')}`);
+console.log(`[Static Files] Attempting to serve static files from: ${staticFilesPath}`);
+
+app.use(express.static(staticFilesPath));
 
 
 // Fallback for SPA: This should be the last route.

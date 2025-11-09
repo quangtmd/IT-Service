@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../ui/Button';
@@ -307,6 +308,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
     // FIX: The async arrow function was causing a strange type inference issue.
     // Wrapped in useCallback to ensure stable function reference and correct dependency tracking, which resolves the type inference problem.
     // Fix: Add unused event parameter `_e` to match onClick handler type.
+    // FIX: Add event parameter to handleSettlePayroll to match onClick handler type.
     const handleSettlePayroll = useCallback(async (_e: React.MouseEvent): Promise<void> => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
@@ -340,6 +342,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
     // FIX: The async arrow function was causing a strange type inference issue.
     // Wrapped in useCallback to ensure stable function reference and correct dependency tracking, which resolves the type inference problem.
     // Fix: Add unused event parameter `_e` to match onClick handler type.
+    // FIX: Add event parameter to handleSaveDraft to match onClick handler type.
     const handleSaveDraft = useCallback(async (_e: React.MouseEvent): Promise<void> => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
 // Fix: Add explicit return type to the async arrow function to help TypeScript's type inference.
