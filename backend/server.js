@@ -13,6 +13,16 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Increase limit for data URLs
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// --- Static assets and Frontend serving ---
+// This assumes the frontend is built into a 'dist' folder in the project root
+// On Render, this would be '../dist' relative to the 'backend' folder.
+const frontendDistPath = path.join(__dirname, '../dist');
+app.use(express.static(frontendDistPath));
+
+
 // --- Helper Functions ---
 const parseJsonFields = (items, fields) => {
   if (!items) return;
@@ -38,6 +48,25 @@ const parseJsonFields = (items, fields) => {
 const API_PREFIX = '/api';
 
 // --- API Endpoints ---
+
+// Health Check Endpoint to verify DB connection
+app.get(`${API_PREFIX}/health`, async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    await connection.ping();
+    connection.release();
+    res.status(200).json({ status: 'ok', message: 'Backend is running and connected to the database.' });
+  } catch (err) {
+    console.error('Health check failed:', err);
+    res.status(500).json({
+      status: 'error',
+      message: 'Backend is running but could not connect to the database.',
+      // In production, avoid sending detailed error messages to the client.
+      error: process.env.NODE_ENV === 'production' ? 'Database connection error' : err.message
+    });
+  }
+});
+
 
 // Server Info
 app.get(`${API_PREFIX}/server-info`, (req, res) => {
@@ -313,6 +342,18 @@ app.post(`${API_PREFIX}/financials/payroll`, async (req, res) => {
     } finally {
         connection.release();
     }
+});
+
+// --- Frontend Catch-all ---
+// This handler serves the `index.html` for any request that doesn't match an API route.
+// It's essential for client-side routing (React Router) to work correctly in a single-server setup.
+app.get('*', (req, res) => {
+  // Check if the request is for an API endpoint that was missed. If so, return a 404.
+  if (req.originalUrl.startsWith(API_PREFIX)) {
+    return res.status(404).json({ message: 'API endpoint not found.' });
+  }
+  // Otherwise, serve the main frontend file.
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 
 
