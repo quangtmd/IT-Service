@@ -129,19 +129,23 @@ const WarrantyFormPage: React.FC = () => {
                 <p className="text-center text-xs mb-6">Ngày: {new Date(formData?.createdAt || Date.now()).toLocaleString('vi-VN')}</p>
 
                 <div className="border-t border-b py-2 my-4">
-                    <p><strong>Khách hàng:</strong> {formData?.customerName}</p>
-                    <p><strong>Điện thoại:</strong> {formData?.customerPhone}</p>
+                    <div className="grid grid-cols-2 gap-x-4">
+                        <p><strong>Khách hàng:</strong> {formData?.customerName}</p>
+                        <p><strong>Điện thoại:</strong> {formData?.customerPhone}</p>
+                    </div>
                 </div>
 
-                <p><strong>Tên thiết bị:</strong> {formData?.productModel}</p>
-                <p><strong>Serial:</strong> {formData?.productSerial}</p>
+                <div className="grid grid-cols-2 gap-x-4">
+                    <p><strong>Tên thiết bị:</strong> {formData?.productModel}</p>
+                    <p><strong>Serial:</strong> {formData?.productSerial}</p>
+                </div>
                 <p className="mt-2"><strong>Mô tả sự cố:</strong> {formData?.reportedIssue}</p>
                 {type === 'return' && <p className="mt-2"><strong>Kết quả xử lý:</strong> {formData?.resolution_notes || 'Chưa có'}</p>}
 
-                <div className="mt-6 text-sm">
+                <div className="mt-6 text-sm grid grid-cols-2 gap-x-4">
                     <p><strong>Ngày nhận:</strong> {formData?.receiveDate ? new Date(formData.receiveDate).toLocaleDateString('vi-VN') : ''}</p>
                     <p><strong>Ngày hẹn trả:</strong> {formData?.returnDate ? new Date(formData.returnDate).toLocaleDateString('vi-VN') : ''}</p>
-                    <p><strong>Nhân viên tiếp nhận:</strong> {creator?.username}</p>
+                    <p className="col-span-2"><strong>Nhân viên tiếp nhận:</strong> {creator?.username}</p>
                 </div>
                 
                 <div className="mt-16 grid grid-cols-2 gap-4 text-center text-sm">
@@ -212,51 +216,46 @@ const WarrantyFormPage: React.FC = () => {
 
                     <div className="admin-card-body">
                         {isEditingMode ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="admin-form-group">
-                                    <label>Đơn hàng gốc</label>
-                                    <select name="orderId" value={formData.orderId || ''} onChange={(e) => handleOrderChange(e.target.value)}>
-                                        <option value="">-- Chọn đơn hàng (tùy chọn) --</option>
-                                        {orders.map(o => (
-                                            <option key={o.id} value={o.id}>#{o.id.slice(-6)} - {o.customerInfo.fullName} - {o.totalAmount.toLocaleString('vi-VN')}₫</option>
-                                        ))}
-                                    </select>
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div className="admin-form-group sm:col-span-2 lg:col-span-3">
+                                        <label>Đơn hàng gốc (để lấy thông tin)</label>
+                                        <select name="orderId" value={formData.orderId || ''} onChange={(e) => handleOrderChange(e.target.value)}>
+                                            <option value="">-- Chọn đơn hàng (tùy chọn) --</option>
+                                            {orders.map(o => (
+                                                <option key={o.id} value={o.id}>#{o.id.slice(-6)} - {o.customerInfo.fullName} - {o.totalAmount.toLocaleString('vi-VN')}₫</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="admin-form-group"><label>Tên khách hàng *</label><input type="text" name="customerName" value={formData.customerName || ''} onChange={handleChange} required /></div>
+                                    <div className="admin-form-group"><label>Số điện thoại</label><input type="tel" name="customerPhone" value={formData.customerPhone || ''} onChange={handleChange} /></div>
+                                    <div className="admin-form-group"><label>Nhân viên tạo</label>
+                                        <select name="creatorId" value={formData.creatorId || ''} onChange={handleChange}>
+                                            <option value="">-- Chọn nhân viên --</option>
+                                            {staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+                                        </select>
+                                    </div>
+                                    
+                                    <div className="admin-form-group">
+                                        <label>Sản phẩm trong đơn</label>
+                                        <select name="productId" value={formData.productId || ''} onChange={(e) => handleProductChange(e.target.value)} disabled={!selectedOrder}>
+                                            <option value="">-- Chọn sản phẩm --</option>
+                                            {selectedOrder?.items.map(item => (
+                                                <option key={item.productId} value={item.productId}>{item.productName}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="admin-form-group"><label>Model sản phẩm</label><input type="text" name="productModel" value={formData.productModel || ''} onChange={handleChange} /></div>
+                                    <div className="admin-form-group"><label>Serial sản phẩm</label><input type="text" name="productSerial" value={formData.productSerial || ''} onChange={handleChange} /></div>
                                 </div>
-                                 <div className="admin-form-group">
-                                    <label>Sản phẩm cần bảo hành</label>
-                                    <select name="productId" value={formData.productId || ''} onChange={(e) => handleProductChange(e.target.value)} disabled={!selectedOrder}>
-                                        <option value="">-- Chọn sản phẩm --</option>
-                                        {selectedOrder?.items.map(item => (
-                                            <option key={item.productId} value={item.productId}>{item.productName}</option>
-                                        ))}
-                                    </select>
+                                <div className="admin-form-group"><label>Mô tả sự cố *</label><textarea name="reportedIssue" value={formData.reportedIssue || ''} onChange={handleChange} required rows={3}></textarea></div>
+                                <div className="admin-form-group"><label>Ghi chú xử lý (hiển thị trên phiếu trả)</label><textarea name="resolution_notes" value={formData.resolution_notes || ''} onChange={handleChange} rows={3}></textarea></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                     <div className="admin-form-group"><label>Trạng thái *</label><select name="status" value={formData.status || 'Đang tiếp nhận'} onChange={handleChange} required>{WARRANTY_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
+                                     <div className="admin-form-group"><label>Phí sửa chữa (nếu có)</label><input type="number" name="totalAmount" value={formData.totalAmount || 0} onChange={handleChange} /></div>
+                                     <div className="admin-form-group"><label>Ngày nhận</label><input type="date" name="receiveDate" value={formData.receiveDate?.split('T')[0] || ''} onChange={handleChange} /></div>
+                                     <div className="admin-form-group"><label>Ngày dự kiến trả</label><input type="date" name="returnDate" value={formData.returnDate?.split('T')[0] || ''} onChange={handleChange} /></div>
                                 </div>
-
-                                <div className="admin-form-group"><label>Tên khách hàng *</label><input type="text" name="customerName" value={formData.customerName || ''} onChange={handleChange} required /></div>
-                                <div className="admin-form-group"><label>Số điện thoại</label><input type="tel" name="customerPhone" value={formData.customerPhone || ''} onChange={handleChange} /></div>
-                                <div className="admin-form-group"><label>Model sản phẩm</label><input type="text" name="productModel" value={formData.productModel || ''} onChange={handleChange} /></div>
-                                <div className="admin-form-group"><label>Serial sản phẩm</label><input type="text" name="productSerial" value={formData.productSerial || ''} onChange={handleChange} /></div>
-
-                                <div className="md:col-span-2 admin-form-group">
-                                    <label>Mô tả sự cố *</label>
-                                    <textarea name="reportedIssue" value={formData.reportedIssue || ''} onChange={handleChange} required rows={3}></textarea>
-                                </div>
-                                 <div className="md:col-span-2 admin-form-group">
-                                    <label>Ghi chú xử lý (hiển thị trên phiếu trả)</label>
-                                    <textarea name="resolution_notes" value={formData.resolution_notes || ''} onChange={handleChange} rows={3}></textarea>
-                                </div>
-                                <div className="admin-form-group">
-                                    <label>Trạng thái *</label>
-                                    <select name="status" value={formData.status || 'Đang tiếp nhận'} onChange={handleChange} required>
-                                        {WARRANTY_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                    </select>
-                                </div>
-                                 <div className="admin-form-group">
-                                    <label>Phí sửa chữa (nếu có)</label>
-                                    <input type="number" name="totalAmount" value={formData.totalAmount || 0} onChange={handleChange} />
-                                </div>
-                                <div className="admin-form-group"><label>Ngày nhận</label><input type="date" name="receiveDate" value={formData.receiveDate?.split('T')[0] || ''} onChange={handleChange} /></div>
-                                <div className="admin-form-group"><label>Ngày dự kiến trả</label><input type="date" name="returnDate" value={formData.returnDate?.split('T')[0] || ''} onChange={handleChange} /></div>
                             </div>
                         ) : (
                              <div className="p-4 bg-gray-100 rounded">
