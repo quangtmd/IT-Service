@@ -72,9 +72,14 @@ CREATE TABLE `Products` (
 CREATE TABLE `Orders` (
   `id` varchar(255) NOT NULL,
   `userId` varchar(255) DEFAULT NULL,
+  `creatorId` varchar(255) DEFAULT NULL,
   `customerInfo` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`customerInfo`)),
   `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`items`)),
+  `subtotal` decimal(15,2) DEFAULT 0.00,
   `totalAmount` decimal(15,2) NOT NULL,
+  `paidAmount` decimal(15,2) DEFAULT 0.00,
+  `cost` decimal(15,2) DEFAULT 0.00,
+  `profit` decimal(15,2) DEFAULT 0.00,
   `status` enum('Chờ xử lý','Đang xác nhận','Đã xác nhận','Đang chuẩn bị','Đang giao','Hoàn thành','Đã hủy','Phiếu tạm') NOT NULL,
   `paymentInfo` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`paymentInfo`)),
   `shippingInfo` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`shippingInfo`)),
@@ -204,7 +209,7 @@ CREATE TABLE `WarrantyTickets` (
 ALTER TABLE `Users` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `email` (`email`);
 ALTER TABLE `ProductCategories` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `slug` (`slug`), ADD KEY `parentId` (`parentId`);
 ALTER TABLE `Products` ADD PRIMARY KEY (`id`), ADD KEY `categoryId` (`categoryId`);
-ALTER TABLE `Orders` ADD PRIMARY KEY (`id`), ADD KEY `userId` (`userId`);
+ALTER TABLE `Orders` ADD PRIMARY KEY (`id`), ADD KEY `userId` (`userId`), ADD KEY `creatorId` (`creatorId`);
 ALTER TABLE `Warehouses` ADD PRIMARY KEY (`id`);
 ALTER TABLE `Inventory` ADD PRIMARY KEY (`productId`,`warehouseId`), ADD KEY `warehouseId` (`warehouseId`);
 ALTER TABLE `Suppliers` ADD PRIMARY KEY (`id`);
@@ -399,9 +404,9 @@ INSERT IGNORE INTO `Faqs` (`id`, `question`, `answer`, `category`, `isVisible`) 
 ('faq001', 'Thời gian bảo hành là bao lâu?', 'Tùy sản phẩm, thường từ 12-36 tháng.', 'Chính sách', 1),
 ('faq002', 'Có hỗ trợ lắp đặt tận nơi không?', 'Có, chúng tôi hỗ trợ lắp đặt tại Đà Nẵng.', 'Dịch vụ', 1);
 
-INSERT IGNORE INTO `Orders` (`id`, `userId`, `customerInfo`, `items`, `totalAmount`, `status`, `paymentInfo`, `orderDate`) VALUES
-('ORD001', 'cust001', '{\"fullName\":\"Nguyễn Văn An\",\"phone\":\"0905123456\",\"address\":\"123 Nguyễn Văn Linh, Đà Nẵng\",\"email\":\"an.nguyen@email.com\"}', '[{\"productId\":\"PCGM001\",\"productName\":\"PC Gaming IQ Eagle\",\"quantity\":1,\"price\":15990000}]', 15990000.00, 'Hoàn thành', '{\"method\":\"Chuyển khoản ngân hàng\",\"status\":\"Đã thanh toán\"}', '2025-10-02 14:30:00'),
-('ORD002', 'cust002', '{\"fullName\":\"Trần Thị Bích\",\"phone\":\"0935987654\",\"address\":\"45 Lê Duẩn, Đà Nẵng\",\"email\":\"bich.tran@email.com\"}', '[{\"productId\":\"LTGM001\",\"productName\":\"Laptop Gaming Acer Nitro 5 Eagle\",\"quantity\":1,\"price\":21500000}]', 21500000.00, 'Đang giao', '{\"method\":\"Thanh toán khi nhận hàng (COD)\",\"status\":\"Chưa thanh toán\"}', '2025-10-10 09:00:00');
+INSERT IGNORE INTO `Orders` (`id`, `userId`, `creatorId`, `customerInfo`, `items`, `totalAmount`, `status`, `paymentInfo`, `orderDate`) VALUES
+('ORD001', 'cust001', 'user001', '{\"fullName\":\"Nguyễn Văn An\",\"phone\":\"0905123456\",\"address\":\"123 Nguyễn Văn Linh, Đà Nẵng\",\"email\":\"an.nguyen@email.com\"}', '[{\"productId\":\"PCGM001\",\"productName\":\"PC Gaming IQ Eagle\",\"quantity\":1,\"price\":15990000}]', 15990000.00, 'Hoàn thành', '{\"method\":\"Chuyển khoản ngân hàng\",\"status\":\"Đã thanh toán\"}', '2025-10-02 14:30:00'),
+('ORD002', 'cust002', 'staff002', '{\"fullName\":\"Trần Thị Bích\",\"phone\":\"0935987654\",\"address\":\"45 Lê Duẩn, Đà Nẵng\",\"email\":\"bich.tran@email.com\"}', '[{\"productId\":\"LTGM001\",\"productName\":\"Laptop Gaming Acer Nitro 5 Eagle\",\"quantity\":1,\"price\":21500000}]', 21500000.00, 'Đang giao', '{\"method\":\"Thanh toán khi nhận hàng (COD)\",\"status\":\"Chưa thanh toán\"}', '2025-10-10 09:00:00');
 
 INSERT IGNORE INTO `Invoices` (`id`, `orderId`, `amount`, `status`, `dueDate`) VALUES
 ('INV001', 'ORD001', 15990000.00, 'paid', '2025-10-02');

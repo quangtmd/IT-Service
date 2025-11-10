@@ -352,7 +352,14 @@ app.delete('/api/articles/:id', async (req, res) => {
 // --- ORDERS API ---
 app.get('/api/orders', async (req, res) => {
     try {
-        const [orders] = await pool.query('SELECT * FROM Orders ORDER BY orderDate DESC');
+        const [orders] = await pool.query(`
+            SELECT 
+                o.*, 
+                u_creator.username as creatorName 
+            FROM Orders o
+            LEFT JOIN Users u_creator ON o.creatorId = u_creator.id
+            ORDER BY o.orderDate DESC
+        `);
         const deserializedOrders = orders.map(o => ({
             ...o,
             customerInfo: JSON.parse(o.customerInfo || '{}'),
@@ -373,9 +380,14 @@ app.post('/api/orders', async (req, res) => {
         await pool.query('INSERT INTO Orders SET ?', {
             id: newOrder.id,
             userId: newOrder.userId || null,
+            creatorId: newOrder.creatorId || null,
             customerInfo: JSON.stringify(newOrder.customerInfo),
             items: JSON.stringify(newOrder.items),
+            subtotal: newOrder.subtotal || 0,
             totalAmount: newOrder.totalAmount,
+            paidAmount: newOrder.paidAmount || 0,
+            cost: newOrder.cost || 0,
+            profit: newOrder.profit || 0,
             orderDate: newOrder.orderDate,
             status: newOrder.status,
             shippingInfo: JSON.stringify(newOrder.shippingInfo || {}),

@@ -297,11 +297,17 @@ export interface PaymentInfo {
 export interface Order {
   id: string;
   userId?: string; // Link to the user who placed the order
+  creatorId?: string; // Link to the staff/admin who created the order
+  creatorName?: string; // Denormalized name for display
   customerInfo: CheckoutFormData;
   items: OrderItem[];
-  totalAmount: number;
+  subtotal?: number; // Total before discounts/taxes
+  totalAmount: number; // Final total
+  paidAmount?: number; // Amount paid by customer
+  cost?: number; // Cost of goods for this order
+  profit?: number; // totalAmount - cost
   orderDate: string; 
-  status: OrderStatus;
+  status: OrderStatus; // Fulfillment status
   shippingInfo?: ShippingInfo; // Added for shipping management
   paymentInfo: PaymentInfo;
 }

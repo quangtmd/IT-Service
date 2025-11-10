@@ -2,30 +2,47 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '../../types';
 import Button from '../ui/Button';
 import { getOrders, deleteOrder } from '../../services/localDataService';
-import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
+import BackendConnectionError from '../../components/shared/BackendConnectionError';
 import * as ReactRouterDOM from 'react-router-dom';
 
-// Updated status colors to match the new design
-const getStatusColor = (status: OrderStatus) => {
+type StatusFilter = 'all' | 'cancelled' | 'unpaid' | 'partial' | 'paid';
+
+const PaymentStatusPill: React.FC<{ status: Order['paymentInfo']['status'] }> = ({ status }) => {
+    let text = '';
+    let className = '';
+
     switch (status) {
-        case 'Hoàn thành': return 'bg-green-100 text-green-800';
-        case 'Đang giao': return 'bg-violet-100 text-violet-800'; // Light purple/blue from image
-        case 'Đã hủy': return 'bg-red-100 text-red-800';
-        case 'Chờ xử lý': return 'bg-yellow-100 text-yellow-800';
-        case 'Đang xác nhận':
-        case 'Đã xác nhận': return 'bg-cyan-100 text-cyan-800';
-        case 'Đang chuẩn bị': return 'bg-blue-100 text-blue-800';
-        case 'Phiếu tạm':
-        default: return 'bg-gray-100 text-gray-800';
+        case 'Chưa thanh toán':
+            text = 'CHƯA THANH TOÁN';
+            className = 'bg-indigo-600 text-white';
+            break;
+        case 'Đã thanh toán':
+            text = 'ĐÃ THANH TOÁN';
+            className = 'bg-green-500 text-white';
+            break;
+        case 'Đã cọc':
+            text = 'ĐÃ CỌC';
+            className = 'bg-amber-500 text-white';
+            break;
+        default:
+            text = status;
+            className = 'bg-gray-500 text-white';
     }
-}
+
+    return (
+        <span className={`px-3 py-1 text-xs font-bold rounded-md ${className}`}>
+            {text}
+        </span>
+    );
+};
 
 const OrderManagementView: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
     const navigate = ReactRouterDOM.useNavigate();
+    const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
 
     const loadOrders = useCallback(async () => {
         setIsLoading(true);
@@ -44,25 +61,48 @@ const OrderManagementView: React.FC = () => {
         loadOrders();
     }, [loadOrders]);
 
-    const filteredOrders = useMemo(() =>
-        orders.filter(o =>
-            o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            o.customerInfo.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            o.customerInfo.phone.includes(searchTerm) ||
-            o.customerInfo.email.toLowerCase().includes(searchTerm.toLowerCase())
-        ).sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()),
-    [orders, searchTerm]);
+    const statusCounts = useMemo(() => {
+        return orders.reduce((acc, order) => {
+            if (order.status === 'Đã hủy') acc.cancelled++;
+            if (order.paymentInfo?.status === 'Chưa thanh toán') acc.unpaid++;
+            if (order.paymentInfo?.status === 'Đã cọc') acc.partial++;
+            if (order.paymentInfo?.status === 'Đã thanh toán') acc.paid++;
+            return acc;
+        }, { cancelled: 0, unpaid: 0, partial: 0, paid: 0 });
+    }, [orders]);
 
-    const handleAddNewOrder = () => {
-        navigate('/admin/orders/new');
+    const filteredOrders = useMemo(() => {
+        return orders.filter(order => {
+            if (activeFilter === 'all') return true;
+            if (activeFilter === 'cancelled') return order.status === 'Đã hủy';
+            if (activeFilter === 'unpaid') return order.paymentInfo?.status === 'Chưa thanh toán';
+            if (activeFilter === 'partial') return order.paymentInfo?.status === 'Đã cọc';
+            if (activeFilter === 'paid') return order.paymentInfo?.status === 'Đã thanh toán';
+            return true;
+        });
+    }, [orders, activeFilter]);
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedOrders(new Set(filteredOrders.map(o => o.id)));
+        } else {
+            setSelectedOrders(new Set());
+        }
+    };
+    
+    const handleSelectOne = (orderId: string) => {
+        const newSelection = new Set(selectedOrders);
+        if (newSelection.has(orderId)) {
+            newSelection.delete(orderId);
+        } else {
+            newSelection.add(orderId);
+        }
+        setSelectedOrders(newSelection);
     };
 
-    const handleEditOrder = (orderId: string) => {
-        navigate(`/admin/orders/edit/${orderId}`);
-    };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('Bạn có chắc muốn xóa đơn hàng này? Hành động này không thể hoàn tác.')) {
+        if (window.confirm('Bạn có chắc muốn xóa đơn hàng này?')) {
             try {
                 await deleteOrder(id);
                 loadOrders();
@@ -71,85 +111,63 @@ const OrderManagementView: React.FC = () => {
             }
         }
     };
-    
-    // Function to format order ID as #ORDXXXX
-    const formatOrderId = (id: string) => {
-        const numericId = id.replace(/[^0-9]/g, '');
-        return `#ORD${numericId.slice(-4).padStart(4, '0')}`;
-    };
 
-    // Function to format date as HH:mm:ss DD/MM/YYYY
-    const formatOrderDate = (dateString: string) => {
-        const date = new Date(dateString);
-        const options: Intl.DateTimeFormatOptions = {
-            hour: '2-digit', minute: '2-digit', second: '2-digit',
+    const formatCurrency = (value?: number) => {
+        if (typeof value !== 'number') return '0';
+        return value.toLocaleString('vi-VN');
+    };
+    
+    const formatOrderId = (id: string) => `T${id.replace(/\D/g, '').slice(-6)}`;
+
+    const formatDateTime = (dateString: string) => {
+        return new Date(dateString).toLocaleString('vi-VN', {
             day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
             hour12: false
-        };
-        // The default vi-VN format is "HH:mm:ss, DD/MM/YYYY". We need to remove the comma.
-        return new Intl.DateTimeFormat('vi-VN', options).format(date).replace(',', '');
+        }).replace(',', '');
     };
 
     const renderContent = () => {
-        if (isLoading) {
-            return (
-                <div className="text-center py-10">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                    <p className="mt-2 text-sm text-gray-500">Đang tải đơn hàng...</p>
-                </div>
-            );
-        }
-
-        if (error) {
-            return <BackendConnectionError error={error} />;
-        }
-
-        if (filteredOrders.length === 0) {
-            return <p className="text-center py-10 text-gray-500">Không tìm thấy đơn hàng nào.</p>;
-        }
-
+        if (isLoading) return <div className="p-8 text-center">Đang tải dữ liệu...</div>;
+        if (error) return <BackendConnectionError error={error} />;
         return (
-             <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-gray-500 uppercase font-semibold border-b">
+            <div className="overflow-x-auto">
+                <table className="min-w-full text-sm align-middle">
+                    <thead className="bg-blue-800 text-white">
                         <tr>
-                            <th scope="col" className="px-4 py-3">Mã ĐH</th>
-                            <th scope="col" className="px-4 py-3">Khách hàng</th>
-                            <th scope="col" className="px-4 py-3">Ngày đặt</th>
-                            <th scope="col" className="px-4 py-3">Tổng tiền</th>
-                            <th scope="col" className="px-4 py-3">Trạng thái</th>
-                            <th scope="col" className="px-4 py-3 text-right">Hành động</th>
+                            <th className="p-3 w-4"><input type="checkbox" className="form-checkbox" onChange={handleSelectAll} checked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} /></th>
+                            <th className="p-3">#</th>
+                            <th className="p-3">Mã đơn hàng</th>
+                            <th className="p-3">Ngày tạo đơn</th>
+                            <th className="p-3">Người tạo đơn</th>
+                            <th className="p-3">Trạng thái đơn hàng</th>
+                            <th className="p-3">Tên khách hàng</th>
+                            <th className="p-3 text-right">Tổng cộng</th>
+                            <th className="p-3 text-right">Đã thanh toán</th>
+                            <th className="p-3 text-right">Chi phí đơn hàng</th>
+                            <th className="p-3 text-right">Lợi nhuận đơn hàng</th>
+                            <th className="p-3 text-center"><i className="fas fa-cog"></i></th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {filteredOrders.map(order => (
-                            <tr key={order.id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-4 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                    <span className="bg-gray-100 text-gray-800 text-xs font-mono p-1 rounded">
-                                        {formatOrderId(order.id)}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-4">{order.customerInfo.fullName}</td>
-                                <td className="px-4 py-4">{formatOrderDate(order.orderDate)}</td>
-                                <td className="px-4 py-4 font-semibold">
-                                    {order.totalAmount.toLocaleString('vi-VN')}₫
-                                </td>
-                                <td className="px-4 py-4">
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}>
-                                        {order.status}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-4 text-right">
-                                    <div className="flex justify-end items-center gap-2">
-                                        <button onClick={() => handleEditOrder(order.id)} className="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100" title="Xem chi tiết">
-                                            <i className="fas fa-eye w-4 h-4"></i>
-                                        </button>
-                                         <button onClick={() => handleEditOrder(order.id)} className="text-gray-500 hover:text-green-600 p-1 rounded-full hover:bg-gray-100" title="Chỉnh sửa">
-                                            <i className="fas fa-edit w-4 h-4"></i>
-                                        </button>
-                                        <button onClick={() => handleDelete(order.id)} className="text-gray-500 hover:text-red-600 p-1 rounded-full hover:bg-gray-100" title="Xóa">
-                                            <i className="fas fa-trash-alt w-4 h-4"></i>
-                                        </button>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredOrders.map((order, index) => (
+                            <tr key={order.id} className="hover:bg-gray-50">
+                                <td className="p-3"><input type="checkbox" className="form-checkbox" checked={selectedOrders.has(order.id)} onChange={() => handleSelectOne(order.id)} /></td>
+                                <td className="p-3">{index + 1}</td>
+                                <td className="p-3 font-medium text-blue-600 cursor-pointer">{formatOrderId(order.id)}</td>
+                                <td className="p-3">{formatDateTime(order.orderDate)}</td>
+                                <td className="p-3">{order.creatorName || 'N/A'}</td>
+                                <td className="p-3"><PaymentStatusPill status={order.paymentInfo.status} /></td>
+                                <td className="p-3">{order.customerInfo.fullName}</td>
+                                <td className="p-3 text-right font-semibold">{formatCurrency(order.totalAmount)}</td>
+                                <td className="p-3 text-right">{formatCurrency(order.paidAmount)}</td>
+                                <td className="p-3 text-right">{formatCurrency(order.cost)}</td>
+                                <td className="p-3 text-right font-semibold text-green-600">{formatCurrency(order.profit)}</td>
+                                <td className="p-3">
+                                    <div className="flex justify-center items-center gap-2">
+                                        <button className="text-gray-500 hover:text-gray-800"><i className="fas fa-ellipsis-h"></i></button>
+                                        <button className="text-gray-500 hover:text-blue-600"><i className="fas fa-pencil-alt"></i></button>
+                                        <button onClick={() => handleDelete(order.id)} className="text-gray-500 hover:text-red-600"><i className="fas fa-trash-alt"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -161,26 +179,32 @@ const OrderManagementView: React.FC = () => {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h2 className="text-xl font-bold text-gray-800">Quản lý Đơn hàng ({filteredOrders.length})</h2>
-                <Button onClick={handleAddNewOrder} size="sm" variant="primary" className="!bg-red-500 hover:!bg-red-600">
-                    <i className="fas fa-plus mr-2"></i>Thêm Đơn
-                </Button>
+        <div className="space-y-4">
+            <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
+                <div className="flex items-center gap-4 text-gray-600">
+                    <h2 className="text-xl font-bold text-gray-800">Quản lý đơn hàng</h2>
+                    <button className="hover:text-blue-600"><i className="fas fa-chart-bar mr-1"></i>Thống kê</button>
+                    <button className="hover:text-blue-600"><i className="fas fa-filter mr-1"></i>Bộ lọc</button>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50">Tạo phiếu dịch vụ</Button>
+                    <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50">Tạo đơn bán hàng</Button>
+                    <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50">Thêm từ excel</Button>
+                    <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50 !px-3"><i className="fas fa-search"></i></Button>
+                </div>
             </div>
 
-            <div className="mb-6 relative">
-                 <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                 <input
-                    type="text"
-                    placeholder="Tìm đơn hàng theo mã, tên, SĐT, email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition"
-                />
+            <div className="flex flex-wrap items-center gap-2">
+                <Button onClick={() => setActiveFilter('all')} size="sm" variant={activeFilter === 'all' ? 'primary' : 'outline'} className="!font-normal">Tất cả</Button>
+                <Button onClick={() => setActiveFilter('cancelled')} size="sm" variant={activeFilter === 'cancelled' ? 'primary' : 'outline'} className="!font-normal">Hủy bỏ <span className="ml-1.5 bg-gray-200 text-gray-700 px-1.5 text-xs rounded-full">{statusCounts.cancelled}</span></Button>
+                <Button onClick={() => setActiveFilter('unpaid')} size="sm" variant={activeFilter === 'unpaid' ? 'primary' : 'outline'} className="!font-normal">Chưa thanh toán <span className="ml-1.5 bg-gray-200 text-gray-700 px-1.5 text-xs rounded-full">{statusCounts.unpaid}</span></Button>
+                <Button onClick={() => setActiveFilter('partial')} size="sm" variant={activeFilter === 'partial' ? 'primary' : 'outline'} className="!font-normal">Đã cọc <span className="ml-1.5 bg-gray-200 text-gray-700 px-1.5 text-xs rounded-full">{statusCounts.partial}</span></Button>
+                <Button onClick={() => setActiveFilter('paid')} size="sm" variant={activeFilter === 'paid' ? 'primary' : 'outline'} className="!font-normal">Đã thanh toán <span className="ml-1.5 bg-gray-200 text-gray-700 px-1.5 text-xs rounded-full">{statusCounts.paid}</span></Button>
             </div>
-            
-            {renderContent()}
+
+            <div className="bg-white shadow-sm rounded-lg">
+                {renderContent()}
+            </div>
         </div>
     );
 };
