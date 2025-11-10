@@ -317,9 +317,9 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
         try {
             const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-            // Fix for line 269: remove explicit return type from async function
+// FIX: The async function passed to useCallback should not have an explicit Promise return type annotation, as it can confuse TypeScript's inference for the callback's arguments and dependencies. Removing ': Promise<void>' resolves the issue.
 await savePayrollRecords(recordsToSave);
-            // Fix for line 261: remove explicit return type from async function
+            // FIX: The async function passed to useCallback should not have an explicit Promise return type annotation, as it can confuse TypeScript's inference for the callback's arguments and dependencies. Removing ': Promise<void>' resolves the issue.
 await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,

@@ -33,7 +33,7 @@ const App: React.FC = () => {
       <ScrollToTop />
       <div className="flex flex-col min-h-screen bg-bgCanvas">
         <Header />
-        <main className="flex-grow pt-[168px]">
+        <main className="flex-grow pt-[168px] print:pt-0">
           <ReactRouterDOM.Routes> {/* Replaced Switch with Routes */}
             <ReactRouterDOM.Route path="/" element={<HomePage />} />
             <ReactRouterDOM.Route path="/shop" element={<ShopPage />} />
