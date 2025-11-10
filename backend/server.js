@@ -3,8 +3,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import pool from './db.js';
-import { fileURLToPath } from 'url';
-import path from 'path';
 import https from 'https';
 
 dotenv.config();
@@ -12,15 +10,6 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Increase limit for data URLs
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// --- Static assets and Frontend serving ---
-// This assumes the frontend is built into a 'dist' folder in the project root
-// On Render, this would be '../dist' relative to the 'backend' folder.
-const frontendDistPath = path.join(__dirname, '../dist');
-app.use(express.static(frontendDistPath));
 
 
 // --- Helper Functions ---
@@ -46,6 +35,15 @@ const parseJsonFields = (items, fields) => {
 };
 
 const API_PREFIX = '/api';
+
+// --- Welcome Route ---
+app.get('/', (req, res) => {
+    res.status(200).json({ 
+        message: 'IQ Technology Backend API is running.',
+        healthCheck: `${API_PREFIX}/health`
+    });
+});
+
 
 // --- API Endpoints ---
 
@@ -344,16 +342,10 @@ app.post(`${API_PREFIX}/financials/payroll`, async (req, res) => {
     }
 });
 
-// --- Frontend Catch-all ---
-// This handler serves the `index.html` for any request that doesn't match an API route.
-// It's essential for client-side routing (React Router) to work correctly in a single-server setup.
-app.get('*', (req, res) => {
-  // Check if the request is for an API endpoint that was missed. If so, return a 404.
-  if (req.originalUrl.startsWith(API_PREFIX)) {
-    return res.status(404).json({ message: 'API endpoint not found.' });
-  }
-  // Otherwise, serve the main frontend file.
-  res.sendFile(path.join(frontendDistPath, 'index.html'));
+
+// --- Fallback for unknown API routes ---
+app.use(API_PREFIX, (req, res) => {
+    res.status(404).json({ message: `API endpoint not found: ${req.method} ${req.originalUrl}` });
 });
 
 
