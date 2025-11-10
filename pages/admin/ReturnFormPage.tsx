@@ -99,15 +99,15 @@ const ReturnFormPage: React.FC = () => {
                 </div>
                 <div className="admin-card-body print-wrapper">
                     <div className="print-container max-w-2xl mx-auto p-4 bg-white">
+                        <div className="text-sm mb-4">
+                            <h3 className="font-bold text-base mb-2">{siteSettings.companyName}</h3>
+                            <p>Địa chỉ: {siteSettings.companyAddress}</p>
+                        </div>
                         <div className="text-center mb-6">
                             <h2 className="text-2xl font-bold uppercase">Phiếu Yêu Cầu Hoàn Trả</h2>
                              <p>Ngày {new Date(formData.createdAt || Date.now()).toLocaleDateString('vi-VN')}</p>
                         </div>
-                        <div className="text-sm mb-4">
-                            <h3 className="font-bold text-base mb-2">Thông tin Đơn vị</h3>
-                            <p>{siteSettings.companyName}</p>
-                            <p>Địa chỉ: {siteSettings.companyAddress}</p>
-                        </div>
+                        
                         <div className="text-sm mb-4 border-t pt-4">
                             <h3 className="font-bold text-base mb-2">Thông tin Khách hàng</h3>
                             <p><strong>Tên:</strong> {selectedOrder?.customerInfo.fullName}</p>

@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react';
 // TypeScript will correctly infer the global 'NodeJS.Process' type.
 
 export default defineConfig(({ mode }) => {
-    // Fix: Cast process to any to resolve TypeScript error regarding 'cwd'.
+    // FIX: Cast process to any to resolve TypeScript error regarding 'cwd'.
     const env = loadEnv(mode, (process as any).cwd(), '');
 
     return {
@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                // Fix: Replace __dirname with process.cwd() for ES module compatibility
+                // FIX: Replace __dirname with process.cwd() for ES module compatibility
                 // Cast process to any to resolve TypeScript error regarding 'cwd'.
                 '@': path.resolve((process as any).cwd(), '.'),
             }

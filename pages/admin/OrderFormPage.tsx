@@ -156,10 +156,6 @@ const OrderFormPage: React.FC = () => {
                 <div className="admin-card-body print-wrapper">
                     <div className="print-container max-w-4xl mx-auto p-4 bg-white">
                         {/* Print Header */}
-                        <div className="text-center mb-6">
-                            <h1 className="text-3xl font-bold uppercase">Hóa Đơn Bán Hàng</h1>
-                            <p>Ngày {new Date(formData.orderDate || Date.now()).getDate()} tháng {new Date(formData.orderDate || Date.now()).getMonth() + 1} năm {new Date(formData.orderDate || Date.now()).getFullYear()}</p>
-                        </div>
                         <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                             <div>
                                 <h2 className="font-bold text-lg">{siteSettings.companyName}</h2>
@@ -171,6 +167,10 @@ const OrderFormPage: React.FC = () => {
                                 <p>Số HĐ: <span className="font-bold">{formData.id?.slice(-6)}</span></p>
                                 <p>Mã số thuế: 010614591</p>
                             </div>
+                        </div>
+                        <div className="text-center mb-6">
+                            <h1 className="text-3xl font-bold uppercase">Hóa Đơn Bán Hàng</h1>
+                            <p>Ngày {new Date(formData.orderDate || Date.now()).getDate()} tháng {new Date(formData.orderDate || Date.now()).getMonth() + 1} năm {new Date(formData.orderDate || Date.now()).getFullYear()}</p>
                         </div>
 
                         {/* Customer Info */}

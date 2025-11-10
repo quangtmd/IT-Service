@@ -155,10 +155,6 @@ const QuotationFormPage: React.FC = () => {
                 <div className="admin-card-body print-wrapper">
                      <div className="print-container max-w-4xl mx-auto p-4 bg-white">
                         {/* Print Header */}
-                        <div className="text-center mb-6">
-                            <h1 className="text-3xl font-bold uppercase">Báo Giá</h1>
-                            <p>Ngày {new Date(formData.creation_date || Date.now()).getDate()} tháng {new Date(formData.creation_date || Date.now()).getMonth() + 1} năm {new Date(formData.creation_date || Date.now()).getFullYear()}</p>
-                        </div>
                         <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                             <div>
                                 <h2 className="font-bold text-lg">{siteSettings.companyName}</h2>
@@ -169,6 +165,10 @@ const QuotationFormPage: React.FC = () => {
                             <div className="text-right">
                                 <p>Số Báo giá: <span className="font-bold">{formData.id?.slice(-6)}</span></p>
                             </div>
+                        </div>
+                        <div className="text-center mb-6">
+                            <h1 className="text-3xl font-bold uppercase">Báo Giá</h1>
+                            <p>Ngày {new Date(formData.creation_date || Date.now()).getDate()} tháng {new Date(formData.creation_date || Date.now()).getMonth() + 1} năm {new Date(formData.creation_date || Date.now()).getFullYear()}</p>
                         </div>
 
                         {/* Customer Info */}

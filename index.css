@@ -645,11 +645,16 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
 }
 
 /* PRINT STYLES */
+@page {
+  size: A4;
+  margin: 0;
+}
 @media print {
-  body, html {
-    background-color: white !important;
+  body {
     -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
     color-adjust: exact !important; /* Firefox */
+    background-color: white !important;
+    margin: 0;
   }
 
   .no-print,
@@ -664,6 +669,10 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
   textarea,
   select {
     display: none !important;
+  }
+  
+  .print-only {
+    display: inline !important;
   }
 
   .admin-main-content {
@@ -687,7 +696,7 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
   }
   
   .print-container {
-    padding: 1rem;
+    padding: 1.5cm; /* Create margin inside the page */
     display: block !important;
     position: static !important;
     width: 100%;
