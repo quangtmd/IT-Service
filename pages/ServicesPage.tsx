@@ -13,7 +13,7 @@ import { SiteSettings } from '../types';
 
 const ServicesPage: React.FC = () => {
   const breadcrumbs = [
-    { label: "Trang chủ", path: "/home" },
+    { label: "Trang chủ", path: "/" },
     { label: "Dịch vụ" }
   ];
 
