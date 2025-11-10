@@ -275,7 +275,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                         <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
                             {isServerInfoLoading ? (
                                 <p className="text-sm text-slate-500">Đang tải thông tin máy chủ...</p>
-                            ) : serverInfo?.outboundIp !== 'Not available' ? (
+                            ) : serverInfo && serverInfo.outboundIp && serverInfo.outboundIp !== 'Not available in dev' ? (
                                 <div className="flex items-center justify-between">
                                     <p className="text-sm text-slate-600">
                                         <strong className="block">IP Máy chủ:</strong>

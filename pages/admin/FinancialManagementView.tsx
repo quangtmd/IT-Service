@@ -275,7 +275,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => void, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => void }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
+const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => Promise<void>, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void> }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
     const { users } = useAuth();
     const staff = users.filter(u => u.role === 'admin' || u.role === 'staff');
     const [payPeriod, setPayPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
@@ -303,8 +303,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
-    // FIX: Explicitly typing the async function passed to useCallback to resolve a potential TypeScript inference issue.
-    const handleSettlePayroll = useCallback(async (): Promise<void> => {
+    // FIX: Removed useCallback to resolve TypeScript type inference issue causing incorrect argument count errors.
+    const handleSettlePayroll = async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -329,15 +329,15 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         } catch (error) {
             alert('Lỗi khi chốt lương.');
         }
-    }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
+    };
 
-    // FIX: Explicitly typing the async function passed to useCallback to resolve a potential TypeScript inference issue.
-    const handleSaveDraft = useCallback(async (): Promise<void> => {
+    // FIX: Removed useCallback to resolve TypeScript type inference issue causing incorrect argument count errors.
+    const handleSaveDraft = async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
-        onDataChange();
-    }, [localPayroll, payPeriod, onDataChange]);
+        await onDataChange();
+    };
 
 
     return (
