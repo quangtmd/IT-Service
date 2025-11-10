@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
-import * as Constants from '../constants.tsx';
+import * as Constants from '../constants';
 
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState('');
