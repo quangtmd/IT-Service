@@ -616,22 +616,49 @@ export interface Debt {
 }
 
 // --- Service & Warranty ---
+export type ServiceTicketStatus = 'Chờ xử lý' | 'Lập chứng từ' | 'Chờ duyệt' | 'Đang duyệt' | 'Đã duyệt' | 'Đang thực hiện' | 'Hoàn thành' | 'Khác' | 'Mới' | 'Chờ linh kiện' | 'Đã đóng';
+export const SERVICE_TICKET_STATUS_OPTIONS: ServiceTicketStatus[] = ['Mới', 'Chờ xử lý', 'Lập chứng từ', 'Chờ duyệt', 'Đang duyệt', 'Đã duyệt', 'Đang thực hiện', 'Chờ linh kiện', 'Hoàn thành', 'Đã đóng', 'Khác'];
+
+export interface ServiceTicketDetailItem {
+    id: string;
+    deviceId: string;
+    deviceName: string;
+    content: string;
+    quantity: number;
+    priceVND: number;
+    estimatedCostVND: number;
+    department?: string;
+    case?: string;
+    contract?: string;
+    paymentPhase?: string;
+}
+
 export interface ServiceTicket {
-  id: string;
+  id: string; // Số c/từ
+  unit: string; // Đơn vị, e.g., 'CTV', 'CN1'
+  status: ServiceTicketStatus;
+  voucherDate: string; // Ngày c/từ
+  recipientCode: string; // Người tiếp nhận (e.g., 'NVD')
+  recipientName: string; // Tên người tiếp nhận
+  currency: 'VND' | 'USD'; // Ngoại tệ
+  departmentCode?: string; // Mã bộ phận
+  notes: string; // Diễn giải
+  totalCost: number; // Tổng chi phí
+  totalQuantity: number; // Số lượng
+  transactionType: 'Sửa chữa' | 'Thay thế' | 'Bảo dưỡng';
+  details: ServiceTicketDetailItem[];
+
+  // Redundant fields for easier data transition
   ticket_code: string;
   customerId?: string;
-  customer_info: {
-    fullName: string;
-    phone: string;
-  };
+  customer_info: { fullName: string; phone: string; };
   deviceName: string;
   reported_issue: string;
-  status: 'Mới' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Đã đóng';
   createdAt: string;
   updatedAt: string;
   assigneeId?: string;
-  notes?: string;
 }
+
 
 export interface WarrantyClaim {
   id: string;

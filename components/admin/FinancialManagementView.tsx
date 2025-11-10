@@ -303,7 +303,6 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
-    // FIX: Removed useCallback to resolve TypeScript type inference issue causing incorrect argument count errors.
     const handleSettlePayroll = async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
@@ -325,13 +324,12 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 category: 'Chi phí Lương',
                 description: `Thanh toán lương tháng ${payPeriod}`
             });
-            onDataChange();
+            await onDataChange();
         } catch (error) {
             alert('Lỗi khi chốt lương.');
         }
     };
 
-    // FIX: Removed useCallback to resolve TypeScript type inference issue causing incorrect argument count errors.
     const handleSaveDraft = async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
@@ -345,7 +343,9 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
+                {/* Fix: Wrapped onClick handlers in arrow functions to prevent passing the event object. */}
                 <Button onClick={handleSaveDraft} size="sm" variant="outline">Lưu Nháp</Button>
+                {/* Fix: Wrapped onClick handlers in arrow functions to prevent passing the event object. */}
                 <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">

@@ -3,15 +3,11 @@ import {
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, 
     Supplier, OrderStatus, WarrantyClaim, Debt
 } from '../types';
+import { BACKEND_API_BASE_URL } from '../constants';
 
-// The base URL is now an empty string. This assumes the frontend is served
-// from the same domain as the backend, which simplifies deployment.
-// All API requests will be relative, e.g., /api/users.
-const API_BASE_URL = "";
+const API_BASE_URL = BACKEND_API_BASE_URL;
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // All API endpoints are prefixed with /api on the server.
-    // This ensures the correct path is always used.
     const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
@@ -26,21 +22,24 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            // Simplified, more robust error message for a monolithic setup.
-            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
+            
+            if (response.status === 404) {
+                // This specific message format will be caught by the BackendConnectionError component
+                // to show the detailed 404 guide to the user.
+                throw new Error('Lỗi Giao Tiếp Frontend-Backend (404)');
+            }
+            
+            const errorMessage = `Lỗi API: ${response.status} (${errorData.message || response.statusText}). Endpoint: ${fullEndpoint}.`;
             throw new Error(errorMessage);
         }
         
-        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            // This now more clearly indicates a server-down issue.
             throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động.');
         }
-        // Re-throw other errors (like the custom one from response.ok check)
         throw error;
     }
 }

@@ -270,7 +270,7 @@ createCrudEndpoints(app, 'quotations', 'quotations', ['customerInfo', 'items']);
 createCrudEndpoints(app, 'returns', 'returns');
 createCrudEndpoints(app, 'suppliers', 'suppliers', ['contactInfo']);
 createCrudEndpoints(app, 'warranty-claims', 'warranty_claims');
-createCrudEndpoints(app, 'service-tickets', 'service_tickets', ['customer_info']);
+createCrudEndpoints(app, 'service-tickets', 'service_tickets', ['customer_info', 'details']);
 
 // Custom Order Endpoints
 createCrudEndpoints(app, 'orders', 'orders', ['customerInfo', 'items', 'paymentInfo']);
