@@ -39,7 +39,7 @@ const FloatingActionButtons: React.FC = () => {
         let hideTimer: number;
 
         // Only show bubble on the homepage and if AI is enabled
-        if (isAiEnabled && (location.pathname === '/home' || location.pathname === '/')) {
+        if (isAiEnabled && location.pathname === '/') {
             const alreadyShown = sessionStorage.getItem(Constants.CHATBOT_AUTO_OPENED_KEY);
             if (!alreadyShown) {
                 // Show the welcome bubble after a delay

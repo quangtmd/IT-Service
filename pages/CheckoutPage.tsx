@@ -135,7 +135,7 @@ const CheckoutPage: React.FC = () => {
           </p>
           <div className="space-y-3 sm:space-y-0 sm:space-x-3">
             <ReactRouterDOM.Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></ReactRouterDOM.Link>
-            <ReactRouterDOM.Link to="/home"><Button variant="outline" size="lg">Về trang chủ</Button></ReactRouterDOM.Link>
+            <ReactRouterDOM.Link to="/"><Button variant="outline" size="lg">Về trang chủ</Button></ReactRouterDOM.Link>
           </div>
         </div>
       </div>
