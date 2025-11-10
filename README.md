@@ -160,7 +160,22 @@ CREATE TABLE `MediaLibrary` (`id` varchar(255) NOT NULL, `url` text NOT NULL, `n
 CREATE TABLE `ProductBrands` (`id` varchar(255) NOT NULL, `name` varchar(255) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `ProductReviews` (`id` varchar(255) NOT NULL, `productId` varchar(255) NOT NULL, `userId` varchar(255) NOT NULL, `rating` tinyint(4) NOT NULL, `comment` text, `createdAt` timestamp NULL DEFAULT current_timestamp()) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Projects` (`id` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `managerId` varchar(255) DEFAULT NULL, `startDate` date DEFAULT NULL, `endDate` date DEFAULT NULL, `budget` decimal(15,2) DEFAULT NULL, `status` varchar(100) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `ServiceTickets` (`id` varchar(255) NOT NULL, `ticket_code` varchar(255) DEFAULT NULL, `customerId` varchar(255) DEFAULT NULL, `deviceName` varchar(255) DEFAULT NULL, `reported_issue` text, `status` varchar(255) DEFAULT NULL, `createdAt` timestamp NULL DEFAULT current_timestamp(), `assigneeId` varchar(255) DEFAULT NULL, `rating` tinyint(1) DEFAULT NULL, customer_info JSON) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `ServiceTickets` (
+  `id` varchar(255) NOT NULL,
+  `ticket_code` varchar(255) DEFAULT NULL,
+  `customerId` varchar(255) DEFAULT NULL,
+  `deviceName` varchar(255) DEFAULT NULL,
+  `reported_issue` text,
+  `status` varchar(255) DEFAULT NULL,
+  `createdAt` timestamp NULL DEFAULT current_timestamp(),
+  `assigneeId` varchar(255) DEFAULT NULL,
+  `rating` tinyint(1) DEFAULT NULL,
+  `customer_info` JSON,
+  `invoiceId` VARCHAR(255) NULL,
+  `receiverId` VARCHAR(255) NULL,
+  `work_items` TEXT NULL,
+  `appointment_date` DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Shipments` (`id` varchar(255) NOT NULL, `orderId` varchar(255) NOT NULL, `trackingCode` varchar(255) DEFAULT NULL, `shippingPartner` varchar(255) DEFAULT NULL, `status` varchar(255) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `SiteSettings` (`settingKey` varchar(255) NOT NULL, `settingValue` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`settingValue`)), `updatedAt` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `StockEntries` (`id` varchar(255) NOT NULL, `type` enum('in','out') NOT NULL, `entryDate` timestamp NULL DEFAULT current_timestamp(), `supplierId` varchar(255) DEFAULT NULL, `orderId` varchar(255) DEFAULT NULL, `notes` text) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -391,9 +406,9 @@ INSERT IGNORE INTO `Orders` (`id`, `userId`, `customerInfo`, `items`, `totalAmou
 INSERT IGNORE INTO `Invoices` (`id`, `orderId`, `amount`, `status`, `dueDate`) VALUES
 ('INV001', 'ORD001', 15990000.00, 'paid', '2025-10-02');
 
-INSERT IGNORE INTO `ServiceTickets` (`id`, `ticket_code`, `customerId`, `deviceName`, `reported_issue`, `status`, `createdAt`, `assigneeId`, `rating`, `customer_info`) VALUES
-('TCK001', 'TCK-001', 'cust002', 'Laptop Dell Inspiron', 'Máy không lên nguồn', 'Mới', '2025-10-08 09:00:00', 'staff001', NULL, '{\"fullName\": \"Trần Thị Bích\", \"phone\": \"0935987654\"}'),
-('TCK002', 'TCK-002', 'cust003', 'PC Gaming', 'Máy tính tự khởi động lại khi chơi game', 'Đang xử lý', '2025-10-09 11:00:00', 'staff001', NULL, '{\"fullName\": \"Lê Hoàng Long\", \"phone\": \"0978111222\"}');
+INSERT IGNORE INTO `ServiceTickets` (`id`, `ticket_code`, `customerId`, `deviceName`, `reported_issue`, `status`, `createdAt`, `assigneeId`, `rating`, `customer_info`, `invoiceId`, `receiverId`, `work_items`, `appointment_date`) VALUES
+('TCK001', 'TCK-001', 'cust002', 'Laptop Dell Inspiron', 'Máy không lên nguồn', 'Mới', '2025-10-08 09:00:00', 'staff001', NULL, '{\"fullName\": \"Trần Thị Bích\", \"phone\": \"0935987654\"}', 'INV-S001', 'staff002', 'Kiểm tra nguồn, mainboard', '2025-10-10 14:00:00'),
+('TCK002', 'TCK-002', 'cust003', 'PC Gaming', 'Máy tính tự khởi động lại khi chơi game', 'Đang xử lý', '2025-10-09 11:00:00', 'staff001', NULL, '{\"fullName\": \"Lê Hoàng Long\", \"phone\": \"0978111222\"}', NULL, 'staff002', 'Vệ sinh, test RAM, test VGA', NULL);
 
 INSERT IGNORE INTO `WarrantyTickets` (`id`, `claim_code`, `order_id`, `product_id`, `product_name`, `customer_id`, `customer_name`, `reported_issue`, `status`, `created_at`) VALUES
 ('WAR001', 'BH-1762592400000', 'ORD001', 'PCGM001', 'PC Gaming IQ Eagle', 'cust001', 'Nguyễn Văn An', 'Card màn hình không xuất hình', 'Đang tiếp nhận', '2025-10-08 10:00:00');

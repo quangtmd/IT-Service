@@ -735,7 +735,18 @@ export interface ReturnTicket {
   createdAt: string; // ISO
 }
 
-export type ServiceTicketStatus = 'Mới' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Đã đóng';
+export type ServiceTicketStatus = 
+  'Mới' | 
+  'Mới tiếp nhận' |
+  'Đang xử lý' | 
+  'Chờ linh kiện' |
+  'Đợi KH đồng ý giá' |
+  'Đợi KH nhận lại' |
+  'Hoàn thành' | 
+  'Đã đóng' |
+  'Không đồng ý sửa máy' |
+  'Hủy bỏ';
+
 export interface ServiceTicket {
   id: string;
   ticket_code: string;
@@ -748,6 +759,10 @@ export interface ServiceTicket {
   reported_issue: string;
   createdAt: string; // ISO string date
   status: ServiceTicketStatus;
-  assigneeId?: string;
+  assigneeId?: string; // Kỹ thuật
   rating?: 1 | 2 | 3 | 4 | 5;
+  invoiceId?: string; // Số hóa đơn
+  receiverId?: string; // Người nhận
+  work_items?: string; // Hạng mục công việc
+  appointment_date?: string; // Thời gian hẹn
 }
