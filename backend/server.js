@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import pool from './db.js';
 import https from 'https';
+import { PRODUCT_CATEGORIES_HIERARCHY } from './constants.js';
 
 dotenv.config();
 
@@ -149,17 +150,25 @@ app.get(`${API_PREFIX}/products`, async (req, res) => {
     try {
         let query = 'SELECT * FROM `products` WHERE 1=1';
         const params = [];
+
         if (req.query.is_featured === 'true') {
             query += ' AND is_featured = ?';
             params.push(true);
         }
         if (req.query.mainCategory) {
-            query += ' AND mainCategory = ?';
-            params.push(req.query.mainCategory);
-        }
-        if (req.query.subCategory) {
-            query += ' AND subCategory = ?';
-            params.push(req.query.subCategory);
+            const mainCat = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === req.query.mainCategory);
+            if(mainCat) {
+                query += ' AND mainCategory = ?';
+                params.push(mainCat.name);
+                
+                if (req.query.subCategory) {
+                    const subCat = mainCat.subCategories.find(sc => sc.slug === req.query.subCategory);
+                    if (subCat) {
+                        query += ' AND subCategory = ?';
+                        params.push(subCat.name);
+                    }
+                }
+            }
         }
         if (req.query.tags) {
             query += ' AND JSON_CONTAINS(tags, ?)';
