@@ -95,7 +95,8 @@ const AdminPage: React.FC = () => {
             id: 'service_warranty', label: 'Dịch Vụ & Bảo Hành', icon: 'fas fa-tools', permission: ['viewService'],
             children: [
                 { id: 'service_tickets', label: 'Phiếu Sửa Chữa', icon: 'fas fa-ticket-alt', permission: ['manageServiceTickets'] },
-                { id: 'warranty_claims', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
+                // FIX: Changed 'warranty_claims' to 'warranty_tickets' to match the AdminView type.
+                { id: 'warranty_tickets', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
             ]
         },
@@ -173,7 +174,7 @@ const AdminPage: React.FC = () => {
         const viewCandidates = [
             'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
             'accounting_dashboard', 'quotations', 'customers', 'orders', 
-            'returns', 'suppliers', 'service_tickets'
+            'returns', 'suppliers', 'service_tickets', 'warranty_tickets'
         ];
 
         let foundView = null;
@@ -235,7 +236,8 @@ const AdminPage: React.FC = () => {
             case 'inventory': return <InventoryView />;
             case 'service_tickets': return <ServiceTicketView />;
             case 'quotations': return <QuotationManagementView />;
-            case 'warranty_claims': return <WarrantyManagementView />;
+            // FIX: Changed 'warranty_claims' to 'warranty_tickets' to match the AdminView type.
+            case 'warranty_tickets': return <WarrantyManagementView />;
             case 'returns': return <ReturnManagementView />;
             case 'suppliers': return <SupplierManagementView />;
             default: return (
@@ -256,6 +258,9 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/products/edit/')) return 'Chỉnh sửa Sản phẩm';
         if (path.startsWith('/admin/hrm_dashboard/new')) return 'Thêm Nhân viên Mới';
         if (path.startsWith('/admin/hrm_dashboard/edit/')) return 'Chỉnh sửa Hồ sơ Nhân sự';
+        if (path.startsWith('/admin/customers/new')) return 'Thêm Khách hàng Mới';
+        if (path.startsWith('/admin/customers/edit/')) return 'Chỉnh sửa Khách hàng';
+        if (path.startsWith('/admin/customers/view/')) return 'Hồ sơ Khách hàng';
         if (path.startsWith('/admin/articles/new')) return 'Thêm Bài viết Mới';
         if (path.startsWith('/admin/articles/edit/')) return 'Chỉnh sửa Bài viết';
         if (path.startsWith('/admin/discounts/new')) return 'Thêm Mã giảm giá Mới';
@@ -266,9 +271,6 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/accounting_dashboard/transactions/edit/')) return 'Chỉnh sửa Giao dịch';
         if (path.startsWith('/admin/quotations/new')) return 'Tạo Báo giá Mới';
         if (path.startsWith('/admin/quotations/edit/')) return 'Chỉnh sửa Báo giá';
-        if (path.startsWith('/admin/customers/new')) return 'Thêm Khách hàng Mới';
-        if (path.startsWith('/admin/customers/edit/')) return 'Chỉnh sửa Khách hàng';
-        if (path.startsWith('/admin/customers/view/')) return 'Hồ sơ Khách hàng';
         if (path.startsWith('/admin/orders/new')) return 'Tạo Đơn hàng Mới';
         if (path.startsWith('/admin/orders/edit/')) return 'Chỉnh sửa Đơn hàng';
         if (path.startsWith('/admin/returns/new')) return 'Tạo Phiếu Hoàn Trả';
@@ -277,6 +279,8 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
         if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
         if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
+        if (path.startsWith('/admin/warranty_tickets/new')) return 'Tạo Phiếu Bảo hành';
+        if (path.startsWith('/admin/warranty_tickets/edit/')) return 'Chỉnh sửa Phiếu Bảo hành';
 
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
@@ -331,6 +335,8 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_tickets/new" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_tickets/edit/:ticketId" element={<WarrantyFormPage />} />
                         
                         {/* Generic route for views */}
                         <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />

@@ -3,7 +3,7 @@
 import { 
     Product, Order, Article, OrderStatus, MediaItem, ServerInfo, 
     ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
-    Quotation, User, WarrantyClaim, ReturnTicket, Supplier
+    Quotation, User, WarrantyTicket, ReturnTicket, Supplier
 } from '../types';
 import { BACKEND_API_BASE_URL } from '../constants';
 
@@ -315,29 +315,29 @@ export const getInventory = async (): Promise<Inventory[]> => {
     return fetchFromApi<Inventory[]>('/api/inventory');
 };
 
-// --- Warranty Claim Service ---
-export const getWarrantyClaims = async (): Promise<WarrantyClaim[]> => {
-    return fetchFromApi<WarrantyClaim[]>('/api/warranty-claims');
+// --- Warranty Ticket Service ---
+export const getWarrantyTickets = async (): Promise<WarrantyTicket[]> => {
+    return fetchFromApi<WarrantyTicket[]>('/api/warranty-tickets');
 };
 
-export const addWarrantyClaim = async (claim: Omit<WarrantyClaim, 'id' | 'claim_code' | 'created_at'>): Promise<WarrantyClaim> => {
-    return fetchFromApi<WarrantyClaim>('/api/warranty-claims', {
+export const addWarrantyTicket = async (ticket: Omit<WarrantyTicket, 'id' | 'ticketNumber' | 'createdAt'>): Promise<WarrantyTicket> => {
+    return fetchFromApi<WarrantyTicket>('/api/warranty-tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(claim),
+        body: JSON.stringify(ticket),
     });
 };
 
-export const updateWarrantyClaim = async (id: string, updates: Partial<WarrantyClaim>): Promise<WarrantyClaim> => {
-    return fetchFromApi<WarrantyClaim>(`/api/warranty-claims/${id}`, {
+export const updateWarrantyTicket = async (id: string, updates: Partial<WarrantyTicket>): Promise<WarrantyTicket> => {
+    return fetchFromApi<WarrantyTicket>(`/api/warranty-tickets/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
     });
 };
 
-export const deleteWarrantyClaim = async (id: string): Promise<void> => {
-    return fetchFromApi<void>(`/api/warranty-claims/${id}`, { method: 'DELETE' });
+export const deleteWarrantyTicket = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/warranty-tickets/${id}`, { method: 'DELETE' });
 };
 
 

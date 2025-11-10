@@ -1,7 +1,8 @@
 // Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
-    FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus
+    FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
+    WarrantyTicket
 } from './types';
 
 // The base URL is now an empty string. This assumes the frontend is served
@@ -126,3 +127,28 @@ export const getSuppliers = (): Promise<Supplier[]> => fetchFromApi<Supplier[]>(
 export const addSupplier = (supplier: Omit<Supplier, 'id'>): Promise<Supplier> => fetchFromApi<Supplier>('/suppliers', { method: 'POST', body: JSON.stringify(supplier) });
 export const updateSupplier = (id: string, updates: Partial<Supplier>): Promise<Supplier> => fetchFromApi<Supplier>(`/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteSupplier = (id: string): Promise<void> => fetchFromApi<void>(`/suppliers/${id}`, { method: 'DELETE' });
+
+// --- Warranty Ticket Service ---
+export const getWarrantyTickets = async (): Promise<WarrantyTicket[]> => {
+    return fetchFromApi<WarrantyTicket[]>('/api/warranty-tickets');
+};
+
+export const addWarrantyTicket = async (ticket: Omit<WarrantyTicket, 'id' | 'ticketNumber' | 'createdAt'>): Promise<WarrantyTicket> => {
+    return fetchFromApi<WarrantyTicket>('/api/warranty-tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticket),
+    });
+};
+
+export const updateWarrantyTicket = async (id: string, updates: Partial<WarrantyTicket>): Promise<WarrantyTicket> => {
+    return fetchFromApi<WarrantyTicket>(`/api/warranty-tickets/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+    });
+};
+
+export const deleteWarrantyTicket = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/warranty-tickets/${id}`, { method: 'DELETE' });
+};

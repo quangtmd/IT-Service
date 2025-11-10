@@ -186,7 +186,7 @@ export type AdminView =
   // Sales & CRM
   | 'customers' | 'quotations' | 'orders' | 'discounts' | 'returns' | 'suppliers' | 'helpdesk_tickets'
   // Service & Warranty
-  | 'service_tickets' | 'warranty_claims' | 'chat_logs'
+  | 'service_tickets' | 'warranty_tickets' | 'chat_logs'
   // CMS & Marketing
   | 'products' | 'articles' | 'media_library' | 'email_marketing' | 'seo_management'
   // Inventory & Logistics
@@ -707,17 +707,36 @@ export interface Quotation {
   terms?: string;
 }
 
-export interface WarrantyClaim {
+export type WarrantyTicketStatus = 
+  'Mới Tạo' | 
+  'Đang xử lý' | 
+  'Chờ linh kiện' | 
+  'Hoàn thành' | 
+  'Đã trả khách' | 
+  'Từ chối bảo hành' | 
+  'Hủy';
+
+export interface WarrantyTicket {
     id: string;
-    claim_code: string;
-    order_id: string;
-    product_id: string;
-    product_name: string;
-    customer_id?: string;
-    customer_name: string;
-    reported_issue: string;
-    status: 'Đang tiếp nhận' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Từ chối';
-    created_at: string; // ISO
+    ticketNumber: string; // Số phiếu
+    productModel?: string; // Model
+    productSerial?: string; // Serial
+    customerName: string; // Khách hàng
+    creatorName?: string; // Người tạo
+    customerPhone?: string; // Số ĐT
+    totalAmount?: number; // Tổng tiền (VND)
+    status: WarrantyTicketStatus;
+    createdAt: string; // Ngày tạo
+    reportedIssue: string; // Mô tả lỗi
+    receiveDate?: string; // Ngày nhận
+    returnDate?: string; // Ngày trả
+    
+    // Original fields kept for backend compatibility where needed
+    orderId?: string;
+    productId?: string;
+    customerId?: string;
+    creatorId?: string;
+    warrantyCenter?: string; // Trạm BH
 }
 
 export interface Supplier {

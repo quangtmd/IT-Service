@@ -191,15 +191,22 @@ CREATE TABLE `Returns` (`id` varchar(255) NOT NULL, `orderId` varchar(255) NOT N
 
 CREATE TABLE `WarrantyTickets` (
   `id` varchar(255) NOT NULL,
-  `claim_code` varchar(255) NOT NULL,
-  `order_id` varchar(255) NOT NULL,
-  `product_id` varchar(255) NOT NULL,
-  `product_name` varchar(255) NOT NULL,
-  `customer_id` varchar(255) DEFAULT NULL,
-  `customer_name` varchar(255) NOT NULL,
-  `reported_issue` text NOT NULL,
+  `ticketNumber` varchar(255) NOT NULL,
+  `productModel` varchar(255) DEFAULT NULL,
+  `productSerial` varchar(255) DEFAULT NULL,
+  `customerName` varchar(255) NOT NULL,
+  `customerPhone` varchar(255) DEFAULT NULL,
+  `creatorId` varchar(255) DEFAULT NULL,
+  `totalAmount` decimal(15,2) DEFAULT 0.00,
   `status` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
+  `reportedIssue` text,
+  `receiveDate` date DEFAULT NULL,
+  `returnDate` date DEFAULT NULL,
+  `orderId` varchar(255) DEFAULT NULL,
+  `productId` varchar(255) DEFAULT NULL,
+  `customerId` varchar(255) DEFAULT NULL,
+  `warrantyCenter` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -243,7 +250,7 @@ ALTER TABLE `StockEntryItems` ADD PRIMARY KEY (`stockEntryId`,`productId`), ADD 
 ALTER TABLE `Tasks` ADD PRIMARY KEY (`id`), ADD KEY `projectId` (`projectId`), ADD KEY `assigneeId` (`assigneeId`);
 ALTER TABLE `UserDetails` ADD PRIMARY KEY (`userId`);
 ALTER TABLE `Returns` ADD PRIMARY KEY (`id`), ADD KEY `orderId` (`orderId`);
-ALTER TABLE `WarrantyTickets` ADD PRIMARY KEY (`id`), ADD KEY `order_id` (`order_id`), ADD KEY `product_id` (`product_id`), ADD KEY `customer_id` (`customer_id`);
+ALTER TABLE `WarrantyTickets` ADD PRIMARY KEY (`id`), ADD KEY `orderId` (`orderId`), ADD KEY `productId` (`productId`), ADD KEY `customerId` (`customerId`), ADD KEY `creatorId` (`creatorId`);
 ALTER TABLE `AuditLogs` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 -- =================================================================
@@ -318,8 +325,8 @@ INSERT IGNORE INTO `FinancialTransactions` (`id`, `accountId`, `type`, `category
 ('TRN003', 'ACC001', 'expense', 'Chi phí Nhà Cung Cấp', 20000000.00, 'Trả tiền hàng cho Mai Hoàng', '2025-10-03');
 
 INSERT IGNORE INTO `Employees` (`userId`, `position`, `joinDate`, `salary`) VALUES
-('staff001', 'Trưởng nhóm Kỹ thuật', '2022-01-15', 18000000.00),
-('staff002', 'Quản lý Bán hàng', '2021-08-20', 22000000.00),
+('staff001', 'Lê Hùng', '2022-01-15', 18000000.00),
+('staff002', 'Nguyễn Thị Lan', '2021-08-20', 22000000.00),
 ('user001', 'Giám đốc', '2020-01-01', 35000000.00);
 
 INSERT IGNORE INTO `PayrollRecords` (`id`, `employeeId`, `employeeName`, `payPeriod`, `baseSalary`, `bonus`, `deduction`, `finalSalary`, `status`, `notes`) VALUES
@@ -415,8 +422,9 @@ INSERT IGNORE INTO `ServiceTickets` (`id`, `ticket_code`, `customerId`, `deviceN
 ('TCK001', 'TCK-001', 'cust002', 'Laptop Dell Inspiron', 'Máy không lên nguồn', 'Mới', '2025-10-08 09:00:00', 'staff001', NULL, '{\"fullName\": \"Trần Thị Bích\", \"phone\": \"0935987654\"}', 'INV-S001', 'staff002', 'Kiểm tra nguồn, mainboard', '2025-10-10 14:00:00'),
 ('TCK002', 'TCK-002', 'cust003', 'PC Gaming', 'Máy tính tự khởi động lại khi chơi game', 'Đang xử lý', '2025-10-09 11:00:00', 'staff001', NULL, '{\"fullName\": \"Lê Hoàng Long\", \"phone\": \"0978111222\"}', NULL, 'staff002', 'Vệ sinh, test RAM, test VGA', NULL);
 
-INSERT IGNORE INTO `WarrantyTickets` (`id`, `claim_code`, `order_id`, `product_id`, `product_name`, `customer_id`, `customer_name`, `reported_issue`, `status`, `created_at`) VALUES
-('WAR001', 'BH-1762592400000', 'ORD001', 'PCGM001', 'PC Gaming IQ Eagle', 'cust001', 'Nguyễn Văn An', 'Card màn hình không xuất hình', 'Đang tiếp nhận', '2025-10-08 10:00:00');
+INSERT IGNORE INTO `WarrantyTickets` (`id`, `ticketNumber`, `productModel`, `productSerial`, `customerName`, `customerPhone`, `creatorId`, `totalAmount`, `status`, `reportedIssue`, `receiveDate`, `returnDate`) VALUES
+('WT001', 'SBN24040000012-002-001', 'S1001', 'AB2C9D', 'C NHUNG', '0938161567', 'user001', 0.00, 'Mới Tạo', 'mixer bị hư', '2024-04-06', '2024-04-16'),
+('WT002', 'SBN24040000012-002', 'MKK-N1', 'D2F5CF', 'C NHUNG', '0938161567', 'user001', 0.00, 'Mới Tạo', 'mixer bị hư', '2024-04-06', '2024-04-16');
 
 INSERT IGNORE INTO `ProductReviews` (`id`, `productId`, `userId`, `rating`, `comment`) VALUES
 ('REV001', 'PCGM001', 'cust001', 5, 'Máy chạy rất mượt, shop tư vấn nhiệt tình!');
