@@ -5,7 +5,7 @@ import { getOrders, deleteOrder } from '../../services/localDataService';
 import BackendConnectionError from '../../components/shared/BackendConnectionError';
 import * as ReactRouterDOM from 'react-router-dom';
 
-type StatusFilter = 'all' | 'cancelled' | 'unpaid' | 'partial' | 'paid';
+type StatusFilter = 'all' | 'cancelled' | 'unpaid' | 'deposited' | 'paid';
 
 const PaymentStatusPill: React.FC<{ status: Order['paymentInfo']['status'] }> = ({ status }) => {
     let text = '';
@@ -63,12 +63,13 @@ const OrderManagementView: React.FC = () => {
 
     const statusCounts = useMemo(() => {
         return orders.reduce((acc, order) => {
+            acc.all++;
             if (order.status === 'Đã hủy') acc.cancelled++;
             if (order.paymentInfo?.status === 'Chưa thanh toán') acc.unpaid++;
-            if (order.paymentInfo?.status === 'Đã cọc') acc.partial++;
+            if (order.paymentInfo?.status === 'Đã cọc') acc.deposited++;
             if (order.paymentInfo?.status === 'Đã thanh toán') acc.paid++;
             return acc;
-        }, { cancelled: 0, unpaid: 0, partial: 0, paid: 0 });
+        }, { all: 0, cancelled: 0, unpaid: 0, deposited: 0, paid: 0 });
     }, [orders]);
 
     const filteredOrders = useMemo(() => {
@@ -76,7 +77,7 @@ const OrderManagementView: React.FC = () => {
             if (activeFilter === 'all') return true;
             if (activeFilter === 'cancelled') return order.status === 'Đã hủy';
             if (activeFilter === 'unpaid') return order.paymentInfo?.status === 'Chưa thanh toán';
-            if (activeFilter === 'partial') return order.paymentInfo?.status === 'Đã cọc';
+            if (activeFilter === 'deposited') return order.paymentInfo?.status === 'Đã cọc';
             if (activeFilter === 'paid') return order.paymentInfo?.status === 'Đã thanh toán';
             return true;
         });
@@ -128,10 +129,19 @@ const OrderManagementView: React.FC = () => {
     };
 
     const renderContent = () => {
-        if (isLoading) return <div className="p-8 text-center">Đang tải dữ liệu...</div>;
-        if (error) return <BackendConnectionError error={error} />;
+        if (isLoading) {
+            return (
+                <div className="p-8 text-center text-textMuted">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-3">Đang tải dữ liệu đơn hàng...</p>
+                </div>
+            );
+        }
+        if (error) {
+            return <BackendConnectionError error={error} />;
+        }
         return (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto bg-white rounded-lg shadow-sm">
                 <table className="min-w-full text-sm align-middle">
                     <thead className="bg-blue-800 text-white">
                         <tr>
@@ -140,17 +150,17 @@ const OrderManagementView: React.FC = () => {
                             <th className="p-3">Mã đơn hàng</th>
                             <th className="p-3">Ngày tạo đơn</th>
                             <th className="p-3">Người tạo đơn</th>
-                            <th className="p-3">Trạng thái đơn hàng</th>
+                            <th className="p-3">Trạng thái TT</th>
                             <th className="p-3">Tên khách hàng</th>
                             <th className="p-3 text-right">Tổng cộng</th>
                             <th className="p-3 text-right">Đã thanh toán</th>
-                            <th className="p-3 text-right">Chi phí đơn hàng</th>
-                            <th className="p-3 text-right">Lợi nhuận đơn hàng</th>
+                            <th className="p-3 text-right">Chi phí</th>
+                            <th className="p-3 text-right">Lợi nhuận</th>
                             <th className="p-3 text-center"><i className="fas fa-cog"></i></th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredOrders.map((order, index) => (
+                    <tbody className="divide-y divide-gray-200">
+                        {filteredOrders.length > 0 ? filteredOrders.map((order, index) => (
                             <tr key={order.id} className="hover:bg-gray-50">
                                 <td className="p-3"><input type="checkbox" className="form-checkbox" checked={selectedOrders.has(order.id)} onChange={() => handleSelectOne(order.id)} /></td>
                                 <td className="p-3">{index + 1}</td>
@@ -166,12 +176,16 @@ const OrderManagementView: React.FC = () => {
                                 <td className="p-3">
                                     <div className="flex justify-center items-center gap-2">
                                         <button className="text-gray-500 hover:text-gray-800"><i className="fas fa-ellipsis-h"></i></button>
-                                        <button className="text-gray-500 hover:text-blue-600"><i className="fas fa-pencil-alt"></i></button>
+                                        <button onClick={() => navigate(`/admin/orders/edit/${order.id}`)} className="text-gray-500 hover:text-blue-600"><i className="fas fa-pencil-alt"></i></button>
                                         <button onClick={() => handleDelete(order.id)} className="text-gray-500 hover:text-red-600"><i className="fas fa-trash-alt"></i></button>
                                     </div>
                                 </td>
                             </tr>
-                        ))}
+                        )) : (
+                            <tr>
+                                <td colSpan={12} className="text-center py-8 text-textMuted">Không có đơn hàng nào.</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -183,28 +197,26 @@ const OrderManagementView: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
                 <div className="flex items-center gap-4 text-gray-600">
                     <h2 className="text-xl font-bold text-gray-800">Quản lý đơn hàng</h2>
-                    <button className="hover:text-blue-600"><i className="fas fa-chart-bar mr-1"></i>Thống kê</button>
-                    <button className="hover:text-blue-600"><i className="fas fa-filter mr-1"></i>Bộ lọc</button>
+                    <button className="hover:text-primary transition-colors"><i className="fas fa-chart-bar mr-1"></i>Thống kê</button>
+                    <button className="hover:text-primary transition-colors"><i className="fas fa-filter mr-1"></i>Bộ lọc</button>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50">Tạo phiếu dịch vụ</Button>
-                    <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50">Tạo đơn bán hàng</Button>
-                    <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50">Thêm từ excel</Button>
-                    <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50 !px-3"><i className="fas fa-search"></i></Button>
+                    <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">Tạo phiếu dịch vụ</Button>
+                    <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">Tạo đơn bán hàng</Button>
+                    <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">Thêm từ excel</Button>
+                    <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10 !px-3"><i className="fas fa-search"></i></Button>
                 </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
                 <Button onClick={() => setActiveFilter('all')} size="sm" variant={activeFilter === 'all' ? 'primary' : 'outline'} className="!font-normal">Tất cả</Button>
-                <Button onClick={() => setActiveFilter('cancelled')} size="sm" variant={activeFilter === 'cancelled' ? 'primary' : 'outline'} className="!font-normal">Hủy bỏ <span className="ml-1.5 bg-gray-200 text-gray-700 px-1.5 text-xs rounded-full">{statusCounts.cancelled}</span></Button>
-                <Button onClick={() => setActiveFilter('unpaid')} size="sm" variant={activeFilter === 'unpaid' ? 'primary' : 'outline'} className="!font-normal">Chưa thanh toán <span className="ml-1.5 bg-gray-200 text-gray-700 px-1.5 text-xs rounded-full">{statusCounts.unpaid}</span></Button>
-                <Button onClick={() => setActiveFilter('partial')} size="sm" variant={activeFilter === 'partial' ? 'primary' : 'outline'} className="!font-normal">Đã cọc <span className="ml-1.5 bg-gray-200 text-gray-700 px-1.5 text-xs rounded-full">{statusCounts.partial}</span></Button>
-                <Button onClick={() => setActiveFilter('paid')} size="sm" variant={activeFilter === 'paid' ? 'primary' : 'outline'} className="!font-normal">Đã thanh toán <span className="ml-1.5 bg-gray-200 text-gray-700 px-1.5 text-xs rounded-full">{statusCounts.paid}</span></Button>
+                <Button onClick={() => setActiveFilter('cancelled')} size="sm" variant={activeFilter === 'cancelled' ? 'primary' : 'outline'} className="!font-normal">Hủy bỏ {statusCounts.cancelled}</Button>
+                <Button onClick={() => setActiveFilter('unpaid')} size="sm" variant={activeFilter === 'unpaid' ? 'primary' : 'outline'} className="!font-normal">Chưa thanh toán {statusCounts.unpaid}</Button>
+                <Button onClick={() => setActiveFilter('deposited')} size="sm" variant={activeFilter === 'deposited' ? 'primary' : 'outline'} className="!font-normal">Đã cọc {statusCounts.deposited}</Button>
+                <Button onClick={() => setActiveFilter('paid')} size="sm" variant={activeFilter === 'paid' ? 'primary' : 'outline'} className="!font-normal">Đã thanh toán {statusCounts.paid}</Button>
             </div>
-
-            <div className="bg-white shadow-sm rounded-lg">
-                {renderContent()}
-            </div>
+            
+            {renderContent()}
         </div>
     );
 };

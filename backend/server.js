@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import mysql from 'mysql2/promise';
+import pool from './db.js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,18 +14,6 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Increase limit for media uploads
-
-const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-};
-
-let pool;
 
 // Helper function to filter an object based on allowed keys
 const filterObject = (obj, allowedKeys) => {
@@ -41,7 +29,6 @@ const filterObject = (obj, allowedKeys) => {
 
 (async () => {
     try {
-        pool = mysql.createPool(dbConfig);
         const connection = await pool.getConnection();
         console.log("✅ Kết nối tới database MySQL thành công!");
         connection.release();
