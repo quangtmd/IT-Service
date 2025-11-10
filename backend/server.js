@@ -956,9 +956,11 @@ app.get('/api/warranty-tickets', async (req, res) => {
         const query = `
             SELECT 
                 wt.*,
-                u.username as creatorName
+                u_creator.username as creatorName,
+                u_returner.username as returnStaffName
             FROM WarrantyTickets wt
-            LEFT JOIN Users u ON wt.creatorId = u.id
+            LEFT JOIN Users u_creator ON wt.creatorId = u_creator.id
+            LEFT JOIN Users u_returner ON wt.returnStaffId = u_returner.id
             ORDER BY wt.createdAt DESC
         `;
         const [rows] = await pool.query(query);
@@ -990,6 +992,7 @@ app.put('/api/warranty-tickets/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const updates = req.body;
+        // Fields that should not be updated via this generic PUT
         delete updates.id;
         delete updates.ticketNumber;
         delete updates.createdAt;

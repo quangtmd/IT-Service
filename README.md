@@ -208,7 +208,12 @@ CREATE TABLE `WarrantyTickets` (
   `orderId` varchar(255) DEFAULT NULL,
   `productId` varchar(255) DEFAULT NULL,
   `customerId` varchar(255) DEFAULT NULL,
-  `warrantyCenter` varchar(255) DEFAULT NULL
+  `warrantyCenter` varchar(255) DEFAULT NULL,
+  `priority` VARCHAR(255) DEFAULT 'Bình thường',
+  `warrantyType` VARCHAR(255) DEFAULT NULL,
+  `technician_notes` TEXT NULL,
+  `repairDate` DATETIME NULL,
+  `returnStaffId` VARCHAR(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

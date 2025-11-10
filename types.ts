@@ -738,6 +738,14 @@ export interface WarrantyTicket {
     customerId?: string;
     creatorId?: string;
     warrantyCenter?: string; // Trạm BH
+
+    // New fields from image
+    priority?: 'Bình thường' | 'Gấp';
+    warrantyType?: string; // Diện bảo hành
+    technician_notes?: string; // Kỹ thuật ghi chú
+    repairDate?: string; // Ngày sửa
+    returnStaffId?: string; // Nhân viên trả
+    returnStaffName?: string; // Denormalized for display
 }
 
 export interface Supplier {
