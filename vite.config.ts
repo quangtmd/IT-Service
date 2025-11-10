@@ -1,13 +1,9 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-// Fix: Removed explicit import of 'process' as it's a global object,
-// which causes a TypeScript error when trying to access 'cwd'.
-// TypeScript will correctly infer the global 'NodeJS.Process' type.
 
 export default defineConfig(({ mode }) => {
-    // FIX: Cast process to any to resolve TypeScript error regarding 'cwd'.
-    const env = loadEnv(mode, (process as any).cwd(), '');
+    const env = loadEnv(mode, process.cwd(), '');
 
     return {
         server: {
@@ -21,21 +17,17 @@ export default defineConfig(({ mode }) => {
             },
         },
         preview: {
-            host: true, // This is equivalent to --host, allows network access
-            // Allow requests from Render's preview domains to prevent host header errors.
+            host: true, 
             allowedHosts: ['.onrender.com'],
         },
         plugins: [react()],
         resolve: {
             alias: {
-                // FIX: Replace __dirname with process.cwd() for ES module compatibility
-                // Cast process to any to resolve TypeScript error regarding 'cwd'.
-                '@': path.resolve((process as any).cwd(), '.'),
+                '@': path.resolve(process.cwd(), '.'),
             }
         },
         define: {
             'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
-            // Use an empty string for dev (relying on proxy) and the env var for prod
             'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(
                 mode === 'production' ? env.VITE_BACKEND_API_BASE_URL : ''
             )

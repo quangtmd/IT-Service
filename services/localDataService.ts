@@ -10,8 +10,6 @@ import {
 const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // All API endpoints are prefixed with /api on the server.
-    // This ensures the correct path is always used.
     const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
@@ -25,28 +23,28 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            // Simplified, more robust error message for a monolithic setup.
-            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
-            throw new Error(errorMessage);
+            // Try to parse the JSON error body from the backend first.
+            const errorData = await response.json().catch(() => ({ 
+                // Fallback if the body isn't JSON or is empty
+                message: `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}.` 
+            }));
+            // Throw an error with the specific message from the backend if available.
+            throw new Error(errorData.message || response.statusText);
         }
         
-        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            // This now more clearly indicates a server-down issue.
             throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động.');
         }
-        // Re-throw other errors (like the custom one from response.ok check)
+        // Re-throw other errors (like the specific one from the backend or other network issues)
         throw error;
     }
 }
 
 // --- User Service ---
-// Note: The endpoint now starts with /users, and /api is prepended by fetchFromApi
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
 export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
