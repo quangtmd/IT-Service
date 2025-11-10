@@ -1,5 +1,6 @@
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
+// Fix: Correct import path for types
 import { Article } from '../../types';
 
 interface ArticlePreviewProps {

@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Correct import path for types
 import { Product } from '../types';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
+// Fix: Correct import path for localDataService
 import { getProduct, getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 import { useChatbotContext } from '../contexts/ChatbotContext'; // Import the context hook

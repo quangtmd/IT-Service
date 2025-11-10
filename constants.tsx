@@ -1,6 +1,7 @@
+// Fix: Correct import path for types
 import { 
     NavLinkItem, ProductCategoryHierarchy, StaffRole, SiteSettings, FaqItem, DiscountCode, 
-    SiteThemeSettings, CustomMenuLink, PricingPlan, UserRole,
+    SiteThemeSettings, CustomMenuLink, PricingPlan, UserRole, OrderStatus,
     HomepageBannerSettings, HomepageAboutSettings, HomepageAboutFeature, 
     HomepageServiceBenefit, HomepageServicesBenefitsSettings,
     HomepageWhyChooseUsFeature, HomepageWhyChooseUsSettings,
@@ -366,7 +367,8 @@ export const PRODUCT_CATEGORIES_HIERARCHY: ProductCategoryHierarchy = [
 export const ARTICLE_CATEGORIES = ["Mẹo vặt", "Hướng dẫn", "So sánh", "Khuyến mãi", "Tin tức công nghệ", "Đánh giá sản phẩm", "Dịch vụ IT", "Bảo mật"];
 export const USER_ROLES_CONST: UserRole[] = ['admin', 'staff', 'customer'];
 export const STAFF_ROLE_OPTIONS_CONST: StaffRole[] = ['Quản lý Bán hàng', 'Biên tập Nội dung', 'Trưởng nhóm Kỹ thuật', 'Chuyên viên Hỗ trợ', 'Nhân viên Toàn quyền'];
-export const ORDER_STATUSES: Array<import('./types').OrderStatus> = ['Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'];
+
+export const ORDER_STATUSES: Array<OrderStatus> = ['Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'];
 export const DEFAULT_SITE_LOGO_URL = ''; 
 
 export const MOCK_PRICING_PLANS_DATA: PricingPlan[] = [

@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
-import * as Constants from '../constants.tsx';
+import * as Constants from '../constants';
 import { AIBuildResponse, PCComponent, AIRecommendedComponent, CustomPCBuildCartItem } from '../types';
 import geminiService from '../services/geminiService';
 import Card from '../components/ui/Card';

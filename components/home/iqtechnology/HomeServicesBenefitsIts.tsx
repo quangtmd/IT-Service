@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants.tsx';
+import * as Constants from '../../../constants';
 import { SiteSettings, HomepageServiceBenefit } from '../../../types';
 
 const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number }> = ({ item, index }) => {

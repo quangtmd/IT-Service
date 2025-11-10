@@ -1,5 +1,6 @@
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Correct import path for types
 import { Product } from '../../types';
 import Button from '../ui/Button';
 import { useCart } from '../../hooks/useCart';

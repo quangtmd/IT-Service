@@ -1,9 +1,7 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../../ui/Button';
-import * as Constants from '../../../constants.tsx';
+import * as Constants from '../../../constants';
 import { SiteSettings, HomepageBannerSettings } from '../../../types';
 
 const HomeBannerIts: React.FC = () => {

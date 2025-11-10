@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ArticlePreview from '../components/blog/ArticlePreview';
 import SearchBar from '../components/shared/SearchBar';
+// Fix: Correct import path for types
 import { Article } from '../types';
 import geminiService from '../services/geminiService';
+// Fix: Correct import path for localDataService
 import { getArticles } from '../services/localDataService';
 import * as Constants from '../constants';
 import BackendConnectionError from '../components/shared/BackendConnectionError'; // Cập nhật đường dẫn

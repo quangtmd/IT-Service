@@ -1,6 +1,8 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { SITE_CONFIG_STORAGE_KEY, INITIAL_SITE_SETTINGS } from '../constants';
+// Fix: Correct import path for types
 import { SiteSettings, TeamMember, StoreImage } from '../types';
 import Markdown from 'react-markdown';
 import useIntersectionObserver from '../hooks/useIntersectionObserver';

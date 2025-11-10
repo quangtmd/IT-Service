@@ -1,5 +1,7 @@
 
+
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
+// Fix: Correct import path for types
 import { CartItem, Product } from '../types';
 
 interface CartContextType {

@@ -1,8 +1,6 @@
-
-
 import React from 'react';
 import { MOCK_SERVICES } from '../data/mockData';
-import * as Constants from '../constants.tsx'; 
+import * as Constants from '../constants'; 
 import PageTitleBannerIts from '../components/services_page_its/PageTitleBannerIts';
 import ServiceCardIts from '../components/services_page_its/ServiceCardIts';
 import CallToActionSectionIts from '../components/services_page_its/CallToActionSectionIts';
@@ -10,6 +8,7 @@ import PricingPlansSectionIts from '../components/services_page_its/PricingPlans
 import ServiceFaqIts from '../components/services_page_its/ServiceFaqIts'; 
 import HomeBlogPreviewIts from '../components/home/iqtechnology/HomeBlogPreviewIts';
 import useIntersectionObserver from '../hooks/useIntersectionObserver';
+// Fix: Correct import path for types
 import { SiteSettings } from '../types';
 
 const ServicesPage: React.FC = () => {

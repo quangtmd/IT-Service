@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Correct import path for types
 import { Product } from '../../types';
 import ProductCard from '../shop/ProductCard';
 import Button from '../ui/Button';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
+// Fix: Correct import path for localDataService
 import { getFeaturedProducts } from '../../services/localDataService';
 import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 

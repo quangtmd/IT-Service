@@ -20,7 +20,8 @@ import FloatingActionButtons from './components/shared/FloatingActionButtons';
 import PCBuildSuggestionsPage from './pages/PCBuildSuggestionsPage'; // Import the new page
 
 // Auth and Admin
-import AdminPage from './pages/admin/AdminPage';
+// Fix: Correct import path for AdminPage
+import AdminPage from './pages/AdminPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';

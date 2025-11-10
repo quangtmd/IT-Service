@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants.tsx';
+import * as Constants from '../../../constants';
 import { SiteSettings, HomepageStatItem } from '../../../types';
 
 // New sub-component to handle individual stat item's intersection observation

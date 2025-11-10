@@ -38,6 +38,7 @@ const FloatingActionButtons: React.FC = () => {
         let showTimer: number;
         let hideTimer: number;
 
+        // Fix: Changed '/home' to '/' to match the actual homepage route in App.tsx
         // Only show bubble on the homepage and if AI is enabled
         if (isAiEnabled && location.pathname === '/') {
             const alreadyShown = sessionStorage.getItem(Constants.CHATBOT_AUTO_OPENED_KEY);

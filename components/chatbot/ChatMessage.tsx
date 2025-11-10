@@ -1,5 +1,6 @@
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Correct import path for types
 import { ChatMessage as ChatMessageType, GroundingChunk } from '../../types';
 import Markdown from 'react-markdown';
 

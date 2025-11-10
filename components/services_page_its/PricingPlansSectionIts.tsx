@@ -3,6 +3,7 @@ import { PricingPlan } from '../../types';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 import PricingPlanCard from '../shared/PricingPlanCard';
 import ConsultationRequestModal from '../shared/ConsultationRequestModal';
+import * as Constants from '../../constants';
 
 
 interface PricingPlansSectionItsProps {
