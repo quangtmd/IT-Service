@@ -83,6 +83,7 @@ export const MOCK_ARTICLES: Article[] = [
         author: 'Admin',
         date: '2024-07-10T11:00:00Z',
         category: 'So sánh',
+        content: 'Nội dung chi tiết so sánh card đồ họa...'
     },
     {
         id: 'it005',

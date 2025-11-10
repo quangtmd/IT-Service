@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import * as Constants from '../../constants.tsx';
+import * as Constants from '../../constants';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../ui/Button';

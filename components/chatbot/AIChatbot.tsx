@@ -4,7 +4,7 @@ import ChatMessage from './ChatMessage';
 import Button from '../ui/Button';
 import geminiService from '../../services/geminiService';
 import { Chat, GenerateContentResponse } from '@google/genai';
-import * as Constants from '../../constants.tsx'; 
+import * as Constants from '../../constants'; 
 import { useChatbotContext } from '../../contexts/ChatbotContext'; // Import the context hook
 import { saveChatLogSession } from '../../services/localDataService';
 

@@ -2,11 +2,11 @@
 
 // Fix: Import correct types from @google/genai
 import { GoogleGenAI, Chat, GenerateContentResponse, Part, Content, Type } from "@google/genai"; // Added Part, Content, Type
-import * as Constants from '../constants.tsx';
+import * as Constants from '../constants';
 // Fix: Added SiteSettings, Article, Product
 import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; 
 import { MOCK_SERVICES } from '../data/mockData';
-import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
+import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants';
 
 
 const CHAT_MODEL_NAME = 'gemini-2.5-flash';
@@ -284,6 +284,7 @@ export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
+                responseMimeType: 'application/json'
             }
         });
 

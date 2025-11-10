@@ -9,7 +9,8 @@ import * as ReactRouterDOM from 'react-router-dom';
 const getStatusColor = (status: OrderStatus) => {
     switch (status) {
         case 'Chờ xử lý': return 'bg-yellow-100 text-yellow-800';
-        case 'Đang xác nhận': return 'bg-cyan-100 text-cyan-800';
+        // Fix: Corrected typo 'Đang xác nhận' to 'Đã xác nhận' to match OrderStatus type
+        case 'Đã xác nhận': return 'bg-cyan-100 text-cyan-800';
         case 'Đang chuẩn bị': return 'bg-blue-100 text-blue-800';
         case 'Đang giao': return 'bg-indigo-100 text-indigo-800';
         case 'Hoàn thành': return 'bg-green-100 text-green-800';

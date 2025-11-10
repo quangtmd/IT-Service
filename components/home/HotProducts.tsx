@@ -5,7 +5,7 @@ import ProductCard from '../shop/ProductCard';
 import Button from '../ui/Button';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 import { getFeaturedProducts } from '../../services/localDataService';
-import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
+import BackendConnectionError from '../shared/BackendConnectionError'; // Cập nhật đường dẫn
 
 const HotProducts: React.FC = () => {
   const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });

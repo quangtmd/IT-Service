@@ -236,7 +236,7 @@ const ProductDetailPage: React.FC = () => {
                         {Object.entries(product.specifications).map(([key, value], index) => (
                             <tr key={key} className={`border-b border-borderDefault ${index % 2 === 0 ? 'bg-bgCanvas' : 'bg-bgBase'}`}>
                                 <td className="py-3 px-4 font-semibold text-textBase w-1/3 md:w-1/4">{key}</td>
-                                <td className="py-3 px-4 text-textMuted">{value}</td>
+                                <td className="py-3 px-4 text-textMuted">{value as React.ReactNode}</td>
                             </tr>
                         ))}
                         </tbody>

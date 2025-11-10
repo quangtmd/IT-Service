@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
-import * as Constants from '../../constants.tsx'; 
+import * as Constants from '../../constants'; 
 import { SiteSettings } from '../../types';
 
 const Footer: React.FC = () => {
