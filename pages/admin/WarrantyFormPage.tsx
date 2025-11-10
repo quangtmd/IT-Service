@@ -11,7 +11,7 @@ const WARRANTY_STATUS_OPTIONS: Array<WarrantyTicket['status']> = ['Mới Tạo',
 const WarrantyFormPage: React.FC = () => {
     const { ticketId } = useParams<{ ticketId: string }>();
     const navigate = useNavigate();
-    const isEditing = !!ticketId;
+    const isNew = !ticketId;
 
     const [formData, setFormData] = useState<Partial<WarrantyTicket> | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
@@ -19,7 +19,9 @@ const WarrantyFormPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const { currentUser, users } = useAuth();
     const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-    const [printMode, setPrintMode] = useState<'receipt' | 'return' | null>(null);
+    
+    const [isEditingMode, setIsEditingMode] = useState(isNew);
+    const [printPreview, setPrintPreview] = useState<'receipt' | 'return' | null>(null);
 
     const staffUsers = users.filter(u => u.role === 'admin' || u.role === 'staff');
 
@@ -34,12 +36,12 @@ const WarrantyFormPage: React.FC = () => {
                 const settingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
                 setSiteSettings(settingsRaw ? JSON.parse(settingsRaw) : Constants.INITIAL_SITE_SETTINGS);
 
-                if (isEditing) {
+                if (!isNew) {
                     const itemToEdit = allTickets.find(c => c.id === ticketId);
                     if (itemToEdit) {
                         setFormData(itemToEdit);
                     } else {
-                        setError('Không tìm thấy phiếu bảo hành để chỉnh sửa.');
+                        setError('Không tìm thấy phiếu bảo hành để xem/chỉnh sửa.');
                     }
                 } else {
                     setFormData({
@@ -55,18 +57,8 @@ const WarrantyFormPage: React.FC = () => {
             }
         };
         loadData();
-    }, [isEditing, ticketId, currentUser]);
+    }, [isNew, ticketId, currentUser]);
 
-    useEffect(() => {
-        if (printMode) {
-            const timer = setTimeout(() => {
-                window.print();
-                setPrintMode(null);
-            }, 100); // Delay to allow state update and re-render
-            return () => clearTimeout(timer);
-        }
-    }, [printMode]);
-    
     const handleOrderChange = (orderId: string) => {
         const selectedOrder = orders.find(o => o.id === orderId);
         if (selectedOrder) {
@@ -108,7 +100,7 @@ const WarrantyFormPage: React.FC = () => {
         }
 
         try {
-            if (isEditing) {
+            if (!isNew) {
                 await updateWarrantyTicket(ticketId!, formData as WarrantyTicket);
                 alert('Cập nhật phiếu bảo hành thành công!');
             } else {
@@ -120,39 +112,35 @@ const WarrantyFormPage: React.FC = () => {
             alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi lưu.');
         }
     };
-
-    if (isLoading) return <div className="admin-card"><div className="admin-card-body text-center">Đang tải...</div></div>;
-    if (error) return <div className="admin-card"><div className="admin-card-body text-center text-red-500">{error}</div></div>;
-    if (!formData) return null;
     
-    const selectedOrder = orders.find(o => o.id === formData.orderId);
-    const creator = staffUsers.find(u => u.id === formData.creatorId);
+    const selectedOrder = orders.find(o => o.id === formData?.orderId);
+    const creator = staffUsers.find(u => u.id === formData?.creatorId);
 
     const Slip: React.FC<{ type: 'receipt' | 'return' }> = ({ type }) => {
         const title = type === 'receipt' ? "Biên Nhận Bảo Hành" : "Phiếu Trả Bảo Hành";
         return (
-             <div className="print-container max-w-2xl mx-auto p-8 bg-white text-black font-sans">
+             <div className="max-w-2xl mx-auto p-8 bg-white text-black font-sans text-sm">
                 <div className="text-center mb-6">
                     <h2 className="text-xl font-bold uppercase">{siteSettings.companyName}</h2>
                     <p className="text-xs">{siteSettings.companyAddress} - ĐT: {siteSettings.companyPhone}</p>
                 </div>
                 <h2 className="text-2xl font-bold mb-4 text-center uppercase">{title}</h2>
-                <p className="text-center text-xs mb-4">Số: {formData.ticketNumber}</p>
-                <p className="text-center text-xs mb-6">Ngày: {new Date(formData.createdAt || Date.now()).toLocaleString('vi-VN')}</p>
+                <p className="text-center text-xs mb-4">Số: {formData?.ticketNumber}</p>
+                <p className="text-center text-xs mb-6">Ngày: {new Date(formData?.createdAt || Date.now()).toLocaleString('vi-VN')}</p>
 
                 <div className="border-t border-b py-2 my-4">
-                    <p><strong>Khách hàng:</strong> {formData.customerName}</p>
-                    <p><strong>Điện thoại:</strong> {formData.customerPhone}</p>
+                    <p><strong>Khách hàng:</strong> {formData?.customerName}</p>
+                    <p><strong>Điện thoại:</strong> {formData?.customerPhone}</p>
                 </div>
 
-                <p><strong>Tên thiết bị:</strong> {formData.productModel}</p>
-                <p><strong>Serial:</strong> {formData.productSerial}</p>
-                <p className="mt-2"><strong>Mô tả sự cố:</strong> {formData.reportedIssue}</p>
-                {type === 'return' && <p className="mt-2"><strong>Kết quả xử lý:</strong> {formData.resolution_notes || 'Chưa có'}</p>}
+                <p><strong>Tên thiết bị:</strong> {formData?.productModel}</p>
+                <p><strong>Serial:</strong> {formData?.productSerial}</p>
+                <p className="mt-2"><strong>Mô tả sự cố:</strong> {formData?.reportedIssue}</p>
+                {type === 'return' && <p className="mt-2"><strong>Kết quả xử lý:</strong> {formData?.resolution_notes || 'Chưa có'}</p>}
 
                 <div className="mt-6 text-sm">
-                    <p><strong>Ngày nhận:</strong> {formData.receiveDate ? new Date(formData.receiveDate).toLocaleDateString('vi-VN') : ''}</p>
-                    <p><strong>Ngày hẹn trả:</strong> {formData.returnDate ? new Date(formData.returnDate).toLocaleDateString('vi-VN') : ''}</p>
+                    <p><strong>Ngày nhận:</strong> {formData?.receiveDate ? new Date(formData.receiveDate).toLocaleDateString('vi-VN') : ''}</p>
+                    <p><strong>Ngày hẹn trả:</strong> {formData?.returnDate ? new Date(formData.returnDate).toLocaleDateString('vi-VN') : ''}</p>
                     <p><strong>Nhân viên tiếp nhận:</strong> {creator?.username}</p>
                 </div>
                 
@@ -163,73 +151,124 @@ const WarrantyFormPage: React.FC = () => {
             </div>
         )
     };
+    
+    const PrintPreviewModal: React.FC<{ type: 'receipt' | 'return', onClose: () => void }> = ({ type, onClose }) => {
+        useEffect(() => {
+            const handleAfterPrint = () => {
+                document.body.classList.remove('printing');
+            };
+            window.addEventListener('afterprint', handleAfterPrint);
+            return () => window.removeEventListener('afterprint', handleAfterPrint);
+        }, []);
+
+        const handlePrint = () => {
+            document.body.classList.add('printing');
+            window.print();
+        };
+
+        return (
+            <div className="admin-modal-overlay" onClick={onClose}>
+                <div className="admin-modal-panel max-w-4xl" onClick={e => e.stopPropagation()}>
+                    <div className="admin-modal-header no-print">
+                        <h4 className="admin-modal-title">Xem trước Phiếu In</h4>
+                        <div>
+                            <Button type="button" variant="outline" onClick={onClose} className="mr-2">Đóng</Button>
+                            <Button type="button" variant="primary" onClick={handlePrint} leftIcon={<i className="fas fa-print"></i>}>In Phiếu</Button>
+                        </div>
+                    </div>
+                    <div className="admin-modal-body bg-gray-300">
+                        <div className="print-section bg-white shadow-lg mx-auto" style={{ width: '210mm', minHeight: '297mm' }}>
+                            <Slip type={type} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    if (isLoading) return <div className="admin-card"><div className="admin-card-body text-center">Đang tải...</div></div>;
+    if (error) return <div className="admin-card"><div className="admin-card-body text-center text-red-500">{error}</div></div>;
+    if (!formData) return null;
 
     return (
-        <div className={`admin-card ${printMode ? `print-mode print-${printMode}`: ''}`}>
-            <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                <div className="admin-card-header flex justify-between items-center no-print">
-                    <h3 className="admin-card-title">{isEditing ? `Sửa Phiếu BH #${formData.ticketNumber}` : 'Tạo Phiếu Bảo Hành Mới'}</h3>
-                    <div className="flex items-center gap-2">
-                        <Button type="button" variant="outline" onClick={() => setPrintMode('receipt')} leftIcon={<i className="fas fa-print"></i>}>In Phiếu Nhận</Button>
-                        <Button type="button" variant="outline" onClick={() => setPrintMode('return')} leftIcon={<i className="fas fa-print"></i>}>In Phiếu Trả</Button>
-                        <Button type="button" variant="outline" onClick={() => navigate('/admin/warranty_tickets')}>Hủy</Button>
-                        <Button type="submit" variant="primary">Lưu</Button>
+        <>
+            <div className="admin-card">
+                <form id="warranty-form" onSubmit={handleSubmit} className="flex flex-col h-full">
+                    <div className="admin-card-header flex justify-between items-center">
+                        <h3 className="admin-card-title">{isNew ? 'Tạo Phiếu Bảo Hành Mới' : `Phiếu BH #${formData.ticketNumber}`}</h3>
+                        <div className="flex items-center gap-2">
+                             <Button type="button" variant="outline" onClick={() => setPrintPreview('receipt')} leftIcon={<i className="fas fa-print"></i>}>In Phiếu Nhận</Button>
+                             <Button type="button" variant="outline" onClick={() => setPrintPreview('return')} leftIcon={<i className="fas fa-print"></i>}>In Phiếu Trả</Button>
+                            {isEditingMode ? (
+                                <>
+                                    {!isNew && <Button type="button" variant="outline" onClick={() => setIsEditingMode(false)}>Hủy</Button>}
+                                    <Button type="submit" variant="primary">Lưu</Button>
+                                </>
+                            ) : (
+                                <Button type="button" variant="primary" onClick={() => setIsEditingMode(true)}>Sửa</Button>
+                            )}
+                        </div>
                     </div>
-                </div>
-                <div className="admin-card-body">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="admin-form-group">
-                            <label>Đơn hàng gốc</label>
-                            <select name="orderId" value={formData.orderId || ''} onChange={(e) => handleOrderChange(e.target.value)}>
-                                <option value="">-- Chọn đơn hàng (tùy chọn) --</option>
-                                {orders.map(o => (
-                                    <option key={o.id} value={o.id}>#{o.id.slice(-6)} - {o.customerInfo.fullName} - {o.totalAmount.toLocaleString('vi-VN')}₫</option>
-                                ))}
-                            </select>
-                        </div>
-                         <div className="admin-form-group">
-                            <label>Sản phẩm cần bảo hành</label>
-                            <select name="productId" value={formData.productId || ''} onChange={(e) => handleProductChange(e.target.value)} disabled={!selectedOrder}>
-                                <option value="">-- Chọn sản phẩm --</option>
-                                {selectedOrder?.items.map(item => (
-                                    <option key={item.productId} value={item.productId}>{item.productName}</option>
-                                ))}
-                            </select>
-                        </div>
 
-                        <div className="admin-form-group"><label>Tên khách hàng *</label><input type="text" name="customerName" value={formData.customerName || ''} onChange={handleChange} required /></div>
-                        <div className="admin-form-group"><label>Số điện thoại</label><input type="tel" name="customerPhone" value={formData.customerPhone || ''} onChange={handleChange} /></div>
-                        <div className="admin-form-group"><label>Model sản phẩm</label><input type="text" name="productModel" value={formData.productModel || ''} onChange={handleChange} /></div>
-                        <div className="admin-form-group"><label>Serial sản phẩm</label><input type="text" name="productSerial" value={formData.productSerial || ''} onChange={handleChange} /></div>
+                    <div className="admin-card-body">
+                        {isEditingMode ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="admin-form-group">
+                                    <label>Đơn hàng gốc</label>
+                                    <select name="orderId" value={formData.orderId || ''} onChange={(e) => handleOrderChange(e.target.value)}>
+                                        <option value="">-- Chọn đơn hàng (tùy chọn) --</option>
+                                        {orders.map(o => (
+                                            <option key={o.id} value={o.id}>#{o.id.slice(-6)} - {o.customerInfo.fullName} - {o.totalAmount.toLocaleString('vi-VN')}₫</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                 <div className="admin-form-group">
+                                    <label>Sản phẩm cần bảo hành</label>
+                                    <select name="productId" value={formData.productId || ''} onChange={(e) => handleProductChange(e.target.value)} disabled={!selectedOrder}>
+                                        <option value="">-- Chọn sản phẩm --</option>
+                                        {selectedOrder?.items.map(item => (
+                                            <option key={item.productId} value={item.productId}>{item.productName}</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                        <div className="md:col-span-2 admin-form-group">
-                            <label>Mô tả sự cố *</label>
-                            <textarea name="reportedIssue" value={formData.reportedIssue || ''} onChange={handleChange} required rows={3}></textarea>
-                        </div>
-                         <div className="md:col-span-2 admin-form-group">
-                            <label>Ghi chú xử lý (hiển thị trên phiếu trả)</label>
-                            <textarea name="resolution_notes" value={formData.resolution_notes || ''} onChange={handleChange} rows={3}></textarea>
-                        </div>
-                        <div className="admin-form-group">
-                            <label>Trạng thái *</label>
-                            <select name="status" value={formData.status || 'Đang tiếp nhận'} onChange={handleChange} required>
-                                {WARRANTY_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
-                        </div>
-                         <div className="admin-form-group">
-                            <label>Phí sửa chữa (nếu có)</label>
-                            <input type="number" name="totalAmount" value={formData.totalAmount || 0} onChange={handleChange} />
-                        </div>
-                        <div className="admin-form-group"><label>Ngày nhận</label><input type="date" name="receiveDate" value={formData.receiveDate?.split('T')[0] || ''} onChange={handleChange} /></div>
-                        <div className="admin-form-group"><label>Ngày dự kiến trả</label><input type="date" name="returnDate" value={formData.returnDate?.split('T')[0] || ''} onChange={handleChange} /></div>
+                                <div className="admin-form-group"><label>Tên khách hàng *</label><input type="text" name="customerName" value={formData.customerName || ''} onChange={handleChange} required /></div>
+                                <div className="admin-form-group"><label>Số điện thoại</label><input type="tel" name="customerPhone" value={formData.customerPhone || ''} onChange={handleChange} /></div>
+                                <div className="admin-form-group"><label>Model sản phẩm</label><input type="text" name="productModel" value={formData.productModel || ''} onChange={handleChange} /></div>
+                                <div className="admin-form-group"><label>Serial sản phẩm</label><input type="text" name="productSerial" value={formData.productSerial || ''} onChange={handleChange} /></div>
+
+                                <div className="md:col-span-2 admin-form-group">
+                                    <label>Mô tả sự cố *</label>
+                                    <textarea name="reportedIssue" value={formData.reportedIssue || ''} onChange={handleChange} required rows={3}></textarea>
+                                </div>
+                                 <div className="md:col-span-2 admin-form-group">
+                                    <label>Ghi chú xử lý (hiển thị trên phiếu trả)</label>
+                                    <textarea name="resolution_notes" value={formData.resolution_notes || ''} onChange={handleChange} rows={3}></textarea>
+                                </div>
+                                <div className="admin-form-group">
+                                    <label>Trạng thái *</label>
+                                    <select name="status" value={formData.status || 'Đang tiếp nhận'} onChange={handleChange} required>
+                                        {WARRANTY_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                    </select>
+                                </div>
+                                 <div className="admin-form-group">
+                                    <label>Phí sửa chữa (nếu có)</label>
+                                    <input type="number" name="totalAmount" value={formData.totalAmount || 0} onChange={handleChange} />
+                                </div>
+                                <div className="admin-form-group"><label>Ngày nhận</label><input type="date" name="receiveDate" value={formData.receiveDate?.split('T')[0] || ''} onChange={handleChange} /></div>
+                                <div className="admin-form-group"><label>Ngày dự kiến trả</label><input type="date" name="returnDate" value={formData.returnDate?.split('T')[0] || ''} onChange={handleChange} /></div>
+                            </div>
+                        ) : (
+                             <div className="p-4 bg-gray-100 rounded">
+                                 <Slip type="receipt" />
+                             </div>
+                        )}
                     </div>
-                </div>
-            </form>
-            <div className="print-wrapper hidden">
-                {printMode === 'receipt' && <Slip type="receipt" />}
-                {printMode === 'return' && <Slip type="return" />}
+                </form>
             </div>
-        </div>
+            
+             {printPreview && <PrintPreviewModal type={printPreview} onClose={() => setPrintPreview(null)} />}
+        </>
     );
 };
 

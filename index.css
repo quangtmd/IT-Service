@@ -1,4 +1,4 @@
-@tailwind base;
+ @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -715,5 +715,21 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
   }
   .print-table th {
     background-color: #f2f2f2 !important;
+  }
+}
+
+/* ADDED FOR MODAL PRINTING */
+@media print {
+  body.printing * {
+    visibility: hidden;
+  }
+  body.printing .print-section, body.printing .print-section * {
+    visibility: visible;
+  }
+  body.printing .print-section {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
   }
 }
