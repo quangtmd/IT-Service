@@ -201,8 +201,8 @@ const OrderManagementView: React.FC = () => {
                     <button className="hover:text-primary transition-colors"><i className="fas fa-filter mr-1"></i>Bộ lọc</button>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">Tạo phiếu dịch vụ</Button>
-                    <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">Tạo đơn bán hàng</Button>
+                    <Button onClick={() => navigate('/admin/service_tickets/new')} variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">Tạo phiếu dịch vụ</Button>
+                    <Button onClick={() => navigate('/admin/orders/new')} variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">Tạo đơn bán hàng</Button>
                     <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">Thêm từ excel</Button>
                     <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10 !px-3"><i className="fas fa-search"></i></Button>
                 </div>

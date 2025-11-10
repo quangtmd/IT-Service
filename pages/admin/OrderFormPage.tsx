@@ -15,7 +15,7 @@ const OrderFormPage: React.FC = () => {
     const { orderId } = useParams<{ orderId: string }>();
     const navigate = useNavigate();
     const isEditing = !!orderId;
-    const { users } = useAuth();
+    const { users, currentUser } = useAuth();
 
     const [formData, setFormData] = useState<Partial<Order> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +69,7 @@ const OrderFormPage: React.FC = () => {
                         status: 'Phiếu tạm',
                         customerInfo: { fullName: '', phone: '', address: '', email: '' },
                         paymentInfo: { method: 'Tiền mặt', status: 'Chưa thanh toán' },
+                        creatorId: currentUser?.id, // Default to current user
                     });
                 }
             } catch (err) {
@@ -78,7 +79,7 @@ const OrderFormPage: React.FC = () => {
             }
         };
         loadData();
-    }, [isEditing, orderId]);
+    }, [isEditing, orderId, currentUser]);
     
     useEffect(() => {
         if(formData?.items) {
@@ -171,10 +172,15 @@ const OrderFormPage: React.FC = () => {
     const filteredProducts = useMemo(() =>
         productSearch ? products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())).slice(0, 5) : [],
     [products, productSearch]);
+    
+    const creator = useMemo(() => staffUsers.find(u => u.id === formData?.creatorId), [staffUsers, formData?.creatorId]);
+
 
     if (isLoading) return <div className="admin-card"><div className="admin-card-body text-center">Đang tải...</div></div>;
     if (error) return <div className="admin-card"><div className="admin-card-body text-center text-red-500">{error}</div></div>;
     if (!formData) return null;
+
+    const selectedCustomer = customers.find(c => c.id === formData.userId);
 
     return (
         <div className="admin-card">
@@ -189,7 +195,7 @@ const OrderFormPage: React.FC = () => {
                 
                 {/* Main Content & Print Area */}
                 <div className="admin-card-body print-wrapper">
-                    <div className="print-container max-w-4xl mx-auto p-4 bg-white">
+                     <div className="print-container max-w-4xl mx-auto p-4 bg-white">
                         {/* Print Header */}
                         <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                             <div>
@@ -216,6 +222,7 @@ const OrderFormPage: React.FC = () => {
                                 <p><strong className="w-24 inline-block">Mã số thuế:</strong></p>
                                 <p><strong className="w-24 inline-block">Địa chỉ:</strong> {formData.customerInfo?.address}</p>
                                 <p><strong className="w-24 inline-block">Điện thoại:</strong> {formData.customerInfo?.phone}</p>
+                                <p><strong className="w-24 inline-block">Nhân viên bán:</strong> {creator?.username || 'N/A'}</p>
                             </div>
                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 no-print">
                                 <div className="admin-form-group relative">
@@ -274,14 +281,25 @@ const OrderFormPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Order Status */}
-                        <div className="admin-form-group mt-4 no-print">
-                            <label>Trạng thái đơn hàng</label>
-                            <select name="status" value={formData.status} onChange={handleChange}>
-                                {ORDER_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
+                        {/* Other Info */}
+                        <div className="no-print mt-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="admin-form-group">
+                                    <label>Trạng thái đơn hàng</label>
+                                    <select name="status" value={formData.status} onChange={handleChange}>
+                                        {ORDER_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                    </select>
+                                </div>
+                                <div className="admin-form-group">
+                                    <label>Nhân viên bán hàng</label>
+                                    <select name="creatorId" value={formData.creatorId || ''} onChange={handleChange}>
+                                        <option value="">-- Chọn nhân viên --</option>
+                                        {staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        
+
                         {/* Signatures */}
                         <div className="mt-16 grid grid-cols-5 gap-4 text-center text-sm">
                             <div><p className="font-bold">Khách hàng</p><p>(Ký & ghi rõ họ tên)</p></div>
