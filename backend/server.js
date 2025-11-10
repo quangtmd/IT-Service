@@ -954,37 +954,26 @@ app.get('/api/inventory', async (req, res) => {
 // Warranty Claims
 app.get('/api/warranty-claims', async (req, res) => {
     try {
-        // This query joins tables to get all necessary info and maps DB columns to frontend keys
         const query = `
             SELECT 
-                wt.id,
-                wt.claim_code,
-                wt.order_id,
-                wt.product_id,
-                wt.product_name,
-                wt.customer_id,
-                wt.customer_name,
-                wt.reported_issue,
-                wt.status,
-                wt.created_at
-            FROM WarrantyTickets wt
-            ORDER BY wt.created_at DESC
+                id,
+                claim_code,
+                order_id,
+                product_id,
+                product_name,
+                customer_id,
+                customer_name,
+                reported_issue,
+                status,
+                created_at
+            FROM WarrantyTickets
+            ORDER BY created_at DESC
         `;
         const [rows] = await pool.query(query);
         res.json(rows);
     } catch (error) {
-        // If the query fails, it might be due to the old schema. Try a fallback.
-        if (error.code === 'ER_BAD_FIELD_ERROR') {
-            try {
-                const fallbackQuery = 'SELECT *, createdAt as created_at, orderId as order_id, productId as product_id, issueDescription as reported_issue FROM WarrantyTickets ORDER BY createdAt DESC';
-                const [fallbackRows] = await pool.query(fallbackQuery);
-                // Note: Fallback data will be missing some fields like customer_name, product_name
-                return res.json(fallbackRows);
-            } catch (fallbackError) {
-                 return res.status(500).json({ message: 'Lỗi server khi truy vấn phiếu bảo hành (cả fallback cũng thất bại)', error: fallbackError.message });
-            }
-        }
-        res.status(500).json({ message: 'Lỗi server khi truy vấn phiếu bảo hành', error: error.message });
+        console.error("Lỗi khi truy vấn phiếu bảo hành:", error);
+        res.status(500).json({ message: 'Lỗi server khi truy vấn phiếu bảo hành. Vui lòng kiểm tra lại DB schema có khớp với file README.md không.', error: error.message });
     }
 });
 
@@ -1003,8 +992,6 @@ app.post('/api/warranty-claims', async (req, res) => {
             reported_issue: claim.reported_issue,
             status: claim.status
         };
-        // This assumes the DB schema matches the new snake_case format
-        // The user will need to update their schema.
         await pool.query('INSERT INTO WarrantyTickets SET ?', newClaim);
         res.status(201).json(newClaim);
     } catch (error) {
@@ -1017,7 +1004,6 @@ app.put('/api/warranty-claims/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const claim = req.body;
-        // Only update fields that can be changed
         const updates = {
             order_id: claim.order_id,
             product_id: claim.product_id,
@@ -1031,7 +1017,7 @@ app.put('/api/warranty-claims/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy phiếu bảo hành' });
         }
-        res.json({ id, ...updates });
+        res.json({ id, ...claim });
     } catch (error) {
         console.error("Error updating warranty claim:", error);
         res.status(500).json({ message: 'Lỗi server', error: error.message });

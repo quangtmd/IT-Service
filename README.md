@@ -167,8 +167,20 @@ CREATE TABLE `StockEntries` (`id` varchar(255) NOT NULL, `type` enum('in','out')
 CREATE TABLE `StockEntryItems` (`stockEntryId` varchar(255) NOT NULL, `productId` varchar(255) NOT NULL, `quantity` int(11) NOT NULL, `costPrice` decimal(15,2) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Tasks` (`id` varchar(255) NOT NULL, `projectId` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `assigneeId` varchar(255) DEFAULT NULL, `dueDate` date DEFAULT NULL, `status` varchar(100) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `UserDetails` (`userId` varchar(255) NOT NULL, `fullName` varchar(255) DEFAULT NULL, `phone` varchar(20) DEFAULT NULL, `address` text, `imageUrl` text, `dateOfBirth` date DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `WarrantyTickets` (`id` varchar(255) NOT NULL, `orderId` varchar(255) DEFAULT NULL, `productId` varchar(255) DEFAULT NULL, `issueDescription` text, `status` varchar(255) DEFAULT NULL, `createdAt` timestamp NULL DEFAULT current_timestamp()) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Returns` (`id` varchar(255) NOT NULL, `orderId` varchar(255) NOT NULL, `reason` text, `status` ENUM('Đang chờ','Đã duyệt','Đã từ chối') NOT NULL DEFAULT 'Đang chờ', `refundAmount` decimal(15,2) DEFAULT NULL, `createdAt` timestamp NULL DEFAULT current_timestamp()) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `WarrantyTickets` (
+  `id` varchar(255) NOT NULL,
+  `claim_code` varchar(255) NOT NULL,
+  `order_id` varchar(255) NOT NULL,
+  `product_id` varchar(255) NOT NULL,
+  `product_name` varchar(255) NOT NULL,
+  `customer_id` varchar(255) DEFAULT NULL,
+  `customer_name` varchar(255) NOT NULL,
+  `reported_issue` text NOT NULL,
+  `status` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- =================================================================
@@ -210,8 +222,8 @@ ALTER TABLE `StockEntries` ADD PRIMARY KEY (`id`), ADD KEY `supplierId` (`suppli
 ALTER TABLE `StockEntryItems` ADD PRIMARY KEY (`stockEntryId`,`productId`), ADD KEY `productId` (`productId`);
 ALTER TABLE `Tasks` ADD PRIMARY KEY (`id`), ADD KEY `projectId` (`projectId`), ADD KEY `assigneeId` (`assigneeId`);
 ALTER TABLE `UserDetails` ADD PRIMARY KEY (`userId`);
-ALTER TABLE `WarrantyTickets` ADD PRIMARY KEY (`id`), ADD KEY `orderId` (`orderId`), ADD KEY `productId` (`productId`);
 ALTER TABLE `Returns` ADD PRIMARY KEY (`id`), ADD KEY `orderId` (`orderId`);
+ALTER TABLE `WarrantyTickets` ADD PRIMARY KEY (`id`), ADD KEY `order_id` (`order_id`), ADD KEY `product_id` (`product_id`), ADD KEY `customer_id` (`customer_id`);
 ALTER TABLE `AuditLogs` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 -- =================================================================
@@ -341,7 +353,7 @@ INSERT IGNORE INTO `Products` (`id`, `name`, `price`, `originalPrice`, `stock`, 
 ('VGA001', 'VGA GIGABYTE GeForce RTX 4060 WINDFORCE OC 8G', 8690000.00, 9500000.00, 30, 'vga', 'Linh kiện máy tính', 'VGA (Card màn hình)', 'Gigabyte', '[\"https://images.unsplash.com/photo-1678846395536-09a8263d4109?q=80&w=800\"]', 'Hiệu năng tốt cho gaming Full HD, hỗ trợ DLSS 3.', '{\"GPU\": \"RTX 4060\", \"Bộ nhớ\": \"8GB GDDR6\"}', '[\"RTX 40 series\", \"Full HD\", \"Khuyến mãi\", \"Nổi bật\"]', 1),
 ('VGA002', 'VGA ASUS TUF Gaming GeForce RTX 4070 Ti SUPER 16GB', 25990000.00, NULL, 10, 'vga', 'Linh kiện máy tính', 'VGA (Card màn hình)', 'ASUS', '[\"https://images.unsplash.com/photo-1694652467926-38d61741b002?q=80&w=800\"]', 'Sức mạnh vượt trội cho gaming 2K và 4K.', '{\"GPU\": \"RTX 4070 Ti SUPER\", \"Bộ nhớ\": \"16GB GDDR6X\"}', '[\"Gaming 4K\", \"TUF Gaming\"]', 1),
 ('VGA003', 'VGA MSI GeForce RTX 3060 VENTUS 2X 12G OC', 7490000.00, 8200000.00, 40, 'vga', 'Linh kiện máy tính', 'VGA (Card màn hình)', 'MSI', '[\"https://images.unsplash.com/photo-1616763355548-1b606f439f86?q=80&w=800\"]', 'Card đồ họa quốc dân, cân tốt các game eSports.', '{\"GPU\": \"RTX 3060\", \"Bộ nhớ\": \"12GB GDDR6\"}', '[\"Bán chạy\", \"Quốc dân\"]', 1),
-('VGA004', 'VGA SAPPHIRE PULSE Radeon RX 7800 XT 16GB', 14500000.00, NULL, 15, 'vga', 'Linh kiện máy tính', 'VGA (Card màn hình)', 'Sapphire', '[\"https://images.unsplash.com/photo-1635399912066-88031a02a8ad?q=80&w=800\"]', 'Đối thủ nặng ký trong phân khúc gaming 2K.', '{\"GPU\": \"RX 7800 XT\", \"Bộ nhớ\": \"16GB GDDR6\"}', '[\"AMD\", \"Gaming 2K\"]', 1),
+('VGA004', 'VGA SAPPHIRE PULSE Radeon RX 7800 XT 16GB', 14500000.00, NULL, 15, 'vga', 'Linh kiện máy tính', 'VGA (Card màn hình)', 'Sapphire', '[\"https://images.unsplash.com/photo-1635399912066-8803a02a8ad?q=80&w=800\"]', 'Đối thủ nặng ký trong phân khúc gaming 2K.', '{\"GPU\": \"RX 7800 XT\", \"Bộ nhớ\": \"16GB GDDR6\"}', '[\"AMD\", \"Gaming 2K\"]', 1),
 ('SCR001', 'Màn hình LG 27GP850-B 27 inch 2K 165Hz Nano IPS', 7990000.00, 8990000.00, 20, 'man_hinh', 'Thiết bị ngoại vi', 'Màn hình (LCD, LED, 2K, 4K, Gaming…)', 'LG', '[\"https://images.unsplash.com/photo-1586221532552-32a24683f3b9?q=80&w=800\"]', 'Màn hình gaming 2K đỉnh cao với tấm nền Nano IPS.', '{\"Kích thước\": \"27 inch\", \"Độ phân giải\": \"2K (2560x1440)\", \"Tần số quét\": \"165Hz\"}', '[\"Gaming\", \"2K\", \"165Hz\", \"Bán chạy\"]', 1),
 ('SCR002', 'Màn hình Dell UltraSharp U2723QE 27 inch 4K IPS', 12500000.00, NULL, 15, 'man_hinh', 'Thiết bị ngoại vi', 'Màn hình (LCD, LED, 2K, 4K, Gaming…)', 'Dell', '[\"https://images.unsplash.com/photo-1593344484962-796b16d00ea2?q=80&w=800\"]', 'Dành cho dân đồ họa chuyên nghiệp, màu sắc chính xác.', '{\"Kích thước\": \"27 inch\", \"Độ phân giải\": \"4K (3840x2160)\", \"Tấm nền\": \"IPS Black\"}', '[\"Đồ họa\", \"4K\", \"USB-C\"]', 1),
 ('SCR003', 'Màn hình ViewSonic VX2428 24 inch FHD 165Hz IPS', 3590000.00, NULL, 40, 'man_hinh', 'Thiết bị ngoại vi', 'Màn hình (LCD, LED, 2K, 4K, Gaming…)', 'ViewSonic', '[\"https://images.unsplash.com/photo-1616296495912-a2da806e3954?q=80&w=800\"]', 'Màn hình gaming giá rẻ p/p tốt cho game eSports.', '{\"Kích thước\": \"24 inch\", \"Độ phân giải\": \"FHD (1920x1080)\", \"Tần số quét\": \"165Hz\"}', '[\"Giá rẻ\", \"eSports\"]', 1),
@@ -383,8 +395,8 @@ INSERT IGNORE INTO `ServiceTickets` (`id`, `ticket_code`, `customerId`, `deviceN
 ('TCK001', 'TCK-001', 'cust002', 'Laptop Dell Inspiron', 'Máy không lên nguồn', 'Mới', '2025-10-08 09:00:00', 'staff001', NULL, '{\"fullName\": \"Trần Thị Bích\", \"phone\": \"0935987654\"}'),
 ('TCK002', 'TCK-002', 'cust003', 'PC Gaming', 'Máy tính tự khởi động lại khi chơi game', 'Đang xử lý', '2025-10-09 11:00:00', 'staff001', NULL, '{\"fullName\": \"Lê Hoàng Long\", \"phone\": \"0978111222\"}');
 
-INSERT IGNORE INTO `WarrantyTickets` (`id`, `orderId`, `productId`, `issueDescription`, `status`, `createdAt`) VALUES
-('WAR001', 'ORD001', 'PCGM001', 'Card màn hình không xuất hình', 'Đang tiếp nhận', '2025-10-08 10:00:00');
+INSERT IGNORE INTO `WarrantyTickets` (`id`, `claim_code`, `order_id`, `product_id`, `product_name`, `customer_id`, `customer_name`, `reported_issue`, `status`, `created_at`) VALUES
+('WAR001', 'BH-1762592400000', 'ORD001', 'PCGM001', 'PC Gaming IQ Eagle', 'cust001', 'Nguyễn Văn An', 'Card màn hình không xuất hình', 'Đang tiếp nhận', '2025-10-08 10:00:00');
 
 INSERT IGNORE INTO `ProductReviews` (`id`, `productId`, `userId`, `rating`, `comment`) VALUES
 ('REV001', 'PCGM001', 'cust001', 5, 'Máy chạy rất mượt, shop tư vấn nhiệt tình!');
