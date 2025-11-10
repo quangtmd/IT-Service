@@ -179,7 +179,8 @@ CREATE TABLE `ServiceTickets` (
   `invoiceId` VARCHAR(255) NULL,
   `receiverId` VARCHAR(255) NULL,
   `work_items` TEXT NULL,
-  `appointment_date` DATETIME NULL
+  `appointment_date` DATETIME NULL,
+  `physical_condition` TEXT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Shipments` (`id` varchar(255) NOT NULL, `orderId` varchar(255) NOT NULL, `trackingCode` varchar(255) DEFAULT NULL, `shippingPartner` varchar(255) DEFAULT NULL, `status` varchar(255) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `SiteSettings` (`settingKey` varchar(255) NOT NULL, `settingValue` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`settingValue`)), `updatedAt` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -201,6 +202,7 @@ CREATE TABLE `WarrantyTickets` (
   `status` varchar(255) NOT NULL,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `reportedIssue` text,
+  `resolution_notes` TEXT NULL,
   `receiveDate` date DEFAULT NULL,
   `returnDate` date DEFAULT NULL,
   `orderId` varchar(255) DEFAULT NULL,

@@ -137,6 +137,8 @@ const ServiceTicketFormPage: React.FC = () => {
     if (!formData) return null;
 
     const assignedStaff = staffUsers.find(u => u.id === formData.assigneeId);
+    const receiver = staffUsers.find(u => u.id === formData.receiverId);
+
 
     return (
         <div className="admin-card !bg-transparent !border-none !shadow-none">
@@ -197,6 +199,10 @@ const ServiceTicketFormPage: React.FC = () => {
                                     <label>Mô tả sự cố/yêu cầu</label>
                                     <textarea name="reported_issue" value={formData.reported_issue || ''} onChange={handleChange} rows={4}></textarea>
                                 </div>
+                                <div className="admin-form-group sm:col-span-2">
+                                    <label>Tình trạng tiếp nhận & Phụ kiện đi kèm</label>
+                                    <textarea name="physical_condition" value={formData.physical_condition || ''} onChange={handleChange} rows={3} placeholder="Ví dụ: Máy trầy góc phải, kèm sạc zin"></textarea>
+                                </div>
                             </div>
                         </div>
                          <div className="admin-card">
@@ -225,7 +231,7 @@ const ServiceTicketFormPage: React.FC = () => {
                                         </select>
                                     </div>
                                     <div className="admin-form-group">
-                                        <label>Nhân viên phụ trách</label>
+                                        <label>Nhân viên phụ trách (Kỹ thuật)</label>
                                         <select name="assigneeId" value={formData.assigneeId || ''} onChange={handleChange} className="!py-2">
                                             <option value="">-- Chưa gán --</option>
                                             {staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
@@ -239,28 +245,35 @@ const ServiceTicketFormPage: React.FC = () => {
 
                 {/* --- Print Section --- */}
                 <div className="print-wrapper hidden print:block">
-                   <div className="print-container max-w-2xl mx-auto p-4 bg-white">
+                   <div className="print-container max-w-2xl mx-auto p-8 bg-white text-black font-sans text-sm">
                         <div className="text-center mb-6">
                             <h2 className="text-xl font-bold uppercase">{siteSettings.companyName}</h2>
                             <p className="text-xs">{siteSettings.companyAddress}</p>
                             <p className="text-xs">ĐT: {siteSettings.companyPhone}</p>
                         </div>
-                        <h2 className="text-lg font-bold mb-4 text-center uppercase">Phiếu Biên Nhận Dịch Vụ</h2>
+                        <h2 className="text-2xl font-bold mb-6 text-center uppercase">Phiếu Biên Nhận Dịch Vụ</h2>
                         
                         <div className="text-right text-xs mb-4">
                             <p>Số: <span className="font-semibold">{formData.ticket_code || '...'}</span></p>
-                            <p>Ngày: <span className="font-semibold">{new Date(formData.createdAt || Date.now()).toLocaleDateString('vi-VN')}</span></p>
+                            <p>Ngày: <span className="font-semibold">{new Date(formData.createdAt || Date.now()).toLocaleString('vi-VN')}</span></p>
                         </div>
 
-                         <div className="border-t border-b border-dashed border-black py-2 mb-4 text-sm">
-                            <p><strong>Khách hàng:</strong> {formData.customer_info?.fullName}</p>
-                            <p><strong>Điện thoại:</strong> {formData.customer_info?.phone}</p>
+                         <div className="border-2 border-black p-3">
+                            <h3 className="text-base font-bold mb-2">Thông tin Khách hàng & Thiết bị</h3>
+                            <div className="grid grid-cols-2 gap-x-4 mb-2">
+                                <p><strong>Tên khách hàng:</strong> {formData.customer_info?.fullName}</p>
+                                <p><strong>Số điện thoại:</strong> {formData.customer_info?.phone}</p>
+                            </div>
+                            <div className="border-t border-black pt-2">
+                                 <h4 className="font-bold">Thông tin thiết bị</h4>
+                                 <p><strong>Tên thiết bị:</strong> {formData.deviceName}</p>
+                                 <p className="mt-1"><strong>Mô tả sự cố/yêu cầu:</strong> {formData.reported_issue}</p>
+                                 <div className="mt-1">
+                                    <p><strong>Tình trạng tiếp nhận & Phụ kiện:</strong></p>
+                                    <div className="border p-2 min-h-[60px]">{formData.physical_condition}</div>
+                                 </div>
+                            </div>
                          </div>
-
-                        <p className="text-sm"><strong>Thiết bị:</strong> {formData.deviceName}</p>
-                        <p className="text-sm mt-2"><strong>Tình trạng/Yêu cầu:</strong> {formData.reported_issue}</p>
-                        <p className="text-sm mt-2"><strong>Trạng thái:</strong> {formData.status}</p>
-                        <p className="text-sm mt-2"><strong>Nhân viên phụ trách:</strong> {assignedStaff?.username || 'Chưa gán'}</p>
                         
                          <div className="mt-16 grid grid-cols-2 gap-4 text-center text-xs">
                             <div><p className="font-bold">Khách hàng</p><p>(Ký & ghi rõ họ tên)</p></div>
@@ -268,7 +281,6 @@ const ServiceTicketFormPage: React.FC = () => {
                         </div>
                    </div>
                 </div>
-
             </form>
         </div>
     );

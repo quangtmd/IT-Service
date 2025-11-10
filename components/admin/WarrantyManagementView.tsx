@@ -125,9 +125,6 @@ const WarrantyManagementView: React.FC = () => {
             <div className="flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => navigate('/admin/warranty_tickets/new')} className="bg-blue-600 hover:bg-blue-700 !py-1"><i className="fas fa-plus mr-1"></i>TẠO PHIẾU</Button>
                 <Button size="sm" variant="outline" onClick={handleResetFilters} className="!py-1"><i className="fas fa-sync-alt mr-1"></i>RESET</Button>
-                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 !py-1"><i className="fas fa-print mr-1"></i>IN PHIẾU NHẬN</Button>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 !py-1"><i className="fas fa-print mr-1"></i>IN PHIẾU TRẢ</Button>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 !py-1"><i className="fas fa-tags mr-1"></i>TÁCH PHIẾU</Button>
                 <Button size="sm" className="bg-orange-500 hover:bg-orange-600 !py-1"><i className="fas fa-file-export mr-1"></i>EXPORT</Button>
             </div>
 

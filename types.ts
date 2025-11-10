@@ -728,6 +728,7 @@ export interface WarrantyTicket {
     status: WarrantyTicketStatus;
     createdAt: string; // Ngày tạo
     reportedIssue: string; // Mô tả lỗi
+    resolution_notes?: string; // Ghi chú xử lý
     receiveDate?: string; // Ngày nhận
     returnDate?: string; // Ngày trả
     
@@ -790,4 +791,5 @@ export interface ServiceTicket {
   receiverId?: string; // Người nhận
   work_items?: string; // Hạng mục công việc
   appointment_date?: string; // Thời gian hẹn
+  physical_condition?: string; // Tình trạng vật lý & phụ kiện
 }
