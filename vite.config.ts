@@ -1,8 +1,8 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-// Fix: Import process to provide type definitions for process.cwd()
-import { process } from 'process';
+// FIX: The 'process' object is a global in Node.js environments.
+// This import is incorrect and causes a compilation error. It has been removed.
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');

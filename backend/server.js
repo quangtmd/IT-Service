@@ -364,6 +364,25 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+
+// --- New Server Start Function ---
+const startServer = async () => {
+  try {
+    // Test database connection
+    const connection = await pool.getConnection();
+    await connection.ping();
+    connection.release();
+    console.log('✅ Kết nối cơ sở dữ liệu thành công.');
+
+    // Start the server if DB connection is successful
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server đang chạy trên cổng ${PORT}`);
+    });
+  } catch (err) {
+    console.error('❌ Không thể kết nối tới cơ sở dữ liệu. Server không được khởi động.');
+    console.error(err);
+    process.exit(1); // Exit with an error code, so Render knows the deployment failed
+  }
+};
+
+startServer();
