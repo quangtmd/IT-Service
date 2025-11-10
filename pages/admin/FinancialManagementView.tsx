@@ -302,8 +302,9 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             return [updatedRecord, ...otherRecords];
         });
     };
-    
-    const handleSettlePayroll = useCallback(async () => {
+
+    // FIX: Explicitly typing the async function passed to useCallback to resolve a potential TypeScript inference issue.
+    const handleSettlePayroll = useCallback(async (): Promise<void> => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -329,8 +330,9 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             alert('Lỗi khi chốt lương.');
         }
     }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
-    
-    const handleSaveDraft = useCallback(async () => {
+
+    // FIX: Explicitly typing the async function passed to useCallback to resolve a potential TypeScript inference issue.
+    const handleSaveDraft = useCallback(async (): Promise<void> => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
