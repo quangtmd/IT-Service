@@ -37,7 +37,7 @@ const FloatingActionButtons: React.FC = () => {
     
     useEffect(() => {
         // Only auto-open and show bubble on the homepage and if AI is enabled
-        if (isAiEnabled && location.pathname === '/home') { 
+        if (isAiEnabled && location.pathname === '/') { 
             const alreadyOpened = sessionStorage.getItem(Constants.CHATBOT_AUTO_OPENED_KEY); // Using sessionStorage to reset on tab close
             if (!alreadyOpened) {
               // Delay slightly before opening chat and showing bubble

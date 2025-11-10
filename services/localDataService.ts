@@ -8,17 +8,23 @@ import { BACKEND_API_BASE_URL } from '../constants';
 const API_BASE_URL = BACKEND_API_BASE_URL;
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
+
     const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
     try {
         const response = await fetch(url, {
+            ...options,
+            signal: controller.signal, // Add the abort signal to the fetch options
             headers: {
                 'Content-Type': 'application/json',
                 ...options.headers,
             },
-            ...options,
         });
+        
+        clearTimeout(timeoutId); // Clear the timeout if the fetch completes successfully
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
@@ -36,7 +42,13 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
-    } catch (error) {
+    } catch (error: any) {
+        clearTimeout(timeoutId); // Ensure timeout is cleared on error
+
+        if (error.name === 'AbortError') {
+            throw new Error('Yêu cầu tới máy chủ đã hết thời gian chờ. Dịch vụ backend có thể đang không hoạt động hoặc quá tải.');
+        }
+
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
             throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động.');
         }
