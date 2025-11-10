@@ -6,7 +6,7 @@ import ProductCard from '../components/shop/ProductCard';
 import { Product, MainCategoryInfo } from '../types';
 import SearchBar from '../components/shared/SearchBar';
 import Pagination from '../components/shared/Pagination';
-import * as Constants from '../constants';
+import * as Constants from '../constants.tsx';
 import CategorySidebar from '../components/shop/CategorySidebar';
 import { getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError'; // Cập nhật đường dẫn

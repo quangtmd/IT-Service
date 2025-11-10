@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useState } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Product } from '../types';
@@ -113,7 +115,7 @@ const ProductDetailPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <nav aria-label="breadcrumb" className="text-sm text-textMuted mb-6 bg-bgBase p-3 rounded-md border border-borderDefault">
           <ol className="flex items-center space-x-1.5 flex-wrap">
-            <li><ReactRouterDOM.Link to="/" className="hover:text-primary">Trang chủ</ReactRouterDOM.Link></li>
+            <li><ReactRouterDOM.Link to="/home" className="hover:text-primary">Trang chủ</ReactRouterDOM.Link></li>
             <li><span className="text-textSubtle">/</span></li>
             <li><ReactRouterDOM.Link to="/shop" className="hover:text-primary">Sản phẩm</ReactRouterDOM.Link></li>
             {mainCategoryInfo && (
@@ -234,7 +236,7 @@ const ProductDetailPage: React.FC = () => {
                         {Object.entries(product.specifications).map(([key, value], index) => (
                             <tr key={key} className={`border-b border-borderDefault ${index % 2 === 0 ? 'bg-bgCanvas' : 'bg-bgBase'}`}>
                                 <td className="py-3 px-4 font-semibold text-textBase w-1/3 md:w-1/4">{key}</td>
-                                <td className="py-3 px-4 text-textMuted">{value as React.ReactNode}</td>
+                                <td className="py-3 px-4 text-textMuted">{value}</td>
                             </tr>
                         ))}
                         </tbody>

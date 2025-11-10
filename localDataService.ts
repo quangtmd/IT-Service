@@ -3,9 +3,11 @@ import {
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus
 } from './types';
-import { BACKEND_API_BASE_URL } from './constants';
 
-const API_BASE_URL = BACKEND_API_BASE_URL;
+// The base URL is now an empty string. This assumes the frontend is served
+// from the same domain as the backend, which simplifies deployment.
+// All API requests will be relative, e.g., /api/users.
+const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // All API endpoints are prefixed with /api on the server.
@@ -24,12 +26,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
-
-            if (response.status === 404) {
-                 throw new Error('Lỗi Giao Tiếp Frontend-Backend (404)');
-            }
-            
-            const errorMessage = `Lỗi API: ${response.status} (${errorData.message || response.statusText}). Endpoint: ${fullEndpoint}.`;
+            // Simplified, more robust error message for a monolithic setup.
+            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
             throw new Error(errorMessage);
         }
         

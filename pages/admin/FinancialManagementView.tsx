@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
-import Button from '../../components/ui/Button';
+import Button from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
-import Card from '../../components/ui/Card';
+import Card from '../ui/Card';
 import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
     getPayrollRecords, savePayrollRecords
@@ -275,7 +275,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => Promise<void>, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void> }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
+const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => void, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => void }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
     const { users } = useAuth();
     const staff = users.filter(u => u.role === 'admin' || u.role === 'staff');
     const [payPeriod, setPayPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
@@ -303,7 +303,9 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
-    const handleSettlePayroll = async () => {
+    // FIX: Explicitly type useCallback to resolve type inference issue.
+    // FIX: The async function passed to useCallback should not have an explicit Promise return type annotation, as it can confuse TypeScript's inference for the callback's arguments and dependencies. Removing ': Promise<void>' resolves the issue.
+    const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -324,18 +326,20 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 category: 'Chi phí Lương',
                 description: `Thanh toán lương tháng ${payPeriod}`
             });
-            await onDataChange();
+            onDataChange();
         } catch (error) {
             alert('Lỗi khi chốt lương.');
         }
-    };
+    }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
 
-    const handleSaveDraft = async () => {
+    // FIX: Explicitly type useCallback to resolve type inference issue.
+    // FIX: The async function passed to useCallback should not have an explicit Promise return type annotation, as it can confuse TypeScript's inference for the callback's arguments and dependencies. Removing ': Promise<void>' resolves the issue.
+    const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
-        await onDataChange();
-    };
+        onDataChange();
+    }, [localPayroll, payPeriod, onDataChange]);
 
 
     return (
@@ -343,10 +347,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                {/* FIX: Wrap onClick handlers in arrow functions to prevent passing event object */}
-                <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* FIX: Wrap onClick handlers in arrow functions to prevent passing event object */}
-                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={handleSaveDraft} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">
