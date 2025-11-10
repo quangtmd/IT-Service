@@ -1,7 +1,5 @@
 
-
 import React from 'react';
-// Fix: Correct import path for types
 import { PCComponent } from '../../types';
 
 interface ComponentSelectorProps {
@@ -28,36 +26,41 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({ type, options, se
     if (option.details) {
       label += ` (${option.details})`;
     }
+    if (option.price && option.price > 0) {
+      label += ` - ${option.price.toLocaleString('vi-VN')}₫`;
+    } else if (option.price === 0) {
+      // Could indicate price not set or free item, adjust as needed
+      // label += ` - (Liên hệ)`; 
+    }
     return label;
   };
 
-  // Fix: Completed the component to return JSX, resolving the FC type error.
   return (
-    <div>
-        <label htmlFor={type} className={`block text-sm font-medium mb-1 ${recommendedValue && !selectedValue ? 'text-blue-600' : 'text-textMuted'}`}>
-          {typeLabels[type]}
-          {recommendedValue && !selectedValue && <span className="text-xs ml-2">(Có gợi ý từ AI)</span>}
-        </label>
-        <select
-            id={type}
-            value={selectedValue || ''}
-            onChange={(e) => onChange(type, e.target.value)}
-            className={`input-style bg-white text-textBase ${recommendedValue && !selectedValue ? 'border-blue-400 ring-1 ring-blue-300' : ''}`}
-        >
-            <option value="">-- Chọn {typeLabels[type]} --</option>
-            {/* If AI recommendation is not in the list, add it as a special option */}
-            {recommendedValue && !options.some(opt => opt.name === recommendedValue) && (
-                <option value={recommendedValue}>
-                    [AI] {recommendedValue}
-                </option>
-            )}
-            {options.map(option => (
-                <option key={option.name} value={option.name}>
-                    {getOptionLabel(option)} {option.price ? `- ${option.price.toLocaleString('vi-VN')}₫` : ''}
-                    {option.name === recommendedValue ? ' (AI Đề xuất)' : ''}
-                </option>
-            ))}
-        </select>
+    <div className="mb-4">
+      <label htmlFor={type} className="block text-sm font-medium text-textMuted mb-1">
+        {typeLabels[type]}
+        {recommendedValue && <span className="text-xs text-success-text ml-2">(AI đề xuất: {recommendedValue.split('(')[0].trim()})</span>}
+      </label>
+      <select
+        id={type}
+        name={type}
+        value={selectedValue || ""}
+        onChange={(e) => onChange(type, e.target.value)}
+        className="w-full p-2.5 bg-white border border-borderStrong text-textBase rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm"
+      >
+        <option value="">-- Chọn {typeLabels[type]} --</option>
+        {options.map(option => (
+          <option key={option.name} value={option.name}>
+            {getOptionLabel(option)}
+          </option>
+        ))}
+        {/* If AI recommends something not in the list, show it as a disabled option for info */}
+        {recommendedValue && !options.find(o => o.name === recommendedValue.split(' - ')[0].trim()) && (
+            <option value={recommendedValue.split(' - ')[0].trim()} disabled className="italic text-textSubtle">
+                (AI Đề xuất) {recommendedValue}
+            </option>
+        )}
+      </select>
     </div>
   );
 };

@@ -1,7 +1,7 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Button from '../components/ui/Button';
-import * as Constants from '../constants';
-// Fix: Correct import path for types
+import * as Constants from '../constants.tsx';
 import { SiteSettings } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 

@@ -1,8 +1,10 @@
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants';
+import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageAboutFeature } from '../../../types';
 
 const HomeAboutIts: React.FC = () => {

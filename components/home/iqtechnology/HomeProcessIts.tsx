@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants';
+import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageProcessStep } from '../../../types';
 
 const ProcessStepCard: React.FC<{ step: HomepageProcessStep; index: number; isEven: boolean }> = ({ step, index, isEven }) => {

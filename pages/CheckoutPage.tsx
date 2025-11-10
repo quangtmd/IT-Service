@@ -3,7 +3,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../contexts/AuthContext';
-import * as Constants from '../constants';
+import * as Constants from '../constants.tsx';
 import { CheckoutFormData, Order, PaymentInfo } from '../types';
 import { addOrder } from '../services/localDataService';
 

@@ -1,6 +1,8 @@
+
+
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import * as Constants from '../../constants';
+import * as Constants from '../../constants.tsx';
 import Button from '../ui/Button';
 
 interface CategorySidebarProps {

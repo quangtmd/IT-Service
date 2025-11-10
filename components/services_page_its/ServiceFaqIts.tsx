@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver'; 
 import { FaqItem } from '../../types';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants';
+import * as Constants from '../../../constants.tsx';
 import { MOCK_ARTICLES } from '../../../data/mockData';
 import { SiteSettings, Article } from '../../../types';
 import Button from '../../ui/Button'; // Import Button

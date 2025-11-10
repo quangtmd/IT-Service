@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-// Fix: Correct import path for types
 import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product } from '../../types';
 import ChatMessage from './ChatMessage';
 import Button from '../ui/Button';
 import geminiService from '../../services/geminiService';
 import { Chat, GenerateContentResponse } from '@google/genai';
-import * as Constants from '../../constants'; 
+import * as Constants from '../../constants.tsx'; 
 import { useChatbotContext } from '../../contexts/ChatbotContext'; // Import the context hook
-// Fix: Correct import path for localDataService
 import { saveChatLogSession } from '../../services/localDataService';
 
 // Add SpeechRecognition types for browser compatibility

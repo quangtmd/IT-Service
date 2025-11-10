@@ -4,7 +4,6 @@ import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
 import { useCart } from '../hooks/useCart';
 import Button from '../components/ui/Button';
-// Fix: Correct import path for types
 import { CartItem, CustomPCBuildCartItem } from '../types';
 
 const CartPage: React.FC = () => {
@@ -48,10 +47,10 @@ const CartPage: React.FC = () => {
                     {item.name}
                   </ReactRouterDOM.Link>
                   {!isCustomBuild && <p className="text-sm text-textMuted">{item.category}</p>}
-                  {isCustomBuild && (item as CustomPCBuildCartItem).buildComponents && (
+                  {isCustomBuild && item.buildComponents && (
                     <div className="text-xs text-textMuted mt-1 space-y-0.5">
                       <p className="font-medium text-textSubtle">Chi tiết cấu hình:</p>
-                      {Object.entries((item as CustomPCBuildCartItem).buildComponents).map(([type, comp]) => {
+                      {Object.entries(item.buildComponents).map(([type, comp]) => {
                         const component = comp as { name: string; price?: number };
                         return (
                         <p key={type} className="truncate" title={`${type}: ${component.name} (${(component.price || 0).toLocaleString('vi-VN')}₫)`}>

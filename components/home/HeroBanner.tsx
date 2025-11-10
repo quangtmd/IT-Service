@@ -1,7 +1,8 @@
+
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../ui/Button';
-import * as Constants from '../../constants';
+import * as Constants from '../../constants.tsx';
 
 const HeroBanner: React.FC = () => {
   const heroBgImageUrl = "https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=1400&q=80";

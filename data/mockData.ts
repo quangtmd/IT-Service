@@ -1,4 +1,3 @@
-// Fix: Correct import path for types
 import { Service, Testimonial, PCComponent, Project, User, Order, AdminNotification, UserRole, StaffRole, Article } from '../types';
 import React from 'react'; 
 import { ADMIN_EMAIL } from '../constants';
@@ -176,7 +175,7 @@ export const MOCK_PROJECTS: Project[] = [
         title: 'Xây Dựng Hệ Thống Lưu Trữ NAS Cho Studio Thiết Kế Đồ Họa',
         client: 'Pixel Perfect Studio',
         description: 'Cung cấp giải pháp lưu trữ tập trung NAS Synology, dung lượng 20TB. Cấu hình RAID, phân quyền người dùng, backup tự động cho các máy trạm thiết kế. Đảm bảo an toàn dữ liệu và truy cập nhanh chóng.',
-        imageUrl: 'https://images.unsplash.com/photo-1626243254-d3d6061352ca?q=80&w=600&auto=format&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1626244243254-d3d6061352ca?q=80&w=600&auto=format&fit=crop',
         technologiesUsed: ['NAS Synology', 'Cấu hình RAID', 'Giải pháp Sao lưu Dữ liệu', 'Kiểm soát Truy cập Người dùng'],
         completionDate: '01-04-2024',
         category: 'Lưu trữ dữ liệu & Sao lưu'

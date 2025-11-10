@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants';
+import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageBrandLogo } from '../../../types';
 
 const HomeBrandLogosIts: React.FC = () => {

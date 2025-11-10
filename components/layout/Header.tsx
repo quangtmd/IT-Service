@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import * as Constants from '../../constants';
+import * as Constants from '../../constants.tsx';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../ui/Button';
-// Fix: Correct import path for types
 import { CustomMenuLink, SiteSettings, NavLinkItem } from '../../types';
 import HeaderSearchBar from '../shared/GlobalSearch';
 import MegaMenu from './MegaMenu'; // Import the new MegaMenu component
