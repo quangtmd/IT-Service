@@ -672,7 +672,7 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
   }
   
   .print-only {
-    display: inline !important;
+    display: block !important;
   }
 
   .admin-main-content {

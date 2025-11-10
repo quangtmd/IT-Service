@@ -344,9 +344,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
                 {/* FIX: Wrap onClick handlers in arrow functions to prevent passing event object */}
-                {/* Fix: Wrapped onClick handlers in arrow functions to prevent passing the event object. */}
                 <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
-                {/* Fix: Wrapped onClick handlers in arrow functions to prevent passing the event object. */}
+                {/* FIX: Wrap onClick handlers in arrow functions to prevent passing event object */}
                 <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">

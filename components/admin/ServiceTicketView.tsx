@@ -5,6 +5,7 @@ import { getServiceTickets, deleteServiceTicket } from '../../services/localData
 import Button from '../ui/Button';
 import BackendConnectionError from '../shared/BackendConnectionError';
 import Pagination from '../shared/Pagination';
+import { MOCK_TICKETS } from '../../data/mockData';
 
 const getStatusColor = (status: ServiceTicketStatus) => {
     const colors: Record<ServiceTicketStatus, string> = {
@@ -35,14 +36,6 @@ const STATUS_FILTERS: { label: string, status: ServiceTicketStatus | 'Tất cả
 
 const ITEMS_PER_PAGE = 25;
 
-const MOCK_TICKETS: ServiceTicket[] = [
-    { id: 'BDN.23.04.001', unit: 'CTV', status: 'Đã duyệt', voucherDate: '2023-04-20', recipientCode: 'NVD', recipientName: 'Nhân viên D', currency: 'VND', departmentCode: 'BAOHANH', notes: 'test', totalCost: 1000000, totalQuantity: 1, transactionType: 'Sửa chữa', details: [{ id: 'd1', deviceId: '02.2304.0001', deviceName: 'Tài sản B', content: 'sửa khay đựng giấy', quantity: 1, priceVND: 1000000, estimatedCostVND: 1000000 }], ticket_code: '', customer_info: { fullName: '', phone: '' }, deviceName: '', reported_issue: '', createdAt: '', updatedAt: '' },
-    { id: 'BDN.22.08.005', unit: 'CTV', status: 'Chờ duyệt', voucherDate: '2022-08-25', recipientCode: 'NVD', recipientName: 'Nhân viên D', currency: 'VND', departmentCode: 'BAOHANH', notes: '', totalCost: 100000000, totalQuantity: 10, transactionType: 'Sửa chữa', details: [], ticket_code: '', customer_info: { fullName: '', phone: '' }, deviceName: '', reported_issue: '', createdAt: '', updatedAt: '' },
-    { id: 'BDN.22.08.004', unit: 'CTV', status: 'Chờ duyệt', voucherDate: '2022-08-25', recipientCode: 'NVA', recipientName: 'Nhân viên A', currency: 'VND', departmentCode: 'BAOHANH', notes: '', totalCost: 1000000, totalQuantity: 1, transactionType: 'Sửa chữa', details: [], ticket_code: '', customer_info: { fullName: '', phone: '' }, deviceName: '', reported_issue: '', createdAt: '', updatedAt: '' },
-    { id: 'BDN.22.08.003', unit: 'CTV', status: 'Chờ duyệt', voucherDate: '2022-08-24', recipientCode: 'NVA', recipientName: 'Nhân viên A', currency: 'VND', departmentCode: 'BAOHANH', notes: '', totalCost: 200000, totalQuantity: 1, transactionType: 'Bảo dưỡng', details: [], ticket_code: '', customer_info: { fullName: '', phone: '' }, deviceName: '', reported_issue: '', createdAt: '', updatedAt: '' },
-    { id: 'BDN.22.08.002', unit: 'CTV', status: 'Đã duyệt', voucherDate: '2022-08-24', recipientCode: 'NVA', recipientName: 'Nhân viên A', currency: 'VND', departmentCode: 'BAOHANH', notes: '', totalCost: 100000, totalQuantity: 10, transactionType: 'Sửa chữa', details: [], ticket_code: '', customer_info: { fullName: '', phone: '' }, deviceName: '', reported_issue: '', createdAt: '', updatedAt: '' },
-    { id: 'BDN.21.12.016', unit: 'CTV', status: 'Hoàn thành', voucherDate: '2021-12-04', recipientCode: 'NVC', recipientName: 'Nhân viên C', currency: 'VND', departmentCode: 'IT', notes: '', totalCost: 4200000, totalQuantity: 7, transactionType: 'Bảo dưỡng', details: [], ticket_code: '', customer_info: { fullName: '', phone: '' }, deviceName: '', reported_issue: '', createdAt: '', updatedAt: '' },
-];
 
 
 const ServiceTicketView: React.FC = () => {
