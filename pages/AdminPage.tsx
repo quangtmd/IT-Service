@@ -35,6 +35,8 @@ import OrderFormPage from './admin/OrderFormPage';
 import ReturnFormPage from './admin/ReturnFormPage';
 import SupplierFormPage from './admin/SupplierFormPage';
 import ServiceTicketFormPage from './admin/ServiceTicketFormPage';
+// FIX: Import WarrantyFormPage to resolve 'Cannot find name' error.
+import WarrantyFormPage from './admin/WarrantyFormPage';
 
 
 // Import new placeholder/skeleton views
