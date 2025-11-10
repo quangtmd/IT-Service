@@ -27,7 +27,7 @@ const ServiceTicketFormPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
     
-    const [customerSearch, setCustomerSearch] = useState('');
+    const [customerSearchText, setCustomerSearchText] = useState('');
     const [customerResults, setCustomerResults] = useState<User[]>([]);
     const [customers, setCustomers] = useState<User[]>([]);
 
@@ -47,6 +47,7 @@ const ServiceTicketFormPage: React.FC = () => {
                     const itemToEdit = allData.find(t => t.id === ticketId);
                     if (itemToEdit) {
                         setFormData(itemToEdit);
+                        setCustomerSearchText(itemToEdit.customer_info?.fullName || '');
                     } else {
                         setError('Không tìm thấy phiếu dịch vụ để chỉnh sửa.');
                     }
@@ -76,6 +77,9 @@ const ServiceTicketFormPage: React.FC = () => {
     const handleCustomerInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => prev ? ({ ...prev, customer_info: { ...prev.customer_info!, [name]: value } }) : null);
+        if (name === 'fullName') {
+             setCustomerSearchText(value);
+        }
     };
 
     const handleCustomerSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,6 +106,7 @@ const ServiceTicketFormPage: React.FC = () => {
                 phone: customer.phone || '',
             }
         }) : null);
+        setCustomerSearchText(customer.username);
         setCustomerResults([]);
     };
 
@@ -156,14 +161,18 @@ const ServiceTicketFormPage: React.FC = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="admin-form-group relative">
                                         <label>Tên khách hàng *</label>
-                                        <input 
-                                            type="text" 
-                                            name="fullName" 
-                                            value={formData.customer_info?.fullName || ''} 
-                                            onChange={handleCustomerSearchChange} 
-                                            required
-                                            autoComplete="off"
-                                         />
+                                        <div className="flex items-center gap-2">
+                                            <input 
+                                                type="text" 
+                                                name="fullName" 
+                                                value={customerSearchText} 
+                                                onChange={handleCustomerSearchChange} 
+                                                required
+                                                autoComplete="off"
+                                                className="flex-grow"
+                                             />
+                                             <Button type="button" size="sm" variant="outline" onClick={() => navigate('/admin/customers/new')} title="Thêm khách hàng mới"><i className="fas fa-plus"></i></Button>
+                                        </div>
                                         {customerResults.length > 0 && (
                                             <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
                                                 {customerResults.map(c => (

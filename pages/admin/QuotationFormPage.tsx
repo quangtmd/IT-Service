@@ -18,6 +18,9 @@ const QuotationFormPage: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [productSearch, setProductSearch] = useState('');
     const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
+    
+    const [customerSearchText, setCustomerSearchText] = useState('');
+    const [customerResults, setCustomerResults] = useState<User[]>([]);
 
     const calculateTotals = useCallback((items: QuotationItem[], discount: number = 0, tax: number = 0) => {
         const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -39,13 +42,20 @@ const QuotationFormPage: React.FC = () => {
                 const settingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
                 setSiteSettings(settingsRaw ? JSON.parse(settingsRaw) : Constants.INITIAL_SITE_SETTINGS);
 
-                setCustomers(users.filter(u => u.role === 'customer' || u.role === 'admin'));
+                const customerUsers = users.filter(u => u.role === 'customer' || u.role === 'admin');
+                setCustomers(customerUsers);
                 setProducts(prodsData.products);
 
                 if (isEditing) {
                     const foundQuotation = allQuotes.find(q => q.id === quotationId);
                     if (foundQuotation) {
                         setFormData(foundQuotation);
+                        const customer = customerUsers.find(c => c.id === foundQuotation.customer_id);
+                        if(customer) {
+                            setCustomerSearchText(customer.username);
+                        } else if (foundQuotation.customerInfo?.name) {
+                            setCustomerSearchText(foundQuotation.customerInfo.name);
+                        }
                     } else {
                         setError('Không tìm thấy báo giá để chỉnh sửa.');
                     }
@@ -72,6 +82,32 @@ const QuotationFormPage: React.FC = () => {
         const { subtotal, total } = calculateTotals(newItems, formData.discount_amount, formData.tax_amount);
         setFormData(p => p ? ({ ...p, items: newItems, subtotal: subtotal, total_amount: total }) : null);
     };
+    
+    const handleCustomerSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const term = e.target.value;
+        setCustomerSearchText(term);
+        setFormData(prev => prev ? ({...prev, customerInfo: { name: term, email: '' }}) : null); // Update name for ad-hoc customer
+
+        if (term) {
+            setCustomerResults(customers.filter(c =>
+                c.username.toLowerCase().includes(term.toLowerCase()) ||
+                c.email.toLowerCase().includes(term.toLowerCase())
+            ).slice(0, 5));
+        } else {
+            setCustomerResults([]);
+        }
+    };
+    
+    const handleSelectCustomer = (customer: User) => {
+        setFormData(prev => prev ? ({
+            ...prev,
+            customer_id: customer.id,
+            customerInfo: { name: customer.username, email: customer.email }
+        }) : null);
+        setCustomerSearchText(customer.username);
+        setCustomerResults([]);
+    };
+
 
     const addItem = (product: Product) => {
         if (!formData) return;
@@ -175,16 +211,23 @@ const QuotationFormPage: React.FC = () => {
                         <div className="border-t border-b border-dashed border-black py-2 mb-4">
                             <h3 className="font-bold mb-2 no-print">Thông tin khách hàng</h3>
                             <div className="grid grid-cols-1 gap-x-4 text-sm">
-                                <p><strong className="w-24 inline-block">Khách hàng:</strong> {selectedCustomer?.username}</p>
+                                <p><strong className="w-24 inline-block">Khách hàng:</strong> {selectedCustomer?.username || formData.customerInfo?.name}</p>
                                 <p><strong className="w-24 inline-block">Địa chỉ:</strong> {selectedCustomer?.address}</p>
                                 <p><strong className="w-24 inline-block">Điện thoại:</strong> {selectedCustomer?.phone}</p>
                             </div>
                              <div className="admin-form-group mt-4 no-print">
                                 <label>Khách hàng</label>
-                                <select value={formData.customer_id || ''} onChange={e => setFormData(p => p ? ({ ...p, customer_id: e.target.value }) : null)}>
-                                    <option value="">-- Chọn khách hàng --</option>
-                                    {customers.map(c => <option key={c.id} value={c.id}>{c.username} ({c.email})</option>)}
-                                </select>
+                                 <div className="flex items-center gap-2">
+                                    <div className="relative flex-grow">
+                                        <input type="text" placeholder="Tìm hoặc nhập tên khách hàng" value={customerSearchText} onChange={handleCustomerSearchChange} autoComplete="off"/>
+                                        {customerResults.length > 0 && (
+                                            <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
+                                                {customerResults.map(c => <li key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{c.username} ({c.email})</li>)}
+                                            </ul>
+                                        )}
+                                    </div>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => navigate('/admin/customers/new')} title="Thêm khách hàng mới"><i className="fas fa-plus"></i></Button>
+                                </div>
                             </div>
                         </div>
                        

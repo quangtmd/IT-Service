@@ -954,9 +954,59 @@ app.get('/api/inventory', async (req, res) => {
 // Warranty Claims
 app.get('/api/warranty-claims', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM WarrantyTickets ORDER BY createdAt DESC');
+// Fix: Changed createdAt to created_at to match database schema and type definition.
+        const [rows] = await pool.query('SELECT * FROM WarrantyTickets ORDER BY created_at DESC');
         res.json(rows);
     } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Fix: Added POST, PUT, and DELETE endpoints for warranty claims.
+app.post('/api/warranty-claims', async (req, res) => {
+    try {
+        const claimData = { 
+            ...req.body, 
+            id: `wc-${Date.now()}`,
+            claim_code: `BH-${Date.now()}`,
+            created_at: new Date()
+        };
+        await pool.query('INSERT INTO WarrantyTickets SET ?', claimData);
+        res.status(201).json(claimData);
+    } catch (error) {
+        console.error("Error creating warranty claim:", error);
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.put('/api/warranty-claims/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body };
+        delete updates.id;
+        delete updates.created_at;
+        delete updates.claim_code;
+        const [result] = await pool.query('UPDATE WarrantyTickets SET ? WHERE id = ?', [updates, id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy phiếu bảo hành' });
+        }
+        res.json({ id, ...req.body });
+    } catch (error) {
+        console.error("Error updating warranty claim:", error);
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+app.delete('/api/warranty-claims/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [result] = await pool.query('DELETE FROM WarrantyTickets WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy phiếu bảo hành' });
+        }
+        res.status(204).send();
+    } catch (error) {
+        console.error("Error deleting warranty claim:", error);
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });

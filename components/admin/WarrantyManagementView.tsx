@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { WarrantyClaim } from '../../types';
-import { getWarrantyClaims } from '../../services/localDataService';
+import { getWarrantyClaims, deleteWarrantyClaim } from '../../services/localDataService';
 import Button from '../ui/Button';
+import BackendConnectionError from '../shared/BackendConnectionError';
 
 const getStatusColor = (status: WarrantyClaim['status']) => {
     switch (status) {
@@ -18,12 +20,12 @@ const WarrantyManagementView: React.FC = () => {
     const [claims, setClaims] = useState<WarrantyClaim[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const loadClaims = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
-            // This service needs to be implemented in localDataService to fetch from API
             const data = await getWarrantyClaims();
             setClaims(data);
         } catch (err) {
@@ -37,48 +39,72 @@ const WarrantyManagementView: React.FC = () => {
         loadClaims();
     }, [loadClaims]);
 
+    const handleAddNew = () => {
+        navigate('/admin/warranty_claims/new');
+    };
+
+    const handleEdit = (id: string) => {
+        navigate(`/admin/warranty_claims/edit/${id}`);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm('Bạn có chắc muốn xóa phiếu bảo hành này?')) {
+            try {
+                await deleteWarrantyClaim(id);
+                loadClaims();
+            } catch (err) {
+                alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi xóa.');
+            }
+        }
+    };
+
     return (
         <div className="admin-card">
-            <div className="admin-card-header">
-                <h3 className="admin-card-title">Quản lý Phiếu Bảo hành</h3>
+            <div className="admin-card-header flex justify-between items-center">
+                <h3 className="admin-card-title">Quản lý Phiếu Bảo hành ({claims.length})</h3>
+                <Button onClick={handleAddNew} size="sm" leftIcon={<i className="fas fa-plus"></i>}>
+                    Tạo Phiếu BH
+                </Button>
             </div>
             <div className="admin-card-body">
-                {isLoading ? (
-                    <p className="text-center py-4">Đang tải dữ liệu...</p>
-                ) : error ? (
-                    <p className="text-center py-4 text-red-500">{error}</p>
-                ) : claims.length > 0 ? (
-                     <div className="overflow-x-auto">
-                        <table className="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Mã Phiếu</th>
-                                    <th>Khách hàng</th>
-                                    <th>Sản phẩm</th>
-                                    <th>Ngày tạo</th>
-                                    <th>Trạng thái</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {claims.map(claim => (
+                {error && <BackendConnectionError error={error} />}
+                <div className="overflow-x-auto">
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Mã Phiếu</th>
+                                <th>Khách hàng</th>
+                                <th>Sản phẩm</th>
+                                <th>Ngày tạo</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoading ? (
+                                <tr><td colSpan={6} className="text-center py-4">Đang tải...</td></tr>
+                            ) : !error && claims.length > 0 ? (
+                                claims.map(claim => (
                                     <tr key={claim.id}>
                                         <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">{claim.claim_code}</span></td>
                                         <td>{claim.customer_name}</td>
                                         <td>{claim.product_name}</td>
                                         <td>{new Date(claim.created_at).toLocaleDateString('vi-VN')}</td>
                                         <td><span className={`status-badge ${getStatusColor(claim.status)}`}>{claim.status}</span></td>
+                                        <td>
+                                            <div className="flex gap-2">
+                                                <Button onClick={() => handleEdit(claim.id)} size="sm" variant="outline" title="Sửa"><i className="fas fa-edit"></i></Button>
+                                                <Button onClick={() => handleDelete(claim.id)} size="sm" variant="ghost" className="text-red-500" title="Xóa"><i className="fas fa-trash"></i></Button>
+                                            </div>
+                                        </td>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <div className="text-center text-textMuted py-12">
-                        <i className="fas fa-shield-alt text-5xl text-gray-300 mb-4"></i>
-                        <h4 className="text-xl font-semibold text-textBase">Chưa có phiếu bảo hành nào</h4>
-                        <p className="mt-2 max-w-md mx-auto">Module quản lý quy trình tiếp nhận, xử lý và trả bảo hành cho khách hàng.</p>
-                    </div>
-                )}
+                                ))
+                            ) : (
+                                !error && <tr><td colSpan={6} className="text-center py-4 text-textMuted">Chưa có phiếu bảo hành nào.</td></tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

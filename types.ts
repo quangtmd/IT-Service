@@ -707,6 +707,7 @@ export interface WarrantyClaim {
     order_id: string;
     product_id: string;
     product_name: string;
+    customer_id?: string;
     customer_name: string;
     reported_issue: string;
     status: 'Đang tiếp nhận' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Từ chối';
