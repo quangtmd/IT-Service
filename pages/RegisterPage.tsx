@@ -13,10 +13,6 @@ const RegisterPage: React.FC = () => {
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = ReactRouterDOM.useNavigate(); // Changed from useHistory
 
-  // New, more vibrant technology background image (same as login page for consistency)
-  const backgroundImage = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
-
-
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/'); // Changed from history.push
@@ -60,19 +56,15 @@ const RegisterPage: React.FC = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative bg-cover bg-center"
-      style={{ backgroundImage: `url('${backgroundImage}')` }}
+      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-200"
     >
-      <div className="absolute inset-0 bg-black opacity-60"></div> {/* Dark overlay */}
-      <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-md p-10 rounded-xl shadow-xl border border-borderDefault relative z-10">
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg border border-gray-200">
         <div>
-          <ReactRouterDOM.Link to="/" className="flex justify-center">
-             <span className="text-3xl font-bold text-primary">{Constants.COMPANY_NAME}</span>
-          </ReactRouterDOM.Link>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-textBase">
+          <h1 className="text-3xl font-bold text-primary text-center">IQ Technology</h1>
+          <h2 className="mt-6 text-center text-3xl font-bold text-gray-800">
             Tạo tài khoản mới
           </h2>
-          <p className="mt-2 text-center text-sm text-textMuted">
+          <p className="mt-2 text-center text-sm text-gray-600">
             Hoặc{' '}
             <ReactRouterDOM.Link to="/login" className="font-medium text-primary hover:text-primary-dark">
               đăng nhập nếu bạn đã có tài khoản
@@ -85,7 +77,7 @@ const RegisterPage: React.FC = () => {
               {error}
             </div>
           )}
-          <div className="rounded-md shadow-sm">
+          <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="username" className="sr-only">
                 Tên người dùng
@@ -96,13 +88,13 @@ const RegisterPage: React.FC = () => {
                 type="text"
                 autoComplete="username"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
                 placeholder="Tên người dùng *"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
             </div>
-            <div className="-mt-px">
+            <div>
               <label htmlFor="email-address" className="sr-only">
                 Địa chỉ email
               </label>
@@ -112,13 +104,13 @@ const RegisterPage: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
                 placeholder="Địa chỉ email *"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="-mt-px">
+            <div>
               <label htmlFor="password" className="sr-only">
                 Mật khẩu
               </label>
@@ -128,13 +120,13 @@ const RegisterPage: React.FC = () => {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
                 placeholder="Mật khẩu *"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <div className="-mt-px">
+            <div>
               <label htmlFor="confirm-password" className="sr-only">
                 Xác nhận mật khẩu
               </label>
@@ -144,7 +136,7 @@ const RegisterPage: React.FC = () => {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
                 placeholder="Xác nhận mật khẩu *"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -153,26 +145,11 @@ const RegisterPage: React.FC = () => {
           </div>
 
           <div>
-            <Button type="submit" className="w-full" size="lg" isLoading={authLoading}>
+            <Button type="submit" className="w-full !py-3 !text-base rounded-lg" size="lg" isLoading={authLoading}>
               Đăng ký
             </Button>
           </div>
         </form>
-
-        <div className="relative flex justify-center text-xs uppercase my-6">
-            <span className="bg-white/80 backdrop-blur-md px-2 text-gray-500">Hoặc</span>
-        </div>
-
-        <div className="space-y-3">
-            <Button variant="outline" className="w-full flex items-center justify-center gap-3 !py-3 !text-base border-blue-500 text-blue-700 hover:bg-blue-50">
-                <i className="fab fa-google text-lg"></i>
-                <span>Đăng ký bằng Google</span>
-            </Button>
-            <Button variant="outline" className="w-full flex items-center justify-center gap-3 !py-3 !text-base border-blue-800 text-blue-800 hover:bg-blue-50">
-                <i className="fab fa-facebook-f text-lg"></i>
-                <span>Đăng ký bằng Facebook</span>
-            </Button>
-        </div>
       </div>
     </div>
   );
