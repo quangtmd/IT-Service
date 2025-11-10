@@ -3,11 +3,12 @@ import {
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus
 } from '../types';
+import { BACKEND_API_BASE_URL } from '../constants';
 
-// The base URL is now an empty string. This assumes the frontend is served
-// from the same domain as the backend, which simplifies deployment.
-// All API requests will be relative, e.g., /api/users.
-const API_BASE_URL = "";
+// Use the environment variable for the backend URL.
+// In development, this is an empty string to use the Vite proxy.
+// In production, this will be the full URL of the deployed backend service.
+const API_BASE_URL = BACKEND_API_BASE_URL;
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const fullEndpoint = `/api${endpoint}`;
