@@ -320,7 +320,6 @@ export const getWarrantyClaims = async (): Promise<WarrantyClaim[]> => {
     return fetchFromApi<WarrantyClaim[]>('/api/warranty-claims');
 };
 
-// Fix: Added missing addWarrantyClaim, updateWarrantyClaim, and deleteWarrantyClaim functions.
 export const addWarrantyClaim = async (claim: Omit<WarrantyClaim, 'id' | 'claim_code' | 'created_at'>): Promise<WarrantyClaim> => {
     return fetchFromApi<WarrantyClaim>('/api/warranty-claims', {
         method: 'POST',
