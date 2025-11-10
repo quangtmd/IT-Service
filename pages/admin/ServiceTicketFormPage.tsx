@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ServiceTicket, User, SiteSettings } from '../../types';
 import Button from '../../components/ui/Button';
@@ -19,13 +19,18 @@ const ServiceTicketFormPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
+    
+    const [customerSearch, setCustomerSearch] = useState('');
+    const [customerResults, setCustomerResults] = useState<User[]>([]);
+    const [customers, setCustomers] = useState<User[]>([]);
 
-    const staffUsers = users.filter(u => u.role === 'admin' || u.role === 'staff');
+    const staffUsers = useMemo(() => users.filter(u => u.role === 'admin' || u.role === 'staff'), [users]);
 
     useEffect(() => {
         const loadData = async () => {
              const settingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
              setSiteSettings(settingsRaw ? JSON.parse(settingsRaw) : Constants.INITIAL_SITE_SETTINGS);
+             setCustomers(users.filter(u => u.role === 'customer'));
 
             if (isEditing) {
                 setIsLoading(true);
@@ -54,16 +59,43 @@ const ServiceTicketFormPage: React.FC = () => {
             }
         };
         loadData();
-    }, [isEditing, ticketId]);
+    }, [isEditing, ticketId, users]);
 
      const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => prev ? ({ ...prev, [name]: value }) : null);
     };
     
-    const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleCustomerInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => prev ? ({ ...prev, customer_info: { ...prev.customer_info!, [name]: value } }) : null);
+    };
+
+    const handleCustomerSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const term = e.target.value;
+        handleCustomerInfoChange(e); // Allow manual typing
+
+        if (term) {
+            setCustomerResults(customers.filter(c =>
+                c.username.toLowerCase().includes(term.toLowerCase()) ||
+                c.email.toLowerCase().includes(term.toLowerCase()) ||
+                (c.phone && c.phone.includes(term))
+            ).slice(0, 5));
+        } else {
+            setCustomerResults([]);
+        }
+    };
+    
+    const handleSelectCustomer = (customer: User) => {
+        setFormData(prev => prev ? ({
+            ...prev,
+            customerId: customer.id,
+            customer_info: {
+                fullName: customer.username,
+                phone: customer.phone || '',
+            }
+        }) : null);
+        setCustomerResults([]);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -116,14 +148,30 @@ const ServiceTicketFormPage: React.FC = () => {
                             <p>Ngày: <span className="font-semibold">{new Date(formData.createdAt || Date.now()).toLocaleDateString('vi-VN')}</span></p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                            <div className="admin-form-group no-print">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm no-print">
+                            <div className="admin-form-group relative">
                                 <label>Tên khách hàng *</label>
-                                <input type="text" name="fullName" value={formData.customer_info?.fullName || ''} onChange={handleCustomerChange} required />
+                                <input 
+                                    type="text" 
+                                    name="fullName" 
+                                    value={formData.customer_info?.fullName || ''} 
+                                    onChange={handleCustomerSearchChange} 
+                                    required
+                                    autoComplete="off"
+                                 />
+                                {customerResults.length > 0 && (
+                                    <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
+                                        {customerResults.map(c => (
+                                            <li key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-gray-100 cursor-pointer">
+                                                {c.username} ({c.phone || c.email})
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
-                             <div className="admin-form-group no-print">
+                             <div className="admin-form-group">
                                 <label>Số điện thoại *</label>
-                                <input type="tel" name="phone" value={formData.customer_info?.phone || ''} onChange={handleCustomerChange} required />
+                                <input type="tel" name="phone" value={formData.customer_info?.phone || ''} onChange={handleCustomerInfoChange} required />
                             </div>
                         </div>
                          <div className="border-t border-b border-dashed border-black py-2 mb-4 text-sm">

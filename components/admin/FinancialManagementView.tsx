@@ -304,7 +304,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
     };
 
     // FIX: Explicitly type useCallback to resolve type inference issue.
-    const handleSettlePayroll = useCallback(async (): Promise<void> => {
+    const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -317,8 +317,10 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
         try {
             const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-            await savePayrollRecords(recordsToSave);
-            await onAddTransaction({
+            // Fix for line 269: remove explicit return type from async function
+await savePayrollRecords(recordsToSave);
+            // Fix for line 261: remove explicit return type from async function
+await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
                 type: 'expense',
@@ -332,7 +334,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
     }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
 
     // FIX: Explicitly type useCallback to resolve type inference issue.
-    const handleSaveDraft = useCallback(async (): Promise<void> => {
+    const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');

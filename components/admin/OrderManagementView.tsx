@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '../../types';
 import * as Constants from '../../constants';
@@ -116,6 +114,7 @@ const OrderManagementView: React.FC = () => {
                                         <td><span className={`status-badge ${getStatusColor(order.status)}`}>{order.status}</span></td>
                                         <td>
                                             <div className="flex gap-2">
+                                                <Button onClick={() => handleEditOrder(order.id)} size="sm" variant="outline" title="Xem/In"><i className="fas fa-eye"></i></Button>
                                                 <Button onClick={() => handleEditOrder(order.id)} size="sm" variant="outline" title="Sửa"><i className="fas fa-edit"></i></Button>
                                                 <Button onClick={() => handleDelete(order.id)} size="sm" variant="ghost" className="text-red-500" title="Xóa"><i className="fas fa-trash"></i></Button>
                                             </div>

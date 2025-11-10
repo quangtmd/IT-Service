@@ -11,10 +11,16 @@ const CustomerManagementView: React.FC = () => {
 
     const customerUsers = useMemo(() =>
         users.filter(u => u.role === 'customer')
-            .filter(u =>
-                u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                u.email.toLowerCase().includes(searchTerm.toLowerCase())
-            ),
+            .filter(u => {
+                const term = searchTerm.toLowerCase();
+                if (!term) return true;
+                return (
+                    u.username.toLowerCase().includes(term) ||
+                    u.email.toLowerCase().includes(term) ||
+                    (u.phone && u.phone.includes(searchTerm)) || // Phone doesn't need to be lowercased for digits
+                    u.id.toLowerCase().includes(term)
+                );
+            }),
         [users, searchTerm]
     );
     
@@ -48,7 +54,7 @@ const CustomerManagementView: React.FC = () => {
             <div className="admin-card-body">
                 <input
                     type="text"
-                    placeholder="Tìm kiếm khách hàng theo tên, email..."
+                    placeholder="Tìm kiếm theo tên, email, SĐT, mã khách hàng..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="admin-form-group w-full max-w-md mb-4"
@@ -72,7 +78,10 @@ const CustomerManagementView: React.FC = () => {
                                         <td>
                                             <div className="flex items-center">
                                                 <img src={user.imageUrl || `https://ui-avatars.com/api/?name=${user.username.charAt(0)}&background=random`} alt={user.username} className="w-10 h-10 rounded-full mr-3 object-cover" />
-                                                <p className="font-semibold text-textBase">{user.username}</p>
+                                                <div>
+                                                    <p className="font-semibold text-textBase">{user.username}</p>
+                                                    <p className="text-xs text-textMuted font-mono">#{user.id.slice(-6)}</p>
+                                                </div>
                                             </div>
                                         </td>
                                         <td>{user.email}</td>
