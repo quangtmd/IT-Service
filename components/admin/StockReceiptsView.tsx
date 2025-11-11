@@ -26,8 +26,6 @@ const StockReceiptsView: React.FC = () => {
 
     useEffect(() => {
         loadData();
-        window.addEventListener('localStorageChange', loadData);
-        return () => window.removeEventListener('localStorageChange', loadData);
     }, [loadData]);
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -47,7 +45,6 @@ const StockReceiptsView: React.FC = () => {
             <div className="admin-card-header">
                 <h3 className="admin-card-title">Quản lý Phiếu Nhập Kho ({receipts.length})</h3>
                 <div className="admin-actions-bar">
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-file-excel"/>}>Xuất Excel</Button>
                     <Button size="sm" onClick={() => navigate('/admin/stock_receipts/new')} leftIcon={<i className="fas fa-plus" />}>Tạo Phiếu Nhập</Button>
                 </div>
             </div>

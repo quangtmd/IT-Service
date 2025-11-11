@@ -8,23 +8,37 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const TICKET_STATUS_FILTERS: Array<{ label: string, value: WarrantyTicketStatus | 'Tất cả' }> = [
     { label: 'Tất cả', value: 'Tất cả' },
-    { label: 'Chờ xem lại', value: 'Chờ xem lại' },
-    { label: 'Lập chứng từ', value: 'Lập chứng từ' },
     { label: 'Chờ duyệt', value: 'Chờ duyệt' },
-    { label: 'Đang duyệt', value: 'Đang duyệt' },
     { label: 'Đã duyệt', value: 'Đã duyệt' },
-    { label: 'Đang thực hiện', value: 'Đang thực hiện' },
+    { label: 'Đang sửa chữa', value: 'Đang sửa chữa' },
     { label: 'Hoàn thành', value: 'Hoàn thành' },
 ];
 
-const getStatusColor = (status: WarrantyTicket['status']) => {
-    const statusLower = status.toLowerCase();
-    if (statusLower.includes('duyệt')) return 'text-green-600 font-semibold';
-    if (statusLower.includes('chờ')) return 'text-yellow-600 font-semibold';
-    if (statusLower.includes('hủy') || statusLower.includes('từ chối')) return 'text-red-600 font-semibold';
-    if (statusLower.includes('đang')) return 'text-blue-600 font-semibold';
-    if (statusLower.includes('hoàn thành')) return 'text-purple-600 font-semibold';
-    return 'text-gray-600';
+const getStatusColorClass = (status: WarrantyTicket['status']) => {
+    switch (status) {
+        case 'Mới Tạo':
+        case 'Chờ xem lại':
+        case 'Lập chứng từ':
+            return 'bg-gray-100 text-gray-800';
+        case 'Chờ duyệt':
+        case 'Đợi KH đồng ý giá':
+        case 'Đợi KH nhận lại':
+        case 'Chờ linh kiện':
+            return 'bg-yellow-100 text-yellow-800';
+        case 'Đang duyệt':
+        case 'Đang sửa chữa':
+        case 'Đang thực hiện':
+             return 'bg-blue-100 text-blue-800';
+        case 'Đã duyệt':
+        case 'Hoàn thành':
+        case 'Đã trả khách':
+            return 'bg-green-100 text-green-800';
+        case 'Từ chối bảo hành':
+        case 'Hủy':
+            return 'bg-red-100 text-red-800';
+        default:
+            return 'bg-gray-100 text-gray-800';
+    }
 };
 
 
@@ -43,7 +57,6 @@ const WarrantyManagementView: React.FC = () => {
         setError(null);
         try {
             const data = await getWarrantyTickets();
-            // Denormalize creatorName if it's missing
             const enrichedData = data.map(ticket => {
                 if (!ticket.creatorName && ticket.creatorId) {
                     const creator = staffUsers.find(u => u.id === ticket.creatorId);
@@ -60,10 +73,8 @@ const WarrantyManagementView: React.FC = () => {
     }, [staffUsers]);
 
     useEffect(() => {
-        if (staffUsers.length > 0) {
-            loadTickets();
-        }
-    }, [loadTickets, staffUsers]);
+        loadTickets();
+    }, [loadTickets]);
 
     const filteredTickets = useMemo(() => {
         if (activeFilter === 'Tất cả') return tickets;
@@ -96,11 +107,9 @@ const WarrantyManagementView: React.FC = () => {
     return (
         <div className="admin-card">
             <div className="admin-card-header">
-                <h3 className="admin-card-title">Phiếu đề nghị sửa chữa, thay thế ({filteredTickets.length})</h3>
+                <h3 className="admin-card-title">Phiếu Bảo Hành ({filteredTickets.length})</h3>
                 <div className="admin-actions-bar">
                     <Button size="sm" onClick={() => navigate('/admin/warranty_tickets/new')} leftIcon={<i className="fas fa-plus"></i>}>Thêm</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-print"></i>}>In</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-search"></i>}>Tìm kiếm</Button>
                 </div>
             </div>
             
@@ -132,8 +141,8 @@ const WarrantyManagementView: React.FC = () => {
                                 <tr><td colSpan={7} className="text-center py-4">Đang tải...</td></tr>
                             ) : !error && filteredTickets.length > 0 ? (
                                 filteredTickets.map((ticket) => (
-                                    <tr key={ticket.id} className="hover:bg-yellow-50 cursor-pointer" onClick={() => navigate(`/admin/warranty_tickets/edit/${ticket.id}`)}>
-                                        <td className={getStatusColor(ticket.status)}>{ticket.status}</td>
+                                    <tr key={ticket.id} className="hover:bg-blue-50 cursor-pointer" onClick={() => navigate(`/admin/warranty_tickets/edit/${ticket.id}`)}>
+                                        <td><span className={`status-badge ${getStatusColorClass(ticket.status)}`}>{ticket.status}</span></td>
                                         <td className="font-semibold text-blue-700">{ticket.ticketNumber}</td>
                                         <td>{formatDate(ticket.createdAt)}</td>
                                         <td>{ticket.creatorName}</td>

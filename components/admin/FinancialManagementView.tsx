@@ -18,7 +18,7 @@ const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + '₫
 type FinancialTab = 'overview' | 'transactions' | 'debts' | 'payroll' | 'forecast' | 'approvals' | 'reports';
 
 const StatCard: React.FC<{ title: string; value: string; icon: string; color: string; onClick?: () => void }> = ({ title, value, icon, color, onClick }) => (
-    <div onClick={onClick} className={`p-4 rounded-lg shadow flex items-center cursor-pointer hover:shadow-lg transition-shadow ${color}`}>
+    <div onClick={onClick} className={`p-4 rounded-lg shadow flex items-center cursor-pointer hover:shadow-lg transition-shadow ${color} stat-card-pattern`}>
         <div className="p-3 rounded-full bg-white/30 mr-4">
             <i className={`fas ${icon} text-2xl text-white`}></i>
         </div>
