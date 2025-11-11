@@ -71,6 +71,33 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     };
   }, [loadSiteSettings]);
 
+  // Handle auto-filling user info if logged in, and resetting state when chat closes
+  useEffect(() => {
+    if (isOpen) {
+      if (currentUser) {
+        setUserName(currentUser.username);
+        setUserPhone(currentUser.phone || ''); // Use phone if available
+        setIsUserInfoSubmitted(true);
+      }
+    } else {
+      // Reset all session-specific state when the chatbot is closed.
+      // This is crucial to ensure a fresh state for the next user or session.
+      setChatSession(null);
+      setMessages([]);
+      setInput('');
+      setError(null);
+      setUserName('');
+      setUserPhone('');
+      setIsUserInfoSubmitted(false);
+      setCurrentChatLogSession(null);
+      handleRemoveImage(); // Clear any selected image
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    }
+  }, [isOpen, currentUser]);
+
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -78,38 +105,33 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   useEffect(scrollToBottom, [messages]);
   
   const initializeChat = useCallback(async () => {
+    // Check if user info is submitted (either by form or auto-filled) and chat isn't already active
     if (!isUserInfoSubmitted || !isOpen || chatSession) return; 
 
     setIsLoading(true);
     setError(null);
     try {
-      // This call will now throw a specific, catchable error if the API key is missing.
       const newChatSession = geminiService.startChat(siteSettings); 
       setChatSession(newChatSession);
       const initialBotGreeting = `Xin chào ${userName}! Tôi là trợ lý AI của ${siteSettings.companyName}. Tôi có thể giúp gì cho bạn?`;
-      setMessages([{ 
+      const welcomeMessage = { 
         id: Date.now().toString(), 
         text: initialBotGreeting,
-        sender: 'bot', 
+        sender: 'bot' as const, 
         timestamp: new Date() 
-      }]);
+      };
+      setMessages([welcomeMessage]);
       
       const newLogSession: ChatLogSession = {
         id: `chat-${Date.now()}`,
         userName: userName,
         userPhone: userPhone,
         startTime: new Date().toISOString(),
-        messages: [{ 
-            id: Date.now().toString(), 
-            text: initialBotGreeting,
-            sender: 'bot', 
-            timestamp: new Date() 
-          }]
+        messages: [welcomeMessage]
       };
       setCurrentChatLogSession(newLogSession);
 
     } catch (err) {
-      // Gracefully handle the error inside the component instead of crashing.
       console.error("Failed to initialize chat:", err);
       const errorMessage = err instanceof Error ? err.message : "Lỗi không xác định.";
       const displayError = errorMessage.includes("API Key") 
@@ -140,16 +162,21 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
         await saveChatLogSession(currentChatLogSession);
       } catch (error) {
         console.error("Failed to save chat log to backend:", error);
-        // Optionally notify user of save failure, but don't block UI
       }
     }
   }, [currentChatLogSession]);
 
   useEffect(() => {
-    if (currentChatLogSession) {
-      saveChatLog();
-    }
-  }, [messages, currentChatLogSession, saveChatLog]);
+    const handleBeforeUnload = () => {
+        if (currentChatLogSession && currentChatLogSession.messages.length > 1) {
+             saveChatLog();
+        }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [currentChatLogSession, saveChatLog]);
   
   const handleUserInfoSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -168,7 +195,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Simple size check (e.g., 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 5MB.');
         return;
@@ -249,6 +275,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     setImageFile(null);
     setImagePreview(null);
     if (currentImagePreview) URL.revokeObjectURL(currentImagePreview);
+    if (imageInputRef.current) imageInputRef.current.value = '';
 
     setIsLoading(true);
     setError(null);
