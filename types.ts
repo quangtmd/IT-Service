@@ -241,6 +241,7 @@ export interface User {
   address?: string;
   joinDate?: string; // ISO string date
   status?: UserStatus;
+  salary?: number;
   
   // CRM Fields (for customers)
   dateOfBirth?: string;
@@ -988,4 +989,56 @@ export interface BackendHealthStatus {
   database: 'connected' | 'disconnected';
   errorCode?: string;
   message?: string;
+}
+
+
+// --- NEW SYSTEM & HR TYPES ---
+export interface AuditLog {
+  id: number;
+  userId: string;
+  username: string; // Denormalized for easy display
+  action: string;
+  targetType: string;
+  targetId: string;
+  details?: string;
+  ipAddress?: string;
+  timestamp: string;
+}
+
+export interface Contract {
+  id: string;
+  name: string;
+  partnerName: string;
+  partnerType: 'customer' | 'supplier' | 'employee';
+  startDate: string;
+  endDate: string;
+  fileUrl?: string;
+  status: 'active' | 'expired' | 'terminated';
+}
+
+export interface Asset {
+  id: string;
+  name: string;
+  serialNumber?: string;
+  purchaseDate: string;
+  value: number;
+  assignedToId?: string;
+  assignedToName?: string;
+  status: 'in_use' | 'in_storage' | 'decommissioned';
+}
+
+export interface KPI {
+  id: string;
+  name: string;
+  targetValue: number;
+  unit: string;
+  period: 'monthly' | 'quarterly' | 'yearly';
+}
+
+export interface EmployeeKPI {
+  id: string;
+  employeeId: string;
+  kpiId: string;
+  actualValue: number;
+  period: string; // e.g., '2024-08'
 }

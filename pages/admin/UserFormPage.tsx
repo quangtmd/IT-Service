@@ -11,7 +11,7 @@ const UserFormPage: React.FC = () => {
     const { users, addUser, updateUser, currentUser } = useAuth();
     const isEditing = !!userId;
 
-    const [formData, setFormData] = useState<User | null>(null);
+    const [formData, setFormData] = useState<Partial<User> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +39,7 @@ const UserFormPage: React.FC = () => {
                 phone: '',
                 address: '',
                 imageUrl: '',
+                salary: 0,
             });
             setIsLoading(false);
         }
@@ -46,8 +47,9 @@ const UserFormPage: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         if (!formData) return;
-        const { name, value } = e.target;
-        setFormData(prev => prev ? ({ ...prev, [name]: value }) : null);
+        const { name, value, type } = e.target;
+        const isNumber = type === 'number';
+        setFormData(prev => prev ? ({ ...prev, [name]: isNumber ? Number(value) : value }) : null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -61,10 +63,10 @@ const UserFormPage: React.FC = () => {
                 alert('Cập nhật hồ sơ nhân sự thành công!');
             } else {
                 const { id, ...dto } = formData;
-                await addUser(dto);
+                await addUser(dto as Omit<User, 'id'>);
                 alert('Thêm nhân viên mới thành công!');
             }
-            navigate('/admin/hrm_dashboard'); // Navigate back to HRM list
+            navigate('/admin/system_management?tab=users');
         } catch (err) {
             alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi lưu hồ sơ nhân sự.');
         }
@@ -87,7 +89,7 @@ const UserFormPage: React.FC = () => {
                 <div className="admin-card-body text-center py-8 text-danger-text">
                     <i className="fas fa-exclamation-triangle text-3xl mb-3"></i>
                     <p>{error}</p>
-                    <Button onClick={() => navigate('/admin/hrm_dashboard')} className="mt-4">Quay lại</Button>
+                    <Button onClick={() => navigate('/admin/system_management?tab=users')} className="mt-4">Quay lại</Button>
                 </div>
             </div>
         );
@@ -100,7 +102,7 @@ const UserFormPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="flex flex-col h-full">
                 <div className="admin-card-header">
                     <h3 className="admin-card-title">{isEditing ? `Chỉnh sửa Hồ sơ Nhân sự: ${formData.username}` : 'Thêm Nhân viên mới'}</h3>
-                    <Button type="button" variant="outline" onClick={() => navigate('/admin/hrm_dashboard')}>Hủy</Button>
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin/system_management?tab=users')}>Hủy</Button>
                 </div>
                 <div className="admin-card-body admin-product-form-page-body"> {/* Using similar class for scrolling */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -125,17 +127,21 @@ const UserFormPage: React.FC = () => {
                                 <label htmlFor="position">Chức vụ</label>
                                 <input type="text" name="position" id="position" value={formData.position || ''} onChange={handleChange} />
                             </div>
+                             <div className="admin-form-group">
+                                <label htmlFor="salary">Lương cơ bản</label>
+                                <input type="number" name="salary" id="salary" value={formData.salary || 0} onChange={handleChange} />
+                            </div>
                             <div className="admin-form-group">
                                 <label htmlFor="phone">Số điện thoại</label>
                                 <input type="tel" name="phone" id="phone" value={formData.phone || ''} onChange={handleChange} />
                             </div>
-                            <div className="admin-form-group sm:col-span-2">
-                                <label htmlFor="address">Địa chỉ</label>
-                                <input type="text" name="address" id="address" value={formData.address || ''} onChange={handleChange} />
-                            </div>
                             <div className="admin-form-group">
                                 <label htmlFor="joinDate">Ngày vào làm</label>
                                 <input type="date" name="joinDate" id="joinDate" value={formData.joinDate ? formData.joinDate.split('T')[0] : ''} onChange={handleChange} />
+                            </div>
+                             <div className="admin-form-group sm:col-span-2">
+                                <label htmlFor="address">Địa chỉ</label>
+                                <input type="text" name="address" id="address" value={formData.address || ''} onChange={handleChange} />
                             </div>
                             <div className="admin-form-group">
                                 <label htmlFor="status">Trạng thái</label>
@@ -143,7 +149,7 @@ const UserFormPage: React.FC = () => {
                                     {USER_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
                             </div>
-                            <div className="admin-form-group sm:col-span-2">
+                            <div className="admin-form-group">
                                 <label htmlFor="staffRole">Vai trò hệ thống</label>
                                 <select name="staffRole" id="staffRole" value={formData.staffRole || 'Chuyên viên Hỗ trợ'} onChange={handleChange} disabled={formData.email === currentUser?.email}>
                                     {STAFF_ROLE_OPTIONS.map(role => <option key={role} value={role}>{role}</option>)}
@@ -153,7 +159,7 @@ const UserFormPage: React.FC = () => {
                     </div>
                 </div>
                 <div className="admin-modal-footer">
-                    <Button type="button" variant="outline" onClick={() => navigate('/admin/hrm_dashboard')}>Hủy</Button>
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin/system_management?tab=users')}>Hủy</Button>
                     <Button type="submit" variant="primary">Lưu thay đổi</Button>
                 </div>
             </form>

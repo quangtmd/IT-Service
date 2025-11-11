@@ -12,6 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+app.set('trust proxy', true); // Enable trusting proxy headers for req.ip
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Increase limit for media uploads
 
@@ -67,6 +68,28 @@ const filterObject = (obj, allowedKeys) => {
         process.exit(1); // Exit the process
     }
 })();
+
+// --- Audit Log Middleware/Helper ---
+const logActivity = async (req, action, targetType, targetId, details = {}) => {
+  try {
+    // In a real app, you'd get userId from a verified JWT token or session
+    const userId = req.body.userId || req.params.id || 'system'; 
+    const username = req.body.username || 'System Action'; // Placeholder
+
+    const logEntry = {
+      userId,
+      username,
+      action,
+      targetType,
+      targetId,
+      details: JSON.stringify(details),
+      ipAddress: req.ip,
+    };
+    await pool.query('INSERT INTO AuditLogs SET ?', logEntry);
+  } catch (error) {
+    console.error('Failed to write to audit log:', error);
+  }
+};
 
 
 app.get('/api/health', async (req, res) => {
@@ -234,6 +257,7 @@ app.post('/api/products', async (req, res) => {
         };
 
         await pool.query('INSERT INTO Products SET ?', productToDb);
+        logActivity(req, 'Tạo mới sản phẩm', 'Product', productToDb.id, { name: productToDb.name });
         const responseProduct = { ...req.body, id: productToDb.id };
         res.status(201).json(responseProduct);
     } catch (error) {
@@ -277,6 +301,7 @@ app.put('/api/products/:id', async (req, res) => {
         };
         
         const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [fieldsToUpdate, id]);
+        logActivity(req, 'Cập nhật sản phẩm', 'Product', id, { name: fieldsToUpdate.name });
         
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy sản phẩm để cập nhật' });
@@ -295,6 +320,7 @@ app.delete('/api/products/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy sản phẩm để xóa' });
         }
+        logActivity(req, 'Xóa sản phẩm', 'Product', id);
         res.status(204).send();
     } catch (error) {
         console.error("Lỗi khi xóa sản phẩm:", error);
@@ -405,6 +431,7 @@ app.post('/api/orders', async (req, res) => {
             paymentInfo: JSON.stringify(newOrder.paymentInfo),
             notes: newOrder.notes || null,
         });
+        logActivity(req, 'Tạo mới đơn hàng', 'Order', newOrder.id);
         res.status(201).json(newOrder);
     } catch (error) {
         console.error("Lỗi khi tạo đơn hàng:", error);
@@ -429,6 +456,7 @@ app.put('/api/orders/:id', async (req, res) => {
         delete updatesForDb.id;
 
         const [result] = await pool.query('UPDATE Orders SET ? WHERE id = ?', [updatesForDb, id]);
+        logActivity(req, 'Cập nhật đơn hàng', 'Order', id);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy đơn hàng để cập nhật' });
@@ -448,6 +476,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy đơn hàng để cập nhật' });
         }
+        logActivity(req, 'Cập nhật trạng thái đơn hàng', 'Order', id, { status });
         res.json({ id, status });
     } catch (error) {
         console.error(`Lỗi khi cập nhật trạng thái đơn hàng ID ${req.params.id}:`, error);
@@ -462,6 +491,7 @@ app.delete('/api/orders/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy đơn hàng để xóa' });
         }
+        logActivity(req, 'Xóa đơn hàng', 'Order', id);
         res.status(204).send();
     } catch (error) {
         console.error("Lỗi khi xóa đơn hàng:", error);
@@ -490,9 +520,11 @@ app.post('/api/login', async (req, res) => {
 
         // In a real app, compare hashed passwords. Here we do a plain text comparison.
         if (user.password !== password) {
+            logActivity(req, 'Đăng nhập thất bại', 'Auth', user.id, { reason: 'Sai mật khẩu' });
             return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
         }
         
+        logActivity(req, 'Đăng nhập thành công', 'Auth', user.id);
         // Remove password before sending user data to client
         delete user.password;
         res.json(user);
@@ -507,7 +539,7 @@ app.get('/api/users', async (req, res) => {
         const [users] = await pool.query(`
             SELECT u.id, u.username, u.email, u.password, u.role, u.staffRole, u.imageUrl, u.isLocked, 
                    u.phone, u.address, u.status, u.dateOfBirth, u.origin, u.loyaltyPoints, u.debtStatus, u.assignedStaffId,
-                   e.position, e.joinDate
+                   e.position, e.joinDate, e.salary
             FROM Users u
             LEFT JOIN Employees e ON u.id = e.userId
         `);
@@ -533,12 +565,12 @@ app.post('/api/users', async (req, res) => {
         if (userForDb.role === 'staff' || userForDb.role === 'admin') {
             const employeeColumns = ['position', 'joinDate', 'salary'];
             const employeeData = filterObject(req.body, employeeColumns);
-            if (Object.keys(employeeData).length > 0) {
-                await connection.query('INSERT INTO Employees SET ?', { userId: userForDb.id, ...employeeData });
-            }
+            // Always create an employee record if role is staff/admin
+            await connection.query('INSERT INTO Employees SET ?', { userId: userForDb.id, ...employeeData });
         }
         
         await connection.commit();
+        logActivity(req, 'Tạo người dùng mới', 'User', userForDb.id, { username: userForDb.username, role: userForDb.role });
         delete userForDb.password;
         res.status(201).json(userForDb);
 
@@ -584,6 +616,7 @@ app.put('/api/users/:id', async (req, res) => {
         }
         
         await connection.commit();
+        logActivity(req, 'Cập nhật người dùng', 'User', id);
         res.json({ id, ...req.body });
 
     } catch (error) {
@@ -605,6 +638,7 @@ app.delete('/api/users/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy người dùng' });
         }
+        logActivity(req, 'Xóa người dùng', 'User', id);
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
@@ -692,6 +726,17 @@ app.post('/api/chatlogs', async (req, res) => {
     } catch (error) {
         console.error("Lỗi khi lưu chat log:", error);
         res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+// --- AUDIT LOGS API ---
+app.get('/api/audit-logs', async (req, res) => {
+    try {
+        const [logs] = await pool.query('SELECT * FROM AuditLogs ORDER BY timestamp DESC LIMIT 100');
+        res.json(logs);
+    } catch (error) {
+        console.error("Error fetching audit logs:", error);
+        res.status(500).json({ message: 'Server error fetching audit logs', error: error.message });
     }
 });
 
@@ -1247,6 +1292,13 @@ app.delete('/api/stock-transfers/:id', async (req, res) => {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
+
+
+// --- PLACEHOLDER APIs for NEW MODULES ---
+app.get('/api/contracts', (req, res) => res.json([]));
+app.get('/api/assets', (req, res) => res.json([]));
+app.get('/api/kpis', (req, res) => res.json([]));
+app.get('/api/employee-kpis', (req, res) => res.json([]));
 
 
 // Serve static files in production

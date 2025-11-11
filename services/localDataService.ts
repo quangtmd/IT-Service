@@ -5,7 +5,8 @@ import {
     ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
     Quotation, User, WarrantyTicket, ReturnTicket, Supplier, Warehouse, StockReceipt, StockIssue, StockTransfer,
     Debt, PaymentApproval, CashflowForecastData,
-    ProductReview, EmailSubscriber, EmailCampaign, AdCampaign
+    ProductReview, EmailSubscriber, EmailCampaign, AdCampaign,
+    AuditLog, Contract, Asset, KPI, EmployeeKPI
 } from '../types';
 import * as Constants from '../constants';
 import { BACKEND_API_BASE_URL } from '../constants';
@@ -568,4 +569,21 @@ export const updateAdCampaign = async (id: string, updates: Partial<AdCampaign>)
 };
 export const deleteAdCampaign = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/marketing/ad-campaigns/${id}`, { method: 'DELETE' });
+};
+
+// --- NEW SYSTEM & HR SERVICES ---
+export const getAuditLogs = async (): Promise<AuditLog[]> => {
+    return fetchFromApi<AuditLog[]>('/api/audit-logs');
+};
+export const getContracts = async (): Promise<Contract[]> => {
+    return fetchFromApi<Contract[]>('/api/contracts');
+};
+export const getAssets = async (): Promise<Asset[]> => {
+    return fetchFromApi<Asset[]>('/api/assets');
+};
+export const getKpis = async (): Promise<KPI[]> => {
+    return fetchFromApi<KPI[]>('/api/kpis');
+};
+export const getEmployeeKpis = async (): Promise<EmployeeKPI[]> => {
+    return fetchFromApi<EmployeeKPI[]>('/api/employee-kpis');
 };

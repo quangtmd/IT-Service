@@ -39,6 +39,14 @@ CREATE TABLE `Users` (
   `assignedStaffId` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `Employees` (
+  `userId` varchar(255) NOT NULL, 
+  `position` varchar(255) DEFAULT NULL, 
+  `joinDate` date DEFAULT NULL, 
+  `salary` decimal(15, 2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE `ProductCategories` (
   `id` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -215,56 +223,67 @@ CREATE TABLE `Articles` (
     `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`tags`)),
     `slug` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `Assets` (`id` varchar(255) NOT NULL, `name` varchar(255) DEFAULT NULL, `serialNumber` varchar(255) DEFAULT NULL, `purchaseDate` date DEFAULT NULL, `value` decimal(15,2) DEFAULT NULL, `assignedTo` varchar(255) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `AuditLogs` (`id` int(11) NOT NULL, `userId` varchar(255) DEFAULT NULL, `action` varchar(255) NOT NULL, `target` varchar(255) DEFAULT NULL, `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details`)), `ipAddress` varchar(45) DEFAULT NULL, `timestamp` timestamp NULL DEFAULT current_timestamp()) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `AuditLogs` (
+  `id` int(11) NOT NULL, 
+  `userId` varchar(255) DEFAULT NULL, 
+  `username` varchar(255) DEFAULT NULL,
+  `action` varchar(255) NOT NULL, 
+  `targetType` varchar(50) DEFAULT NULL,
+  `targetId` varchar(255) DEFAULT NULL,
+  `details` text DEFAULT NULL,
+  `ipAddress` varchar(45) DEFAULT NULL, 
+  `timestamp` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Assets` (
+  `id` varchar(255) NOT NULL, 
+  `name` varchar(255) NOT NULL, 
+  `serialNumber` varchar(255) DEFAULT NULL, 
+  `purchaseDate` date DEFAULT NULL, 
+  `value` decimal(15,2) DEFAULT NULL, 
+  `assignedToId` varchar(255) DEFAULT NULL,
+  `assignedToName` varchar(255) DEFAULT NULL,
+  `status` enum('in_use','in_storage','decommissioned') DEFAULT 'in_storage'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `ChatLogSessions` (`id` varchar(255) NOT NULL, `userName` varchar(255) DEFAULT NULL, `userPhone` varchar(20) DEFAULT NULL, `startTime` timestamp NULL DEFAULT current_timestamp(), `messages` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`messages`))) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `Contracts` (`id` varchar(255) NOT NULL, `name` varchar(255) DEFAULT NULL, `partnerName` varchar(255) DEFAULT NULL, `startDate` date DEFAULT NULL, `endDate` date DEFAULT NULL, `fileUrl` text) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `Contracts` (
+  `id` varchar(255) NOT NULL, 
+  `name` varchar(255) NOT NULL, 
+  `partnerName` varchar(255) DEFAULT NULL, 
+  `partnerType` enum('customer','supplier','employee') NOT NULL,
+  `startDate` date DEFAULT NULL, 
+  `endDate` date DEFAULT NULL, 
+  `fileUrl` text,
+  `status` enum('active','expired','terminated') DEFAULT 'active'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `Debts` (`id` varchar(255) NOT NULL, `entityId` varchar(255) NOT NULL COMMENT 'Customer or Supplier ID', `entityName` varchar(255) DEFAULT NULL, `entityType` enum('customer','supplier') NOT NULL, `type` enum('receivable','payable') NOT NULL, `amount` decimal(15,2) NOT NULL, `dueDate` date DEFAULT NULL, `relatedTransactionId` varchar(255) DEFAULT NULL, `status` enum('Chưa thanh toán','Đã thanh toán','Quá hạn') NOT NULL DEFAULT 'Chưa thanh toán') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `DiscountCodes` (`id` varchar(255) NOT NULL, `code` varchar(255) NOT NULL, `type` enum('percentage','fixed_amount') NOT NULL, `value` decimal(10,2) NOT NULL, `description` text, `expiryDate` date DEFAULT NULL, `isActive` tinyint(1) DEFAULT 1) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `EmployeeKPIs` (`id` varchar(255) NOT NULL, `employeeId` varchar(255) NOT NULL, `kpiId` varchar(255) NOT NULL, `actualValue` decimal(15,2) DEFAULT NULL, `period` varchar(50) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `Employees` (`userId` varchar(255) NOT NULL, `position` varchar(255) DEFAULT NULL, `joinDate` date DEFAULT NULL, `salary` decimal(15,2) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `EmployeeKPIs` (
+  `id` varchar(255) NOT NULL, 
+  `employeeId` varchar(255) NOT NULL, 
+  `kpiId` varchar(255) NOT NULL, 
+  `actualValue` decimal(15,2) DEFAULT NULL, 
+  `period` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Faqs` (`id` varchar(255) NOT NULL, `question` text NOT NULL, `answer` text NOT NULL, `category` varchar(255) DEFAULT NULL, `isVisible` tinyint(1) DEFAULT 1) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `FinancialAccounts` (`id` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `type` varchar(100) DEFAULT NULL, `balance` decimal(15,2) DEFAULT 0.00) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Invoices` (`id` varchar(255) NOT NULL, `orderId` varchar(255) DEFAULT NULL, `amount` decimal(15,2) NOT NULL, `status` enum('unpaid','paid','overdue') NOT NULL, `dueDate` date DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `KPIs` (`id` varchar(255) NOT NULL, `name` varchar(255) DEFAULT NULL, `targetValue` decimal(15,2) DEFAULT NULL, `unit` varchar(50) DEFAULT NULL, `period` varchar(50) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `KPIs` (
+  `id` varchar(255) NOT NULL, 
+  `name` varchar(255) DEFAULT NULL, 
+  `targetValue` decimal(15,2) DEFAULT NULL, 
+  `unit` varchar(50) DEFAULT NULL, 
+  `period` enum('monthly','quarterly','yearly') DEFAULT 'monthly'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `LeaveRequests` (`id` varchar(255) NOT NULL, `employeeId` varchar(255) NOT NULL, `startDate` date DEFAULT NULL, `endDate` date DEFAULT NULL, `reason` text, `status` enum('pending','approved','rejected') DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `MediaLibrary` (
-    `id` varchar(255) NOT NULL,
-    `url` text NOT NULL,
-    `name` varchar(255) DEFAULT NULL,
-    `type` varchar(100) DEFAULT NULL,
-    `uploadedAt` timestamp NULL DEFAULT current_timestamp(),
-    `altText` varchar(255) DEFAULT NULL,
-    `associatedEntityType` varchar(50) DEFAULT NULL,
-    `associatedEntityId` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `MediaLibrary` ( `id` varchar(255) NOT NULL, `url` text NOT NULL, `name` varchar(255) DEFAULT NULL, `type` varchar(100) DEFAULT NULL, `uploadedAt` timestamp NULL DEFAULT current_timestamp(), `altText` varchar(255) DEFAULT NULL, `associatedEntityType` varchar(50) DEFAULT NULL, `associatedEntityId` varchar(255) DEFAULT NULL ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `ProductBrands` (`id` varchar(255) NOT NULL, `name` varchar(255) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `ProductReviews` (
-  `id` varchar(255) NOT NULL,
-  `productId` varchar(255) NOT NULL,
-  `userId` varchar(255) DEFAULT NULL,
-  `reviewerName` varchar(255) NOT NULL,
-  `rating` tinyint(4) NOT NULL,
-  `comment` text,
-  `createdAt` timestamp NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `ProductReviews` ( `id` varchar(255) NOT NULL, `productId` varchar(255) NOT NULL, `userId` varchar(255) DEFAULT NULL, `reviewerName` varchar(255) NOT NULL, `rating` tinyint(4) NOT NULL, `comment` text, `createdAt` timestamp NULL DEFAULT current_timestamp() ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Projects` (`id` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `managerId` varchar(255) DEFAULT NULL, `startDate` date DEFAULT NULL, `endDate` date DEFAULT NULL, `budget` decimal(15,2) DEFAULT NULL, `status` varchar(100) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `ServiceTickets` (
-  `id` varchar(255) NOT NULL,
-  `ticket_code` varchar(255) DEFAULT NULL,
-  `customerId` varchar(255) DEFAULT NULL,
-  `deviceName` varchar(255) DEFAULT NULL,
-  `reported_issue` text,
-  `status` varchar(255) DEFAULT NULL,
-  `createdAt` timestamp NULL DEFAULT current_timestamp(),
-  `assigneeId` varchar(255) DEFAULT NULL,
-  `rating` tinyint(1) DEFAULT NULL,
-  `customer_info` JSON,
-  `invoiceId` VARCHAR(255) NULL,
-  `receiverId` VARCHAR(255) NULL,
-  `work_items` TEXT NULL,
-  `appointment_date` DATETIME NULL,
-  `physical_condition` TEXT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `ServiceTickets` ( `id` varchar(255) NOT NULL, `ticket_code` varchar(255) DEFAULT NULL, `customerId` varchar(255) DEFAULT NULL, `deviceName` varchar(255) DEFAULT NULL, `reported_issue` text, `status` varchar(255) DEFAULT NULL, `createdAt` timestamp NULL DEFAULT current_timestamp(), `assigneeId` varchar(255) DEFAULT NULL, `rating` tinyint(1) DEFAULT NULL, `customer_info` JSON, `invoiceId` VARCHAR(255) NULL, `receiverId` VARCHAR(255) NULL, `work_items` TEXT NULL, `appointment_date` DATETIME NULL, `physical_condition` TEXT NULL ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Shipments` (`id` varchar(255) NOT NULL, `orderId` varchar(255) NOT NULL, `trackingCode` varchar(255) DEFAULT NULL, `shippingPartner` varchar(255) DEFAULT NULL, `status` varchar(255) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `SiteSettings` (`settingKey` varchar(255) NOT NULL, `settingValue` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`settingValue`)), `updatedAt` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `StockEntries` (`id` varchar(255) NOT NULL, `type` enum('in','out') NOT NULL, `entryDate` timestamp NULL DEFAULT current_timestamp(), `supplierId` varchar(255) DEFAULT NULL, `orderId` varchar(255) DEFAULT NULL, `notes` text) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -272,91 +291,17 @@ CREATE TABLE `StockEntryItems` (`stockEntryId` varchar(255) NOT NULL, `productId
 CREATE TABLE `Tasks` (`id` varchar(255) NOT NULL, `projectId` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `assigneeId` varchar(255) DEFAULT NULL, `dueDate` date DEFAULT NULL, `status` varchar(100) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `UserDetails` (`userId` varchar(255) NOT NULL, `fullName` varchar(255) DEFAULT NULL, `phone` varchar(20) DEFAULT NULL, `address` text, `imageUrl` text, `dateOfBirth` date DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Returns` (`id` varchar(255) NOT NULL, `orderId` varchar(255) NOT NULL, `reason` text, `status` ENUM('Đang chờ','Đã duyệt','Đã từ chối') NOT NULL DEFAULT 'Đang chờ', `refundAmount` decimal(15,2) DEFAULT NULL, `createdAt` timestamp NULL DEFAULT current_timestamp()) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `WarrantyTickets` (
-  `id` varchar(255) NOT NULL,
-  `ticketNumber` varchar(255) NOT NULL,
-  `productModel` varchar(255) DEFAULT NULL,
-  `productSerial` varchar(255) DEFAULT NULL,
-  `customerName` varchar(255) NOT NULL,
-  `customerPhone` varchar(255) DEFAULT NULL,
-  `creatorId` varchar(255) DEFAULT NULL,
-  `totalAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `status` varchar(255) NOT NULL,
-  `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
-  `reportedIssue` text,
-  `resolution_notes` text,
-  `receiveDate` datetime DEFAULT NULL,
-  `returnDate` datetime DEFAULT NULL,
-  `orderId` varchar(255) DEFAULT NULL,
-  `productId` varchar(255) DEFAULT NULL,
-  `customerId` varchar(255) DEFAULT NULL,
-  `priority` varchar(255) DEFAULT 'Bình thường',
-  `warrantyType` varchar(255) DEFAULT NULL,
-  `technician_notes` text,
-  `repairDate` datetime DEFAULT NULL,
-  `returnStaffId` varchar(255) DEFAULT NULL,
-  `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '[]' CHECK (json_valid(`items`)),
-  `serviceFee` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `discount` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `vat` decimal(5,2) NOT NULL DEFAULT 0.00,
-  `transactionType` varchar(50) DEFAULT 'Sửa chữa',
-  `department` varchar(255) DEFAULT NULL,
-  `departmentCode` varchar(255) DEFAULT NULL,
-  `currency` varchar(10) DEFAULT 'VND',
-  `totalQuantity` int(11) DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `Debts` (
-  `id` varchar(255) NOT NULL,
-  `entityId` varchar(255) NOT NULL COMMENT 'Customer or Supplier ID',
-  `entityName` varchar(255) DEFAULT NULL,
-  `entityType` enum('customer','supplier') NOT NULL,
-  `type` enum('receivable','payable') NOT NULL,
-  `amount` decimal(15,2) NOT NULL,
-  `dueDate` date DEFAULT NULL,
-  `relatedTransactionId` varchar(255) DEFAULT NULL,
-  `status` enum('Chưa thanh toán','Đã thanh toán','Quá hạn') NOT NULL DEFAULT 'Chưa thanh toán'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `PaymentApprovals` (
-  `id` varchar(255) NOT NULL,
-  `requestorId` varchar(255) NOT NULL,
-  `approverId` varchar(255) DEFAULT NULL,
-  `amount` decimal(15,2) NOT NULL,
-  `description` text NOT NULL,
-  `relatedTransactionId` varchar(255) DEFAULT NULL,
-  `status` enum('Chờ duyệt','Đã duyệt','Đã từ chối') NOT NULL DEFAULT 'Chờ duyệt',
-  `createdAt` timestamp NULL DEFAULT current_timestamp(),
-  `updatedAt` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `EmailSubscribers` (
-  `id` int(11) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `name` varchar(255) DEFAULT NULL,
-  `subscribedAt` timestamp NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `EmailCampaigns` (
-  `id` varchar(255) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `subject` varchar(255) NOT NULL,
-  `content` longtext,
-  `status` enum('Nháp','Đã gửi','Đang gửi') NOT NULL DEFAULT 'Nháp',
-  `sentAt` datetime DEFAULT NULL,
-  `createdAt` timestamp NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `AdCampaigns` (
-  `id` varchar(255) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `source` varchar(100) DEFAULT NULL,
-  `cost` decimal(10,2) DEFAULT 0.00,
-  `clicks` int(11) DEFAULT 0,
-  `conversions` int(11) DEFAULT 0,
-  `startDate` date DEFAULT NULL,
-  `endDate` date DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `WarrantyTickets` ( `id` varchar(255) NOT NULL, `ticketNumber` varchar(255) NOT NULL, `productModel` varchar(255) DEFAULT NULL, `productSerial` varchar(255) DEFAULT NULL, `customerName` varchar(255) NOT NULL, `customerPhone` varchar(255) DEFAULT NULL, `creatorId` varchar(255) DEFAULT NULL, `totalAmount` decimal(15,2) NOT NULL DEFAULT 0.00, `status` varchar(255) NOT NULL, `createdAt` timestamp NOT NULL DEFAULT current_timestamp(), `reportedIssue` text, `resolution_notes` text, `receiveDate` datetime DEFAULT NULL, `returnDate` datetime DEFAULT NULL, `orderId` varchar(255) DEFAULT NULL, `productId` varchar(255) DEFAULT NULL, `customerId` varchar(255) DEFAULT NULL, `priority` varchar(255) DEFAULT 'Bình thường', `warrantyType` varchar(255) DEFAULT NULL, `technician_notes` text, `repairDate` datetime DEFAULT NULL, `returnStaffId` varchar(255) DEFAULT NULL, `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '[]' CHECK (json_valid(`items`)), `serviceFee` decimal(15,2) NOT NULL DEFAULT 0.00, `discount` decimal(15,2) NOT NULL DEFAULT 0.00, `vat` decimal(5,2) NOT NULL DEFAULT 0.00, `transactionType` varchar(50) DEFAULT 'Sửa chữa', `department` varchar(255) DEFAULT NULL, `departmentCode` varchar(255) DEFAULT NULL, `currency` varchar(10) DEFAULT 'VND', `totalQuantity` int(11) DEFAULT 0 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `PaymentApprovals` ( `id` varchar(255) NOT NULL, `requestorId` varchar(255) NOT NULL, `approverId` varchar(255) DEFAULT NULL, `amount` decimal(15,2) NOT NULL, `description` text NOT NULL, `relatedTransactionId` varchar(255) DEFAULT NULL, `status` enum('Chờ duyệt','Đã duyệt','Đã từ chối') NOT NULL DEFAULT 'Chờ duyệt', `createdAt` timestamp NULL DEFAULT current_timestamp(), `updatedAt` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `EmailSubscribers` ( `id` int(11) NOT NULL, `email` varchar(255) NOT NULL, `name` varchar(255) DEFAULT NULL, `subscribedAt` timestamp NULL DEFAULT current_timestamp() ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `EmailCampaigns` ( `id` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `subject` varchar(255) NOT NULL, `content` longtext, `status` enum('Nháp','Đã gửi','Đang gửi') NOT NULL DEFAULT 'Nháp', `sentAt` datetime DEFAULT NULL, `createdAt` timestamp NULL DEFAULT current_timestamp() ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `AdCampaigns` ( `id` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `source` varchar(100) DEFAULT NULL, `cost` decimal(10,2) DEFAULT 0.00, `clicks` int(11) DEFAULT 0, `conversions` int(11) DEFAULT 0, `startDate` date DEFAULT NULL, `endDate` date DEFAULT NULL ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =================================================================
 -- 3. ADD INDEXES & CONSTRAINTS
 -- =================================================================
 ALTER TABLE `Users` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `email` (`email`);
+ALTER TABLE `Employees` ADD PRIMARY KEY (`userId`);
 ALTER TABLE `ProductCategories` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `slug` (`slug`), ADD KEY `parentId` (`parentId`);
 ALTER TABLE `Products` ADD PRIMARY KEY (`id`), ADD KEY `categoryId` (`categoryId`), ADD KEY `slug` (`slug`), ADD KEY `supplierId` (`supplierId`);
 ALTER TABLE `Orders` ADD PRIMARY KEY (`id`), ADD KEY `userId` (`userId`), ADD KEY `creatorId` (`creatorId`);
@@ -371,14 +316,12 @@ ALTER TABLE `StockIssues` ADD PRIMARY KEY (`id`), ADD KEY `orderId` (`orderId`);
 ALTER TABLE `StockTransfers` ADD PRIMARY KEY (`id`), ADD KEY `sourceWarehouseId` (`sourceWarehouseId`), ADD KEY `destWarehouseId` (`destWarehouseId`), ADD KEY `approverId` (`approverId`);
 ALTER TABLE `ArticleCategories` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `name` (`name`), ADD UNIQUE KEY `slug` (`slug`);
 ALTER TABLE `Articles` ADD PRIMARY KEY (`id`), ADD KEY `slug` (`slug`);
-ALTER TABLE `Assets` ADD PRIMARY KEY (`id`), ADD KEY `assignedTo` (`assignedTo`);
-ALTER TABLE `AuditLogs` ADD PRIMARY KEY (`id`);
-ALTER TABLE `ChatLogSessions` ADD PRIMARY KEY (`id`);
+ALTER TABLE `Assets` ADD PRIMARY KEY (`id`), ADD KEY `assignedToId` (`assignedToId`);
+ALTER TABLE `AuditLogs` ADD PRIMARY KEY (`id`), ADD KEY `userId` (`userId`);
 ALTER TABLE `Contracts` ADD PRIMARY KEY (`id`);
 ALTER TABLE `Debts` ADD PRIMARY KEY (`id`);
 ALTER TABLE `DiscountCodes` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `code` (`code`);
 ALTER TABLE `EmployeeKPIs` ADD PRIMARY KEY (`id`), ADD KEY `employeeId` (`employeeId`), ADD KEY `kpiId` (`kpiId`);
-ALTER TABLE `Employees` ADD PRIMARY KEY (`userId`);
 ALTER TABLE `Faqs` ADD PRIMARY KEY (`id`);
 ALTER TABLE `FinancialAccounts` ADD PRIMARY KEY (`id`);
 ALTER TABLE `Invoices` ADD PRIMARY KEY (`id`), ADD KEY `orderId` (`orderId`);
@@ -414,9 +357,14 @@ INSERT IGNORE INTO `Users` (`id`, `username`, `email`, `password`, `role`, `staf
 ('cust003', 'Lê Hoàng Long', 'long.le@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 0, '0978111222', 'K12/3 Phan Châu Trinh, Đà Nẵng', '1988-01-30', 'Giới thiệu', 500, 'Không có', 'staff002'),
 ('cust004', 'Phạm Thị Mai', 'mai.pham@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 0, '0945333444', '78 Hùng Vương, Đà Nẵng', '2001-03-10', 'Website', 0, 'Không có', NULL),
 ('cust005', 'Võ Thành Trung', 'trung.vo@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 1, '0988555666', '34/5 Hoàng Diệu, Đà Nẵng', '1999-07-25', 'Khác', 80, 'Quá hạn', 'staff002'),
-('staff001', 'Lê Hùng', 'hung.le@iqtech.com', 'password123', 'staff', 'Trưởng nhóm Kỹ thuật', 'Đang hoạt động', 0, '0911855055', 'Văn phòng IQ Tech', NULL, NULL, NULL, NULL, NULL),
-('staff002', 'Nguyễn Thị Lan', 'lan.nguyen@iqtech.com', 'password123', 'staff', 'Quản lý Bán hàng', 'Đang hoạt động', 0, '0911855056', 'Văn phòng IQ Tech', NULL, NULL, NULL, NULL, NULL),
-('user001', 'Duy Quang', 'duyquang@email.com', 'password123', 'admin', 'Nhân viên Toàn quyền', 'Đang hoạt động', 0, '0911855055', 'Văn phòng IQ Tech', NULL, NULL, NULL, NULL, NULL);
+('staff001', 'Lê Hùng', 'hung.le@iqtechnology.com.vn', 'password123', 'staff', 'Trưởng nhóm Kỹ thuật', 'Đang hoạt động', 0, '0911855055', 'Văn phòng IQ Tech', NULL, NULL, NULL, NULL, NULL),
+('staff002', 'Nguyễn Thị Lan', 'lan.nguyen@iqtechnology.com.vn', 'password123', 'staff', 'Quản lý Bán hàng', 'Đang hoạt động', 0, '0911855056', 'Văn phòng IQ Tech', NULL, NULL, NULL, NULL, NULL),
+('user001', 'Duy Quang', 'quang.tran@iqtechnology.com.vn', 'password123', 'admin', 'Nhân viên Toàn quyền', 'Đang hoạt động', 0, '0911855055', 'Văn phòng IQ Tech', NULL, NULL, NULL, NULL, NULL);
+
+INSERT IGNORE INTO `Employees` (`userId`, `position`, `joinDate`, `salary`) VALUES
+('staff001', 'Trưởng nhóm Kỹ thuật', '2022-01-15', 20000000),
+('staff002', 'Quản lý Bán hàng', '2021-11-01', 18000000),
+('user001', 'Giám đốc', '2020-01-01', 30000000);
 
 INSERT IGNORE INTO `Warehouses` (`id`, `name`, `location`) VALUES 
 ('WH001', 'Kho Chính', '10 Huỳnh Thúc Kháng, Đà Nẵng'), 
