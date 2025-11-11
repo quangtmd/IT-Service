@@ -349,8 +349,10 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                <Button onClick={handleSaveDraft} size="sm" variant="outline">Lưu Nháp</Button>
-                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                {/* FIX: Wrap event handlers in arrow functions to call them without arguments, resolving a TypeScript error. */}
+                <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
+                {/* FIX: Wrap event handlers in arrow functions to call them without arguments, resolving a TypeScript error. */}
+                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

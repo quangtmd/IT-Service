@@ -5,11 +5,9 @@ import {
     ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
     Quotation, User, WarrantyTicket, ReturnTicket, Supplier, Warehouse, StockReceipt, StockIssue, StockTransfer
 } from '../types';
-// FIX: Import all of Constants to use its properties.
 import * as Constants from '../constants';
 import { BACKEND_API_BASE_URL } from '../constants';
 
-// FIX: Add missing helper functions for localStorage access.
 // --- Helper Functions for localStorage ---
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try {
@@ -425,7 +423,6 @@ export const getServerInfo = async (): Promise<ServerInfo> => {
 export const checkBackendHealth = async () => {
     return fetchFromApi<{ status: string; database: string; errorCode?: string; message?: string }>('/api/health');
 };
-// FIX: Exported inventory and logistics functions to resolve import errors.
 // --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
 
 // Warehouses
@@ -475,7 +472,21 @@ export const addStockIssue = async (issue: Omit<StockIssue, 'id'>): Promise<Stoc
     setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, [newIssue, ...issues]);
     return newIssue;
 };
-// ... Add update and delete for Stock Issues if needed
+
+export const updateStockIssue = async (id: string, updates: Partial<StockIssue>): Promise<StockIssue> => {
+    const issues = await getStockIssues();
+    let updatedIssue: StockIssue | undefined;
+    const newIssues = issues.map(i => {
+        if (i.id === id) {
+            updatedIssue = { ...i, ...updates };
+            return updatedIssue;
+        }
+        return i;
+    });
+    if (!updatedIssue) throw new Error("Issue not found");
+    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, newIssues);
+    return updatedIssue;
+};
 
 // Stock Transfers
 export const getStockTransfers = async (): Promise<StockTransfer[]> => {
@@ -487,4 +498,17 @@ export const addStockTransfer = async (transfer: Omit<StockTransfer, 'id'>): Pro
     setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, [newTransfer, ...transfers]);
     return newTransfer;
 };
-// ... Add update and delete for Stock Transfers if needed
+export const updateStockTransfer = async (id: string, updates: Partial<StockTransfer>): Promise<StockTransfer> => {
+    const transfers = await getStockTransfers();
+    let updatedTransfer: StockTransfer | undefined;
+    const newTransfers = transfers.map(t => {
+        if (t.id === id) {
+            updatedTransfer = { ...t, ...updates };
+            return updatedTransfer;
+        }
+        return t;
+    });
+    if (!updatedTransfer) throw new Error("Transfer not found");
+    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, newTransfers);
+    return updatedTransfer;
+};
