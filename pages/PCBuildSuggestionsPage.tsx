@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 // FIX: The PCBuildSuggestion interface is now defined in types.ts.
@@ -6,6 +6,7 @@ import { PCBuildSuggestion } from '../types';
 import geminiService from '../services/geminiService';
 import * as Constants from '../constants';
 import { Link } from 'react-router-dom';
+import { useChatbotContext } from '../contexts/ChatbotContext';
 
 const PCBuildSuggestionsPage: React.FC = () => {
     const [useCase, setUseCase] = useState<'PC Gaming' | 'PC Văn phòng'>('PC Gaming');
@@ -14,6 +15,12 @@ const PCBuildSuggestionsPage: React.FC = () => {
     const [suggestions, setSuggestions] = useState<PCBuildSuggestion[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { setCurrentContext } = useChatbotContext();
+
+    useEffect(() => {
+        setCurrentContext('Khách hàng đang ở trang Gợi ý Cấu hình PC từ AI.');
+        return () => setCurrentContext(null); // Clear context on unmount
+    }, [setCurrentContext]);
 
     const isApiKeyConfigured = process.env.API_KEY && process.env.API_KEY !== 'undefined';
 

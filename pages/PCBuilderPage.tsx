@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 // Fix: Use named import for useNavigate
 import { useNavigate } from 'react-router-dom';
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
@@ -10,6 +10,7 @@ import geminiService from '../services/geminiService';
 import Card from '../components/ui/Card';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../contexts/AuthContext';
+import { useChatbotContext } from '../contexts/ChatbotContext';
 
 type BuilderSelectorKey = 'CPU' | 'Motherboard' | 'RAM' | 'GPU' | 'SSD' | 'PSU' | 'Case';
 type SelectedComponents = Partial<Record<BuilderSelectorKey, string>>;
@@ -48,6 +49,13 @@ export const PCBuilderPage: React.FC = () => {
   const { addAdminNotification } = useAuth();
   // Fix: Use useNavigate directly
   const navigate = useNavigate();
+  const { setCurrentContext } = useChatbotContext();
+
+  useEffect(() => {
+    setCurrentContext('Khách hàng đang ở trang Xây Dựng Cấu Hình PC.');
+    return () => setCurrentContext(null); // Clear context on unmount
+  }, [setCurrentContext]);
+
 
   const handleComponentChange = useCallback((
     type: BuilderSelectorKey,

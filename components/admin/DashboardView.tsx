@@ -1,12 +1,12 @@
-
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getOrders, getProducts, getArticles, getServerInfo } from '../../services/localDataService';
+import { getOrders, getProducts, checkBackendHealth } from '../../services/localDataService';
 import Card from '../ui/Card';
-import { Order, OrderStatus, ServerInfo, Product, Article, AdminView } from '../../types';
+import { Order, OrderStatus, Product, AdminView, User, AdminNotification, BackendHealthStatus } from '../../types';
 import Button from '../ui/Button';
-import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
+import BackendConnectionError from '../../components/shared/BackendConnectionError';
+// FIX: Import useNavigate hook for navigation.
+import { Link, useNavigate } from 'react-router-dom';
 
 interface DashboardViewProps {
   setActiveView: (view: AdminView) => void;
@@ -23,125 +23,44 @@ const getStatusColor = (status: OrderStatus) => {
     }
 };
 
-const StatCard: React.FC<{ title: string; value: string | number; icon: string; color: string; onClick?: () => void }> = ({ title, value, icon, color, onClick }) => (
-    <div onClick={onClick} className={`p-4 rounded-lg shadow-md flex items-center cursor-pointer hover:shadow-lg transition-shadow ${color} stat-card-pattern`}>
-        <div className="p-3 rounded-full bg-white/30 mr-4">
-            <i className={`fas ${icon} text-2xl text-white`}></i>
+const StatCard: React.FC<{ title: string; value: string | number; icon: string; color: string; onClick?: () => void, subtitle?: string }> = ({ title, value, icon, color, onClick, subtitle }) => (
+    <div onClick={onClick} className={`p-5 rounded-lg shadow-md flex items-center cursor-pointer hover:shadow-xl transition-shadow ${color} stat-card-pattern`}>
+        <div className="p-4 rounded-full bg-white/30 mr-4">
+            <i className={`fas ${icon} text-3xl text-white`}></i>
         </div>
         <div>
+            <p className="text-3xl font-bold text-white">{value}</p>
             <p className="text-sm font-medium text-white/90">{title}</p>
-            <p className="text-2xl font-bold text-white">{value}</p>
+            {subtitle && <p className="text-xs text-white/80 mt-1">{subtitle}</p>}
         </div>
     </div>
 );
 
-const RevenueChart: React.FC<{ data: { day: string; revenue: number }[] }> = ({ data }) => {
-    const width = 600;
-    const height = 300;
-    const padding = 40;
-
-    if (!data || data.length === 0) {
-        return <div className="text-center p-8 text-gray-500">Không có dữ liệu doanh thu.</div>;
-    }
-
-    const maxRevenue = Math.max(...data.map(d => d.revenue));
-    const maxRevenueCeiling = Math.ceil(maxRevenue / 1000000) * 1000000 || 1000000;
-
-    const getX = (index: number) => padding + (index / (data.length - 1)) * (width - padding * 2);
-    const getY = (revenue: number) => height - padding - (revenue / maxRevenueCeiling) * (height - padding * 2);
-
-    const linePath = data.map((point, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(point.revenue)}`).join(' ');
-    const areaPath = `${linePath} L ${getX(data.length - 1)} ${height - padding} L ${getX(0)} ${height - padding} Z`;
-
-    const yAxisLabels = Array.from({ length: 5 }, (_, i) => {
-        const value = (maxRevenueCeiling / 4) * i;
-        return { value, y: getY(value) };
-    });
-
-    return (
-        <div className="w-full overflow-hidden">
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
-                <defs>
-                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--color-primary-default)" stopOpacity={0.4} />
-                        <stop offset="100%" stopColor="var(--color-primary-default)" stopOpacity={0} />
-                    </linearGradient>
-                </defs>
-                {yAxisLabels.map(label => (
-                    <g key={label.value}>
-                        <line x1={padding} y1={label.y} x2={width - padding} y2={label.y} stroke="#e2e8f0" strokeDasharray="4" />
-                        <text x={padding - 10} y={label.y + 4} textAnchor="end" fontSize="10" fill="#94a3b8">{`${label.value / 1000000}tr`}</text>
-                    </g>
-                ))}
-                {data.map((point, i) => {
-                    if (data.length <= 7 || i % (Math.floor(data.length / 6)) === 0) {
-                        return <text key={i} x={getX(i)} y={height - padding + 15} textAnchor="middle" fontSize="10" fill="#94a3b8">{point.day}</text>
-                    }
-                    return null;
-                })}
-                <path d={areaPath} fill="url(#revenueGradient)" />
-                <path d={linePath} fill="none" stroke="var(--color-primary-default)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-        </div>
-    );
-};
-
-
 const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
+    // FIX: Initialize useNavigate hook.
+    const navigate = useNavigate();
     const { users, adminNotifications } = useAuth();
     const [orders, setOrders] = useState<Order[]>([]);
-    const [totalProducts, setTotalProducts] = useState(0);
-    const [recentArticles, setRecentArticles] = useState<Article[]>([]);
-    const [revenueData, setRevenueData] = useState<{ day: string; revenue: number }[]>([]);
-    const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null);
-    const [isServerInfoLoading, setIsServerInfoLoading] = useState(true);
-    const [ipCopied, setIpCopied] = useState(false);
+    const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
+    const [backendStatus, setBackendStatus] = useState<BackendHealthStatus | null>(null);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                const [ordersData, productsData, articlesData] = await Promise.all([
+                const [ordersData, productsData, healthData] = await Promise.all([
                     getOrders(),
-                    getProducts('limit=1'), // Only need total count
-                    getArticles(),
+                    getProducts('limit=10000'),
+                    checkBackendHealth()
                 ]);
                 
                 setOrders(ordersData);
-                setTotalProducts(productsData.totalProducts);
-                setRecentArticles(articlesData.slice(0, 3));
-
-                // Process revenue data
-                const revenueByDay: Record<string, number> = {};
-                const today = new Date();
-                const thirtyDaysAgo = new Date(today);
-                thirtyDaysAgo.setDate(today.getDate() - 29);
-
-                ordersData
-                    .filter(o => o.status === 'Hoàn thành' && new Date(o.orderDate) >= thirtyDaysAgo)
-                    .forEach(o => {
-                        const day = new Date(o.orderDate).toLocaleDateString('vi-VN', { day: '2-digit' });
-                        revenueByDay[day] = (revenueByDay[day] || 0) + o.totalAmount;
-                    });
-                
-                const chartData = Array.from({ length: 30 }, (_, i) => {
-                    const date = new Date();
-                    date.setDate(today.getDate() - i);
-                    const day = date.toLocaleDateString('vi-VN', { day: '2-digit' });
-                    return { day, revenue: 0 };
-                }).reverse();
-
-                chartData.forEach(d => {
-                    if (revenueByDay[d.day]) {
-                        d.revenue = revenueByDay[d.day];
-                    }
-                });
-                
-                setRevenueData(chartData);
+                setProducts(productsData.products);
+                // FIX: Cast healthData to BackendHealthStatus to resolve type mismatch.
+                setBackendStatus(healthData as BackendHealthStatus);
 
             } catch (error) {
                 console.error("Failed to fetch dashboard data:", error);
@@ -151,34 +70,41 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
             }
         };
 
-        const fetchServerInfo = async () => {
-            setIsServerInfoLoading(true);
-            try {
-                const info = await getServerInfo();
-                setServerInfo(info);
-            } catch (err) {
-                 console.error("Failed to fetch server info", err);
-                 // Don't set global error for server info as it's not critical for the entire dashboard
-            } finally {
-                setIsServerInfoLoading(false);
-            }
-        };
-
         fetchDashboardData();
-        fetchServerInfo();
     }, []);
 
-    const handleCopyIp = () => {
-        if (serverInfo?.outboundIp) {
-            navigator.clipboard.writeText(serverInfo.outboundIp);
-            setIpCopied(true);
-            setTimeout(() => setIpCopied(false), 2000);
-        }
-    };
+    const summary = useMemo(() => {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const customerCount = users.filter(u => u.role === 'customer').length;
-    const unreadNotifications = adminNotifications.filter(n => !n.isRead).length;
-    const recentOrders = orders.slice(0, 5);
+        const ordersThisMonth = orders.filter(o => new Date(o.orderDate) >= startOfMonth);
+        const customersThisMonth = users.filter(u => u.role === 'customer' && u.createdAt && new Date(u.createdAt) >= startOfMonth);
+
+        const revenueThisMonth = ordersThisMonth
+            .filter(o => o.status === 'Hoàn thành')
+            .reduce((sum, o) => sum + o.totalAmount, 0);
+        
+        const profitThisMonth = ordersThisMonth
+            .filter(o => o.status === 'Hoàn thành')
+            .reduce((sum, o) => sum + (o.profit || 0), 0);
+
+        const pendingOrders = orders.filter(o => o.status === 'Chờ xử lý');
+        const lowStockProducts = products.filter(p => p.stock > 0 && p.stock <= 5);
+        const bestSellers = products.filter(p => p.tags?.includes('Bán chạy')).slice(0, 5);
+
+        return {
+            revenueThisMonth,
+            profitThisMonth,
+            newOrdersCount: ordersThisMonth.length,
+            newCustomersCount: customersThisMonth.length,
+            pendingOrders,
+            lowStockProducts,
+            bestSellers,
+        };
+    }, [orders, products, users]);
+
+    const recentOrders = useMemo(() => orders.slice(0, 5), [orders]);
+    const unreadNotifications = useMemo(() => adminNotifications.filter(n => !n.isRead).slice(0, 4), [adminNotifications]);
 
     if (isLoading) {
         return (
@@ -192,49 +118,35 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
         <div className="space-y-6">
             {error && <BackendConnectionError error={error} />}
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title="Tổng Đơn Hàng" value={orders.length} icon="fa-receipt" color="bg-blue-500" onClick={() => setActiveView('orders')} />
-                <StatCard title="Sản Phẩm" value={totalProducts} icon="fa-box-open" color="bg-green-500" onClick={() => setActiveView('products')} />
-                <StatCard title="Khách Hàng" value={customerCount} icon="fa-users" color="bg-purple-500" onClick={() => setActiveView('customers')} />
-                <StatCard title="Thông Báo Mới" value={unreadNotifications} icon="fa-bell" color="bg-yellow-500" onClick={() => setActiveView('notifications_panel')} />
+                <StatCard title="Doanh thu tháng" value={summary.revenueThisMonth.toLocaleString('vi-VN')+'₫'} icon="fa-chart-line" color="bg-blue-500" onClick={() => setActiveView('reports')} />
+                <StatCard title="Lợi nhuận tháng" value={summary.profitThisMonth.toLocaleString('vi-VN')+'₫'} icon="fa-dollar-sign" color="bg-green-500" onClick={() => navigate('/admin/reports?type=profit')} />
+                <StatCard title="Đơn hàng mới" value={summary.newOrdersCount} icon="fa-receipt" color="bg-purple-500" onClick={() => setActiveView('orders')} subtitle="Trong tháng này" />
+                <StatCard title="Khách hàng mới" value={summary.newCustomersCount} icon="fa-users" color="bg-orange-500" onClick={() => setActiveView('partners')} subtitle="Trong tháng này" />
             </div>
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2 space-y-6">
-                    {/* Revenue Chart */}
                     <Card className="!p-4">
-                        <h4 className="font-semibold text-lg mb-3 px-2">Doanh thu 30 ngày qua</h4>
-                        <RevenueChart data={revenueData} />
-                    </Card>
-                    {/* Recent Orders */}
-                    <Card className="!p-4">
-                        <div className="flex justify-between items-center mb-3">
+                         <div className="flex justify-between items-center mb-3">
                             <h4 className="font-semibold text-lg">Đơn hàng gần đây</h4>
                             <Button variant="ghost" size="sm" onClick={() => setActiveView('orders')}>Xem tất cả</Button>
                         </div>
                          <div className="overflow-x-auto">
                             <table className="admin-table w-full">
                                 <thead>
-                                    <tr>
-                                        <th>Mã ĐH</th>
-                                        <th>Khách hàng</th>
-                                        <th>Tổng tiền</th>
-                                        <th>Trạng thái</th>
-                                    </tr>
+                                    <tr><th>Mã ĐH</th><th>Khách hàng</th><th>Tổng tiền</th><th>Trạng thái</th></tr>
                                 </thead>
                                 <tbody>
                                     {recentOrders.length > 0 ? recentOrders.map(order => (
-                                        <tr key={order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setActiveView('orders')}>
+                                        <tr key={order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/admin/orders/edit/${order.id}`)}>
                                             <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{String(order.id).slice(-6)}</span></td>
                                             <td>{order.customerInfo.fullName}</td>
                                             <td className="font-semibold">{order.totalAmount.toLocaleString('vi-VN')}₫</td>
                                             <td><span className={`status-badge ${getStatusColor(order.status)}`}>{order.status}</span></td>
                                         </tr>
                                     )) : (
-                                        <tr>
-                                            <td colSpan={4} className="text-center py-4 text-gray-500">Chưa có đơn hàng nào.</td>
-                                        </tr>
+                                        <tr><td colSpan={4} className="text-center py-4 text-gray-500">Chưa có đơn hàng nào.</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -242,54 +154,53 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                     </Card>
                 </div>
                  <div className="xl:col-span-1 space-y-6">
-                    {/* Quick Actions */}
                     <Card className="!p-4">
-                        <h4 className="font-semibold text-lg mb-3">Tác vụ nhanh</h4>
-                        <div className="flex flex-col gap-2">
-                            <Button onClick={() => setActiveView('products')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-plus w-6 mr-2"></i>Thêm sản phẩm</Button>
-                            <Button onClick={() => setActiveView('articles')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-pen w-6 mr-2"></i>Viết bài mới</Button>
-                            <Button onClick={() => setActiveView('discounts')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-tags w-6 mr-2"></i>Tạo mã giảm giá</Button>
-                            <Button onClick={() => setActiveView('hrm_dashboard')} variant="outline" className="w-full justify-start !py-3"><i className="fas fa-user-plus w-6 mr-2"></i>Thêm nhân viên</Button>
+                        <h4 className="font-semibold text-lg mb-3">Cần chú ý</h4>
+                        <div className="space-y-3">
+                            <Link to="/admin/orders" className="flex justify-between items-center p-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors">
+                                <div><i className="fas fa-hourglass-half mr-2 text-yellow-600"></i><span className="font-medium text-yellow-800">Đơn hàng chờ xử lý</span></div>
+                                <span className="font-bold text-lg text-yellow-800">{summary.pendingOrders.length}</span>
+                            </Link>
+                             <Link to="/admin/inventory" className="flex justify-between items-center p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                <div><i className="fas fa-box-open mr-2 text-red-600"></i><span className="font-medium text-red-800">Sản phẩm sắp hết hàng</span></div>
+                                <span className="font-bold text-lg text-red-800">{summary.lowStockProducts.length}</span>
+                            </Link>
+                             <Link to="/admin/notifications_panel" className="flex justify-between items-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                <div><i className="fas fa-bell mr-2 text-blue-600"></i><span className="font-medium text-blue-800">Thông báo chưa đọc</span></div>
+                                <span className="font-bold text-lg text-blue-800">{unreadNotifications.length}</span>
+                            </Link>
                         </div>
                     </Card>
+                    
+                    <Card className="!p-4">
+                         <h4 className="font-semibold text-lg mb-3">Thông báo gần đây</h4>
+                         <div className="space-y-2">
+                            {unreadNotifications.length > 0 ? unreadNotifications.map(n => (
+                                <div key={n.id} className="text-sm p-2 rounded-md bg-gray-50 border-l-4 border-blue-400">
+                                    <p className="line-clamp-2">{n.message}</p>
+                                    <p className="text-xs text-gray-400 mt-1">{new Date(n.timestamp).toLocaleString('vi-VN')}</p>
+                                </div>
+                            )) : <p className="text-sm text-gray-500 text-center py-4">Không có thông báo mới.</p>}
+                         </div>
+                    </Card>
 
-                    {/* Recent Articles */}
-                     <Card className="!p-4">
-                        <h4 className="font-semibold text-lg mb-3">Bài viết gần đây</h4>
-                        <div className="space-y-3">
-                        {recentArticles.map(article => (
-                            <div key={article.id} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-1 rounded-md" onClick={() => setActiveView('articles')}>
-                                <img src={article.imageUrl || `https://picsum.photos/seed/${article.id}/60/60`} alt={article.title} className="w-12 h-12 rounded-md object-cover flex-shrink-0" />
+                    <Card className="!p-4">
+                        <h4 className="font-semibold text-lg mb-3">Tình trạng Hệ thống</h4>
+                        {backendStatus ? (
+                            <div className={`p-3 rounded-lg border flex items-center gap-3 ${backendStatus.status === 'ok' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                <i className={`fas ${backendStatus.status === 'ok' ? 'fa-check-circle text-green-500' : 'fa-exclamation-triangle text-red-500'} text-2xl`}></i>
                                 <div>
-                                    <p className="text-sm font-semibold line-clamp-2 text-textBase">{article.title}</p>
-                                    <p className="text-xs text-textMuted">{article.author} - {new Date(article.date).toLocaleDateString('vi-VN')}</p>
+                                    <p className={`font-semibold ${backendStatus.status === 'ok' ? 'text-green-800' : 'text-red-800'}`}>
+                                        Backend: {backendStatus.status === 'ok' ? 'Hoạt động' : 'Gặp sự cố'}
+                                    </p>
+                                    <p className={`text-xs ${backendStatus.status === 'ok' ? 'text-green-600' : 'text-red-600'}`}>
+                                        Database: {backendStatus.database === 'connected' ? 'Đã kết nối' : 'Mất kết nối'}
+                                    </p>
                                 </div>
                             </div>
-                        ))}
-                        </div>
-                    </Card>
-
-                    {/* System Info Card */}
-                    <Card className="!p-4">
-                        <h4 className="font-semibold text-lg mb-3">Thông tin Hệ thống</h4>
-                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            {isServerInfoLoading ? (
-                                <p className="text-sm text-slate-500">Đang tải thông tin máy chủ...</p>
-                            ) : serverInfo?.outboundIp !== 'Not available' ? (
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm text-slate-600">
-                                        <strong className="block">IP Máy chủ:</strong>
-                                        <span className="font-mono bg-slate-200 text-slate-800 py-1 px-2 rounded">{serverInfo.outboundIp}</span>
-                                    </p>
-                                    <Button size="sm" variant="outline" onClick={handleCopyIp} leftIcon={ipCopied ? <i className="fas fa-check"></i> : <i className="fas fa-copy"></i>}>
-                                        {ipCopied ? 'Đã chép!' : 'Chép'}
-                                    </Button>
-                                </div>
-                            ) : (
-                                <p className="text-sm text-yellow-600">IP máy chủ chỉ hiển thị trên môi trường production (Render).</p>
-                            )}
-                            <p className="text-xs text-slate-400 mt-2">Sử dụng IP này để cho phép (whitelist) kết nối tới DB của bạn (vd: Hostinger).</p>
-                        </div>
+                        ) : (
+                             <div className="p-3 rounded-lg border bg-yellow-50 border-yellow-200 text-yellow-800 text-sm">Đang kiểm tra...</div>
+                        )}
                     </Card>
                 </div>
             </div>

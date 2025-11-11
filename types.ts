@@ -260,6 +260,7 @@ export interface User {
   loyaltyPoints?: number;
   debtStatus?: DebtStatus;
   assignedStaffId?: string;
+  createdAt?: string; // For tracking new customers
 }
 
 export interface Project {
@@ -311,6 +312,7 @@ export interface ShippingInfo {
 }
 
 export interface PaymentInfo {
+  // FIX: Corrected typo 'Chuyện' to 'Chuyển' to match common usage.
   method: 'Thanh toán khi nhận hàng (COD)' | 'Chuyển khoản ngân hàng' | 'Tiền mặt';
   status: 'Chưa thanh toán' | 'Đã thanh toán' | 'Đã cọc';
   transactionId?: string; // Optional: For online gateway transaction IDs
@@ -989,4 +991,12 @@ export interface AdCampaign {
   conversions: number;
   startDate?: string;
   endDate?: string;
+}
+
+// NEW: For dashboard backend status
+export interface BackendHealthStatus {
+  status: 'ok' | 'error';
+  database: 'connected' | 'disconnected';
+  errorCode?: string;
+  message?: string;
 }
