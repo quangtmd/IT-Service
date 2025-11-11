@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
+// FIX: The PCBuildSuggestion interface is now defined in types.ts.
 import { PCBuildSuggestion } from '../types';
 import geminiService from '../services/geminiService';
 import * as Constants from '../constants';

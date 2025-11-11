@@ -7,7 +7,8 @@ import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
     getPayrollRecords, savePayrollRecords
 } from '../../services/localDataService';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Updated imports to use named imports from 'react-router-dom'.
+import { useNavigate, NavigateFunction } from 'react-router-dom';
 
 // --- HELPER FUNCTIONS ---
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
@@ -27,7 +28,8 @@ const FinancialManagementView: React.FC = () => {
     const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const navigate = ReactRouterDOM.useNavigate();
+    // FIX: Used named import for useNavigate.
+    const navigate = useNavigate();
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
@@ -134,19 +136,20 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
     );
 };
 
-const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: ReactRouterDOM.NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
+// FIX: Added `NavigateFunction` to props type.
+const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
 
     const handleAddNewTransaction = () => {
         navigate('/admin/accounting_dashboard/transactions/new');
     };
 
-    // FIX: Add explicit return type `: void` to resolve TypeScript inference error.
-    const handleEditTransaction = (transactionId: string): void => {
+    // FIX: Wrapped handleEditTransaction in useCallback to ensure stable function reference.
+    const handleEditTransaction = useCallback((transactionId: string): void => {
         navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
-    };
+    }, [navigate]);
 
-    // FIX: Add explicit return type `: Promise<void>` to resolve TypeScript inference error.
-    const handleDelete = async (id: string): Promise<void> => {
+    // FIX: Wrapped handleDelete in useCallback to ensure stable function reference.
+    const handleDelete = useCallback(async (id: string): Promise<void> => {
         if(window.confirm('Bạn có chắc muốn xóa giao dịch này?')) {
             try {
                 await deleteFinancialTransaction(id);
@@ -155,7 +158,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
                 alert("Lỗi khi xóa giao dịch.");
             }
         }
-    };
+    }, [onDataChange]);
 
     return (
         <div>
@@ -324,6 +327,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
 
         try {
             const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+// FIX: The savePayrollRecords function expects one argument, which is provided here.
             await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
@@ -339,6 +343,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
 
     const handleSaveDraft = async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+// FIX: The savePayrollRecords function expects one argument, which is provided here.
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
         await onDataChange();
@@ -350,8 +355,8 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
-                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={handleSaveDraft} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

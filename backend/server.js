@@ -1045,6 +1045,131 @@ app.delete('/api/warranty-tickets/:id', async (req, res) => {
     }
 });
 
+// --- INVENTORY & LOGISTICS API ---
+
+app.get('/api/warehouses', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Warehouses ORDER BY name ASC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Stock Receipts
+app.get('/api/stock-receipts', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM StockReceipts ORDER BY date DESC');
+        res.json(rows.map(r => ({...r, items: JSON.parse(r.items || '[]')})));
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.post('/api/stock-receipts', async (req, res) => {
+    try {
+        const receipt = { ...req.body, id: `sr-${Date.now()}`, items: JSON.stringify(req.body.items || []) };
+        await pool.query('INSERT INTO StockReceipts SET ?', receipt);
+        res.status(201).json({ ...req.body, id: receipt.id });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.put('/api/stock-receipts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body, items: JSON.stringify(req.body.items || []) };
+        delete updates.id;
+        await pool.query('UPDATE StockReceipts SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.delete('/api/stock-receipts/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM StockReceipts WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Stock Issues
+app.get('/api/stock-issues', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM StockIssues ORDER BY date DESC');
+        res.json(rows.map(r => ({...r, items: JSON.parse(r.items || '[]')})));
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.post('/api/stock-issues', async (req, res) => {
+    try {
+        const issue = { ...req.body, id: `si-${Date.now()}`, items: JSON.stringify(req.body.items || []) };
+        await pool.query('INSERT INTO StockIssues SET ?', issue);
+        res.status(201).json({ ...req.body, id: issue.id });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.put('/api/stock-issues/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body, items: JSON.stringify(req.body.items || []) };
+        delete updates.id;
+        await pool.query('UPDATE StockIssues SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.delete('/api/stock-issues/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM StockIssues WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Stock Transfers
+app.get('/api/stock-transfers', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM StockTransfers ORDER BY date DESC');
+        res.json(rows.map(r => ({...r, items: JSON.parse(r.items || '[]')})));
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.post('/api/stock-transfers', async (req, res) => {
+    try {
+        const transfer = { ...req.body, id: `stf-${Date.now()}`, items: JSON.stringify(req.body.items || []) };
+        await pool.query('INSERT INTO StockTransfers SET ?', transfer);
+        res.status(201).json({ ...req.body, id: transfer.id });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.put('/api/stock-transfers/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body, items: JSON.stringify(req.body.items || []) };
+        delete updates.id;
+        await pool.query('UPDATE StockTransfers SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.delete('/api/stock-transfers/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM StockTransfers WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

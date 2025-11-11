@@ -11,7 +11,7 @@ SET time_zone = "+00:00";
 -- 1. DROP ALL TABLES TO ENSURE A CLEAN SLATE
 -- This is the safest way to apply schema updates and prevent errors like "Unknown column".
 -- =================================================================
-DROP TABLE IF EXISTS `StockEntryItems`, `StockEntries`, `Shipments`, `ServiceTickets`, `Quotations`, `Projects`, `ProductReviews`, `ProductCategories`, `ProductBrands`, `PayrollRecords`, `Orders`, `MediaLibrary`, `LeaveRequests`, `KPIs`, `Invoices`, `Inventory`, `FinancialTransactions`, `FinancialAccounts`, `Faqs`, `Employees`, `EmployeeKPIs`, `DiscountCodes`, `Debts`, `Contracts`, `ChatLogSessions`, `AuditLogs`, `Assets`, `Articles`, `ArticleCategories`, `UserDetails`, `Tasks`, `Warehouses`, `WarrantyTickets`, `SiteSettings`, `Returns`, `Suppliers`, `Products`, `Users`;
+DROP TABLE IF EXISTS `StockReceipts`, `StockIssues`, `StockTransfers`, `StockEntryItems`, `StockEntries`, `Shipments`, `ServiceTickets`, `Quotations`, `Projects`, `ProductReviews`, `ProductCategories`, `ProductBrands`, `PayrollRecords`, `Orders`, `MediaLibrary`, `LeaveRequests`, `KPIs`, `Invoices`, `Inventory`, `FinancialTransactions`, `FinancialAccounts`, `Faqs`, `Employees`, `EmployeeKPIs`, `DiscountCodes`, `Debts`, `Contracts`, `ChatLogSessions`, `AuditLogs`, `Assets`, `Articles`, `ArticleCategories`, `UserDetails`, `Tasks`, `Warehouses`, `WarrantyTickets`, `SiteSettings`, `Returns`, `Suppliers`, `Products`, `Users`;
 
 
 -- =================================================================
@@ -156,6 +156,42 @@ CREATE TABLE `Quotations` (
   `terms` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `StockReceipts` (
+  `id` varchar(255) NOT NULL,
+  `receiptNumber` varchar(255) NOT NULL,
+  `supplierId` varchar(255) NOT NULL,
+  `supplierName` varchar(255) DEFAULT NULL,
+  `date` datetime NOT NULL,
+  `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`items`)),
+  `totalAmount` decimal(15,2) NOT NULL,
+  `notes` text,
+  `status` enum('Nháp','Hoàn thành') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `StockIssues` (
+  `id` varchar(255) NOT NULL,
+  `issueNumber` varchar(255) NOT NULL,
+  `orderId` varchar(255) NOT NULL,
+  `date` datetime NOT NULL,
+  `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`items`)),
+  `notes` text,
+  `status` enum('Nháp','Hoàn thành') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `StockTransfers` (
+  `id` varchar(255) NOT NULL,
+  `transferNumber` varchar(255) NOT NULL,
+  `sourceWarehouseId` varchar(255) NOT NULL,
+  `sourceWarehouseName` varchar(255) DEFAULT NULL,
+  `destWarehouseId` varchar(255) NOT NULL,
+  `destWarehouseName` varchar(255) DEFAULT NULL,
+  `date` datetime NOT NULL,
+  `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`items`)),
+  `notes` text,
+  `status` enum('Chờ duyệt','Đã duyệt','Đang vận chuyển','Hoàn thành','Đã hủy') NOT NULL,
+  `approverId` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `ArticleCategories` (`id` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `slug` varchar(255) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Articles` (`id` varchar(255) NOT NULL, `title` varchar(255) NOT NULL, `summary` text, `content` longtext, `author` varchar(255) DEFAULT NULL, `category` varchar(255) DEFAULT NULL, `imageUrl` text, `date` datetime NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Assets` (`id` varchar(255) NOT NULL, `name` varchar(255) DEFAULT NULL, `serialNumber` varchar(255) DEFAULT NULL, `purchaseDate` date DEFAULT NULL, `value` decimal(15,2) DEFAULT NULL, `assignedTo` varchar(255) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -248,6 +284,9 @@ ALTER TABLE `Suppliers` ADD PRIMARY KEY (`id`);
 ALTER TABLE `FinancialTransactions` ADD PRIMARY KEY (`id`), ADD KEY `accountId` (`accountId`);
 ALTER TABLE `PayrollRecords` ADD PRIMARY KEY (`id`), ADD KEY `employeeId` (`employeeId`);
 ALTER TABLE `Quotations` ADD PRIMARY KEY (`id`), ADD KEY `customer_id` (`customer_id`);
+ALTER TABLE `StockReceipts` ADD PRIMARY KEY (`id`), ADD KEY `supplierId` (`supplierId`);
+ALTER TABLE `StockIssues` ADD PRIMARY KEY (`id`), ADD KEY `orderId` (`orderId`);
+ALTER TABLE `StockTransfers` ADD PRIMARY KEY (`id`), ADD KEY `sourceWarehouseId` (`sourceWarehouseId`), ADD KEY `destWarehouseId` (`destWarehouseId`), ADD KEY `approverId` (`approverId`);
 ALTER TABLE `ArticleCategories` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `name` (`name`), ADD UNIQUE KEY `slug` (`slug`);
 ALTER TABLE `Articles` ADD PRIMARY KEY (`id`);
 ALTER TABLE `Assets` ADD PRIMARY KEY (`id`), ADD KEY `assignedTo` (`assignedTo`);
@@ -389,6 +428,10 @@ INSERT IGNORE INTO `Debts` (`id`, `entityId`, `entityType`, `type`, `amount`, `d
 INSERT IGNORE INTO `Returns` (`id`, `orderId`, `reason`, `status`, `refundAmount`, `createdAt`) VALUES
 ('RET001', 'ORD001', 'Sản phẩm lỗi card màn hình, không lên hình', 'Đã duyệt', 15990000.00, '2025-10-10 10:00:00'),
 ('RET002', 'ORD002', 'Khách đổi ý, muốn nâng cấp lên sản phẩm khác', 'Đang chờ', 0.00, '2025-10-11 14:00:00');
+
+INSERT IGNORE INTO `StockReceipts` (`id`, `receiptNumber`, `supplierId`, `supplierName`, `date`, `items`, `totalAmount`, `status`) VALUES
+('sr001', 'PN001', 'SUP001', 'Nhà phân phối Tin học Mai Hoàng', '2025-10-20 10:00:00', '[{\"productId\":\"CPU001\",\"productName\":\"CPU Intel Core i5-14600K\",\"quantity\":10,\"purchasePrice\":8000000},{\"productId\":\"VGA001\",\"productName\":\"VGA GIGABYTE GeForce RTX 4060\",\"quantity\":5,\"purchasePrice\":8200000}]', 121000000.00, 'Hoàn thành'),
+('sr002', 'PN002', 'SUP002', 'Công ty máy tính Vĩnh Xuân (SPC)', '2025-10-21 11:30:00', '[{\"productId\":\"RAM002\",\"productName\":\"RAM Kingston Fury Beast 16GB (2x8GB) DDR4 3200MHz\",\"quantity\":20,\"purchasePrice\":1050000}]', 21000000.00, 'Hoàn thành');
 
 INSERT IGNORE INTO `Products` (`id`, `name`, `price`, `originalPrice`, `stock`, `categoryId`, `mainCategory`, `subCategory`, `brand`, `imageUrls`, `shortDescription`, `specifications`, `tags`, `isVisible`) VALUES
 ('PCVP001', 'PC Văn Phòng IQ Office Standard', 7590000.00, 8500000.00, 50, 'pc_van_phong', 'Máy tính để bàn (PC)', 'Máy tính văn phòng', 'IQ Tech', '[\"https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?q=80&w=800\"]', 'Cấu hình tối ưu cho công việc văn phòng, học tập online. Mượt mà với các tác vụ Word, Excel, lướt web.', '{\"CPU\": \"Intel Core i3-12100\", \"RAM\": \"8GB DDR4 3200MHz\", \"SSD\": \"256GB NVMe\", \"Mainboard\": \"H610M\"}', '[\"Văn phòng\", \"Học tập\"]', 1),

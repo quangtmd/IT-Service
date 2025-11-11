@@ -163,21 +163,20 @@ export interface AIBuildResponse {
   error?: string;
 }
 
-export interface SuggestedComponent {
-  CPU: string;
-  GPU: string;
-  RAM: string;
-  Motherboard: string;
-  SSD: string;
-  PSU: string;
-  Case: string;
-}
-
+// FIX: Defined PCBuildSuggestion interface.
 export interface PCBuildSuggestion {
   name: string;
   total_price: number;
   reasoning: string;
-  components: SuggestedComponent;
+  components: {
+    CPU: string;
+    GPU: string;
+    RAM: string;
+    Motherboard: string;
+    SSD: string;
+    PSU: string;
+    Case: string;
+  };
 }
 
 export interface AIBuildSuggestionsResponse {
@@ -198,7 +197,9 @@ export type AdminView =
   // Sales & CRM
   | 'customers' | 'quotations' | 'orders' | 'discounts' | 'returns' | 'suppliers' | 'helpdesk_tickets'
   // Service & Warranty
-  | 'service_tickets' | 'warranty_tickets' | 'chat_logs'
+  | 'service_tickets' | 'warranty_tickets'
+  // FIX: Changed 'warranty_claims' to 'warranty_tickets' to match the AdminView type.
+  | 'chat_logs'
   // CMS & Marketing
   | 'products' | 'articles' | 'media_library' | 'email_marketing' | 'seo_management'
   // Inventory & Logistics
