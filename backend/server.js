@@ -785,6 +785,71 @@ app.post('/api/financials/payroll', async (req, res) => {
     }
 });
 
+// --- NEW FINANCIAL APIs ---
+// Debts
+app.get('/api/debts', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Debts ORDER BY dueDate DESC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.put('/api/debts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = filterObject(req.body, ['status']);
+        await pool.query('UPDATE Debts SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...updates });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Payment Approvals
+app.get('/api/payment-approvals', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM PaymentApprovals ORDER BY createdAt DESC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.put('/api/payment-approvals/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = filterObject(req.body, ['status', 'approverId']);
+        await pool.query('UPDATE PaymentApprovals SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...updates });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Cashflow Forecast
+app.get('/api/financials/forecast', async (req, res) => {
+    try {
+        // Simple forecast: sum of upcoming receivables and payables for the next 3 months
+        const [receivables] = await pool.query("SELECT DATE_FORMAT(dueDate, '%Y-%m') as month, SUM(amount) as total FROM Debts WHERE type = 'receivable' AND status = 'Chưa thanh toán' AND dueDate > NOW() GROUP BY month ORDER BY month ASC LIMIT 3");
+        const [payables] = await pool.query("SELECT DATE_FORMAT(dueDate, '%Y-%m') as month, SUM(amount) as total FROM Debts WHERE type = 'payable' AND status = 'Chưa thanh toán' AND dueDate > NOW() GROUP BY month ORDER BY month ASC LIMIT 3");
+        
+        const forecast = {};
+        receivables.forEach(r => {
+            if (!forecast[r.month]) forecast[r.month] = { income: 0, expense: 0 };
+            forecast[r.month].income = r.total;
+        });
+        payables.forEach(p => {
+            if (!forecast[p.month]) forecast[p.month] = { income: 0, expense: 0 };
+            forecast[p.month].expense = p.total;
+        });
+        
+        res.json(forecast);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+
 // --- NEW APIs ---
 
 // Quotations

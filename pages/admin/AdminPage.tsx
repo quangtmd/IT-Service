@@ -75,7 +75,7 @@ const AdminPage: React.FC = () => {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
         'sales_crm': true, 'service_warranty': true, 'cms_marketing': true, 'inventory_logistics': true,
-        'finance_accounting': false, 'procurement': false, 'system_hr': false,
+        'finance_accounting': true, 'procurement': false, 'system_hr': false,
     });
 
     useEffect(() => {
@@ -106,7 +106,6 @@ const AdminPage: React.FC = () => {
             id: 'service_warranty', label: 'Dịch Vụ & Bảo Hành', icon: 'fas fa-tools', permission: ['viewService'],
             children: [
                 { id: 'service_tickets', label: 'Phiếu Sửa Chữa', icon: 'fas fa-ticket-alt', permission: ['manageServiceTickets'] },
-                // FIX: Changed 'warranty_claims' to 'warranty_tickets' to match the AdminView type.
                 { id: 'warranty_tickets', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
             ]
@@ -139,8 +138,7 @@ const AdminPage: React.FC = () => {
             id: 'finance_accounting', label: 'Tài Chính - Kế Toán', icon: 'fas fa-calculator', permission: ['viewAccounting'],
             children: [
                 { id: 'accounting_dashboard', label: 'Tổng Quan Tài Chính', icon: 'fas fa-chart-pie', permission: ['viewAccounting'] },
-                { id: 'invoices', label: 'Hóa Đơn / Phiếu Thu', icon: 'fas fa-file-invoice', permission: ['manageTransactions'] },
-                { id: 'expenses', label: 'Phiếu Chi', icon: 'fas fa-file-export', permission: ['manageTransactions'] },
+                { id: 'invoices', label: 'Hóa Đơn / Giao dịch', icon: 'fas fa-file-invoice', permission: ['manageTransactions'] },
                 { id: 'debt_management', label: 'Công Nợ', icon: 'fas fa-book', permission: ['viewAccounting'] },
                 { id: 'cashflow_forecast', label: 'Dự Báo Dòng Tiền', icon: 'fas fa-water', permission: ['viewAccounting'] },
                 { id: 'payment_approval', label: 'Phê Duyệt Chi', icon: 'fas fa-check-double', permission: ['viewAccounting'] },
@@ -184,7 +182,8 @@ const AdminPage: React.FC = () => {
 
         const viewCandidates = [
             'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
-            'accounting_dashboard', 'quotations', 'customers', 'orders', 
+            'accounting_dashboard', 'invoices', 'debt_management', 'cashflow_forecast', 'payment_approval', // Added finance views
+            'quotations', 'customers', 'orders', 
             'returns', 'suppliers', 'service_tickets', 'warranty_tickets',
             'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers'
         ];
@@ -212,7 +211,12 @@ const AdminPage: React.FC = () => {
         if (isParent) {
             setOpenMenus(prev => ({ ...prev, [viewId]: !prev[viewId] }));
         } else {
-            navigate(`/admin/${viewId}`);
+            if (viewId === 'invoices' || viewId === 'expenses') {
+                // Both invoices and expenses are handled by the accounting dashboard now
+                 navigate(`/admin/accounting_dashboard?tab=transactions`);
+            } else {
+                 navigate(`/admin/${viewId}`);
+            }
             setIsMobileSidebarOpen(false);
         }
     };
@@ -244,7 +248,12 @@ const AdminPage: React.FC = () => {
             case 'theme_settings': return <SiteSettingsView initialTab="theme_settings" />;
             case 'menu_settings': return <SiteSettingsView initialTab="menu_settings" />;
             case 'notifications_panel': return <NotificationsView />;
-            case 'accounting_dashboard': return <FinancialManagementView />;
+            case 'accounting_dashboard':
+            case 'invoices':
+            case 'debt_management':
+            case 'cashflow_forecast':
+            case 'payment_approval':
+                return <FinancialManagementView />;
             case 'inventory': return <InventoryView />;
             case 'service_tickets': return <ServiceTicketView />;
             case 'quotations': return <QuotationManagementView />;

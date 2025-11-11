@@ -904,3 +904,34 @@ export interface StockTransfer {
   status: 'Chờ duyệt' | 'Đã duyệt' | 'Đang vận chuyển' | 'Hoàn thành' | 'Đã hủy';
   approverId?: string;
 }
+
+// --- NEW FINANCE MODULE TYPES ---
+export interface Debt {
+    id: string;
+    entityId: string; // Customer or Supplier ID
+    entityName: string;
+    entityType: 'customer' | 'supplier';
+    type: 'receivable' | 'payable'; // Phải thu | Phải trả
+    amount: number;
+    dueDate?: string;
+    relatedTransactionId?: string;
+    status: 'Chưa thanh toán' | 'Đã thanh toán' | 'Quá hạn';
+}
+
+export interface PaymentApproval {
+    id: string;
+    requestorId: string;
+    approverId?: string;
+    amount: number;
+    description: string;
+    relatedTransactionId?: string;
+    status: 'Chờ duyệt' | 'Đã duyệt' | 'Đã từ chối';
+    createdAt: string;
+}
+
+export interface CashflowForecastData {
+    [month: string]: {
+        income: number;
+        expense: number;
+    };
+}

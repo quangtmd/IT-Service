@@ -11,7 +11,7 @@ SET time_zone = "+00:00";
 -- 1. DROP ALL TABLES TO ENSURE A CLEAN SLATE
 -- This is the safest way to apply schema updates and prevent errors like "Unknown column".
 -- =================================================================
-DROP TABLE IF EXISTS `StockReceipts`, `StockIssues`, `StockTransfers`, `StockEntryItems`, `StockEntries`, `Shipments`, `ServiceTickets`, `Quotations`, `Projects`, `ProductReviews`, `ProductCategories`, `ProductBrands`, `PayrollRecords`, `Orders`, `MediaLibrary`, `LeaveRequests`, `KPIs`, `Invoices`, `Inventory`, `FinancialTransactions`, `FinancialAccounts`, `Faqs`, `Employees`, `EmployeeKPIs`, `DiscountCodes`, `Debts`, `Contracts`, `ChatLogSessions`, `AuditLogs`, `Assets`, `Articles`, `ArticleCategories`, `UserDetails`, `Tasks`, `Warehouses`, `WarrantyTickets`, `SiteSettings`, `Returns`, `Suppliers`, `Products`, `Users`;
+DROP TABLE IF EXISTS `StockReceipts`, `StockIssues`, `StockTransfers`, `StockEntryItems`, `StockEntries`, `Shipments`, `ServiceTickets`, `Quotations`, `Projects`, `ProductReviews`, `ProductCategories`, `ProductBrands`, `PayrollRecords`, `Orders`, `MediaLibrary`, `LeaveRequests`, `KPIs`, `Invoices`, `Inventory`, `FinancialTransactions`, `FinancialAccounts`, `Faqs`, `Employees`, `EmployeeKPIs`, `DiscountCodes`, `Debts`, `Contracts`, `ChatLogSessions`, `AuditLogs`, `Assets`, `Articles`, `ArticleCategories`, `UserDetails`, `Tasks`, `Warehouses`, `WarrantyTickets`, `SiteSettings`, `Returns`, `Suppliers`, `Products`, `Users`, `PaymentApprovals`;
 
 
 -- =================================================================
@@ -198,7 +198,6 @@ CREATE TABLE `Assets` (`id` varchar(255) NOT NULL, `name` varchar(255) DEFAULT N
 CREATE TABLE `AuditLogs` (`id` int(11) NOT NULL, `userId` varchar(255) DEFAULT NULL, `action` varchar(255) NOT NULL, `target` varchar(255) DEFAULT NULL, `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details`)), `ipAddress` varchar(45) DEFAULT NULL, `timestamp` timestamp NULL DEFAULT current_timestamp()) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `ChatLogSessions` (`id` varchar(255) NOT NULL, `userName` varchar(255) DEFAULT NULL, `userPhone` varchar(20) DEFAULT NULL, `startTime` timestamp NULL DEFAULT current_timestamp(), `messages` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`messages`))) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Contracts` (`id` varchar(255) NOT NULL, `name` varchar(255) DEFAULT NULL, `partnerName` varchar(255) DEFAULT NULL, `startDate` date DEFAULT NULL, `endDate` date DEFAULT NULL, `fileUrl` text) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE `Debts` (`id` varchar(255) NOT NULL, `entityId` varchar(255) NOT NULL, `entityType` enum('customer','supplier') NOT NULL, `type` enum('receivable','payable') NOT NULL, `amount` decimal(15,2) NOT NULL, `dueDate` date DEFAULT NULL, `status` varchar(100) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `DiscountCodes` (`id` varchar(255) NOT NULL, `code` varchar(255) NOT NULL, `type` enum('percentage','fixed_amount') NOT NULL, `value` decimal(10,2) NOT NULL, `description` text, `expiryDate` date DEFAULT NULL, `isActive` tinyint(1) DEFAULT 1) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `EmployeeKPIs` (`id` varchar(255) NOT NULL, `employeeId` varchar(255) NOT NULL, `kpiId` varchar(255) NOT NULL, `actualValue` decimal(15,2) DEFAULT NULL, `period` varchar(50) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `Employees` (`userId` varchar(255) NOT NULL, `position` varchar(255) DEFAULT NULL, `joinDate` date DEFAULT NULL, `salary` decimal(15,2) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -270,6 +269,30 @@ CREATE TABLE `WarrantyTickets` (
   `totalQuantity` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `Debts` (
+  `id` varchar(255) NOT NULL,
+  `entityId` varchar(255) NOT NULL COMMENT 'Customer or Supplier ID',
+  `entityName` varchar(255) DEFAULT NULL,
+  `entityType` enum('customer','supplier') NOT NULL,
+  `type` enum('receivable','payable') NOT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `dueDate` date DEFAULT NULL,
+  `relatedTransactionId` varchar(255) DEFAULT NULL,
+  `status` enum('Chưa thanh toán','Đã thanh toán','Quá hạn') NOT NULL DEFAULT 'Chưa thanh toán'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `PaymentApprovals` (
+  `id` varchar(255) NOT NULL,
+  `requestorId` varchar(255) NOT NULL,
+  `approverId` varchar(255) DEFAULT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `description` text NOT NULL,
+  `relatedTransactionId` varchar(255) DEFAULT NULL,
+  `status` enum('Chờ duyệt','Đã duyệt','Đã từ chối') NOT NULL DEFAULT 'Chờ duyệt',
+  `createdAt` timestamp NULL DEFAULT current_timestamp(),
+  `updatedAt` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- =================================================================
 -- 3. ADD INDEXES & CONSTRAINTS
@@ -315,6 +338,7 @@ ALTER TABLE `Tasks` ADD PRIMARY KEY (`id`), ADD KEY `projectId` (`projectId`), A
 ALTER TABLE `UserDetails` ADD PRIMARY KEY (`userId`);
 ALTER TABLE `Returns` ADD PRIMARY KEY (`id`), ADD KEY `orderId` (`orderId`);
 ALTER TABLE `WarrantyTickets` ADD PRIMARY KEY (`id`), ADD KEY `orderId` (`orderId`), ADD KEY `productId` (`productId`), ADD KEY `customerId` (`customerId`), ADD KEY `creatorId` (`creatorId`);
+ALTER TABLE `PaymentApprovals` ADD PRIMARY KEY (`id`);
 ALTER TABLE `AuditLogs` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 -- =================================================================
@@ -422,8 +446,9 @@ INSERT IGNORE INTO `Assets` (`id`, `name`, `serialNumber`, `purchaseDate`, `valu
 INSERT IGNORE INTO `LeaveRequests` (`id`, `employeeId`, `startDate`, `endDate`, `reason`, `status`) VALUES
 ('LEAVE001', 'staff002', '2025-09-10', '2025-09-11', 'Việc gia đình', 'approved');
 
-INSERT IGNORE INTO `Debts` (`id`, `entityId`, `entityType`, `type`, `amount`, `dueDate`, `status`) VALUES
-('DEBT001', 'cust002', 'customer', 'receivable', 5000000.00, '2025-11-15', 'Chưa thanh toán');
+INSERT IGNORE INTO `Debts` (`id`, `entityId`, `entityName`, `entityType`, `type`, `amount`, `dueDate`, `relatedTransactionId`, `status`) VALUES
+('DEBT001', 'cust002', 'Trần Thị Bích', 'customer', 'receivable', 5000000.00, '2025-11-15', 'ORD002', 'Chưa thanh toán'),
+('DEBT002', 'SUP001', 'Nhà phân phối Tin học Mai Hoàng', 'supplier', 'payable', 20000000.00, '2025-11-20', 'TRN003', 'Chưa thanh toán');
 
 INSERT IGNORE INTO `Returns` (`id`, `orderId`, `reason`, `status`, `refundAmount`, `createdAt`) VALUES
 ('RET001', 'ORD001', 'Sản phẩm lỗi card màn hình, không lên hình', 'Đã duyệt', 15990000.00, '2025-10-10 10:00:00'),

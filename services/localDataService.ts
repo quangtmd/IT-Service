@@ -3,7 +3,8 @@
 import { 
     Product, Order, Article, OrderStatus, MediaItem, ServerInfo, 
     ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
-    Quotation, User, WarrantyTicket, ReturnTicket, Supplier, Warehouse, StockReceipt, StockIssue, StockTransfer
+    Quotation, User, WarrantyTicket, ReturnTicket, Supplier, Warehouse, StockReceipt, StockIssue, StockTransfer,
+    Debt, PaymentApproval, CashflowForecastData
 } from '../types';
 import * as Constants from '../constants';
 import { BACKEND_API_BASE_URL } from '../constants';
@@ -245,6 +246,31 @@ export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records),
     });
 };
+
+export const getDebts = async (): Promise<Debt[]> => {
+    return fetchFromApi<Debt[]>('/api/debts');
+};
+
+export const updateDebt = async (id: string, updates: Partial<Debt>): Promise<Debt> => {
+    return fetchFromApi<Debt>(`/api/debts/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates),
+    });
+};
+
+export const getPaymentApprovals = async (): Promise<PaymentApproval[]> => {
+    return fetchFromApi<PaymentApproval[]>('/api/payment-approvals');
+};
+
+export const updatePaymentApproval = async (id: string, updates: Partial<PaymentApproval>): Promise<PaymentApproval> => {
+    return fetchFromApi<PaymentApproval>(`/api/payment-approvals/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates),
+    });
+};
+
+export const getCashflowForecast = async (): Promise<CashflowForecastData> => {
+    return fetchFromApi<CashflowForecastData>('/api/financials/forecast');
+};
+
 
 // --- Auth & User Service ---
 export const loginUser = async (credentials: { email: string; password?: string }): Promise<User> => {
