@@ -317,6 +317,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         try {
             const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
             await savePayrollRecords(recordsToSave);
+            // FIX: Corrected the incorrect call to `onDataChange`. The `onAddTransaction` function already triggers a data refresh, so calling `onDataChange` was both wrong and redundant.
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -324,8 +325,6 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 category: 'Chi phí Lương',
                 description: `Thanh toán lương tháng ${payPeriod}`
             });
-            // FIX: The call to onDataChange() here was redundant because onAddTransaction() already triggers a data refresh.
-            // Removing it simplifies the logic and resolves a confusing TypeScript error.
         } catch (error) {
             alert('Lỗi khi chốt lương.');
         }
