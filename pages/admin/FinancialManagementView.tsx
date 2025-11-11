@@ -326,8 +326,11 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
 
         try {
-            const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-            // FIX: Pass the 'recordsToSave' argument to the savePayrollRecords function to fix the error "Expected 0 arguments, but got 1".
+            const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod).map(r => {
+                const shouldSettle = recordsToSettle.some(s => s.id === r.id);
+                return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
+            });
+            // FIX: Pass the records to be saved to the savePayrollRecords function, resolving the "Expected 0 arguments, but got 1" error.
             await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
@@ -336,17 +339,29 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 category: 'Chi phí Lương',
                 description: `Thanh toán lương tháng ${payPeriod}`
             });
+            alert('Chốt lương và tạo giao dịch chi thành công!');
+            await onDataChange();
         } catch (error) {
+            console.error("Lỗi khi chốt lương:", error);
             alert('Lỗi khi chốt lương.');
         }
     };
 
     const handleSaveDraft = async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-        // FIX: Pass the 'recordsToSave' argument to the savePayrollRecords function to fix the error "Expected 0 arguments, but got 1".
-        await savePayrollRecords(recordsToSave);
-        alert('Đã lưu nháp lương thành công!');
-        await onDataChange();
+        if(recordsToSave.length === 0) {
+            alert("Không có dữ liệu lương để lưu nháp.");
+            return;
+        }
+        try {
+            // FIX: Pass the records to be saved to the savePayrollRecords function, resolving the "Expected 0 arguments, but got 1" error.
+            await savePayrollRecords(recordsToSave);
+            alert('Đã lưu nháp lương thành công!');
+            await onDataChange();
+        } catch (error) {
+            console.error("Lỗi khi lưu nháp lương:", error);
+            alert("Đã có lỗi xảy ra khi lưu nháp lương.");
+        }
     };
 
 

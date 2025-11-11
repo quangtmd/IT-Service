@@ -442,31 +442,40 @@ app.post('/api/orders', async (req, res) => {
 app.put('/api/orders/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const updates = req.body;
-        // Serialize JSON fields before updating
-        const updatesForDb = {
-            ...updates,
-            customerInfo: JSON.stringify(updates.customerInfo || {}),
-            items: JSON.stringify(updates.items || []),
-            paymentInfo: JSON.stringify(updates.paymentInfo || {}),
-            shippingInfo: JSON.stringify(updates.shippingInfo || {}),
-            notes: updates.notes || null,
-        };
-        // remove id from updates object
-        delete updatesForDb.id;
 
+        const allowedFields = [
+            'userId', 'creatorId', 'customerInfo', 'items', 'subtotal',
+            'totalAmount', 'paidAmount', 'cost', 'profit', 'orderDate',
+            'status', 'shippingInfo', 'paymentInfo', 'notes'
+        ];
+        
+        const updatesForDb = filterObject(req.body, allowedFields);
+
+        // Serialize fields that are stored as JSON
+        if (updatesForDb.customerInfo) updatesForDb.customerInfo = JSON.stringify(updatesForDb.customerInfo);
+        if (updatesForDb.items) updatesForDb.items = JSON.stringify(updatesForDb.items);
+        if (updatesForDb.paymentInfo) updatesForDb.paymentInfo = JSON.stringify(updatesForDb.paymentInfo);
+        if (updatesForDb.shippingInfo) updatesForDb.shippingInfo = JSON.stringify(updatesForDb.shippingInfo);
+
+        if (Object.keys(updatesForDb).length === 0) {
+            return res.status(400).json({ message: 'Không có trường hợp lệ nào để cập nhật.' });
+        }
+        
         const [result] = await pool.query('UPDATE Orders SET ? WHERE id = ?', [updatesForDb, id]);
-        logActivity(req, 'Cập nhật đơn hàng', 'Order', id);
-
+        
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy đơn hàng để cập nhật' });
         }
-        res.json({ id, ...req.body }); // Return original updates object
+
+        logActivity(req, 'Cập nhật đơn hàng', 'Order', id);
+        res.json({ id, ...req.body });
+
     } catch (error) {
         console.error(`Lỗi khi cập nhật đơn hàng ID ${req.params.id}:`, error);
         res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
     }
 });
+
 
 app.put('/api/orders/:id/status', async (req, res) => {
     try {
