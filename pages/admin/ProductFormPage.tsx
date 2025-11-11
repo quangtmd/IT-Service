@@ -196,7 +196,27 @@ const ProductFormPage: React.FC = () => {
                         </div>
                         <Button type="button" size="sm" variant="outline" onClick={addImageUrl} className="mt-3" leftIcon={<i className="fas fa-plus"></i>}>Thêm ảnh</Button>
                     </div>
-                    
+                     
+                    {/* --- SEO Section --- */}
+                    <div className="p-4 border rounded-md bg-white shadow-sm mt-6">
+                        <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary">Tối ưu hóa SEO</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="admin-form-group md:col-span-2">
+                                <label>Tiêu đề SEO (Meta Title)</label>
+                                <input type="text" name="seoMetaTitle" value={formData.seoMetaTitle || ''} onChange={handleChange} />
+                            </div>
+                             <div className="admin-form-group md:col-span-2">
+                                <label>Mô tả SEO (Meta Description)</label>
+                                <textarea name="seoMetaDescription" value={formData.seoMetaDescription || ''} onChange={handleChange} rows={3}></textarea>
+                            </div>
+                            <div className="admin-form-group md:col-span-2">
+                                <label>Đường dẫn (URL Slug)</label>
+                                <input type="text" name="slug" value={formData.slug || ''} onChange={handleChange} />
+                                <p className="form-input-description">Ví dụ: pc-gaming-iq-eagle. Để trống để tạo tự động.</p>
+                            </div>
+                        </div>
+                    </div>
+                     
                      {/* --- Other settings --- */}
                     <div className="p-4 border rounded-md bg-white shadow-sm mt-6">
                          <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary">Cài đặt khác</h3>

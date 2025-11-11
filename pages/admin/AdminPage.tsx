@@ -22,10 +22,15 @@ import ServiceTicketView from '../../components/admin/ServiceTicketView';
 
 // Import new Inventory & Logistics views
 import InventoryView from '../../components/admin/InventoryView';
+// FIX: Add missing imports for Inventory & Logistics views.
 import StockReceiptsView from '../../components/admin/StockReceiptsView';
 import StockIssuesView from '../../components/admin/StockIssuesView';
 import StockTransfersView from '../../components/admin/StockTransfersView';
 import ShippingManagementView from '../../components/admin/ShippingManagementView';
+
+// Import new Marketing views
+import EmailMarketingView from '../../components/admin/EmailMarketingView';
+import SeoManagementView from '../../components/admin/SeoManagementView';
 
 
 // Import new form pages
@@ -115,7 +120,7 @@ const AdminPage: React.FC = () => {
             id: 'cms_marketing', label: 'Website & Marketing', icon: 'fas fa-desktop', permission: ['viewContent'],
             children: [
                 { id: 'homepage_management', label: 'Quản lý Trang chủ', icon: 'fas fa-home', permission: ['manageSiteSettings'] },
-                { id: 'products', label: 'Sản Phẩm', icon: 'fas fa-box-open', permission: ['viewProducts'] },
+                { id: 'products', label: 'Sản Phẩm Website', icon: 'fas fa-box-open', permission: ['viewProducts'] },
                 { id: 'articles', label: 'Bài Viết', icon: 'fas fa-newspaper', permission: ['viewArticles'] },
                 { id: 'media_library', label: 'Thư Viện Media', icon: 'fas fa-photo-video', permission: ['manageMedia'] },
                 { id: 'email_marketing', label: 'Email Marketing', icon: 'fas fa-envelope-open-text', permission: ['viewAnalytics'] },
@@ -182,10 +187,11 @@ const AdminPage: React.FC = () => {
 
         const viewCandidates = [
             'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
-            'accounting_dashboard', 'invoices', 'debt_management', 'cashflow_forecast', 'payment_approval', // Added finance views
+            'accounting_dashboard', 'invoices', 'debt_management', 'cashflow_forecast', 'payment_approval',
             'quotations', 'customers', 'orders', 
             'returns', 'suppliers', 'service_tickets', 'warranty_tickets',
-            'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers'
+            'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers',
+            'email_marketing', 'seo_management' // Add new marketing views
         ];
 
         let foundView = null;
@@ -264,6 +270,8 @@ const AdminPage: React.FC = () => {
             case 'stock_issues': return <StockIssuesView />;
             case 'stock_transfers': return <StockTransfersView />;
             case 'shipping': return <ShippingManagementView />;
+            case 'email_marketing': return <EmailMarketingView />;
+            case 'seo_management': return <SeoManagementView />;
             default: return (
                 <div className="admin-card">
                     <div className="admin-card-body text-center py-12">

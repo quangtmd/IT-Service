@@ -59,6 +59,8 @@ export interface Article {
   content?: string; 
   isAIGenerated?: boolean; // New field to mark AI-generated articles
   imageSearchQuery?: string; // New field for AI-suggested image search term
+  tags?: string[]; // New field for tags
+  slug?: string; // New field for SEO URL
 }
 
 export interface CartItem extends Product {
@@ -600,6 +602,9 @@ export interface MediaItem {
   name: string;
   type: string; // e.g., 'image/jpeg', 'image/png'
   uploadedAt: string;
+  altText?: string;
+  associatedEntityType?: 'product' | 'article';
+  associatedEntityId?: string;
 }
 
 // --- Main Site Settings ---
@@ -934,4 +939,42 @@ export interface CashflowForecastData {
         income: number;
         expense: number;
     };
+}
+
+// --- NEW WEBSITE & MARKETING TYPES ---
+export interface ProductReview {
+  id: string;
+  productId: string;
+  reviewerName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
+export interface EmailSubscriber {
+  id: number;
+  email: string;
+  name?: string;
+  subscribedAt: string;
+}
+
+export interface EmailCampaign {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  status: 'Nháp' | 'Đã gửi' | 'Đang gửi';
+  sentAt?: string;
+  createdAt: string;
+}
+
+export interface AdCampaign {
+  id: string;
+  name: string;
+  source: string;
+  cost: number;
+  clicks: number;
+  conversions: number;
+  startDate?: string;
+  endDate?: string;
 }

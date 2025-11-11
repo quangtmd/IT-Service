@@ -4,7 +4,8 @@ import {
     Product, Order, Article, OrderStatus, MediaItem, ServerInfo, 
     ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
     Quotation, User, WarrantyTicket, ReturnTicket, Supplier, Warehouse, StockReceipt, StockIssue, StockTransfer,
-    Debt, PaymentApproval, CashflowForecastData
+    Debt, PaymentApproval, CashflowForecastData,
+    ProductReview, EmailSubscriber, EmailCampaign, AdCampaign
 } from '../types';
 import * as Constants from '../constants';
 import { BACKEND_API_BASE_URL } from '../constants';
@@ -189,7 +190,9 @@ export const deleteArticle = async (id: string): Promise<void> => {
 };
 
 // --- Media Library Service ---
-export const getMediaItems = async (): Promise<MediaItem[]> => fetchFromApi('/api/media');
+export const getMediaItems = async (): Promise<MediaItem[]> => {
+    return fetchFromApi<MediaItem[]>('/api/media');
+};
 
 export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaItem> => {
     return fetchFromApi<MediaItem>('/api/media', {
@@ -200,7 +203,7 @@ export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaIt
 };
 
 export const deleteMediaItem = async (id: string): Promise<void> => {
-    return fetchFromApi(`/api/media/${id}`, { method: 'DELETE' });
+    return fetchFromApi<void>(`/api/media/${id}`, { method: 'DELETE' });
 };
 
 // --- Chat Log Service ---
@@ -481,19 +484,16 @@ export const deleteStockReceipt = async (id: string): Promise<void> => {
 export const getStockIssues = async (): Promise<StockIssue[]> => {
     return fetchFromApi<StockIssue[]>('/api/stock-issues');
 };
-
 export const addStockIssue = async (issue: Omit<StockIssue, 'id'>): Promise<StockIssue> => {
     return fetchFromApi<StockIssue>('/api/stock-issues', {
         method: 'POST', body: JSON.stringify(issue), headers: { 'Content-Type': 'application/json' }
     });
 };
-
 export const updateStockIssue = async (id: string, updates: Partial<StockIssue>): Promise<StockIssue> => {
     return fetchFromApi<StockIssue>(`/api/stock-issues/${id}`, {
         method: 'PUT', body: JSON.stringify(updates), headers: { 'Content-Type': 'application/json' }
     });
 };
-
 export const deleteStockIssue = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/stock-issues/${id}`, { method: 'DELETE' });
 };
@@ -514,4 +514,48 @@ export const updateStockTransfer = async (id: string, updates: Partial<StockTran
 };
 export const deleteStockTransfer = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/stock-transfers/${id}`, { method: 'DELETE' });
+};
+
+// --- NEW MARKETING & SEO SERVICES ---
+export const getProductReviews = async (productId: string): Promise<ProductReview[]> => {
+    return fetchFromApi<ProductReview[]>(`/api/products/${productId}/reviews`);
+};
+export const addProductReview = async (productId: string, review: Omit<ProductReview, 'id'|'productId'|'createdAt'>): Promise<ProductReview> => {
+    return fetchFromApi<ProductReview>(`/api/products/${productId}/reviews`, { method: 'POST', body: JSON.stringify(review) });
+};
+
+export const getEmailSubscribers = async (): Promise<EmailSubscriber[]> => {
+    return fetchFromApi<EmailSubscriber[]>('/api/marketing/subscribers');
+};
+export const addEmailSubscriber = async (subscriber: {email: string, name?: string}): Promise<EmailSubscriber> => {
+    return fetchFromApi<EmailSubscriber>('/api/marketing/subscribers', { method: 'POST', body: JSON.stringify(subscriber) });
+};
+export const deleteEmailSubscriber = async (id: number): Promise<void> => {
+    return fetchFromApi<void>(`/api/marketing/subscribers/${id}`, { method: 'DELETE' });
+};
+
+export const getEmailCampaigns = async (): Promise<EmailCampaign[]> => {
+    return fetchFromApi<EmailCampaign[]>('/api/marketing/campaigns');
+};
+export const addEmailCampaign = async (campaign: Omit<EmailCampaign, 'id'|'createdAt'>): Promise<EmailCampaign> => {
+    return fetchFromApi<EmailCampaign>('/api/marketing/campaigns', { method: 'POST', body: JSON.stringify(campaign) });
+};
+export const updateEmailCampaign = async (id: string, updates: Partial<EmailCampaign>): Promise<EmailCampaign> => {
+    return fetchFromApi<EmailCampaign>(`/api/marketing/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+};
+export const deleteEmailCampaign = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/marketing/campaigns/${id}`, { method: 'DELETE' });
+};
+
+export const getAdCampaigns = async (): Promise<AdCampaign[]> => {
+    return fetchFromApi<AdCampaign[]>('/api/marketing/ad-campaigns');
+};
+export const addAdCampaign = async (campaign: Omit<AdCampaign, 'id'>): Promise<AdCampaign> => {
+    return fetchFromApi<AdCampaign>('/api/marketing/ad-campaigns', { method: 'POST', body: JSON.stringify(campaign) });
+};
+export const updateAdCampaign = async (id: string, updates: Partial<AdCampaign>): Promise<AdCampaign> => {
+    return fetchFromApi<AdCampaign>(`/api/marketing/ad-campaigns/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+};
+export const deleteAdCampaign = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/marketing/ad-campaigns/${id}`, { method: 'DELETE' });
 };
