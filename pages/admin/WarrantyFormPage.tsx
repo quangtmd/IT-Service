@@ -1,14 +1,142 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { WarrantyTicket, Order, SiteSettings, User } from '../../types';
+import { WarrantyTicket, WarrantyTicketItem, SiteSettings, User } from '../../types';
 import Button from '../../components/ui/Button';
-import { getWarrantyTickets, addWarrantyTicket, updateWarrantyTicket, getOrders } from '../../services/localDataService';
+import { getWarrantyTickets, addWarrantyTicket, updateWarrantyTicket } from '../../services/localDataService';
 import * as Constants from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
 
-// FIX: Corrected the status options to match the WarrantyTicketStatus type definition.
-const WARRANTY_STATUS_OPTIONS: Array<WarrantyTicket['status']> = ['Mới Tạo', 'Chờ duyệt', 'Đã duyệt', 'Đang sửa chữa', 'Chờ linh kiện', 'Hoàn thành', 'Đã trả khách', 'Từ chối bảo hành', 'Hủy'];
-const PRIORITY_OPTIONS: Array<WarrantyTicket['priority']> = ['Bình thường', 'Gấp'];
+const WARRANTY_STATUS_OPTIONS: Array<WarrantyTicket['status']> = [
+    'Mới Tạo', 'Chờ duyệt', 'Đã duyệt', 'Đang sửa chữa', 'Hoàn thành', 'Đã trả khách', 'Chờ linh kiện', 'Đợi KH đồng ý giá', 'Đợi KH nhận lại', 'Từ chối bảo hành', 'Hủy', 'Lập chứng từ', 'Đang duyệt', 'Đang thực hiện', 'Chờ xem lại'
+];
+
+const PrintableRepairSlip: React.FC<{ ticket: Partial<WarrantyTicket>, settings: SiteSettings, title: string }> = ({ ticket, settings, title }) => {
+    const itemsTotal = ticket.items?.reduce((sum, item) => sum + item.price * item.quantity, 0) || 0;
+    const totalBeforeVat = itemsTotal + (ticket.serviceFee || 0) - (ticket.discount || 0);
+    const vatAmount = totalBeforeVat * ((ticket.vat || 0) / 100);
+    const grandTotal = totalBeforeVat + vatAmount;
+
+    return (
+        <div className="print-container max-w-4xl mx-auto p-8 bg-white text-black font-sans text-sm">
+            <header className="grid grid-cols-3 gap-4 mb-4">
+                <div className="col-span-1">
+                    {settings.siteLogoUrl && <img src={settings.siteLogoUrl} alt="Company Logo" className="max-h-20 mb-2" />}
+                    <p className="font-bold">{settings.companyName}</p>
+                    <p>{settings.companyAddress}</p>
+                    <p>ĐT: {settings.companyPhone}</p>
+                </div>
+                <div className="col-span-2 text-right">
+                    <h1 className="text-3xl font-bold uppercase">{title}</h1>
+                    <p className="mt-2">Số phiếu trả: <span className="font-semibold">{ticket.ticketNumber || '...'}</span></p>
+                    <p>Số biên nhận: <span className="font-semibold">{ticket.ticketNumber || '...'}</span></p>
+                </div>
+            </header>
+
+            <main>
+                <section className="grid grid-cols-2 gap-x-4 mb-4 text-xs">
+                    <div>
+                        <p><strong>Nhân viên trả:</strong> {ticket.returnStaffName || '...'}</p>
+                        <p><strong>Ngày nhận:</strong> {ticket.receiveDate ? new Date(ticket.receiveDate).toLocaleString('vi-VN') : ''}</p>
+                        <p><strong>Ngày trả:</strong> {ticket.returnDate ? new Date(ticket.returnDate).toLocaleString('vi-VN') : ''}</p>
+                        <p><strong>Ghi chú:</strong> {ticket.resolution_notes || ''}</p>
+                    </div>
+                    <div className="text-right">
+                        <p><strong>Tên khách hàng:</strong> {ticket.customerName}</p>
+                        <p><strong>Thứ tự:</strong> {ticket.priority || 'Bình thường'}</p>
+                    </div>
+                </section>
+
+                <table className="w-full border-collapse border border-black text-xs mb-4 print-table">
+                     <thead className="bg-gray-100 text-center font-bold">
+                         <tr>
+                             <th className="border border-black p-1 w-[5%]">STT</th>
+                             <th className="border border-black p-1 w-[25%]">Sản phẩm bảo hành</th>
+                             <th className="border border-black p-1 w-[15%]">Tình trạng hư hỏng</th>
+                             <th className="border border-black p-1 w-[15%]">Diện bảo hành</th>
+                             <th className="border border-black p-1 w-[15%]">Giải pháp xử lý</th>
+                             <th className="border border-black p-1 w-[25%]">Kỹ thuật ghi chú</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                         <tr>
+                             <td className="border border-black p-1 text-center align-top">1</td>
+                             <td className="border border-black p-1 align-top">
+                                 <p><strong>Tên:</strong> {ticket.productModel}</p>
+                                 <p><strong>Mã:</strong> {ticket.productId || 'N/A'}</p>
+                                 <p><strong>Serial:</strong> {ticket.productSerial}</p>
+                             </td>
+                             <td className="border border-black p-1 align-top">{ticket.reportedIssue}</td>
+                             <td className="border border-black p-1 align-top">{ticket.warrantyType}</td>
+                             <td className="border border-black p-1 align-top">{ticket.resolution_notes}</td>
+                             <td className="border border-black p-1 align-top">{ticket.technician_notes}</td>
+                         </tr>
+                         <tr>
+                             <td colSpan={2} className="border border-black p-1 font-bold">Xử lý</td>
+                             <td colSpan={2} className="border border-black p-1"><strong>Ngày sửa:</strong> {ticket.repairDate ? new Date(ticket.repairDate).toLocaleString('vi-VN') : ''}</td>
+                             <td colSpan={2} className="border border-black p-1 text-center font-bold">{ticket.status === 'Hoàn thành' ? 'Hoàn thành' : ''}</td>
+                         </tr>
+                     </tbody>
+                </table>
+                
+                 <table className="w-full border-collapse border border-black text-xs print-table">
+                    <thead className="bg-gray-100 text-center font-bold">
+                        <tr>
+                            <th className="border border-black p-1 w-[5%]">STT</th>
+                            <th className="border border-black p-1 w-[20%]">Mã linh kiện</th>
+                            <th className="border border-black p-1 w-[40%]">Tên linh kiện</th>
+                            <th className="border border-black p-1 w-[10%]">Số lượng</th>
+                            <th className="border border-black p-1 w-[25%]">Giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {ticket.items?.map((item, index) => (
+                            <tr key={item.id}>
+                                <td className="border border-black p-1 text-center">{index + 1}</td>
+                                <td className="border border-black p-1">{item.itemCode}</td>
+                                <td className="border border-black p-1">{item.itemName}</td>
+                                <td className="border border-black p-1 text-right">{item.quantity}</td>
+                                <td className="border border-black p-1 text-right">{item.price.toLocaleString('vi-VN')} VND</td>
+                            </tr>
+                        ))}
+                        {(!ticket.items || ticket.items.length === 0) && (
+                            <tr><td colSpan={5} className="border border-black p-1 text-center italic">Không có linh kiện/dịch vụ.</td></tr>
+                        )}
+                        <tr>
+                            <td colSpan={3} rowSpan={4} className="border border-black p-1 align-bottom">
+                                <strong>Bằng chữ:</strong>
+                            </td>
+                            <td className="border border-black p-1">Phí dịch vụ</td>
+                            <td className="border border-black p-1 text-right">{ticket.serviceFee?.toLocaleString('vi-VN')} VND</td>
+                        </tr>
+                        <tr>
+                            <td className="border border-black p-1">Giảm giá</td>
+                            <td className="border border-black p-1 text-right">{ticket.discount?.toLocaleString('vi-VN')} VND</td>
+                        </tr>
+                         <tr>
+                            <td className="border border-black p-1">Thuế VAT ({ticket.vat || 0}%)</td>
+                            <td className="border border-black p-1 text-right">{vatAmount.toLocaleString('vi-VN')} VND</td>
+                        </tr>
+                        <tr>
+                            <td className="border border-black p-1 font-bold">Tổng cộng</td>
+                            <td className="border border-black p-1 text-right font-bold">{grandTotal.toLocaleString('vi-VN')} VND</td>
+                        </tr>
+                    </tbody>
+                 </table>
+            </main>
+            
+            <footer className="mt-16 grid grid-cols-2 gap-4 text-center text-xs">
+                <div>
+                    <p className="font-bold">Trưởng TTBH</p>
+                    <p className="mt-12">(Ký & ghi rõ họ tên)</p>
+                </div>
+                <div>
+                    <p className="font-bold">Nhân viên kỹ thuật</p>
+                     <p className="mt-12">(Ký & ghi rõ họ tên)</p>
+                </div>
+            </footer>
+        </div>
+    );
+};
 
 
 const WarrantyFormPage: React.FC = () => {
@@ -16,42 +144,34 @@ const WarrantyFormPage: React.FC = () => {
     const navigate = useNavigate();
     const isNew = !ticketId;
 
-    const [formData, setFormData] = useState<Partial<WarrantyTicket> | null>(null);
-    const [orders, setOrders] = useState<Order[]>([]);
+    const [formData, setFormData] = useState<Partial<WarrantyTicket>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { currentUser, users } = useAuth();
     const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-    
-    const [isEditingMode, setIsEditingMode] = useState(isNew);
-    const [printPreview, setPrintPreview] = useState<'receipt' | 'return' | null>(null);
-
-    const staffUsers = users.filter(u => u.role === 'admin' || u.role === 'staff');
+    const [printTitle, setPrintTitle] = useState('');
 
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                const [allOrders, allTickets] = await Promise.all([getOrders(), getWarrantyTickets()]);
-                setOrders(allOrders);
-
                 const settingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
                 setSiteSettings(settingsRaw ? JSON.parse(settingsRaw) : Constants.INITIAL_SITE_SETTINGS);
 
                 if (!isNew) {
+                    const allTickets = await getWarrantyTickets();
                     const itemToEdit = allTickets.find(c => c.id === ticketId);
                     if (itemToEdit) {
                         setFormData(itemToEdit);
                     } else {
-                        setError('Không tìm thấy phiếu bảo hành để xem/chỉnh sửa.');
+                        setError('Không tìm thấy phiếu để xem/chỉnh sửa.');
                     }
                 } else {
                     setFormData({
-                        status: 'Mới Tạo',
-                        creatorId: currentUser?.id,
-                        receiveDate: new Date().toISOString(),
-                        priority: 'Bình thường',
+                        status: 'Mới Tạo', creatorId: currentUser?.id,
+                        receiveDate: new Date().toISOString(), priority: 'Bình thường',
+                        items: [], serviceFee: 0, discount: 0, vat: 0, totalAmount: 0,
                     });
                 }
             } catch (err) {
@@ -62,54 +182,52 @@ const WarrantyFormPage: React.FC = () => {
         };
         loadData();
     }, [isNew, ticketId, currentUser]);
-
-    const handleOrderChange = (orderId: string) => {
-        const selectedOrder = orders.find(o => o.id === orderId);
-        if (selectedOrder) {
-            setFormData(prev => ({
-                ...prev,
-                orderId: selectedOrder.id,
-                customerId: selectedOrder.userId,
-                customerName: selectedOrder.customerInfo.fullName,
-                customerPhone: selectedOrder.customerInfo.phone,
-                productId: '', 
-                productModel: '',
-                productSerial: '',
-            }));
-        }
-    };
     
-    const handleProductChange = (productId: string) => {
-        const selectedOrder = orders.find(o => o.id === formData?.orderId);
-        const selectedProduct = selectedOrder?.items.find(i => i.productId === productId);
-        if(selectedProduct) {
-             setFormData(prev => ({
-                ...prev,
-                productId: selectedProduct.productId,
-                productModel: selectedProduct.productName,
-            }));
+    // Auto-calculate total amount
+    useEffect(() => {
+        if (formData.items || formData.serviceFee || formData.discount || formData.vat) {
+            const itemsTotal = formData.items?.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 0), 0) || 0;
+            const subtotal = itemsTotal + (formData.serviceFee || 0) - (formData.discount || 0);
+            const vatAmount = subtotal * ((formData.vat || 0) / 100);
+            const total = subtotal + vatAmount;
+            const totalQty = formData.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+            setFormData(prev => ({ ...prev, totalAmount: total, totalQuantity: totalQty }));
         }
-    };
+    }, [formData.items, formData.serviceFee, formData.discount, formData.vat]);
+
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => prev ? ({ ...prev, [name]: value }) : null);
+        const { name, value, type } = e.target;
+        const isNumber = type === 'number';
+        setFormData(prev => ({ ...prev, [name]: isNumber ? Number(value) : value }));
+    };
+
+    const handleItemChange = (index: number, field: keyof WarrantyTicketItem, value: string | number) => {
+        const newItems = [...(formData.items || [])];
+        newItems[index] = { ...newItems[index], [field]: value };
+        setFormData(prev => ({ ...prev, items: newItems }));
+    };
+    
+    const addItem = () => {
+        const newItem: WarrantyTicketItem = { id: `item-${Date.now()}`, itemCode: '', itemName: '', quantity: 1, price: 0 };
+        setFormData(prev => ({ ...prev, items: [...(prev?.items || []), newItem] }));
+    };
+
+    const removeItem = (index: number) => {
+        setFormData(prev => ({ ...prev, items: prev?.items?.filter((_, i) => i !== index) }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData || !formData.customerName || !formData.reportedIssue) {
-            alert("Vui lòng điền đầy đủ các trường bắt buộc.");
-            return;
-        }
+        if (!formData || !formData.customerName) return alert("Vui lòng nhập tên khách hàng.");
 
         try {
             if (!isNew) {
                 await updateWarrantyTicket(ticketId!, formData as WarrantyTicket);
-                alert('Cập nhật phiếu bảo hành thành công!');
+                alert('Cập nhật thành công!');
             } else {
                 await addWarrantyTicket(formData as Omit<WarrantyTicket, 'id'>);
-                alert('Tạo phiếu bảo hành mới thành công!');
+                alert('Tạo phiếu mới thành công!');
             }
             navigate('/admin/warranty_tickets');
         } catch (err) {
@@ -117,90 +235,18 @@ const WarrantyFormPage: React.FC = () => {
         }
     };
     
-    const selectedOrder = orders.find(o => o.id === formData?.orderId);
-
-    const Slip: React.FC<{ type: 'receipt' | 'return' }> = ({ type }) => {
-        const returnStaff = staffUsers.find(u => u.id === formData?.returnStaffId);
-        return (
-             <div className="max-w-4xl mx-auto p-8 bg-white text-black font-sans text-xs">
-                 <div className="grid grid-cols-2 gap-x-4 mb-2 text-xs">
-                     <div>
-                         <p><strong>Nhân viên trả:</strong> {returnStaff?.username || '...'}</p>
-                         <p><strong>Ngày nhận:</strong> {formData?.receiveDate ? new Date(formData.receiveDate).toLocaleString('vi-VN') : ''}</p>
-                         <p><strong>Ngày trả:</strong> {formData?.returnDate ? new Date(formData.returnDate).toLocaleString('vi-VN') : ''}</p>
-                         <p><strong>Ghi chú:</strong> {formData?.resolution_notes || ''}</p>
-                     </div>
-                     <div className="text-right">
-                         <p><strong>Tên khách hàng:</strong> {formData?.customerName}</p>
-                         <p><strong>Thứ tự:</strong> {formData?.priority || 'Bình thường'}</p>
-                     </div>
-                 </div>
- 
-                 <table className="w-full border-collapse border border-black text-xs">
-                     <thead>
-                         <tr className="bg-gray-100 text-center font-bold">
-                             <th className="border border-black p-1">STT</th>
-                             <th className="border border-black p-1">Sản phẩm bảo hành</th>
-                             <th className="border border-black p-1">Tình trạng hư hỏng</th>
-                             <th className="border border-black p-1">Diện bảo hành</th>
-                             <th className="border border-black p-1">Giải pháp xử lý</th>
-                             <th className="border border-black p-1">Kỹ thuật ghi chú</th>
-                         </tr>
-                     </thead>
-                     <tbody>
-                         <tr>
-                             <td className="border border-black p-1 text-center align-top">1</td>
-                             <td className="border border-black p-1 align-top">
-                                 <p><strong>Tên sản phẩm:</strong> {formData?.productModel}</p>
-                                 <p><strong>Mã sản phẩm:</strong> {formData?.productId || formData?.productModel}</p>
-                                 <p><strong>Số serial:</strong> {formData?.productSerial}</p>
-                             </td>
-                             <td className="border border-black p-1 align-top">{formData?.reportedIssue}</td>
-                             <td className="border border-black p-1 align-top">{formData?.warrantyType}</td>
-                             <td className="border border-black p-1 align-top">{formData?.resolution_notes}</td>
-                             <td className="border border-black p-1 align-top">{formData?.technician_notes}</td>
-                         </tr>
-                         <tr>
-                             <td colSpan={2} className="border border-black p-1 font-bold">Xử lý</td>
-                             <td colSpan={2} className="border border-black p-1"><strong>Ngày sửa:</strong> {formData?.repairDate ? new Date(formData.repairDate).toLocaleString('vi-VN') : ''}</td>
-                             <td colSpan={2} className="border border-black p-1 text-center font-bold">{formData?.status === 'Hoàn thành' ? 'Hoàn thành' : ''}</td>
-                         </tr>
-                     </tbody>
-                 </table>
-             </div>
-        );
-    };
-    
-    const PrintPreviewModal: React.FC<{ type: 'receipt' | 'return', onClose: () => void }> = ({ type, onClose }) => {
-        useEffect(() => {
-            const handleAfterPrint = () => { document.body.classList.remove('printing'); };
-            window.addEventListener('afterprint', handleAfterPrint);
-            return () => window.removeEventListener('afterprint', handleAfterPrint);
-        }, []);
-
-        const handlePrint = () => {
-            document.body.classList.add('printing');
-            window.print();
-        };
-
-        return (
-            <div className="admin-modal-overlay" onClick={onClose}>
-                <div className="admin-modal-panel max-w-4xl" onClick={e => e.stopPropagation()}>
-                    <div className="admin-modal-header no-print">
-                        <h4 className="admin-modal-title">Xem trước Phiếu In</h4>
-                        <div>
-                            <Button type="button" variant="outline" onClick={onClose} className="mr-2">Đóng</Button>
-                            <Button type="button" variant="primary" onClick={handlePrint} leftIcon={<i className="fas fa-print"></i>}>In Phiếu</Button>
-                        </div>
-                    </div>
-                    <div className="admin-modal-body bg-gray-300">
-                        <div className="print-section bg-white shadow-lg mx-auto" style={{ width: '210mm', minHeight: '297mm' }}>
-                            <Slip type={type} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+    const handlePrint = (type: 'receipt' | 'return') => {
+        setPrintTitle(type === 'receipt' ? 'PHIẾU BIÊN NHẬN' : 'PHIẾU SỬA CHỮA');
+        setTimeout(() => {
+            const printContents = document.getElementById('print-section')?.innerHTML;
+            const originalContents = document.body.innerHTML;
+            if(printContents) {
+                document.body.innerHTML = printContents;
+                window.print();
+                document.body.innerHTML = originalContents;
+                window.location.reload(); // Reload to re-attach React listeners
+            }
+        }, 100);
     };
 
     if (isLoading) return <div className="admin-card"><div className="admin-card-body text-center">Đang tải...</div></div>;
@@ -208,75 +254,74 @@ const WarrantyFormPage: React.FC = () => {
     if (!formData) return null;
 
     return (
-        <>
+        <form onSubmit={handleSubmit}>
             <div className="admin-card">
-                <form id="warranty-form" onSubmit={handleSubmit} className="flex flex-col h-full">
-                    <div className="admin-card-header flex justify-between items-center">
-                        <h3 className="admin-card-title">{isNew ? 'Tạo Phiếu Bảo Hành Mới' : `Phiếu BH #${formData.ticketNumber}`}</h3>
-                        <div className="flex items-center gap-2">
-                             {!isNew && !isEditingMode && <Button type="button" variant="outline" onClick={() => navigate('/admin/warranty_tickets')} leftIcon={<i className="fas fa-arrow-left"></i>}>Quay lại</Button>}
-                             {!isNew && <Button type="button" variant="outline" onClick={() => setPrintPreview('receipt')} leftIcon={<i className="fas fa-print"></i>}>In Phiếu Nhận</Button>}
-                             {!isNew && <Button type="button" variant="outline" onClick={() => setPrintPreview('return')} leftIcon={<i className="fas fa-print"></i>}>In Phiếu Trả</Button>}
-                            
-                            {isEditingMode ? (
-                                <>
-                                    {!isNew && <Button type="button" variant="outline" onClick={() => setIsEditingMode(false)}>Hủy</Button>}
-                                    <Button type="submit" variant="primary">Lưu</Button>
-                                </>
-                            ) : (
-                                !isNew && <Button type="button" variant="primary" onClick={() => setIsEditingMode(true)}>Sửa</Button>
-                            )}
-                            {isNew && <Button type="submit" variant="primary">Lưu</Button>}
-                            {isNew && <Button type="button" variant="outline" onClick={() => navigate('/admin/warranty_tickets')}>Hủy</Button>}
-
-                        </div>
+                 <div className="admin-card-header flex justify-between items-center">
+                    <h3 className="admin-card-title">{isNew ? 'Tạo Phiếu Mới' : `Sửa Phiếu #${formData.ticketNumber}`}</h3>
+                    <div>
+                        <Button type="button" variant="outline" onClick={() => handlePrint('receipt')} className="mr-2" leftIcon={<i className="fas fa-print"></i>}>In Phiếu Nhận</Button>
+                        <Button type="button" variant="outline" onClick={() => handlePrint('return')} className="mr-2" leftIcon={<i className="fas fa-print"></i>}>In Phiếu Trả</Button>
+                        <Button type="button" variant="outline" onClick={() => navigate('/admin/warranty_tickets')} className="mr-2">Hủy</Button>
+                        <Button type="submit" variant="primary">Lưu</Button>
                     </div>
-
-                    <div className="admin-card-body">
-                        {isEditingMode ? (
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    <div className="admin-form-group"><label>Tên khách hàng *</label><input type="text" name="customerName" value={formData.customerName || ''} onChange={handleChange} required /></div>
-                                    <div className="admin-form-group"><label>Số điện thoại</label><input type="tel" name="customerPhone" value={formData.customerPhone || ''} onChange={handleChange} /></div>
-                                    <div className="admin-form-group"><label>Nhân viên tạo</label>
-                                        <select name="creatorId" value={formData.creatorId || ''} onChange={handleChange}>
-                                            <option value="">-- Chọn nhân viên --</option>
-                                            {staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="admin-form-group"><label>Model sản phẩm</label><input type="text" name="productModel" value={formData.productModel || ''} onChange={handleChange} /></div>
-                                    <div className="admin-form-group"><label>Serial sản phẩm</label><input type="text" name="productSerial" value={formData.productSerial || ''} onChange={handleChange} /></div>
-                                    <div className="admin-form-group"><label>Diện bảo hành</label><input type="text" name="warrantyType" value={formData.warrantyType || ''} onChange={handleChange} /></div>
-                                </div>
-                                <div className="admin-form-group"><label>Mô tả sự cố *</label><textarea name="reportedIssue" value={formData.reportedIssue || ''} onChange={handleChange} required rows={3}></textarea></div>
-                                <div className="admin-form-group"><label>Giải pháp/Ghi chú xử lý</label><textarea name="resolution_notes" value={formData.resolution_notes || ''} onChange={handleChange} rows={3}></textarea></div>
-                                <div className="admin-form-group"><label>Ghi chú của kỹ thuật viên</label><textarea name="technician_notes" value={formData.technician_notes || ''} onChange={handleChange} rows={3}></textarea></div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                     <div className="admin-form-group"><label>Trạng thái *</label><select name="status" value={formData.status || 'Mới Tạo'} onChange={handleChange} required>{WARRANTY_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
-                                     <div className="admin-form-group"><label>Ưu tiên</label><select name="priority" value={formData.priority || 'Bình thường'} onChange={handleChange}>{PRIORITY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
-                                     <div className="admin-form-group"><label>Phí sửa chữa (nếu có)</label><input type="number" name="totalAmount" value={formData.totalAmount || 0} onChange={handleChange} /></div>
-                                     <div className="admin-form-group"><label>Ngày nhận</label><input type="datetime-local" name="receiveDate" value={formData.receiveDate ? formData.receiveDate.slice(0,16) : ''} onChange={handleChange} /></div>
-                                     <div className="admin-form-group"><label>Ngày hẹn trả</label><input type="datetime-local" name="returnDate" value={formData.returnDate?.slice(0,16) || ''} onChange={handleChange} /></div>
-                                     <div className="admin-form-group"><label>Ngày sửa</label><input type="datetime-local" name="repairDate" value={formData.repairDate?.slice(0,16) || ''} onChange={handleChange} /></div>
-                                     <div className="admin-form-group"><label>Nhân viên trả</label>
-                                        <select name="returnStaffId" value={formData.returnStaffId || ''} onChange={handleChange}>
-                                            <option value="">-- Chọn nhân viên --</option>
-                                            {staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                             <div className="p-4 bg-gray-50 rounded border">
-                                 <Slip type="receipt" />
+                </div>
+                 <div className="admin-card-body">
+                     {/* Form Fields */}
+                     <div className="space-y-6">
+                        <div className="p-4 border rounded-md">
+                             <h4 className="admin-form-subsection-title !mt-0">Thông tin chung</h4>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                 <div className="admin-form-group"><label>Trạng thái</label><select name="status" value={formData.status || ''} onChange={handleChange}>{WARRANTY_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
+                                <div className="admin-form-group"><label>Tên khách hàng *</label><input type="text" name="customerName" value={formData.customerName || ''} onChange={handleChange} required /></div>
+                                <div className="admin-form-group"><label>Số điện thoại</label><input type="tel" name="customerPhone" value={formData.customerPhone || ''} onChange={handleChange} /></div>
                              </div>
-                        )}
-                    </div>
-                </form>
+                        </div>
+                        <div className="p-4 border rounded-md">
+                            <h4 className="admin-form-subsection-title !mt-0">Thông tin Sản phẩm & Sự cố</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="admin-form-group"><label>Tên sản phẩm</label><input type="text" name="productModel" value={formData.productModel || ''} onChange={handleChange} /></div>
+                                <div className="admin-form-group"><label>Mã sản phẩm</label><input type="text" name="productId" value={formData.productId || ''} onChange={handleChange} /></div>
+                                <div className="admin-form-group"><label>Serial</label><input type="text" name="productSerial" value={formData.productSerial || ''} onChange={handleChange} /></div>
+                            </div>
+                            <div className="admin-form-group"><label>Tình trạng hư hỏng / Yêu cầu *</label><textarea name="reportedIssue" value={formData.reportedIssue || ''} onChange={handleChange} required rows={3}></textarea></div>
+                            <div className="admin-form-group"><label>Giải pháp xử lý</label><textarea name="resolution_notes" value={formData.resolution_notes || ''} onChange={handleChange} rows={2}></textarea></div>
+                            <div className="admin-form-group"><label>Kỹ thuật ghi chú</label><textarea name="technician_notes" value={formData.technician_notes || ''} onChange={handleChange} rows={2}></textarea></div>
+                             <div className="admin-form-group"><label>Diện bảo hành</label><input type="text" name="warrantyType" value={formData.warrantyType || 'Bảo hành dịch vụ'} onChange={handleChange} /></div>
+                        </div>
+                         <div className="p-4 border rounded-md">
+                            <h4 className="admin-form-subsection-title !mt-0">Linh kiện & Chi phí</h4>
+                             <div className="overflow-x-auto">
+                                <table className="admin-table text-sm">
+                                    <thead><tr><th>Mã LK</th><th>Tên Linh kiện/Dịch vụ</th><th className="w-24">Số lượng</th><th className="w-40">Đơn giá</th><th className="w-12"></th></tr></thead>
+                                    <tbody>
+                                        {formData.items?.map((item, index) => (
+                                            <tr key={item.id}>
+                                                <td><input type="text" value={item.itemCode || ''} onChange={e => handleItemChange(index, 'itemCode', e.target.value)} className="admin-form-group !p-1 !mb-0"/></td>
+                                                <td><input type="text" value={item.itemName || ''} onChange={e => handleItemChange(index, 'itemName', e.target.value)} className="admin-form-group !p-1 !mb-0"/></td>
+                                                <td><input type="number" value={item.quantity || 1} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} className="admin-form-group !p-1 !mb-0"/></td>
+                                                <td><input type="number" value={item.price || 0} onChange={e => handleItemChange(index, 'price', Number(e.target.value))} className="admin-form-group !p-1 !mb-0"/></td>
+                                                <td><Button type="button" size="sm" variant="ghost" className="text-red-500" onClick={() => removeItem(index)}><i className="fas fa-trash"></i></Button></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                             </div>
+                             <Button type="button" onClick={addItem} size="sm" variant="outline" className="mt-2" leftIcon={<i className="fas fa-plus"/>}>Thêm dòng</Button>
+                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                <div className="admin-form-group"><label>Phí dịch vụ</label><input type="number" name="serviceFee" value={formData.serviceFee || 0} onChange={handleChange}/></div>
+                                <div className="admin-form-group"><label>Giảm giá</label><input type="number" name="discount" value={formData.discount || 0} onChange={handleChange}/></div>
+                                <div className="admin-form-group"><label>Thuế VAT (%)</label><input type="number" name="vat" value={formData.vat || 0} onChange={handleChange}/></div>
+                                <div className="admin-form-group"><label className="text-lg">Tổng cộng</label><p className="text-xl font-bold text-primary pt-2">{(formData.totalAmount || 0).toLocaleString('vi-VN')}₫</p></div>
+                             </div>
+                        </div>
+                     </div>
+                 </div>
             </div>
-            
-             {printPreview && <PrintPreviewModal type={printPreview} onClose={() => setPrintPreview(null)} />}
-        </>
+            {/* Hidden printable section */}
+            <div id="print-section" className="hidden print:block">
+                <PrintableRepairSlip ticket={formData} settings={siteSettings} title={printTitle} />
+            </div>
+        </form>
     );
 };
 

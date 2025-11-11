@@ -721,62 +721,74 @@ export interface Quotation {
 
 export interface WarrantyTicketItem {
     id: string;
-    itemCode?: string;
-    itemName: string;
-    quantity: number;
-    price: number;
+    itemCode: string; // Mã linh kiện
+    itemName: string; // Tên linh kiện
+    quantity: number; // Số lượng
+    price: number; // Giá
 }
 
 export type WarrantyTicketStatus = 
+  // Main workflow statuses
   'Mới Tạo' | 
   'Chờ duyệt' |
   'Đã duyệt' |
   'Đang sửa chữa' |
-  'Chờ linh kiện' | 
   'Hoàn thành' | 
   'Đã trả khách' | 
+  // Waiting statuses
+  'Chờ linh kiện' | 
+  'Đợi KH đồng ý giá' |
+  'Đợi KH nhận lại' |
+  // Alternative outcomes
   'Từ chối bảo hành' | 
-  'Hủy';
+  'Hủy' |
+  // New statuses from images for a more ERP-like flow
+  'Lập chứng từ' |
+  'Đang duyệt' |
+  'Đang thực hiện' | // From "Giao dịch" column
+  'Chờ xem lại'; // Typo fix for "Chơi bạn xem lại"
+
 
 export interface WarrantyTicket {
     id: string;
-    ticketNumber: string; // Số phiếu
-    productModel?: string; // Model
-    productSerial?: string; // Serial
-    customerName: string; // Khách hàng
-    creatorName?: string; // Người tạo
+    ticketNumber: string; // Số phiếu / Số c/từ
+    productModel?: string; // Model sản phẩm
+    productSerial?: string; // Serial sản phẩm
+    customerName: string; // Tên khách hàng
+    creatorName?: string; // Người tạo / Người tiếp nhận
     customerPhone?: string; // Số ĐT
-    totalAmount?: number; // Tổng tiền (VND)
+    totalAmount: number; // Tổng tiền / Tổng chi phí
     status: WarrantyTicketStatus;
-    createdAt: string; // Ngày tạo
-    reportedIssue: string; // Mô tả lỗi
-    resolution_notes?: string; // Ghi chú xử lý
+    createdAt: string; // Ngày tạo / Ngày c/từ
+    reportedIssue: string; // Mô tả lỗi / Diễn giải / Tình trạng hư hỏng
+    resolution_notes?: string; // Ghi chú xử lý / Giải pháp xử lý
     receiveDate?: string; // Ngày nhận
     returnDate?: string; // Ngày trả
     
-    // Original fields kept for backend compatibility where needed
     orderId?: string;
     productId?: string;
     customerId?: string;
-    creatorId?: string;
-    warrantyCenter?: string; // Trạm BH
-
-    // New fields from image
-    priority?: 'Bình thường' | 'Gấp';
+    creatorId?: string; // ID người tạo
+    
+    priority?: 'Bình thường' | 'Gấp'; // Thứ tự
     warrantyType?: string; // Diện bảo hành
     technician_notes?: string; // Kỹ thuật ghi chú
     repairDate?: string; // Ngày sửa
     returnStaffId?: string; // Nhân viên trả
     returnStaffName?: string; // Denormalized for display
     
-    // New fields for items and detailed costs from Image 2
-    items?: WarrantyTicketItem[];
-    serviceFee?: number; // Phí dịch vụ
-    discount?: number; // Giảm giá
-    vat?: number; // Thuế VAT
+    // Detailed costs from Print Slip
+    items: WarrantyTicketItem[];
+    serviceFee: number; // Phí dịch vụ
+    discount: number; // Giảm giá
+    vat: number; // Thuế VAT
     
-    // New field from Image 1
-    transactionType?: 'Sửa chữa' | 'Bảo dưỡng' | 'Thay thế';
+    // Fields from List View
+    transactionType?: 'Sửa chữa' | 'Bảo dưỡng' | 'Thay thế' | 'Bảo hành'; // Giao dịch
+    department?: string; // Đơn vị
+    departmentCode?: string; // Mã bộ phận
+    currency?: string; // Ngoại tệ
+    totalQuantity?: number; // Số lượng (tổng)
 }
 
 export interface Supplier {

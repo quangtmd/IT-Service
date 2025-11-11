@@ -208,7 +208,7 @@ CREATE TABLE `WarrantyTickets` (
   `customerName` varchar(255) NOT NULL,
   `customerPhone` varchar(255) DEFAULT NULL,
   `creatorId` varchar(255) DEFAULT NULL,
-  `totalAmount` decimal(15,2) DEFAULT 0.00,
+  `totalAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
   `status` varchar(255) NOT NULL,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `reportedIssue` text,
@@ -218,17 +218,20 @@ CREATE TABLE `WarrantyTickets` (
   `orderId` varchar(255) DEFAULT NULL,
   `productId` varchar(255) DEFAULT NULL,
   `customerId` varchar(255) DEFAULT NULL,
-  `warrantyCenter` varchar(255) DEFAULT NULL,
   `priority` varchar(255) DEFAULT 'Bình thường',
   `warrantyType` varchar(255) DEFAULT NULL,
   `technician_notes` text,
   `repairDate` datetime DEFAULT NULL,
   `returnStaffId` varchar(255) DEFAULT NULL,
-  `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`items`)),
-  `serviceFee` decimal(15,2) DEFAULT 0.00,
-  `discount` decimal(15,2) DEFAULT 0.00,
-  `vat` decimal(5,2) DEFAULT 0.00,
-  `transactionType` varchar(50) DEFAULT 'Sửa chữa'
+  `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '[]' CHECK (json_valid(`items`)),
+  `serviceFee` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `discount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `vat` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `transactionType` varchar(50) DEFAULT 'Sửa chữa',
+  `department` varchar(255) DEFAULT NULL,
+  `departmentCode` varchar(255) DEFAULT NULL,
+  `currency` varchar(10) DEFAULT 'VND',
+  `totalQuantity` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -444,9 +447,9 @@ INSERT IGNORE INTO `ServiceTickets` (`id`, `ticket_code`, `customerId`, `deviceN
 ('TCK001', 'TCK-001', 'cust002', 'Laptop Dell Inspiron', 'Máy không lên nguồn', 'Mới', '2025-10-08 09:00:00', 'staff001', NULL, '{\"fullName\": \"Trần Thị Bích\", \"phone\": \"0935987654\"}', 'INV-S001', 'staff002', 'Kiểm tra nguồn, mainboard', '2025-10-10 14:00:00'),
 ('TCK002', 'TCK-002', 'cust003', 'PC Gaming', 'Máy tính tự khởi động lại khi chơi game', 'Đang xử lý', '2025-10-09 11:00:00', 'staff001', NULL, '{\"fullName\": \"Lê Hoàng Long\", \"phone\": \"0978111222\"}', NULL, 'staff002', 'Vệ sinh, test RAM, test VGA', NULL);
 
-INSERT IGNORE INTO `WarrantyTickets` (`id`, `ticketNumber`, `productModel`, `productSerial`, `customerName`, `customerPhone`, `creatorId`, `totalAmount`, `status`, `reportedIssue`, `receiveDate`, `returnDate`) VALUES
-('WT001', 'SBN24040000012-002-001', 'S1001', 'AB2C9D', 'C NHUNG', '0938161567', 'user001', 0.00, 'Mới Tạo', 'mixer bị hư', '2024-04-06', '2024-04-16'),
-('WT002', 'SBN24040000012-002', 'MKK-N1', 'D2F5CF', 'C NHUNG', '0938161567', 'user001', 0.00, 'Mới Tạo', 'mixer bị hư', '2024-04-06', '2024-04-16');
+INSERT IGNORE INTO `WarrantyTickets` (`id`, `ticketNumber`, `productModel`, `productSerial`, `customerName`, `customerPhone`, `creatorId`, `totalAmount`, `status`, `reportedIssue`, `receiveDate`, `returnDate`, `department`, `departmentCode`, `currency`, `transactionType`) VALUES
+('WT001', 'BDN.23.04.001', 'Máy tính NM1234', 'SBN2407000006', 'NVQ', '0905123456', 'user001', 176895.00, 'Đã duyệt', 'test', '2023-04-20 00:00:00', NULL, 'CTV', 'BAOHANH', 'VND', 'Sửa chữa'),
+('WT002', 'BDN.22.08.005', 'Máy tính XYZ', 'SBN2407000007', 'NVO', '0905654321', 'user001', 100000.00, 'Chờ duyệt', 'Hư màn hình', '2022-08-25 00:00:00', NULL, 'CTV', 'BAOHANH', 'VND', 'Sửa chữa');
 
 INSERT IGNORE INTO `ProductReviews` (`id`, `productId`, `userId`, `rating`, `comment`) VALUES
 ('REV001', 'PCGM001', 'cust001', 5, 'Máy chạy rất mượt, shop tư vấn nhiệt tình!');

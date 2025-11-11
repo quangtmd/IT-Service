@@ -4,16 +4,28 @@ import { WarrantyTicket, WarrantyTicketStatus } from '../../types';
 import { getWarrantyTickets, deleteWarrantyTicket } from '../../services/localDataService';
 import Button from '../ui/Button';
 import BackendConnectionError from '../shared/BackendConnectionError';
+import { useAuth } from '../../contexts/AuthContext';
 
 const TICKET_STATUS_FILTERS: Array<{ label: string, value: WarrantyTicketStatus | 'Tất cả' }> = [
     { label: 'Tất cả', value: 'Tất cả' },
-    { label: 'Mới Tạo', value: 'Mới Tạo' },
+    { label: 'Chờ xem lại', value: 'Chờ xem lại' },
+    { label: 'Lập chứng từ', value: 'Lập chứng từ' },
     { label: 'Chờ duyệt', value: 'Chờ duyệt' },
-    { label: 'Đang sửa chữa', value: 'Đang sửa chữa' },
+    { label: 'Đang duyệt', value: 'Đang duyệt' },
+    { label: 'Đã duyệt', value: 'Đã duyệt' },
+    { label: 'Đang thực hiện', value: 'Đang thực hiện' },
     { label: 'Hoàn thành', value: 'Hoàn thành' },
-    { label: 'Đã trả khách', value: 'Đã trả khách' },
-    { label: 'Hủy', value: 'Hủy' },
 ];
+
+const getStatusColor = (status: WarrantyTicket['status']) => {
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes('duyệt')) return 'text-green-600 font-semibold';
+    if (statusLower.includes('chờ')) return 'text-yellow-600 font-semibold';
+    if (statusLower.includes('hủy') || statusLower.includes('từ chối')) return 'text-red-600 font-semibold';
+    if (statusLower.includes('đang')) return 'text-blue-600 font-semibold';
+    if (statusLower.includes('hoàn thành')) return 'text-purple-600 font-semibold';
+    return 'text-gray-600';
+};
 
 
 const WarrantyManagementView: React.FC = () => {
@@ -22,23 +34,36 @@ const WarrantyManagementView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
     const [activeFilter, setActiveFilter] = useState<WarrantyTicketStatus | 'Tất cả'>('Tất cả');
+    const { users } = useAuth();
+    const staffUsers = useMemo(() => users.filter(u => u.role === 'admin' || u.role === 'staff'), [users]);
+
 
     const loadTickets = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
             const data = await getWarrantyTickets();
-            setTickets(data);
+            // Denormalize creatorName if it's missing
+            const enrichedData = data.map(ticket => {
+                if (!ticket.creatorName && ticket.creatorId) {
+                    const creator = staffUsers.find(u => u.id === ticket.creatorId);
+                    return { ...ticket, creatorName: creator?.username || 'N/A' };
+                }
+                return ticket;
+            });
+            setTickets(enrichedData);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu phiếu bảo hành.');
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [staffUsers]);
 
     useEffect(() => {
-        loadTickets();
-    }, [loadTickets]);
+        if (staffUsers.length > 0) {
+            loadTickets();
+        }
+    }, [loadTickets, staffUsers]);
 
     const filteredTickets = useMemo(() => {
         if (activeFilter === 'Tất cả') return tickets;
@@ -47,7 +72,7 @@ const WarrantyManagementView: React.FC = () => {
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation(); // Prevent row click navigation
-        if (window.confirm('Bạn có chắc muốn xóa phiếu bảo hành này?')) {
+        if (window.confirm('Bạn có chắc muốn xóa phiếu sửa chữa này?')) {
             try {
                 await deleteWarrantyTicket(id);
                 loadTickets();
@@ -62,25 +87,29 @@ const WarrantyManagementView: React.FC = () => {
         return value.toLocaleString('vi-VN');
     };
 
-    const formatDateTime = (dateString?: string) => {
+    const formatDate = (dateString?: string) => {
         if (!dateString) return '';
         const date = new Date(dateString);
-        return `${date.toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'})}`;
+        return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
     };
 
     return (
         <div className="admin-card">
             <div className="admin-card-header flex justify-between items-center">
-                <h3 className="admin-card-title">Phiếu Báo Sửa Chữa, Thay Thế ({filteredTickets.length})</h3>
+                <h3 className="admin-card-title">Phiếu báo đề nghị sửa chữa, thay thế ({filteredTickets.length})</h3>
                 <div className="flex items-center gap-2">
-                    <Button size="sm" onClick={() => navigate('/admin/warranty_tickets/new')} leftIcon={<i className="fas fa-plus"></i>}>Tạo Phiếu</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-print"></i>}>In</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-file-export"></i>}>Export</Button>
+                    <Button size="sm" onClick={() => navigate('/admin/warranty_tickets/new')} leftIcon={<i className="fas fa-plus"></i>}>Thêm</Button>
+                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-edit"></i>}>Sửa</Button>
+                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-trash"></i>}>Xóa</Button>
+                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-copy"></i>}>Sao chép</Button>
+                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-print"></i>}>In ấn</Button>
+                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-search"></i>}>Tìm kiếm</Button>
                 </div>
             </div>
             
             <div className="admin-card-body">
                 <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <span className="text-sm font-semibold mr-2">Chọn bạn xem lại:</span>
                     {TICKET_STATUS_FILTERS.map(filter => (
                          <Button key={filter.value} onClick={() => setActiveFilter(filter.value)} size="sm" variant={activeFilter === filter.value ? 'primary' : 'outline'} className="!font-normal">
                              {filter.label}
@@ -91,35 +120,43 @@ const WarrantyManagementView: React.FC = () => {
                 {error && <BackendConnectionError error={error} />}
                  <div className="overflow-x-auto">
                     <table className="admin-table text-sm">
-                        <thead>
+                        <thead className="bg-gray-100">
                             <tr>
+                                <th>Đơn vị</th>
                                 <th>Trạng thái</th>
-                                <th>Số phiếu</th>
-                                <th>Ngày</th>
-                                <th>Người tạo</th>
-                                <th>Khách hàng</th>
+                                <th>Số c/từ</th>
+                                <th>Ngày c/từ</th>
+                                <th>Người tiếp nhận</th>
+                                <th>Ngoại tệ</th>
+                                <th>Tên người tiếp nhận</th>
+                                <th>Mã bộ phận</th>
                                 <th>Diễn giải</th>
-                                <th>Loại GD</th>
-                                <th>Tổng tiền</th>
+                                <th className="text-right">Tổng chi phí</th>
+                                <th className="text-right">Số lượng</th>
+                                <th>Giao dịch</th>
                                 <th>Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
                              {isLoading ? (
-                                <tr><td colSpan={9} className="text-center py-4">Đang tải...</td></tr>
+                                <tr><td colSpan={13} className="text-center py-4">Đang tải...</td></tr>
                             ) : !error && filteredTickets.length > 0 ? (
-                                filteredTickets.map((ticket) => (
-                                    <tr key={ticket.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/admin/warranty_tickets/edit/${ticket.id}`)}>
-                                        <td><span className="text-red-600 font-semibold">{ticket.status}</span></td>
-                                        <td className="text-blue-600 font-semibold">{ticket.ticketNumber}</td>
-                                        <td>{formatDateTime(ticket.createdAt)}</td>
+                                filteredTickets.map((ticket, index) => (
+                                    <tr key={ticket.id} className={`hover:bg-yellow-50 cursor-pointer ${index === 0 ? 'bg-yellow-100' : ''}`} onClick={() => navigate(`/admin/warranty_tickets/edit/${ticket.id}`)}>
+                                        <td>{ticket.department || 'CTV'}</td>
+                                        <td className={getStatusColor(ticket.status)}>{ticket.status}</td>
+                                        <td className="font-semibold text-blue-700">{ticket.ticketNumber}</td>
+                                        <td>{formatDate(ticket.createdAt)}</td>
                                         <td>{ticket.creatorName}</td>
-                                        <td>{ticket.customerName}</td>
+                                        <td>{ticket.currency || 'VND'}</td>
+                                        <td>{ticket.creatorName}</td>
+                                        <td>{ticket.departmentCode || 'BAOHANH'}</td>
                                         <td className="max-w-xs truncate">{ticket.reportedIssue}</td>
+                                        <td className="text-right font-semibold">{formatCurrency(ticket.totalAmount)}</td>
+                                        <td className="text-right">{ticket.totalQuantity || ticket.items?.reduce((s, i) => s + i.quantity, 0) || 0}</td>
                                         <td>{ticket.transactionType}</td>
-                                        <td className="text-right font-semibold">{formatCurrency(ticket.totalAmount)}₫</td>
                                         <td>
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 justify-center">
                                                 <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/warranty_tickets/edit/${ticket.id}`) }} className="text-blue-600" title="Sửa"><i className="fas fa-edit"></i></button>
                                                 <button onClick={(e) => handleDelete(e, ticket.id)} className="text-red-600" title="Xóa"><i className="fas fa-times"></i></button>
                                             </div>
@@ -127,7 +164,7 @@ const WarrantyManagementView: React.FC = () => {
                                     </tr>
                                 ))
                             ) : (
-                                !error && <tr><td colSpan={9} className="text-center py-4 text-textMuted">Không có phiếu nào.</td></tr>
+                                !error && <tr><td colSpan={13} className="text-center py-4 text-textMuted">Không có phiếu nào.</td></tr>
                             )}
                         </tbody>
                     </table>
