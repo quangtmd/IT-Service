@@ -37,6 +37,10 @@ export interface Product {
   warrantyPeriod?: number; // Bảo Hành (in months)
   countryOfOrigin?: string; // Xuất Xứ
   yearOfManufacture?: number; // Năm SX
+
+  // New fields for supplier
+  supplierId?: string; // ID Nhà cung cấp
+  supplierName?: string; // Tên nhà cung cấp (denormalized)
 }
 
 export interface Service {

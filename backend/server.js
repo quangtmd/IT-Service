@@ -229,6 +229,8 @@ app.post('/api/products', async (req, res) => {
             warrantyPeriod: productData.warrantyPeriod ? Number(productData.warrantyPeriod) : null,
             countryOfOrigin: productData.countryOfOrigin || null,
             yearOfManufacture: productData.yearOfManufacture ? Number(productData.yearOfManufacture) : null,
+            supplierId: productData.supplierId || null,
+            supplierName: productData.supplierName || null,
         };
 
         await pool.query('INSERT INTO Products SET ?', productToDb);
@@ -270,6 +272,8 @@ app.put('/api/products/:id', async (req, res) => {
             warrantyPeriod: productData.warrantyPeriod ? Number(productData.warrantyPeriod) : null,
             countryOfOrigin: productData.countryOfOrigin,
             yearOfManufacture: productData.yearOfManufacture ? Number(productData.yearOfManufacture) : null,
+            supplierId: productData.supplierId,
+            supplierName: productData.supplierName,
         };
         
         const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [fieldsToUpdate, id]);

@@ -79,7 +79,9 @@ CREATE TABLE `Products` (
   `yearOfManufacture` int(11) DEFAULT NULL,
   `slug` varchar(255) DEFAULT NULL,
   `seoMetaTitle` varchar(255) DEFAULT NULL,
-  `seoMetaDescription` text
+  `seoMetaDescription` text,
+  `supplierId` varchar(255) DEFAULT NULL,
+  `supplierName` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `Orders` (
@@ -168,7 +170,11 @@ CREATE TABLE `StockReceipts` (
   `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`items`)),
   `totalAmount` decimal(15,2) NOT NULL,
   `notes` text,
-  `status` enum('Nháp','Hoàn thành') NOT NULL
+  `status` enum('Nháp','Hoàn thành', 'Công nợ') NOT NULL,
+  `subTotal` decimal(15,2) NOT NULL DEFAULT 0,
+  `discount` decimal(15,2) NOT NULL DEFAULT 0,
+  `amountPaid` decimal(15,2) NOT NULL DEFAULT 0,
+  `paymentMethod` enum('Tiền mặt','Thẻ') NOT NULL DEFAULT 'Tiền mặt'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `StockIssues` (
@@ -351,7 +357,7 @@ CREATE TABLE `AdCampaigns` (
 -- =================================================================
 ALTER TABLE `Users` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `email` (`email`);
 ALTER TABLE `ProductCategories` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `slug` (`slug`), ADD KEY `parentId` (`parentId`);
-ALTER TABLE `Products` ADD PRIMARY KEY (`id`), ADD KEY `categoryId` (`categoryId`), ADD KEY `slug` (`slug`);
+ALTER TABLE `Products` ADD PRIMARY KEY (`id`), ADD KEY `categoryId` (`categoryId`), ADD KEY `slug` (`slug`), ADD KEY `supplierId` (`supplierId`);
 ALTER TABLE `Orders` ADD PRIMARY KEY (`id`), ADD KEY `userId` (`userId`), ADD KEY `creatorId` (`creatorId`);
 ALTER TABLE `Warehouses` ADD PRIMARY KEY (`id`);
 ALTER TABLE `Inventory` ADD PRIMARY KEY (`productId`,`warehouseId`), ADD KEY `warehouseId` (`warehouseId`);
@@ -418,7 +424,9 @@ INSERT IGNORE INTO `Warehouses` (`id`, `name`, `location`) VALUES
 INSERT IGNORE INTO `Suppliers` (`id`, `name`, `contactInfo`, `paymentTerms`) VALUES 
 ('SUP001', 'Nhà phân phối Tin học Mai Hoàng', '{\"email\":\"contact@maihoang.com.vn\", \"phone\":\"02436285868\"}', 'Thanh toán gối đầu 30 ngày'), 
 ('SUP002', 'Công ty máy tính Vĩnh Xuân (SPC)', '{\"email\":\"info@spc.com.vn\", \"phone\":\"02838326085\"}', 'Thanh toán ngay khi nhận hàng'),
-('SUP003', 'Công ty máy tính Viễn Sơn', '{\"email\":\"info@microstar.vn\", \"phone\":\"02838326085\"}', 'Thanh toán cuối tháng');
+('SUP003', 'Công ty máy tính Viễn Sơn', '{\"email\":\"info@microstar.vn\", \"phone\":\"02838326085\"}', 'Thanh toán cuối tháng'),
+('SUP004', 'TNC Store', '{\"email\":\"cskh@tncstore.vn\", \"phone\":\"0912345678\"}', 'Thanh toán ngay'),
+('SUP005', 'An Phát Computer', '{\"email\":\"kinhdoanh@anphatpc.com.vn\", \"phone\":\"0923456789\"}', 'Công nợ 15 ngày');
 
 INSERT IGNORE INTO `EmailSubscribers` (`email`, `name`) VALUES 
 ('subscriber1@email.com', 'Nguyễn Văn A'), 
@@ -432,6 +440,20 @@ INSERT IGNORE INTO `AdCampaigns` (`id`, `name`, `source`, `cost`, `clicks`, `con
 
 INSERT IGNORE INTO `ProductReviews` (`id`, `productId`, `reviewerName`, `rating`, `comment`) VALUES
 ('REV001', 'PCGM001', 'Nguyễn Văn An', 5, 'Máy chạy rất mượt, shop tư vấn nhiệt tình!');
+
+INSERT IGNORE INTO `Products` (`id`, `name`, `mainCategory`, `subCategory`, `price`, `originalPrice`, `stock`, `brand`, `tags`, `imageUrls`, `specifications`, `purchasePrice`, `wholesalePrice`, `productCode`, `supplierId`) VALUES
+('CPU001', 'CPU Intel Core i9-14900K', 'Linh kiện máy tính', 'CPU (Vi xử lý Intel, AMD)', 15990000, 17500000, 15, 'Intel', '["Nổi bật", "Gaming", "Mới"]', '["https://hanoicomputercdn.com/media/product/84214_cpu_intel_core_i9_14900k_1.png"]', '{}', 14500000, 15000000, 'CPU-INT-14900K', 'SUP001'),
+('VGA001', 'VGA GIGABYTE GeForce RTX 4070 Ti SUPER', 'Linh kiện máy tính', 'VGA (Card màn hình)', 25490000, 27000000, 10, 'GIGABYTE', '["Nổi bật", "Gaming"]', '["https://hanoicomputercdn.com/media/product/85223_vga_gigabyte_geforce_rtx_4070_ti_super_gaming_oc_16gb_gddr6x_1.png"]', '{}', 23000000, 24000000, 'VGA-GIGA-4070TIS', 'SUP002'),
+('RAM001', 'RAM Kingston Fury Beast RGB 32GB (2x16GB) DDR5 6000MHz', 'Linh kiện máy tính', 'RAM (DDR4, DDR5…)', 3290000, 3500000, 30, 'Kingston', '["Bán chạy"]', '["https://hanoicomputercdn.com/media/product/78396_ram_kingston_fury_beast_rgb_32gb_2x16gb_ddr5_bus_6000mhz_kf560c36bbeak2_32_1.png"]', '{}', 2800000, 3000000, 'RAM-KING-D532GB6000', 'SUP003'),
+('SSD001', 'Ổ cứng SSD Samsung 990 PRO 2TB NVMe PCIe 4.0', 'Linh kiện máy tính', 'Ổ cứng HDD / SSD (SATA, NVMe)', 4490000, 5000000, 25, 'Samsung', '["Bán chạy", "Tốc độ cao"]', '["https://hanoicomputercdn.com/media/product/77353_ssd_samsung_990_pro_2tb_pcie_gen4_x4_nvme_2_0_v_nand_m_2_mz_v9p2t0bw_1.png"]', '{}', 3900000, 4200000, 'SSD-SS-990P2TB', 'SUP001'),
+('MAIN001', 'Mainboard ASUS ROG STRIX Z790-E GAMING WIFI II', 'Linh kiện máy tính', 'Bo mạch chủ (Mainboard)', 16490000, NULL, 8, 'ASUS', '["Gaming", "High-end"]', '["https://hanoicomputercdn.com/media/product/84128_mainboard_asus_rog_strix_z790_e_gaming_wifi_ii_ddr5_1.png"]', '{}', 15000000, 15500000, 'MAIN-ASUS-Z790E2', 'SUP002'),
+('PSU001', 'Nguồn Cooler Master MWE Gold V2 850W - 80 Plus Gold', 'Linh kiện máy tính', 'Nguồn máy tính (PSU)', 2890000, 3200000, 18, 'Cooler Master', '["Bán chạy"]', '["https://hanoicomputercdn.com/media/product/64757_mwe_850_gold_v2_full_modular__1_.png"]', '{}', 2500000, 2700000, 'PSU-CM-850GV2', 'SUP003'),
+('CASE001', 'Vỏ case NZXT H6 Flow RGB Black', 'Linh kiện máy tính', 'Vỏ máy (Case)', 3290000, NULL, 12, 'NZXT', '["Mới", "Đẹp"]', '["https://hanoicomputercdn.com/media/product/84705_vo_case_nzxt_h6_flow_rgb_black_1.png"]', '{}', 2900000, 3100000, 'CASE-NZXT-H6FRGB', 'SUP004'),
+('LCD001', 'Màn hình LG UltraGear 27GR93U-B 4K 144Hz', 'Thiết bị ngoại vi', 'Màn hình (LCD, LED, 2K, 4K, Gaming…)', 13990000, 15500000, 20, 'LG', '["Gaming", "4K"]', '["https://hanoicomputercdn.com/media/product/83281_lg_27gr93u_b_1.png"]', '{}', 12500000, 13000000, 'LCD-LG-27GR93U', 'SUP001'),
+('LAP001', 'Laptop Gaming Acer Predator Helios Neo 16', 'Laptop', 'Laptop Gaming', 37990000, 42000000, 7, 'Acer', '["Nổi bật", "Gaming"]', '["https://hanoicomputercdn.com/media/product/85429_laptop_gaming_acer_predator_helios_neo_16_phn16_72_9154_nh_qlxsv_002__1_.png"]', '{}', 35000000, 36000000, 'LAP-ACER-HELNEO16', 'SUP005'),
+('PCGM001', 'PC GAMING IQ EAGLE', 'Máy tính để bàn (PC)', 'Máy tính Gaming', 28990000, 32000000, 5, 'IQ Technology', '["Bán chạy", "Nổi bật"]', '["https://hanoicomputercdn.com/media/product/85055_pc_gaming_hacom_thor_1.png"]', '{}', 26000000, 27500000, 'PCGM-IQ-EAGLE', NULL),
+('PCGM002', 'PC GAMING STREAMER PRO', 'Máy tính để bàn (PC)', 'Máy tính Gaming', 48500000, 55000000, 3, 'IQ Technology', '["Nổi bật", "High-end"]', '["https://hanoicomputercdn.com/media/product/85461_pc_gaming_hacom_ghost_1.png"]', '{}', 45000000, 46500000, 'PCGM-IQ-STREAMER', NULL),
+('CPU002', 'CPU AMD Ryzen 7 7800X3D', 'Linh kiện máy tính', 'CPU (Vi xử lý Intel, AMD)', 10490000, 11500000, 18, 'AMD', '["Gaming", "3D V-Cache"]', '["https://hanoicomputercdn.com/media/product/80267_cpu_amd_ryzen_7_7800x3d_1.png"]', '{}', 9500000, 10000000, 'CPU-AMD-7800X3D', 'SUP002');
 
 COMMIT;
 -- =================================================================
