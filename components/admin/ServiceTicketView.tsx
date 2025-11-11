@@ -7,7 +7,7 @@ import BackendConnectionError from '../shared/BackendConnectionError';
 
 const STATUS_FILTERS: Array<{ label: string, value: ServiceTicket['status'] | 'Tất cả' }> = [
     { label: 'Tất cả', value: 'Tất cả' },
-    { label: 'Mới', value: 'Mới' },
+    { label: 'Mới tiếp nhận', value: 'Mới tiếp nhận' },
     { label: 'Đang xử lý', value: 'Đang xử lý' },
     { label: 'Hoàn thành', value: 'Hoàn thành' },
     { label: 'Đã đóng', value: 'Đã đóng' },

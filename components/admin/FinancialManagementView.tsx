@@ -50,7 +50,8 @@ const FinancialManagementView: React.FC = () => {
         loadData();
     }, [loadData]);
 
-    const addTransaction = async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
+    // FIX: Wrapped addTransaction in useCallback to ensure a stable function reference is passed down.
+    const addTransaction = useCallback(async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
         try {
             await addFinancialTransaction(newTransaction);
             loadData(); // Re-fetch all data to ensure consistency
@@ -58,7 +59,7 @@ const FinancialManagementView: React.FC = () => {
             console.error(error);
             alert("Lỗi khi thêm giao dịch.");
         }
-    };
+    }, [loadData]);
 
     const renderTabContent = () => {
         if (isLoading) return <div className="text-center p-8">Đang tải dữ liệu tài chính...</div>;
@@ -303,8 +304,6 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
-    // FIX: Explicitly providing the return type for an async function inside useCallback
-    // can help TypeScript's type inference and resolve some obscure errors.
     const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
@@ -332,8 +331,6 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         }
     }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
 
-    // FIX: Explicitly providing the return type for an async function inside useCallback
-    // can help TypeScript's type inference and resolve some obscure errors.
     const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);

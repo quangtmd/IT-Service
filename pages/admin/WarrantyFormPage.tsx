@@ -41,81 +41,93 @@ const PrintableRepairSlip: React.FC<{ ticket: Partial<WarrantyTicket>, settings:
                 <table className="w-full border-collapse border border-black text-xs mb-4 print-table">
                      <thead className="bg-red-700 text-white text-center font-bold">
                          <tr>
-                             <th className="border border-black p-1 w-[5%]">STT</th>
-                             <th className="border border-black p-1 w-[25%]">Sản phẩm bảo hành</th>
-                             <th className="border border-black p-1 w-[15%]">Tình trạng hư hỏng</th>
-                             <th className="border border-black p-1 w-[15%]">Diện bảo hành</th>
-                             <th className="border border-black p-1 w-[15%]">Giải pháp xử lý</th>
-                             <th className="border border-black p-1 w-[25%]">Kỹ thuật ghi chú</th>
+                             <th className="border border-black p-2 w-[5%]">STT</th>
+                             <th className="border border-black p-2 w-[25%]">Sản phẩm bảo hành</th>
+                             <th className="border border-black p-2 w-[15%]">Tình trạng hư hỏng</th>
+                             <th className="border border-black p-2 w-[15%]">Diện bảo hành</th>
+                             <th className="border border-black p-2 w-[15%]">Giải pháp xử lý</th>
+                             <th className="border border-black p-2 w-[25%]">Kỹ thuật ghi chú</th>
                          </tr>
                      </thead>
                      <tbody>
                          <tr>
-                             <td className="border border-black p-1 text-center align-top">1</td>
-                             <td className="border border-black p-1 align-top">
+                             <td className="border border-black p-2 text-center align-top">1</td>
+                             <td className="border border-black p-2 align-top">
                                  <p><strong>Tên:</strong> {ticket.productModel}</p>
                                  <p><strong>Mã:</strong> {ticket.productId || 'N/A'}</p>
                                  <p><strong>Serial:</strong> {ticket.productSerial}</p>
                              </td>
-                             <td className="border border-black p-1 align-top">{ticket.reportedIssue}</td>
-                             <td className="border border-black p-1 align-top">{ticket.warrantyType}</td>
-                             <td className="border border-black p-1 align-top">{ticket.resolution_notes}</td>
-                             <td className="border border-black p-1 align-top">{ticket.technician_notes}</td>
+                             <td className="border border-black p-2 align-top">{ticket.reportedIssue}</td>
+                             <td className="border border-black p-2 align-top">{ticket.warrantyType}</td>
+                             <td className="border border-black p-2 align-top">{ticket.resolution_notes}</td>
+                             <td className="border border-black p-2 align-top">{ticket.technician_notes}</td>
                          </tr>
                      </tbody>
                 </table>
                 
-                 <table className="w-full border-collapse border border-black text-xs print-table">
-                    <thead className="bg-red-700 text-white text-center font-bold">
-                        <tr>
-                            <th className="border border-black p-1 w-[5%]">STT</th>
-                            <th className="border border-black p-1 w-[20%]">Mã linh kiện</th>
-                            <th className="border border-black p-1 w-[40%]">Tên linh kiện</th>
-                            <th className="border border-black p-1 w-[10%]">Số lượng</th>
-                            <th className="border border-black p-1 w-[25%]">Giá</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {ticket.items?.map((item, index) => (
-                            <tr key={item.id}>
-                                <td className="border border-black p-1 text-center">{index + 1}</td>
-                                <td className="border border-black p-1">{item.itemCode}</td>
-                                <td className="border border-black p-1">{item.itemName}</td>
-                                <td className="border border-black p-1 text-right">{item.quantity}</td>
-                                <td className="border border-black p-1 text-right">{item.price.toLocaleString('vi-VN')} VND</td>
-                            </tr>
-                        ))}
-                        {(!ticket.items || ticket.items.length === 0) && (
-                            <tr><td colSpan={5} className="border border-black p-1 text-center italic">Không có linh kiện/dịch vụ.</td></tr>
-                        )}
-                        <tr>
-                            <td colSpan={3} rowSpan={4} className="border border-black p-1 align-bottom">
-                                <strong>Bằng chữ:</strong>
-                            </td>
-                            <td className="border border-black p-1">Phí dịch vụ</td>
-                            <td className="border border-black p-1 text-right">{ticket.serviceFee?.toLocaleString('vi-VN')} VND</td>
-                        </tr>
-                        <tr>
-                            <td className="border border-black p-1">Giảm giá</td>
-                            <td className="border border-black p-1 text-right">{ticket.discount?.toLocaleString('vi-VN')} VND</td>
-                        </tr>
-                         <tr>
-                            <td className="border border-black p-1">Thuế VAT ({ticket.vat || 0}%)</td>
-                            <td className="border border-black p-1 text-right">{vatAmount.toLocaleString('vi-VN')} VND</td>
-                        </tr>
-                        <tr>
-                            <td className="border border-black p-1 font-bold">Tổng cộng</td>
-                            <td className="border border-black p-1 text-right font-bold">{grandTotal.toLocaleString('vi-VN')} VND</td>
-                        </tr>
-                    </tbody>
-                 </table>
+                <div className="flex items-start justify-between gap-4">
+                    <div className="w-[65%]">
+                        <table className="w-full border-collapse border border-black text-xs print-table">
+                            <thead className="bg-red-700 text-white text-center font-bold">
+                                <tr>
+                                    <th className="border border-black p-2 w-[8%]">STT</th>
+                                    <th className="border border-black p-2 w-[25%]">Mã linh kiện</th>
+                                    <th className="border border-black p-2">Tên linh kiện</th>
+                                    <th className="border border-black p-2 w-[12%]">SL</th>
+                                    <th className="border border-black p-2 w-[25%]">Giá</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {ticket.items?.map((item, index) => (
+                                    <tr key={item.id}>
+                                        <td className="border border-black p-2 text-center">{index + 1}</td>
+                                        <td className="border border-black p-2">{item.itemCode}</td>
+                                        <td className="border border-black p-2">{item.itemName}</td>
+                                        <td className="border border-black p-2 text-right">{item.quantity}</td>
+                                        <td className="border border-black p-2 text-right">{item.price.toLocaleString('vi-VN')} VND</td>
+                                    </tr>
+                                ))}
+                                {(!ticket.items || ticket.items.length === 0) && (
+                                    <tr><td colSpan={5} className="border border-black p-2 h-10 text-center italic">Không có linh kiện/dịch vụ.</td></tr>
+                                )}
+                                 <tr>
+                                    <td colSpan={5} className="border border-black p-2 align-bottom min-h-[50px]">
+                                        <strong>Bằng chữ:</strong> <span className="italic">(Một trăm nghìn đồng chẵn)</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="w-[35%]">
+                         <table className="w-full border-collapse border border-black text-xs print-table">
+                            <tbody>
+                                <tr>
+                                    <td className="border border-black p-2">Phí dịch vụ</td>
+                                    <td className="border border-black p-2 text-right">{ticket.serviceFee?.toLocaleString('vi-VN')} VND</td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-black p-2">Giảm giá</td>
+                                    <td className="border border-black p-2 text-right">{ticket.discount?.toLocaleString('vi-VN')} VND</td>
+                                </tr>
+                                 <tr>
+                                    <td className="border border-black p-2">Thuế VAT ({ticket.vat || 0}%)</td>
+                                    <td className="border border-black p-2 text-right">{vatAmount.toLocaleString('vi-VN')} VND</td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-black p-2 font-bold bg-gray-100">Tổng cộng</td>
+                                    <td className="border border-black p-2 text-right font-bold bg-gray-100">{grandTotal.toLocaleString('vi-VN')} VND</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </main>
             
             <footer className="mt-24 grid grid-cols-4 gap-4 text-center text-xs">
-                <div><p className="font-bold">Khách hàng</p><p className="mt-12">(Ký & ghi rõ họ tên)</p></div>
-                <div><p className="font-bold">Nhân viên nhận</p><p className="mt-12">(Ký & ghi rõ họ tên)</p></div>
-                <div><p className="font-bold">Kỹ thuật viên</p><p className="mt-12">(Ký & ghi rõ họ tên)</p></div>
-                <div><p className="font-bold">Quản lý TTBH</p><p className="mt-12">(Ký & ghi rõ họ tên)</p></div>
+                <div><p className="font-bold">Khách hàng</p><p className="mt-12 text-gray-500">(Ký & ghi rõ họ tên)</p></div>
+                <div><p className="font-bold">Nhân viên nhận</p><p className="mt-12 text-gray-500">(Ký & ghi rõ họ tên)</p></div>
+                <div><p className="font-bold">Kỹ thuật viên</p><p className="mt-12 text-gray-500">(Ký & ghi rõ họ tên)</p></div>
+                <div><p className="font-bold">Quản lý TTBH</p><p className="mt-12 text-gray-500">(Ký & ghi rõ họ tên)</p></div>
             </footer>
         </div>
     );
@@ -301,7 +313,7 @@ const WarrantyFormPage: React.FC = () => {
                  </div>
             </div>
             {/* Hidden printable section */}
-            <div id="print-section" className="hidden print:block">
+            <div id="print-section" className="hidden">
                 <PrintableRepairSlip ticket={formData} settings={siteSettings} title={printTitle} />
             </div>
         </form>
