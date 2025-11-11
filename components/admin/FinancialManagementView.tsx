@@ -140,11 +140,13 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
         navigate('/admin/accounting_dashboard/transactions/new');
     };
 
-    const handleEditTransaction = (transactionId: string) => {
+    // FIX: Add explicit return type `: void` to resolve TypeScript inference error.
+    const handleEditTransaction = (transactionId: string): void => {
         navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
     };
 
-    const handleDelete = async (id: string) => {
+    // FIX: Add explicit return type `: Promise<void>` to resolve TypeScript inference error.
+    const handleDelete = async (id: string): Promise<void> => {
         if(window.confirm('Bạn có chắc muốn xóa giao dịch này?')) {
             try {
                 await deleteFinancialTransaction(id);
@@ -309,7 +311,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
         });
     };
 
-// FIX: Removed useCallback wrapper which may have caused type inference issues.
     const handleSettlePayroll = async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
@@ -336,7 +337,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
         }
     };
 
-// FIX: Removed useCallback wrapper which may have caused type inference issues.
     const handleSaveDraft = async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
@@ -350,8 +350,8 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                <Button onClick={handleSaveDraft} size="sm" variant="outline">Lưu Nháp</Button>
-                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

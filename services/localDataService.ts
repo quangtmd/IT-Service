@@ -427,12 +427,12 @@ export const checkBackendHealth = async () => {
 
 // Warehouses
 export const getWarehouses = async (): Promise<Warehouse[]> => {
-    return getLocalStorageItem(Constants.WAREHOUSES_STORAGE_KEY, Constants.INITIAL_WAREHOUSES);
+    return Promise.resolve(getLocalStorageItem(Constants.WAREHOUSES_STORAGE_KEY, Constants.INITIAL_WAREHOUSES));
 };
 
 // Stock Receipts
 export const getStockReceipts = async (): Promise<StockReceipt[]> => {
-    return getLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, Constants.INITIAL_STOCK_RECEIPTS);
+    return Promise.resolve(getLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, Constants.INITIAL_STOCK_RECEIPTS));
 };
 
 export const addStockReceipt = async (receipt: Omit<StockReceipt, 'id'>): Promise<StockReceipt> => {
@@ -464,7 +464,7 @@ export const deleteStockReceipt = async (id: string): Promise<void> => {
 
 // Stock Issues
 export const getStockIssues = async (): Promise<StockIssue[]> => {
-    return getLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, []);
+    return Promise.resolve(getLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, []));
 };
 export const addStockIssue = async (issue: Omit<StockIssue, 'id'>): Promise<StockIssue> => {
     const issues = await getStockIssues();
@@ -495,7 +495,7 @@ export const deleteStockIssue = async (id: string): Promise<void> => {
 
 // Stock Transfers
 export const getStockTransfers = async (): Promise<StockTransfer[]> => {
-    return getLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, []);
+    return Promise.resolve(getLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, []));
 };
 export const addStockTransfer = async (transfer: Omit<StockTransfer, 'id'>): Promise<StockTransfer> => {
     const transfers = await getStockTransfers();
