@@ -107,13 +107,12 @@ const OrderFormPage: React.FC = () => {
     const handleCustomerSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const term = e.target.value;
         setCustomerSearchText(term);
-        setFormData(prev => prev ? ({...prev, customerInfo: {...prev.customerInfo!, fullName: term}}): null);
-
 
         if (term) {
             setCustomerResults(customers.filter(c =>
                 c.username.toLowerCase().includes(term.toLowerCase()) ||
-                (c.phone && c.phone.includes(term))
+                (c.phone && c.phone.includes(term)) ||
+                c.id.toLowerCase().includes(term.toLowerCase())
             ).slice(0, 5));
         } else {
             setCustomerResults([]);
@@ -131,7 +130,7 @@ const OrderFormPage: React.FC = () => {
                 email: customer.email || '',
             }
         }) : null);
-        setCustomerSearchText(customer.username);
+        setCustomerSearchText('');
         setCustomerResults([]);
     };
 
@@ -191,7 +190,6 @@ const OrderFormPage: React.FC = () => {
     if (error) return <div className="admin-card"><div className="admin-card-body text-center text-red-500">{error}</div></div>;
     if (!formData) return null;
 
-    const selectedCustomer = customers.find(c => c.id === formData.userId);
     const totalAmount = formData.totalAmount || 0;
 
     return (
@@ -228,29 +226,60 @@ const OrderFormPage: React.FC = () => {
 
                         {/* Customer Info */}
                         <div className="border-t border-b border-dashed border-black py-2 mb-4">
+                            {/* --- Start of New Customer Section --- */}
                             <h3 className="font-bold mb-2 no-print">Thông tin khách hàng</h3>
+                            
+                            <div className="admin-form-group relative no-print">
+                                <label>Tìm kiếm khách hàng</label>
+                                <div className="flex items-center gap-2">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Tìm theo Tên, SĐT, Mã KH..." 
+                                        value={customerSearchText} 
+                                        onChange={handleCustomerSearchChange} 
+                                        autoComplete="off" 
+                                        className="flex-grow"
+                                    />
+                                    <Button type="button" size="sm" variant="outline" onClick={() => navigate('/admin/customers/new')} title="Thêm khách hàng mới"><i className="fas fa-plus"></i></Button>
+                                </div>
+                                {customerResults.length > 0 && (
+                                    <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
+                                        {customerResults.map(c => 
+                                            <li key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">
+                                                {c.username} ({c.phone || c.email})
+                                            </li>
+                                        )}
+                                    </ul>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                <div className="admin-form-group no-print">
+                                    <label>Mã khách hàng</label>
+                                    <input type="text" value={formData.userId || 'Khách lẻ'} disabled className="bg-gray-100" />
+                                </div>
+                                <div className="admin-form-group no-print">
+                                    <label>Tên khách hàng</label>
+                                    <input type="text" name="fullName" value={formData.customerInfo?.fullName || ''} onChange={handleCustomerInfoChange}/>
+                                </div>
+                                 <div className="admin-form-group no-print">
+                                    <label>Số điện thoại</label>
+                                    <input type="tel" name="phone" value={formData.customerInfo?.phone || ''} onChange={handleCustomerInfoChange}/>
+                                </div>
+                                <div className="admin-form-group no-print">
+                                    <label>Địa chỉ</label>
+                                    <input type="text" name="address" value={formData.customerInfo?.address || ''} onChange={handleCustomerInfoChange}/>
+                                </div>
+                            </div>
+                            {/* --- End of New Customer Section --- */}
+
                              <div className="grid grid-cols-2 gap-x-4 text-sm print-only">
                                 <p><strong className="w-24 inline-block">Khách hàng:</strong> {formData.customerInfo?.fullName}</p>
-                                <p><strong className="w-24 inline-block">Mã số thuế:</strong></p>
+                                <p><strong className="w-24 inline-block">Mã KH:</strong> {formData.userId || 'Khách lẻ'}</p>
                                 <p><strong className="w-24 inline-block">Địa chỉ:</strong> {formData.customerInfo?.address}</p>
                                 <p><strong className="w-24 inline-block">Điện thoại:</strong> {formData.customerInfo?.phone}</p>
                                 <p><strong className="w-24 inline-block">Nhân viên bán:</strong> {creator?.username || 'N/A'}</p>
-                            </div>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 no-print">
-                                <div className="admin-form-group relative">
-                                    <label>Tên khách hàng</label>
-                                    <div className="flex items-center gap-2">
-                                        <input type="text" name="fullName" placeholder="Tìm hoặc nhập tên khách hàng" value={customerSearchText} onChange={handleCustomerSearchChange} autoComplete="off" className="flex-grow"/>
-                                        <Button type="button" size="sm" variant="outline" onClick={() => navigate('/admin/customers/new')} title="Thêm khách hàng mới"><i className="fas fa-plus"></i></Button>
-                                    </div>
-                                    {customerResults.length > 0 && (
-                                        <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
-                                            {customerResults.map(c => <li key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{c.username} ({c.phone || c.email})</li>)}
-                                        </ul>
-                                    )}
-                                </div>
-                                <div className="admin-form-group"><input type="tel" name="phone" placeholder="Số điện thoại" value={formData.customerInfo?.phone || ''} onChange={handleCustomerInfoChange}/></div>
-                                <div className="admin-form-group sm:col-span-2"><input type="text" name="address" placeholder="Địa chỉ" value={formData.customerInfo?.address || ''} onChange={handleCustomerInfoChange}/></div>
+                                <p><strong className="w-24 inline-block">Mã số thuế:</strong></p>
                             </div>
                         </div>
                        
