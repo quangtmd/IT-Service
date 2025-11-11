@@ -327,7 +327,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
 
         try {
             const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-// FIX: The savePayrollRecords function expects one argument, which is provided here.
+            // FIX: Pass the 'recordsToSave' argument to the savePayrollRecords function.
             await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
@@ -343,7 +343,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
 
     const handleSaveDraft = async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-// FIX: The savePayrollRecords function expects one argument, which is provided here.
+        // FIX: Pass the 'recordsToSave' argument to the savePayrollRecords function.
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
         await onDataChange();
