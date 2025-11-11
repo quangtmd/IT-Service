@@ -197,33 +197,21 @@ export interface GroundingChunk {
   web: GroundingChunkWeb;
 }
 
-// Updated AdminView to include all new modules
 export type AdminView = 
   | 'dashboard'
-  | 'partners' // New combined view for customers and suppliers
-  | 'reports' // New view for all reports
-  | 'system_management' // New view for system settings like users, permissions etc.
-  // Sales & CRM
+  | 'reports'
+  | 'partners'
+  | 'system_management'
+  // Old views - keep for compatibility if needed
   | 'customers' | 'quotations' | 'orders' | 'discounts' | 'returns' | 'suppliers' | 'helpdesk_tickets'
-  // Service & Warranty
-  | 'service_tickets' | 'warranty_tickets'
-  // FIX: Changed 'warranty_claims' to 'warranty_tickets' to match the AdminView type.
-  | 'chat_logs'
-  // CMS & Marketing
+  | 'service_tickets' | 'warranty_tickets' | 'chat_logs'
   | 'products' | 'articles' | 'media_library' | 'email_marketing' | 'seo_management'
-  // Inventory & Logistics
   | 'inventory' | 'stock_receipts' | 'stock_issues' | 'shipping' | 'stock_transfers'
-  // Finance & Accounting
   | 'accounting_dashboard' | 'invoices' | 'expenses' | 'debt_management' | 'cashflow_forecast' | 'payment_approval'
-  // Procurement
   | 'purchase_requests' | 'purchase_orders' | 'procurement_approval'
-  // System & HR
   | 'hrm_dashboard' | 'user_permissions' | 'site_settings' | 'activity_log' | 'contract_management' | 'asset_management' | 'kpi_management'
-  // Analytics & Automation
   | 'workflows' | 'notification_center' | 'ai_forecast' | 'branch_reports' | 'system_backup'
-  // Multi-branch
   | 'branch_list' | 'branch_permissions' | 'reports_by_branch'
-  // Old/Misc that need to be categorized
   | 'faqs' | 'theme_settings' | 'menu_settings' | 'notifications_panel' | 'homepage_management'
   ;
 
@@ -300,6 +288,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   purchasePrice?: number; // Added for profit calculation
+  unit?: string;
 }
 
 // FIX: Add 'Đang xác nhận' to OrderStatus type to fix type error.
@@ -312,7 +301,6 @@ export interface ShippingInfo {
 }
 
 export interface PaymentInfo {
-  // FIX: Corrected typo 'Chuyện' to 'Chuyển' to match common usage.
   method: 'Thanh toán khi nhận hàng (COD)' | 'Chuyển khoản ngân hàng' | 'Tiền mặt';
   status: 'Chưa thanh toán' | 'Đã thanh toán' | 'Đã cọc';
   transactionId?: string; // Optional: For online gateway transaction IDs
@@ -335,6 +323,7 @@ export interface Order {
   status: OrderStatus; // Fulfillment status
   shippingInfo?: ShippingInfo; // Added for shipping management
   paymentInfo: PaymentInfo;
+  notes?: string;
 }
 
 export interface AdminNotification {

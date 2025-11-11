@@ -403,6 +403,7 @@ app.post('/api/orders', async (req, res) => {
             status: newOrder.status,
             shippingInfo: JSON.stringify(newOrder.shippingInfo || {}),
             paymentInfo: JSON.stringify(newOrder.paymentInfo),
+            notes: newOrder.notes || null,
         });
         res.status(201).json(newOrder);
     } catch (error) {
@@ -422,6 +423,7 @@ app.put('/api/orders/:id', async (req, res) => {
             items: JSON.stringify(updates.items || []),
             paymentInfo: JSON.stringify(updates.paymentInfo || {}),
             shippingInfo: JSON.stringify(updates.shippingInfo || {}),
+            notes: updates.notes || null,
         };
         // remove id from updates object
         delete updatesForDb.id;
