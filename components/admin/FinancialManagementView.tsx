@@ -55,7 +55,8 @@ const FinancialManagementView: React.FC = () => {
     
     const handleTabChange = (tab: FinancialTab) => {
         setActiveTab(tab);
-        navigate(`/admin/accounting_dashboard?tab=${tab}`);
+        // Do not change URL for sub-tabs inside Financial Management
+        // navigate(`/admin/accounting_dashboard?tab=${tab}`);
     }
 
     return (
@@ -191,12 +192,12 @@ const TransactionsTab: React.FC<{ navigate: NavigateFunction }> = ({ navigate })
 
     return (
         <div className="admin-card">
-            <div className="admin-card-header flex justify-between items-center">
-                <h3 className="admin-card-title">Danh sách Giao dịch</h3>
+            <div className="admin-card-header">
+                <h3 className="admin-card-title">Quản lý Giao dịch</h3>
                 <Button onClick={() => navigate('/admin/accounting_dashboard/transactions/new')} size="sm" leftIcon={<i className="fas fa-plus"/>}>Thêm Giao dịch</Button>
             </div>
             <div className="admin-card-body overflow-x-auto"><table className="admin-table">
-                <thead><tr><th>Ngày</th><th>Loại</th><th>Danh mục</th><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
+                <thead className="thead-brand"><tr><th>Ngày</th><th>Loại</th><th>Danh mục</th><th>Mô tả</th><th>Số tiền</th><th>Hành động</th></tr></thead>
                 <tbody>{transactions.map(t => (
                     <tr key={t.id}>
                         <td>{formatDate(t.date)}</td>
@@ -227,27 +228,65 @@ const DebtTab: React.FC = () => {
     
     return (
         <div className="admin-card">
-            <div className="admin-card-header"><h3 className="admin-card-title">Quản lý Công nợ</h3></div>
-            <div className="admin-card-body overflow-x-auto"><table className="admin-table">
-                <thead><tr><th>Đối tượng</th><th>Loại</th><th>Số tiền</th><th>Ngày đáo hạn</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
-                <tbody>{debts.map(d => (
-                    <tr key={d.id}>
-                        <td>{d.entityName} ({d.entityType})</td>
-                        <td><span className={`font-medium ${d.type === 'receivable' ? 'text-blue-600' : 'text-orange-600'}`}>{d.type === 'receivable' ? 'Phải thu' : 'Phải trả'}</span></td>
-                        <td className="font-semibold">{formatCurrency(d.amount)}</td>
-                        <td>{d.dueDate ? formatDate(d.dueDate) : 'N/A'}</td>
-                        <td><span className={`status-badge ${d.status === 'Đã thanh toán' ? 'bg-green-100 text-green-800' : d.status === 'Quá hạn' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>{d.status}</span></td>
-                        <td>{d.status !== 'Đã thanh toán' && <Button size="sm" onClick={() => handleMarkAsPaid(d.id)}>Đánh dấu đã trả</Button>}</td>
-                    </tr>
-                ))}</tbody>
-            </table></div>
+            <div className="admin-card-header">
+                <h3 className="admin-card-title">Quản lý Công nợ</h3>
+                <Button size="sm" leftIcon={<i className="fas fa-plus"/>}>Tạo Công nợ</Button>
+            </div>
+            <div className="admin-card-body">
+                <div className="filter-tabs">
+                    <Button size="sm" variant="primary">Tất cả</Button>
+                    <Button size="sm" variant="outline">Phải thu</Button>
+                    <Button size="sm" variant="outline">Phải trả</Button>
+                    <Button size="sm" variant="outline">Quá hạn</Button>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="admin-table">
+                        <thead className="thead-brand">
+                            <tr>
+                                <th>Đối tượng</th>
+                                <th>Loại</th>
+                                <th className="text-right">Số tiền</th>
+                                <th>Ngày đáo hạn</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {debts.map(d => (
+                                <tr key={d.id}>
+                                    <td>{d.entityName} <span className="text-xs text-gray-500">({d.entityType === 'customer' ? 'KH' : 'NCC'})</span></td>
+                                    <td>
+                                        <span className={`font-medium ${d.type === 'receivable' ? 'text-blue-600' : 'text-orange-600'}`}>
+                                            {d.type === 'receivable' ? 'Phải thu' : 'Phải trả'}
+                                        </span>
+                                    </td>
+                                    <td className="font-semibold text-right">{formatCurrency(d.amount)}</td>
+                                    <td>{d.dueDate ? formatDate(d.dueDate) : 'N/A'}</td>
+                                    <td>
+                                        <span className={`status-badge ${d.status === 'Đã thanh toán' ? 'bg-green-100 text-green-800' : d.status === 'Quá hạn' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                            {d.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {d.status !== 'Đã thanh toán' && 
+                                            <Button size="sm" variant="outline" onClick={() => handleMarkAsPaid(d.id)}>
+                                                <i className="fas fa-check mr-1"></i> Đã thanh toán
+                                            </Button>
+                                        }
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 };
 
 const PayrollTab: React.FC = () => { return <div className="text-center p-8 text-textMuted">Tính năng lương đang được tích hợp vào module Nhân sự (HRM).</div>; };
-const CashflowForecastTab: React.FC = () => { /* ... giữ nguyên ... */ return <div className="text-center p-8 text-textMuted">Tính năng đang được xây dựng.</div>; };
-const PaymentApprovalTab: React.FC = () => { /* ... giữ nguyên ... */ return <div className="text-center p-8 text-textMuted">Tính năng đang được xây dựng.</div>;};
+const CashflowForecastTab: React.FC = () => { return <div className="text-center p-8 text-textMuted">Tính năng đang được xây dựng.</div>; };
+const PaymentApprovalTab: React.FC = () => { return <div className="text-center p-8 text-textMuted">Tính năng đang được xây dựng.</div>;};
 const ReportsTab: React.FC = () => { return <div className="text-center p-8 text-textMuted">Tính năng báo cáo chi tiết đang được phát triển.</div>; };
 
 export default FinancialManagementView;

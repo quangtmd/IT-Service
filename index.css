@@ -322,15 +322,44 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
 .admin-page-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; /* slate-800 */ }
 
 .admin-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.03), 0 1px 2px -1px rgba(0,0,0,0.03); display: flex; flex-direction: column; height: 100%; }
-.admin-card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; background-color: #f8fafc; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; }
+.admin-card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; background-color: #fff; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; display: flex; justify-content: space-between; align-items: center; }
 .admin-card-title { font-size: 1.125rem; font-weight: 600; color: #1e293b; }
 .admin-card-body { padding: 1.5rem; flex-grow: 1; overflow-y: auto; } /* Ensure admin-card-body can scroll */
 
+/* NEW/IMPROVED TABLE STYLES */
 .admin-table { width: 100%; text-align: left; }
-.admin-table thead th { background-color: #f1f5f9; /* slate-100 */ color: #475569; /* slate-600 */ padding: 0.75rem 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; }
-.admin-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; /* slate-100 */ font-size: 0.875rem; color: #334155; /* slate-700 */ }
-.admin-table tbody tr:nth-child(odd) { background-color: #fdfdff; }
-.admin-table tbody tr:hover { background-color: #f1f5f9; /* slate-100 */ }
+/* This allows TH to control the background color */
+.admin-table thead { background-color: transparent; color: inherit; }
+.admin-table th {
+  background-color: #f8fafc; /* slate-50 - Default light header */
+  color: #475569;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e2e8f0;
+}
+/* This is the dark theme override for the table header */
+.thead-brand th {
+  background-color: #1e3a8a; /* A nice dark blue */
+  color: #ffffff;
+  border-bottom: none;
+}
+.admin-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; color: #334155; vertical-align: middle; }
+.admin-table tbody tr:nth-child(even) { background-color: #f8fafc; /* slate-50 */ }
+.admin-table tbody tr:hover { background-color: #eff6ff; /* blue-50 */ }
+
+/* NEW ACTION AND FILTER BARS */
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 1rem;
+}
 
 .admin-form-group { margin-bottom: 1.25rem; }
 .admin-form-group-checkbox { margin-bottom: 1.25rem; display: flex; align-items: center; }
