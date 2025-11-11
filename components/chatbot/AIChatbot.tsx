@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product } from '../../types';
+import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product, Order } from '../../types';
 import ChatMessage from './ChatMessage';
 import Button from '../ui/Button';
 import geminiService from '../../services/geminiService';
 import { Chat, GenerateContentResponse } from '@google/genai';
 import * as Constants from '../../constants.tsx'; 
 import { useChatbotContext } from '../../contexts/ChatbotContext'; // Import the context hook
-import { saveChatLogSession } from '../../services/localDataService';
+import { saveChatLogSession, getCustomerOrders, getOrders } from '../../services/localDataService';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Add SpeechRecognition types for browser compatibility
 declare global {
@@ -39,6 +40,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [currentChatLogSession, setCurrentChatLogSession] = useState<ChatLogSession | null>(null);
 
   const { currentContext } = useChatbotContext(); // Get the current viewing context
+  const { currentUser } = useAuth(); // Get current user for order lookups
 
   // New state for image and voice input
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -273,18 +275,73 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
         }
 
         let currentText = '';
+        const functionCalls: any[] = [];
+        
         for await (const chunk of stream) {
-            currentText += chunk.text; 
-            setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: currentText } : msg));
-            setCurrentChatLogSession(prevLog => {
-                if (!prevLog) return null;
-                const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: currentText } : m);
-                return {...prevLog, messages: updatedMessages};
-            });
+            if (chunk.functionCalls) {
+                functionCalls.push(...chunk.functionCalls);
+            }
+            if(chunk.text) {
+                currentText += chunk.text;
+                setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: currentText } : msg));
+                setCurrentChatLogSession(prevLog => {
+                    if (!prevLog) return null;
+                    const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: currentText } : m);
+                    return {...prevLog, messages: updatedMessages};
+                });
+            }
             if (chunk.candidates?.[0]?.groundingMetadata?.groundingChunks) {
                 setCurrentGroundingChunks(chunk.candidates[0].groundingMetadata.groundingChunks as GroundingChunk[]);
             }
         }
+
+        if (functionCalls.length > 0) {
+            setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: "Đang tìm kiếm thông tin đơn hàng..." } : msg));
+            setIsLoading(true);
+
+            const call = functionCalls[0]; // Process first function call
+            if (call.name === 'getOrderStatus') {
+                let orderResult: Order | null = null;
+                try {
+                    const orderIdArg = call.args.orderId?.replace(/[^0-9]/g, '');
+
+                    if (orderIdArg && orderIdArg.length > 0) {
+                        const allOrders = await getOrders();
+                        orderResult = allOrders.find(o => o.id.includes(orderIdArg) && o.userId === currentUser?.id) || null;
+                    } else if (currentUser) {
+                        const userOrders = await getCustomerOrders(currentUser.id);
+                        if (userOrders && userOrders.length > 0) {
+                            orderResult = userOrders[0]; // Latest order
+                        }
+                    }
+
+                    const toolResponseStream = await chatSession.sendToolResponse({
+                        functionResponses: [{
+                            id: call.id,
+                            name: call.name,
+                            response: { result: orderResult ? JSON.stringify(orderResult) : JSON.stringify({ error: "Không tìm thấy đơn hàng nào khớp với yêu cầu của bạn." }) }
+                        }]
+                    });
+
+                    let finalText = '';
+                    for await (const finalChunk of toolResponseStream) {
+                        if (finalChunk.text) {
+                            finalText += finalChunk.text;
+                             setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: finalText } : msg));
+                             setCurrentChatLogSession(prevLog => {
+                                if (!prevLog) return null;
+                                const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: finalText } : m);
+                                return {...prevLog, messages: updatedMessages};
+                            });
+                        }
+                    }
+                } catch (toolError) {
+                     console.error("Error executing tool or sending response:", toolError);
+                     setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: 'Rất tiếc, đã có lỗi khi truy xuất thông tin đơn hàng.', sender: 'system' } : msg));
+                }
+            }
+        }
+
     } catch (err) {
       console.error("Error sending message:", err);
       const errorText = err instanceof Error ? err.message : "Đã xảy ra lỗi khi gửi tin nhắn.";

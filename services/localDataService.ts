@@ -256,6 +256,8 @@ export const getPayrollRecords = async (): Promise<PayrollRecord[]> => {
 };
 
 // FIX: Updated savePayrollRecords to accept an argument to resolve TypeScript error.
+// The function was defined with no arguments, but was being called with one argument in FinancialManagementView.tsx.
+// Added the `records` parameter to the function signature.
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/api/financials/payroll', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records),
