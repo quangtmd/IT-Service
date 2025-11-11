@@ -20,6 +20,7 @@ import ScrollToTop from './components/shared/ScrollToTop';
 import FloatingActionButtons from './components/shared/FloatingActionButtons';
 import PCBuildSuggestionsPage from './pages/PCBuildSuggestionsPage'; // Import the new page
 import CustomerOrdersPage from './pages/CustomerOrdersPage'; // New import for customer orders page
+import CustomerOrderDetailPage from './pages/CustomerOrderDetailPage'; // Import the new detail page
 
 // Auth and Admin
 import AdminPage from './pages/admin/AdminPage';
@@ -63,6 +64,14 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <CustomerOrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account/orders/:orderId"
+              element={
+                <ProtectedRoute>
+                  <CustomerOrderDetailPage />
                 </ProtectedRoute>
               }
             />
