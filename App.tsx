@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
+// Fix: Use named imports from react-router-dom instead of namespace import
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
@@ -29,33 +30,36 @@ import CheckoutPage from './pages/CheckoutPage';
 const App: React.FC = () => {
 
   return (
-    <ReactRouterDOM.HashRouter>
+    // Fix: Use HashRouter directly
+    <HashRouter>
       <ScrollToTop />
       <div className="flex flex-col min-h-screen bg-bgCanvas">
         <Header />
         <main className="flex-grow pt-[168px] print:pt-0">
-          <ReactRouterDOM.Routes> {/* Replaced Switch with Routes */}
-            <ReactRouterDOM.Route path="/" element={<HomePage />} />
-            <ReactRouterDOM.Route path="/shop" element={<ShopPage />} />
-            <ReactRouterDOM.Route path="/product/:productId" element={<ProductDetailPage />} />
-            <ReactRouterDOM.Route path="/services" element={<ServicesPage />} />
-            <ReactRouterDOM.Route path="/service/:serviceId" element={<ServiceDetailPage />} />
-            <ReactRouterDOM.Route path="/projects" element={<ProjectsPage />} />
-            <ReactRouterDOM.Route path="/blog" element={<BlogPage />} />
-            <ReactRouterDOM.Route path="/article/:articleId" element={<ArticleDetailPage />} />
-            <ReactRouterDOM.Route path="/about" element={<AboutPage />} />
-            <ReactRouterDOM.Route path="/contact" element={<ContactPage />} />
-            <ReactRouterDOM.Route path="/cart" element={<CartPage />} />
-            <ReactRouterDOM.Route path="/pc-builder" element={<PCBuilderPage />} />
-            <ReactRouterDOM.Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} /> {/* Add new route */}
+          {/* Fix: Use Routes directly */}
+          <Routes> {/* Replaced Switch with Routes */}
+            {/* Fix: Use Route directly */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/shop" element={<ShopPage />} />
+            <Route path="/product/:productId" element={<ProductDetailPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/article/:articleId" element={<ArticleDetailPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/pc-builder" element={<PCBuilderPage />} />
+            <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} /> {/* Add new route */}
 
             {/* Auth Routes */}
-            <ReactRouterDOM.Route path="/login" element={<LoginPage />} />
-            <ReactRouterDOM.Route path="/register" element={<RegisterPage />} />
-            <ReactRouterDOM.Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
 
             {/* Protected Admin Route - Updated for v6/v7 */}
-            <ReactRouterDOM.Route
+            <Route
               path="/admin/*" // Add /* to allow nested routes within AdminPage if any
               element={
                 <ProtectedRoute>
@@ -64,13 +68,13 @@ const App: React.FC = () => {
               }
             />
 
-            <ReactRouterDOM.Route path="*" element={<NotFoundPage />} />
-          </ReactRouterDOM.Routes>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
         </main>
         <Footer />
         <FloatingActionButtons />
       </div>
-    </ReactRouterDOM.HashRouter>
+    </HashRouter>
   );
 };
 

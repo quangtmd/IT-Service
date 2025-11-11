@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Use named import for Link
+import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageBannerSettings } from '../../../types';
@@ -84,14 +85,16 @@ const HomeBannerIts: React.FC = () => {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                   {currentBanner.primaryButtonLink && currentBanner.primaryButtonText && (
-                    <ReactRouterDOM.Link to={currentBanner.primaryButtonLink}>
+                    // Fix: Use Link directly
+                    <Link to={currentBanner.primaryButtonLink}>
                       <Button size="lg" variant="primary" className="w-full sm:w-auto px-8 py-3.5 text-base shadow-lg hover:shadow-primary/40 transform hover:scale-105">
                         {currentBanner.primaryButtonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                       </Button>
-                    </ReactRouterDOM.Link>
+                    </Link>
                   )}
                   {currentBanner.secondaryButtonLink && currentBanner.secondaryButtonText && (
-                    <ReactRouterDOM.Link to={currentBanner.secondaryButtonLink}>
+                    // Fix: Use Link directly
+                    <Link to={currentBanner.secondaryButtonLink}>
                       <Button
                         size="lg"
                         variant="outline"
@@ -99,7 +102,7 @@ const HomeBannerIts: React.FC = () => {
                       >
                         {currentBanner.secondaryButtonText}
                       </Button>
-                    </ReactRouterDOM.Link>
+                    </Link>
                   )}
                 </div>
               </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Use named imports for react-router-dom components and hooks
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,7 +11,8 @@ import { addOrder } from '../services/localDataService';
 const CheckoutPage: React.FC = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
   const { currentUser, isAuthenticated, addAdminNotification } = useAuth();
-  const navigate = ReactRouterDOM.useNavigate();
+  // Fix: Use useNavigate directly
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState<CheckoutFormData>({
     fullName: '', phone: '', address: '', email: '', notes: '',
@@ -111,7 +113,8 @@ const CheckoutPage: React.FC = () => {
         <i className="fas fa-shopping-cart text-6xl text-textSubtle mb-6"></i>
         <h1 className="text-3xl font-semibold text-textBase mb-4">Giỏ hàng của bạn trống</h1>
         <p className="text-textMuted mb-6">Không có gì để thanh toán. Hãy thêm sản phẩm vào giỏ!</p>
-        <ReactRouterDOM.Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></ReactRouterDOM.Link>
+        {/* Fix: Use Link directly */}
+        <Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></Link>
       </div>
     );
   }
@@ -134,8 +137,10 @@ const CheckoutPage: React.FC = () => {
             }
           </p>
           <div className="space-y-3 sm:space-y-0 sm:space-x-3">
-            <ReactRouterDOM.Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></ReactRouterDOM.Link>
-            <ReactRouterDOM.Link to="/"><Button variant="outline" size="lg">Về trang chủ</Button></ReactRouterDOM.Link>
+            {/* Fix: Use Link directly */}
+            <Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></Link>
+            {/* Fix: Use Link directly */}
+            <Link to="/"><Button variant="outline" size="lg">Về trang chủ</Button></Link>
           </div>
         </div>
       </div>

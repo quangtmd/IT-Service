@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Use named imports for react-router-dom components and hooks
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -8,8 +9,9 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
-  const navigate = ReactRouterDOM.useNavigate();
-  const location = ReactRouterDOM.useLocation();
+  // Fix: Use hooks directly
+  const navigate = useNavigate();
+  const location = useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
 
   useEffect(() => {
@@ -56,9 +58,10 @@ const LoginPage: React.FC = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-primary">
             Hoặc{' '}
-            <ReactRouterDOM.Link to="/register" className="font-medium hover:text-primary-dark">
+            {/* Fix: Use Link directly */}
+            <Link to="/register" className="font-medium hover:text-primary-dark">
               đăng ký nếu bạn chưa có tài khoản
-            </ReactRouterDOM.Link>
+            </Link>
           </p>
         </div>
         

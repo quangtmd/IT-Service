@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
+// Fix: Use named imports for react-router-dom components and hooks
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants.tsx';
@@ -11,7 +12,8 @@ const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();
-  const navigate = ReactRouterDOM.useNavigate(); // Changed from useHistory
+  // Fix: Use useNavigate directly
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -66,9 +68,10 @@ const RegisterPage: React.FC = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Hoặc{' '}
-            <ReactRouterDOM.Link to="/login" className="font-medium text-primary hover:text-primary-dark">
+            {/* Fix: Use Link directly */}
+            <Link to="/login" className="font-medium text-primary hover:text-primary-dark">
               đăng nhập nếu bạn đã có tài khoản
-            </ReactRouterDOM.Link>
+            </Link>
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

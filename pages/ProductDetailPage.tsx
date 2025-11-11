@@ -1,7 +1,8 @@
 
 
 import React, { useEffect, useState } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Use named imports for react-router-dom hooks and components
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Product } from '../types';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
@@ -12,7 +13,8 @@ import BackendConnectionError from '../components/shared/BackendConnectionError'
 import { useChatbotContext } from '../contexts/ChatbotContext'; // Import the context hook
 
 const ProductDetailPage: React.FC = () => {
-  const { productId } = ReactRouterDOM.useParams<{ productId: string }>();
+  // Fix: Use useParams directly
+  const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,7 +24,8 @@ const ProductDetailPage: React.FC = () => {
   const [mainImage, setMainImage] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'description' | 'specs'>('description');
   const { addToCart } = useCart();
-  const navigate = ReactRouterDOM.useNavigate();
+  // Fix: Use useNavigate directly
+  const navigate = useNavigate();
   const { setCurrentContext } = useChatbotContext(); // Get the context setter
 
   useEffect(() => {
@@ -99,9 +102,10 @@ const ProductDetailPage: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h2 className="text-2xl font-semibold text-textBase">Không tìm thấy sản phẩm</h2>
-        <ReactRouterDOM.Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
+        {/* Fix: Use Link directly */}
+        <Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
           Quay lại cửa hàng
-        </ReactRouterDOM.Link>
+        </Link>
       </div>
     );
   }
@@ -115,19 +119,23 @@ const ProductDetailPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <nav aria-label="breadcrumb" className="text-sm text-textMuted mb-6 bg-bgBase p-3 rounded-md border border-borderDefault">
           <ol className="flex items-center space-x-1.5 flex-wrap">
-            <li><ReactRouterDOM.Link to="/home" className="hover:text-primary">Trang chủ</ReactRouterDOM.Link></li>
+            {/* Fix: Use Link directly */}
+            <li><Link to="/home" className="hover:text-primary">Trang chủ</Link></li>
             <li><span className="text-textSubtle">/</span></li>
-            <li><ReactRouterDOM.Link to="/shop" className="hover:text-primary">Sản phẩm</ReactRouterDOM.Link></li>
+            {/* Fix: Use Link directly */}
+            <li><Link to="/shop" className="hover:text-primary">Sản phẩm</Link></li>
             {mainCategoryInfo && (
               <>
                 <li><span className="text-textSubtle">/</span></li>
-                <li><ReactRouterDOM.Link to={`/shop?mainCategory=${mainCategoryInfo.slug}`} className="hover:text-primary">{mainCategoryInfo.name}</ReactRouterDOM.Link></li>
+                {/* Fix: Use Link directly */}
+                <li><Link to={`/shop?mainCategory=${mainCategoryInfo.slug}`} className="hover:text-primary">{mainCategoryInfo.name}</Link></li>
               </>
             )}
             {subCategoryInfo && (
               <>
                 <li><span className="text-textSubtle">/</span></li>
-                <li><ReactRouterDOM.Link to={`/shop?mainCategory=${mainCategoryInfo?.slug}&subCategory=${subCategoryInfo.slug}`} className="hover:text-primary">{subCategoryInfo.name}</ReactRouterDOM.Link></li>
+                {/* Fix: Use Link directly */}
+                <li><Link to={`/shop?mainCategory=${mainCategoryInfo?.slug}&subCategory=${subCategoryInfo.slug}`} className="hover:text-primary">{subCategoryInfo.name}</Link></li>
               </>
             )}
             <li><span className="text-textSubtle">/</span></li>

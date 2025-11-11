@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Use named import for useNavigate
+import { useNavigate } from 'react-router-dom';
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
@@ -45,7 +46,8 @@ export const PCBuilderPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
   const { addAdminNotification } = useAuth();
-  const navigate = ReactRouterDOM.useNavigate();
+  // Fix: Use useNavigate directly
+  const navigate = useNavigate();
 
   const handleComponentChange = useCallback((
     type: BuilderSelectorKey,

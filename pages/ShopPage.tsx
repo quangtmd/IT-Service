@@ -1,7 +1,8 @@
 
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Use named imports for react-router-dom hooks
+import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/shop/ProductCard';
 import { Product, MainCategoryInfo } from '../types';
 import SearchBar from '../components/shared/SearchBar';
@@ -43,8 +44,9 @@ const ProductCategoryNav: React.FC<{
 };
 
 const ShopPage: React.FC = () => {
-  const location = ReactRouterDOM.useLocation();
-  const navigate = ReactRouterDOM.useNavigate();
+  // Fix: Use hooks directly
+  const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
