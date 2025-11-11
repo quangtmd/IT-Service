@@ -305,7 +305,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
     // FIX: Explicitly providing the return type for an async function inside useCallback
     // can help TypeScript's type inference and resolve some obscure errors.
-    const handleSettlePayroll = useCallback(async (): Promise<void> => {
+    const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -334,7 +334,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
     // FIX: Explicitly providing the return type for an async function inside useCallback
     // can help TypeScript's type inference and resolve some obscure errors.
-    const handleSaveDraft = useCallback(async (): Promise<void> => {
+    const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');

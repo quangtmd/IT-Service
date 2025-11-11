@@ -18,36 +18,28 @@ const PrintableRepairSlip: React.FC<{ ticket: Partial<WarrantyTicket>, settings:
 
     return (
         <div className="print-container max-w-4xl mx-auto p-8 bg-white text-black font-sans text-sm">
-            <header className="grid grid-cols-3 gap-4 mb-4">
-                <div className="col-span-1">
-                    {settings.siteLogoUrl && <img src={settings.siteLogoUrl} alt="Company Logo" className="max-h-20 mb-2" />}
-                    <p className="font-bold">{settings.companyName}</p>
-                    <p>{settings.companyAddress}</p>
-                    <p>ĐT: {settings.companyPhone}</p>
+            <header className="flex justify-between items-start mb-4 pb-2 border-b-2 border-black">
+                <div className="w-1/3">
+                    {settings.siteLogoUrl ? <img src={settings.siteLogoUrl} alt="Company Logo" className="max-h-20" /> : <h2 className="text-2xl font-bold">{settings.companyName}</h2>}
                 </div>
-                <div className="col-span-2 text-right">
+                <div className="w-2/3 text-right">
                     <h1 className="text-3xl font-bold uppercase">{title}</h1>
-                    <p className="mt-2">Số phiếu trả: <span className="font-semibold">{ticket.ticketNumber || '...'}</span></p>
-                    <p>Số biên nhận: <span className="font-semibold">{ticket.ticketNumber || '...'}</span></p>
+                    <p className="mt-2">Số: <span className="font-semibold">{ticket.ticketNumber || '...'}</span></p>
+                    <p>Ngày: {new Date(ticket.receiveDate || Date.now()).toLocaleDateString('vi-VN')}</p>
                 </div>
             </header>
 
-            <main>
-                <section className="grid grid-cols-2 gap-x-4 mb-4 text-xs">
-                    <div>
-                        <p><strong>Nhân viên trả:</strong> {ticket.returnStaffName || '...'}</p>
-                        <p><strong>Ngày nhận:</strong> {ticket.receiveDate ? new Date(ticket.receiveDate).toLocaleString('vi-VN') : ''}</p>
-                        <p><strong>Ngày trả:</strong> {ticket.returnDate ? new Date(ticket.returnDate).toLocaleString('vi-VN') : ''}</p>
-                        <p><strong>Ghi chú:</strong> {ticket.resolution_notes || ''}</p>
-                    </div>
-                    <div className="text-right">
-                        <p><strong>Tên khách hàng:</strong> {ticket.customerName}</p>
-                        <p><strong>Thứ tự:</strong> {ticket.priority || 'Bình thường'}</p>
-                    </div>
-                </section>
+            <section className="mb-4 p-2 border border-black rounded">
+                <h2 className="text-base font-bold mb-1">Thông Tin Khách Hàng</h2>
+                <div className="grid grid-cols-2 gap-x-4 text-xs">
+                    <p><strong>Tên khách hàng:</strong> {ticket.customerName}</p>
+                    <p><strong>Điện thoại:</strong> {ticket.customerPhone}</p>
+                </div>
+            </section>
 
+            <main>
                 <table className="w-full border-collapse border border-black text-xs mb-4 print-table">
-                     <thead className="bg-gray-100 text-center font-bold">
+                     <thead className="bg-red-700 text-white text-center font-bold">
                          <tr>
                              <th className="border border-black p-1 w-[5%]">STT</th>
                              <th className="border border-black p-1 w-[25%]">Sản phẩm bảo hành</th>
@@ -70,16 +62,11 @@ const PrintableRepairSlip: React.FC<{ ticket: Partial<WarrantyTicket>, settings:
                              <td className="border border-black p-1 align-top">{ticket.resolution_notes}</td>
                              <td className="border border-black p-1 align-top">{ticket.technician_notes}</td>
                          </tr>
-                         <tr>
-                             <td colSpan={2} className="border border-black p-1 font-bold">Xử lý</td>
-                             <td colSpan={2} className="border border-black p-1"><strong>Ngày sửa:</strong> {ticket.repairDate ? new Date(ticket.repairDate).toLocaleString('vi-VN') : ''}</td>
-                             <td colSpan={2} className="border border-black p-1 text-center font-bold">{ticket.status === 'Hoàn thành' ? 'Hoàn thành' : ''}</td>
-                         </tr>
                      </tbody>
                 </table>
                 
                  <table className="w-full border-collapse border border-black text-xs print-table">
-                    <thead className="bg-gray-100 text-center font-bold">
+                    <thead className="bg-red-700 text-white text-center font-bold">
                         <tr>
                             <th className="border border-black p-1 w-[5%]">STT</th>
                             <th className="border border-black p-1 w-[20%]">Mã linh kiện</th>
@@ -124,15 +111,11 @@ const PrintableRepairSlip: React.FC<{ ticket: Partial<WarrantyTicket>, settings:
                  </table>
             </main>
             
-            <footer className="mt-16 grid grid-cols-2 gap-4 text-center text-xs">
-                <div>
-                    <p className="font-bold">Trưởng TTBH</p>
-                    <p className="mt-12">(Ký & ghi rõ họ tên)</p>
-                </div>
-                <div>
-                    <p className="font-bold">Nhân viên kỹ thuật</p>
-                     <p className="mt-12">(Ký & ghi rõ họ tên)</p>
-                </div>
+            <footer className="mt-24 grid grid-cols-4 gap-4 text-center text-xs">
+                <div><p className="font-bold">Khách hàng</p><p className="mt-12">(Ký & ghi rõ họ tên)</p></div>
+                <div><p className="font-bold">Nhân viên nhận</p><p className="mt-12">(Ký & ghi rõ họ tên)</p></div>
+                <div><p className="font-bold">Kỹ thuật viên</p><p className="mt-12">(Ký & ghi rõ họ tên)</p></div>
+                <div><p className="font-bold">Quản lý TTBH</p><p className="mt-12">(Ký & ghi rõ họ tên)</p></div>
             </footer>
         </div>
     );
