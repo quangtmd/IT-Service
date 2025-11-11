@@ -37,7 +37,13 @@ const API_BASE = BACKEND_API_BASE_URL;
 // --- Helper for API calls ---
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     try {
-        const response = await fetch(`${API_BASE}${endpoint}`, options);
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            },
+            ...options,
+        });
         if (!response.ok) {
             // Try to parse error message from backend
             try {
@@ -52,6 +58,9 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
                 }
                 throw new Error(errorMessage);
             } catch (e) {
+                 if (e instanceof Error && e.message.includes('Lỗi API')) {
+                    throw e; // Re-throw specific errors from the try block
+                 }
                  if (response.status === 404) {
                     throw new Error(`Lỗi API: 404 Not Found. Vui lòng kiểm tra VITE_BACKEND_API_BASE_URL trên frontend.`);
                 }
@@ -62,7 +71,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         if (response.status === 204) {
             return {} as T;
         }
-        return response.json();
+        const text = await response.text();
+        return text ? JSON.parse(text) : ({} as T);
     } catch (error) {
         console.error(`API call failed for endpoint ${endpoint}:`, error);
         // Re-throw a more user-friendly error message

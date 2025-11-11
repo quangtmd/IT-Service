@@ -476,10 +476,17 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
         }
         const user = rows[0];
+
+        // Check if the account is locked
+        if (user.isLocked) {
+            return res.status(401).json({ message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.' });
+        }
+
         // In a real app, compare hashed passwords. Here we do a plain text comparison.
         if (user.password !== password) {
             return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
         }
+        
         // Remove password before sending user data to client
         delete user.password;
         res.json(user);

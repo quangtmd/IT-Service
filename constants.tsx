@@ -54,7 +54,7 @@ export const INITIAL_WAREHOUSES: Warehouse[] = [
 
 export const INITIAL_STOCK_RECEIPTS: StockReceipt[] = [
     {
-        id: 'sr001', receiptNumber: 'PN001', supplierId: 'sup001', supplierName: 'Nhà phân phối Tin học Mai Hoàng',
+        id: 'sr001', receiptNumber: 'PN000001', supplierId: 'SUP001', supplierName: 'Nhà phân phối Tin học Mai Hoàng',
         date: new Date().toISOString(),
         items: [
             { productId: 'CPU001', productName: 'CPU Intel Core i5-14600K', quantity: 10, purchasePrice: 8000000 },

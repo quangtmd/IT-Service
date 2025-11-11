@@ -43,9 +43,9 @@ const StockReceiptsView: React.FC = () => {
     return (
         <div className="admin-card">
             <div className="admin-card-header">
-                <h3 className="admin-card-title">Quản lý Phiếu Nhập Kho ({receipts.length})</h3>
+                <h3 className="admin-card-title">Danh sách phiếu nhập ({receipts.length})</h3>
                 <div className="admin-actions-bar">
-                    <Button size="sm" onClick={() => navigate('/admin/stock_receipts/new')} leftIcon={<i className="fas fa-plus" />}>Tạo Phiếu Nhập</Button>
+                    <Button size="sm" onClick={() => navigate('/admin/stock_receipts/new')} leftIcon={<i className="fas fa-plus" />}>Tạo phiếu nhập</Button>
                 </div>
             </div>
             <div className="admin-card-body">
@@ -54,9 +54,10 @@ const StockReceiptsView: React.FC = () => {
                     <table className="admin-table text-sm">
                         <thead className="thead-brand">
                             <tr>
-                                <th>Số Phiếu</th>
-                                <th>Ngày Nhập</th>
+                                <th>Mã phiếu nhập</th>
+                                <th>Ngày nhập</th>
                                 <th>Nhà Cung Cấp</th>
+                                <th>Người nhập</th>
                                 <th>Trạng Thái</th>
                                 <th className="text-right">Tổng Tiền</th>
                                 <th>Hành Động</th>
@@ -64,13 +65,14 @@ const StockReceiptsView: React.FC = () => {
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan={6} className="text-center py-4">Đang tải...</td></tr>
+                                <tr><td colSpan={7} className="text-center py-4">Đang tải...</td></tr>
                             ) : !error && receipts.length > 0 ? (
                                 receipts.map(receipt => (
                                     <tr key={receipt.id} className="hover:bg-blue-50 cursor-pointer" onClick={() => navigate(`/admin/stock_receipts/edit/${receipt.id}`)}>
                                         <td className="font-semibold text-blue-700">{receipt.receiptNumber}</td>
                                         <td>{new Date(receipt.date).toLocaleDateString('vi-VN')}</td>
                                         <td>{receipt.supplierName || receipt.supplierId}</td>
+                                        <td>admin</td>
                                         <td>
                                             <span className={`status-badge ${receipt.status === 'Hoàn thành' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>{receipt.status}</span>
                                         </td>
@@ -84,7 +86,7 @@ const StockReceiptsView: React.FC = () => {
                                     </tr>
                                 ))
                             ) : (
-                                !error && <tr><td colSpan={6} className="text-center py-4 text-textMuted">Chưa có phiếu nhập kho nào.</td></tr>
+                                !error && <tr><td colSpan={7} className="text-center py-4 text-textMuted">Chưa có phiếu nhập kho nào.</td></tr>
                             )}
                         </tbody>
                     </table>

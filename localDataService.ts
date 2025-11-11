@@ -183,6 +183,7 @@ export const deleteWarrantyTicket = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/warranty-tickets/${id}`, { method: 'DELETE' });
 };
 
+
 // --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
 
 // Warehouses
@@ -232,7 +233,25 @@ export const addStockIssue = async (issue: Omit<StockIssue, 'id'>): Promise<Stoc
     setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, [newIssue, ...issues]);
     return newIssue;
 };
-// ... Add update and delete for Stock Issues if needed
+export const updateStockIssue = async (id: string, updates: Partial<StockIssue>): Promise<StockIssue> => {
+    const issues = await getStockIssues();
+    let updated: StockIssue | undefined;
+    const newItems = issues.map(i => {
+        if (i.id === id) {
+            updated = { ...i, ...updates };
+            return updated;
+        }
+        return i;
+    });
+    if (!updated) throw new Error("Issue not found");
+    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, newItems);
+    return updated;
+};
+export const deleteStockIssue = async (id: string): Promise<void> => {
+    const issues = await getStockIssues();
+    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, issues.filter(i => i.id !== id));
+};
+
 
 // Stock Transfers
 export const getStockTransfers = async (): Promise<StockTransfer[]> => {
@@ -244,4 +263,21 @@ export const addStockTransfer = async (transfer: Omit<StockTransfer, 'id'>): Pro
     setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, [newTransfer, ...transfers]);
     return newTransfer;
 };
-// ... Add update and delete for Stock Transfers if needed
+export const updateStockTransfer = async (id: string, updates: Partial<StockTransfer>): Promise<StockTransfer> => {
+    const transfers = await getStockTransfers();
+    let updated: StockTransfer | undefined;
+    const newItems = transfers.map(t => {
+        if (t.id === id) {
+            updated = { ...t, ...updates };
+            return updated;
+        }
+        return t;
+    });
+    if (!updated) throw new Error("Transfer not found");
+    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, newItems);
+    return updated;
+};
+export const deleteStockTransfer = async (id: string): Promise<void> => {
+    const transfers = await getStockTransfers();
+    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, transfers.filter(t => t.id !== id));
+};
