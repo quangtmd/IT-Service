@@ -324,8 +324,9 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 category: 'Chi phí Lương',
                 description: `Thanh toán lương tháng ${payPeriod}`
             });
-            // FIX: The call to onDataChange() here was redundant because onAddTransaction() already triggers a data refresh.
-            // Removing it simplifies the logic and resolves a confusing TypeScript error.
+            // FIX: This call was incorrect (`onDataChange(onAddTransaction)`) and also redundant.
+            // onAddTransaction already triggers a data refresh via `loadData()`.
+            // Removing the call simplifies the logic and resolves the TypeScript error.
         } catch (error) {
             alert('Lỗi khi chốt lương.');
         }

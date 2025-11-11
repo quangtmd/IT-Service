@@ -117,8 +117,8 @@ const ServiceTicketView: React.FC = () => {
                         <tbody>
                             {isLoading ? (
                                 <tr><td colSpan={6} className="text-center py-4">Đang tải...</td></tr>
-                            ) : !error && filteredTickets.length > 0 ? ( filteredTickets.map((ticket, index) => (
-                                <tr key={ticket.id} className={`hover:bg-yellow-50 cursor-pointer ${index === 0 ? 'bg-yellow-100' : ''}`} onClick={() => navigate(`/admin/service_tickets/edit/${ticket.id}`)}>
+                            ) : !error && filteredTickets.length > 0 ? ( filteredTickets.map((ticket) => (
+                                <tr key={ticket.id} className="hover:bg-yellow-50 cursor-pointer" onClick={() => navigate(`/admin/service_tickets/edit/${ticket.id}`)}>
                                     <td><span className="font-semibold text-blue-700">{ticket.ticket_code || ticket.id}</span></td>
                                     <td>{ticket.customer_info?.fullName || 'Khách lẻ'}</td>
                                     <td>{ticket.deviceName}</td>
