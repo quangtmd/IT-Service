@@ -330,7 +330,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 const shouldSettle = recordsToSettle.some(s => s.id === r.id);
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
-            // FIX: Pass the records to be saved to the savePayrollRecords function, resolving the "Expected 0 arguments, but got 1" error.
+            // FIX: Pass the records to be saved to the savePayrollRecords function.
             await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
@@ -354,7 +354,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             return;
         }
         try {
-            // FIX: Pass the records to be saved to the savePayrollRecords function, resolving the "Expected 0 arguments, but got 1" error.
+            // FIX: Pass the records to be saved to the savePayrollRecords function.
             await savePayrollRecords(recordsToSave);
             alert('Đã lưu nháp lương thành công!');
             await onDataChange();

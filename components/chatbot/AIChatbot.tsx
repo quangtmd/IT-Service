@@ -35,12 +35,15 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
   const [userName, setUserName] = useState('');
   const [userPhone, setUserPhone] = useState('');
-  const [isUserInfoSubmitted, setIsUserInfoSubmitted] = useState(false);
   const [userInfoError, setUserInfoError] = useState<string | null>(null);
   const [currentChatLogSession, setCurrentChatLogSession] = useState<ChatLogSession | null>(null);
 
   const { currentContext } = useChatbotContext(); // Get the current viewing context
   const { currentUser } = useAuth(); // Get current user for order lookups
+
+  // Initialize based on whether user is logged in initially
+  const [isUserInfoSubmitted, setIsUserInfoSubmitted] = useState(!!currentUser);
+
 
   // New state for image and voice input
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -73,29 +76,33 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
   // Handle auto-filling user info if logged in, and resetting state when chat closes
   useEffect(() => {
-    if (isOpen) {
-      if (currentUser) {
-        setUserName(currentUser.username);
-        setUserPhone(currentUser.phone || ''); // Use phone if available
+    // Sync user info with auth state
+    if (currentUser) {
         setIsUserInfoSubmitted(true);
-      }
+        setUserName(currentUser.username);
+        setUserPhone(currentUser.phone || '');
     } else {
-      // Reset all session-specific state when the chatbot is closed.
-      // This is crucial to ensure a fresh state for the next user or session.
+        // If user logs out, reset the form state
+        setIsUserInfoSubmitted(false);
+        setUserName('');
+        setUserPhone('');
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    // Reset only chat-session-specific state when chat is closed
+    if (!isOpen) {
       setChatSession(null);
       setMessages([]);
       setInput('');
       setError(null);
-      setUserName('');
-      setUserPhone('');
-      setIsUserInfoSubmitted(false);
       setCurrentChatLogSession(null);
       handleRemoveImage(); // Clear any selected image
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen]);
 
 
   const scrollToBottom = () => {
@@ -371,12 +378,20 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
     } catch (err) {
       console.error("Error sending message:", err);
-      const errorText = err instanceof Error ? err.message : "Đã xảy ra lỗi khi gửi tin nhắn.";
-      setError(errorText);
-      setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: `Lỗi: ${errorText}`, sender: 'system' } : msg));
+      let errorText = "Đã có lỗi xảy ra khi giao tiếp với AI. Vui lòng thử lại sau.";
+      if (err instanceof Error) {
+        if (err.message.includes("503") || err.message.toLowerCase().includes("overloaded")) {
+          errorText = "Hệ thống AI đang quá tải, vui lòng thử lại sau giây lát.";
+        }
+      }
+      
+      const errorMessageForUser = `Lỗi: ${errorText}`;
+
+      setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: errorMessageForUser, sender: 'system' } : msg));
+      
       setCurrentChatLogSession(prevLog => {
         if (!prevLog) return null;
-        const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: `Lỗi: ${errorText}`, sender: 'system' as const } : m);
+        const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: errorMessageForUser, sender: 'system' as const } : m);
         return {...prevLog, messages: updatedMessages};
       });
     } finally {
