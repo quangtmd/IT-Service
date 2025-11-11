@@ -8,7 +8,6 @@ import HRMProfileView from '../../components/admin/HRMProfileView';
 import ProductManagementView from '../../components/admin/ProductManagementView';
 import ArticleManagementView from '../../components/admin/ArticleManagementView';
 import OrderManagementView from '../../components/admin/OrderManagementView';
-import CustomerManagementView from '../../components/admin/CustomerManagementView';
 import DiscountManagementView from '../../components/admin/DiscountManagementView';
 import FaqManagementView from '../../components/admin/FaqManagementView';
 import ChatLogView from '../../components/admin/ChatLogView';
@@ -19,18 +18,19 @@ import HomepageManagementView from '../../components/admin/HomepageManagementVie
 import FinancialManagementView from '../../components/admin/FinancialManagementView';
 import DashboardView from '../../components/admin/DashboardView';
 import ServiceTicketView from '../../components/admin/ServiceTicketView';
-
-// Import new Inventory & Logistics views
 import InventoryView from '../../components/admin/InventoryView';
-// FIX: Add missing imports for Inventory & Logistics views.
 import StockReceiptsView from '../../components/admin/StockReceiptsView';
 import StockIssuesView from '../../components/admin/StockIssuesView';
 import StockTransfersView from '../../components/admin/StockTransfersView';
 import ShippingManagementView from '../../components/admin/ShippingManagementView';
+import QuotationManagementView from '../../components/admin/QuotationManagementView';
+import WarrantyManagementView from '../../components/admin/WarrantyManagementView';
+import ReturnManagementView from '../../components/admin/ReturnManagementView';
 
-// Import new Marketing views
-import EmailMarketingView from '../../components/admin/EmailMarketingView';
-import SeoManagementView from '../../components/admin/SeoManagementView';
+// Import new top-level views
+import ReportsView from '../../components/admin/ReportsView';
+import PartnersView from '../../components/admin/PartnersView';
+import SystemManagementView from '../../components/admin/SystemManagementView';
 
 
 // Import new form pages
@@ -51,13 +51,7 @@ import WarrantyFormPage from './WarrantyFormPage';
 import StockReceiptFormPage from './StockReceiptFormPage';
 import StockIssueFormPage from './StockIssueFormPage';
 import StockTransferFormPage from './StockTransferFormPage';
-
-
-// Import new placeholder/skeleton views
-import QuotationManagementView from '../../components/admin/QuotationManagementView';
-import WarrantyManagementView from '../../components/admin/WarrantyManagementView';
-import ReturnManagementView from '../../components/admin/ReturnManagementView';
-import SupplierManagementView from '../../components/admin/SupplierManagementView';
+import SupplierProfilePage from './SupplierProfilePage';
 
 
 interface MenuItemConfig {
@@ -79,8 +73,9 @@ const AdminPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+        'reports': true,
         'sales_crm': true, 'service_warranty': true, 'cms_marketing': true, 'inventory_logistics': true,
-        'finance_accounting': true, 'procurement': false, 'system_hr': false,
+        'finance_accounting': true, 'procurement': false, 'system_hr': true,
     });
 
     useEffect(() => {
@@ -94,42 +89,31 @@ const AdminPage: React.FC = () => {
 
     const MENU_CONFIG: MenuItemConfig[] = useMemo(() => [
         { id: 'dashboard', label: 'Tổng Quan', icon: 'fas fa-tachometer-alt', permission: ['viewDashboard'] },
-        // I. Sales & CRM
         {
-            id: 'sales_crm', label: 'Bán Hàng & CRM', icon: 'fas fa-hand-holding-usd', permission: ['viewSales'],
+            id: 'reports', label: 'Báo Cáo', icon: 'fas fa-chart-line', permission: ['viewAnalytics'],
             children: [
-                { id: 'customers', label: 'Khách Hàng', icon: 'fas fa-users', permission: ['viewCustomers'] },
-                { id: 'quotations', label: 'Báo Giá', icon: 'fas fa-file-invoice-dollar', permission: ['viewQuotations'] },
-                { id: 'orders', label: 'Đơn Hàng', icon: 'fas fa-receipt', permission: ['viewOrders'] },
-                { id: 'discounts', label: 'Mã Giảm Giá', icon: 'fas fa-tags', permission: ['manageDiscounts'] },
-                { id: 'returns', label: 'Hoàn Trả', icon: 'fas fa-undo-alt', permission: ['manageOrders'] },
-                { id: 'suppliers', label: 'Nhà Cung Cấp', icon: 'fas fa-truck-loading', permission: ['viewSuppliers'] },
+                { id: 'reports', label: 'Báo cáo doanh thu', icon: 'fas fa-chart-bar', permission: ['viewAnalytics'] },
+                { id: 'reports', label: 'Báo cáo lợi nhuận', icon: 'fas fa-chart-pie', permission: ['viewAnalytics'] },
             ]
         },
-        // II. Service & Warranty
+        {
+            id: 'sales_crm', label: 'Bán Hàng & Đối Tác', icon: 'fas fa-hand-holding-usd', permission: ['viewSales'],
+            children: [
+                { id: 'partners', label: 'Đối Tác', icon: 'fas fa-users', permission: ['viewCustomers'] },
+                { id: 'quotations', label: 'Báo Giá', icon: 'fas fa-file-invoice-dollar', permission: ['viewQuotations'] },
+                { id: 'orders', label: 'Đơn Hàng', icon: 'fas fa-receipt', permission: ['viewOrders'] },
+                { id: 'returns', label: 'Hoàn Trả', icon: 'fas fa-undo-alt', permission: ['manageOrders'] },
+            ]
+        },
         {
             id: 'service_warranty', label: 'Dịch Vụ & Bảo Hành', icon: 'fas fa-tools', permission: ['viewService'],
             children: [
                 { id: 'service_tickets', label: 'Phiếu Sửa Chữa', icon: 'fas fa-ticket-alt', permission: ['manageServiceTickets'] },
                 { id: 'warranty_tickets', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
-                { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
             ]
         },
-         // III. CMS & Marketing
         {
-            id: 'cms_marketing', label: 'Website & Marketing', icon: 'fas fa-desktop', permission: ['viewContent'],
-            children: [
-                { id: 'homepage_management', label: 'Quản lý Trang chủ', icon: 'fas fa-home', permission: ['manageSiteSettings'] },
-                { id: 'products', label: 'Sản Phẩm Website', icon: 'fas fa-box-open', permission: ['viewProducts'] },
-                { id: 'articles', label: 'Bài Viết', icon: 'fas fa-newspaper', permission: ['viewArticles'] },
-                { id: 'media_library', label: 'Thư Viện Media', icon: 'fas fa-photo-video', permission: ['manageMedia'] },
-                { id: 'email_marketing', label: 'Email Marketing', icon: 'fas fa-envelope-open-text', permission: ['viewAnalytics'] },
-                { id: 'seo_management', label: 'Quản lý SEO', icon: 'fas fa-search-dollar', permission: ['viewAnalytics'] },
-            ]
-        },
-        // IV. Inventory & Logistics
-        {
-            id: 'inventory_logistics', label: 'Kho & Logistics', icon: 'fas fa-warehouse', permission: ['viewInventory'],
+            id: 'inventory_logistics', label: 'Kho & Vận', icon: 'fas fa-warehouse', permission: ['viewInventory'],
             children: [
                 { id: 'inventory', label: 'Tồn Kho', icon: 'fas fa-boxes', permission: ['viewInventory'] },
                 { id: 'stock_receipts', label: 'Phiếu Nhập Kho', icon: 'fas fa-dolly-flatbed', permission: ['manageInventory'] },
@@ -138,140 +122,97 @@ const AdminPage: React.FC = () => {
                 { id: 'stock_transfers', label: 'Điều Chuyển Kho', icon: 'fas fa-exchange-alt', permission: ['manageInventory'] },
             ]
         },
-         // V. Finance & Accounting
         {
-            id: 'finance_accounting', label: 'Tài Chính - Kế Toán', icon: 'fas fa-calculator', permission: ['viewAccounting'],
+            id: 'finance_accounting', label: 'Tài Chính', icon: 'fas fa-calculator', permission: ['viewAccounting'],
             children: [
-                { id: 'accounting_dashboard', label: 'Tổng Quan Tài Chính', icon: 'fas fa-chart-pie', permission: ['viewAccounting'] },
-                { id: 'invoices', label: 'Hóa Đơn / Giao dịch', icon: 'fas fa-file-invoice', permission: ['manageTransactions'] },
-                { id: 'debt_management', label: 'Công Nợ', icon: 'fas fa-book', permission: ['viewAccounting'] },
-                { id: 'cashflow_forecast', label: 'Dự Báo Dòng Tiền', icon: 'fas fa-water', permission: ['viewAccounting'] },
-                { id: 'payment_approval', label: 'Phê Duyệt Chi', icon: 'fas fa-check-double', permission: ['viewAccounting'] },
+                { id: 'accounting_dashboard', label: 'Tổng Quan Tài Chính', icon: 'fas fa-wallet', permission: ['viewAccounting'] },
+                { id: 'invoices', label: 'Giao dịch', icon: 'fas fa-file-invoice', permission: ['manageTransactions'] },
             ]
         },
-        // VI. Procurement
         {
-            id: 'procurement', label: 'Mua Hàng', icon: 'fas fa-shopping-cart', permission: ['viewProcurement'],
+            id: 'cms_marketing', label: 'Website', icon: 'fas fa-desktop', permission: ['viewContent'],
             children: [
-                { id: 'purchase_requests', label: 'Yêu Cầu Mua Hàng (PR)', icon: 'fas fa-file-signature', permission: ['viewProcurement'] },
-                { id: 'purchase_orders', label: 'Đơn Đặt Hàng (PO)', icon: 'fas fa-file-alt', permission: ['viewProcurement'] },
-                { id: 'procurement_approval', label: 'Duyệt & Nhập Kho', icon: 'fas fa-clipboard-check', permission: ['viewProcurement'] },
+                { id: 'homepage_management', label: 'Trang chủ', icon: 'fas fa-home', permission: ['manageSiteSettings'] },
+                { id: 'products', label: 'Sản Phẩm', icon: 'fas fa-box-open', permission: ['viewProducts'] },
+                { id: 'articles', label: 'Bài Viết', icon: 'fas fa-newspaper', permission: ['viewArticles'] },
+                { id: 'media_library', label: 'Thư Viện Media', icon: 'fas fa-photo-video', permission: ['manageMedia'] },
             ]
         },
-        // VII. System & HR
         {
-            id: 'system_hr', label: 'Hệ Thống & Nhân Sự', icon: 'fas fa-users-cog', permission: ['viewSystem'],
+            id: 'system_hr', label: 'Hệ Thống', icon: 'fas fa-users-cog', permission: ['viewSystem'],
             children: [
-                { id: 'hrm_dashboard', label: 'Hồ Sơ Nhân Sự', icon: 'fas fa-id-card', permission: ['viewHrm'] },
-                { id: 'user_permissions', label: 'Phân Quyền Người Dùng', icon: 'fas fa-user-shield', permission: ['manageEmployees'] },
+                { id: 'system_management', label: 'Nhân sự & Phân quyền', icon: 'fas fa-users-cog', permission: ['manageEmployees'] },
                 { id: 'site_settings', label: 'Cài Đặt Chung', icon: 'fas fa-cog', permission: ['manageSiteSettings'] },
-                { id: 'activity_log', label: 'Nhật Ký Hoạt Động', icon: 'fas fa-history', permission: ['viewSystem'] },
-                { id: 'contract_management', label: 'Quản Lý Hợp Đồng', icon: 'fas fa-file-contract', permission: ['viewSystem'] },
-                { id: 'asset_management', label: 'Quản Lý Tài Sản', icon: 'fas fa-laptop-house', permission: ['viewSystem'] },
-                { id: 'kpi_management', label: 'KPI & Hiệu Suất', icon: 'fas fa-chart-line', permission: ['viewHrm'] },
+                { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
             ]
         },
-        // Other top-level items
-        { id: 'notifications_panel', label: 'Thông Báo', icon: 'fas fa-bell', count: unreadNotificationCount, permission: ['viewNotifications'] },
     ], [unreadNotificationCount]);
 
-    // Determine the active view based on URL path
     useEffect(() => {
         const path = location.pathname;
         const parts = path.split('/');
         const adminIndex = parts.indexOf('admin');
-        if (adminIndex === -1) {
-            setActiveView('dashboard');
-            return;
-        }
-
+        if (adminIndex === -1) { setActiveView('dashboard'); return; }
+        
         const viewCandidates = [
+            'reports', 'partners', 'system_management',
             'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
-            'accounting_dashboard', 'invoices', 'debt_management', 'cashflow_forecast', 'payment_approval',
+            'accounting_dashboard', 'invoices',
             'quotations', 'customers', 'orders', 
             'returns', 'suppliers', 'service_tickets', 'warranty_tickets',
-            'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers',
-            'email_marketing', 'seo_management' // Add new marketing views
+            'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers'
         ];
 
-        let foundView = null;
-        for (const candidate of viewCandidates) {
-            if(path.startsWith(`/admin/${candidate}`)) {
-                foundView = candidate;
-                break;
-            }
-        }
-        
-        if (foundView) {
-             setActiveView(foundView as AdminView);
-        } else {
-            const lastSegment = parts[adminIndex + 1] || 'dashboard';
-            const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
-            const matchingItem = allMenuItems.find(item => item.id === lastSegment);
-            setActiveView(matchingItem ? matchingItem.id as AdminView : 'dashboard');
-        }
+        let foundView = viewCandidates.find(candidate => path.startsWith(`/admin/${candidate}`)) || parts[adminIndex + 1] || 'dashboard';
+        const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
+        const matchingItem = allMenuItems.find(item => item.id === foundView);
+        setActiveView(matchingItem ? matchingItem.id as AdminView : 'dashboard');
+
     }, [location.pathname, MENU_CONFIG]);
 
 
-    const handleMenuClick = (viewId: AdminView | string, isParent: boolean) => {
+    const handleMenuClick = (viewId: AdminView | string, isParent: boolean, customPath?: string) => {
         if (isParent) {
             setOpenMenus(prev => ({ ...prev, [viewId]: !prev[viewId] }));
         } else {
-            if (viewId === 'invoices' || viewId === 'expenses') {
-                // Both invoices and expenses are handled by the accounting dashboard now
-                 navigate(`/admin/accounting_dashboard?tab=transactions`);
-            } else {
-                 navigate(`/admin/${viewId}`);
-            }
+            navigate(customPath || `/admin/${viewId}`);
             setIsMobileSidebarOpen(false);
         }
     };
-
+    
     const renderContent = (currentView: AdminView) => {
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
         const currentMenuItem = allMenuItems.find(i => i.id === currentView);
 
         if (currentMenuItem && !hasPermission(currentMenuItem.permission)) {
-            if (hasPermission(['viewDashboard'])) {
-                setActiveView('dashboard');
-            }
+            if (hasPermission(['viewDashboard'])) { setActiveView('dashboard'); }
             return <div className="admin-card"><div className="admin-card-body">Bạn không có quyền truy cập mục này.</div></div>;
         }
 
         switch(currentView) {
             case 'dashboard': return <DashboardView setActiveView={setActiveView} />;
+            case 'reports': return <ReportsView />;
+            case 'partners': return <PartnersView />;
+            case 'system_management': return <SystemManagementView />;
             case 'products': return <ProductManagementView />;
             case 'articles': return <ArticleManagementView />;
             case 'orders': return <OrderManagementView />;
-            case 'hrm_dashboard': return <HRMProfileView />;
-            case 'customers': return <CustomerManagementView />;
-            case 'discounts': return <DiscountManagementView />;
-            case 'faqs': return <FaqManagementView />;
-            case 'chat_logs': return <ChatLogView />;
-            case 'media_library': return <MediaLibraryView />;
-            case 'homepage_management': return <HomepageManagementView />;
-            case 'site_settings': return <SiteSettingsView initialTab="site_settings" />;
-            case 'theme_settings': return <SiteSettingsView initialTab="theme_settings" />;
-            case 'menu_settings': return <SiteSettingsView initialTab="menu_settings" />;
-            case 'notifications_panel': return <NotificationsView />;
-            case 'accounting_dashboard':
-            case 'invoices':
-            case 'debt_management':
-            case 'cashflow_forecast':
-            case 'payment_approval':
-                return <FinancialManagementView />;
-            case 'inventory': return <InventoryView />;
-            case 'service_tickets': return <ServiceTicketView />;
             case 'quotations': return <QuotationManagementView />;
-            case 'warranty_tickets': return <WarrantyManagementView />;
             case 'returns': return <ReturnManagementView />;
-            case 'suppliers': return <SupplierManagementView />;
+            case 'service_tickets': return <ServiceTicketView />;
+            case 'warranty_tickets': return <WarrantyManagementView />;
+            case 'inventory': return <InventoryView />;
             case 'stock_receipts': return <StockReceiptsView />;
             case 'stock_issues': return <StockIssuesView />;
             case 'stock_transfers': return <StockTransfersView />;
             case 'shipping': return <ShippingManagementView />;
-            case 'email_marketing': return <EmailMarketingView />;
-            case 'seo_management': return <SeoManagementView />;
+            case 'accounting_dashboard':
+            case 'invoices':
+                return <FinancialManagementView />;
+            case 'chat_logs': return <ChatLogView />;
+            case 'media_library': return <MediaLibraryView />;
+            case 'homepage_management': return <HomepageManagementView />;
+            case 'site_settings': return <SiteSettingsView initialTab="site_settings" />;
             default: return (
                 <div className="admin-card">
                     <div className="admin-card-body text-center py-12">
@@ -286,29 +227,25 @@ const AdminPage: React.FC = () => {
 
     const getPageTitle = useMemo(() => {
         const path = location.pathname;
+        if (path.startsWith('/admin/reports')) return path.includes('profit') ? 'Báo cáo Lợi nhuận' : 'Báo cáo Doanh thu';
         if (path.startsWith('/admin/products/new')) return 'Thêm Sản phẩm Mới';
         if (path.startsWith('/admin/products/edit/')) return 'Chỉnh sửa Sản phẩm';
-        if (path.startsWith('/admin/hrm_dashboard/new')) return 'Thêm Nhân viên Mới';
-        if (path.startsWith('/admin/hrm_dashboard/edit/')) return 'Chỉnh sửa Hồ sơ Nhân sự';
-        if (path.startsWith('/admin/customers/new')) return 'Thêm Khách hàng Mới';
-        if (path.startsWith('/admin/customers/edit/')) return 'Chỉnh sửa Khách hàng';
-        if (path.startsWith('/admin/customers/view/')) return 'Hồ sơ Khách hàng';
+        if (path.startsWith('/admin/system_management/users/new')) return 'Thêm Nhân viên Mới';
+        if (path.startsWith('/admin/system_management/users/edit/')) return 'Chỉnh sửa Hồ sơ Nhân sự';
+        if (path.startsWith('/admin/partners/customers/new')) return 'Thêm Khách hàng Mới';
+        if (path.startsWith('/admin/partners/customers/edit/')) return 'Chỉnh sửa Khách hàng';
+        if (path.startsWith('/admin/partners/customers/view/')) return 'Hồ sơ Khách hàng';
+        if (path.startsWith('/admin/partners/suppliers/new')) return 'Thêm Nhà Cung Cấp';
+        if (path.startsWith('/admin/partners/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
+        if (path.startsWith('/admin/partners/suppliers/view/')) return 'Hồ sơ Nhà Cung Cấp';
         if (path.startsWith('/admin/articles/new')) return 'Thêm Bài viết Mới';
         if (path.startsWith('/admin/articles/edit/')) return 'Chỉnh sửa Bài viết';
-        if (path.startsWith('/admin/discounts/new')) return 'Thêm Mã giảm giá Mới';
-        if (path.startsWith('/admin/discounts/edit/')) return 'Chỉnh sửa Mã giảm giá';
-        if (path.startsWith('/admin/faqs/new')) return 'Thêm FAQ Mới';
-        if (path.startsWith('/admin/faqs/edit/')) return 'Chỉnh sửa FAQ';
-        if (path.startsWith('/admin/accounting_dashboard/transactions/new')) return 'Thêm Giao dịch Mới';
-        if (path.startsWith('/admin/accounting_dashboard/transactions/edit/')) return 'Chỉnh sửa Giao dịch';
         if (path.startsWith('/admin/quotations/new')) return 'Tạo Báo giá Mới';
         if (path.startsWith('/admin/quotations/edit/')) return 'Chỉnh sửa Báo giá';
         if (path.startsWith('/admin/orders/new')) return 'Tạo Đơn hàng Mới';
         if (path.startsWith('/admin/orders/edit/')) return 'Chỉnh sửa Đơn hàng';
         if (path.startsWith('/admin/returns/new')) return 'Tạo Phiếu Hoàn Trả';
         if (path.startsWith('/admin/returns/edit/')) return 'Chỉnh sửa Phiếu Hoàn Trả';
-        if (path.startsWith('/admin/suppliers/new')) return 'Thêm Nhà Cung Cấp';
-        if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
         if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
         if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
         if (path.startsWith('/admin/warranty_tickets/new')) return 'Tạo Phiếu Bảo hành';
@@ -319,58 +256,35 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/stock_issues/edit/')) return 'Sửa Phiếu Xuất Kho';
         if (path.startsWith('/admin/stock_transfers/new')) return 'Tạo Phiếu Điều Chuyển';
         if (path.startsWith('/admin/stock_transfers/edit/')) return 'Sửa Phiếu Điều Chuyển';
-
-
+        
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
+        if (activeView === 'reports' && location.search.includes('type=profit')) {
+            return 'Báo cáo Lợi nhuận';
+        }
         return allMenuItems.find(i => i.id === activeView)?.label || "Tổng Quan";
-    }, [activeView, location.pathname, MENU_CONFIG]);
+    }, [activeView, location.pathname, location.search, MENU_CONFIG]);
 
 
     return (
         <div className="admin-wrapper">
             <AdminSidebar
-                isOpen={isMobileSidebarOpen}
-                isCollapsed={isSidebarCollapsed}
-                onClose={() => setIsMobileSidebarOpen(false)}
-                onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
-                activeView={activeView}
-                openMenus={openMenus}
-                onMenuClick={handleMenuClick}
-                menuConfig={MENU_CONFIG}
-                authContext={{ currentUser, hasPermission }}
+                isOpen={isMobileSidebarOpen} isCollapsed={isSidebarCollapsed} onClose={() => setIsMobileSidebarOpen(false)} onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
+                activeView={activeView} openMenus={openMenus} onMenuClick={handleMenuClick} menuConfig={MENU_CONFIG} authContext={{ currentUser, hasPermission }}
             />
             <main className={`admin-main-content ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-                <AdminHeader
-                    onMobileMenuOpen={() => setIsMobileSidebarOpen(true)}
-                    pageTitle={getPageTitle}
-                    currentUser={currentUser}
-                />
+                <AdminHeader onMobileMenuOpen={() => setIsMobileSidebarOpen(true)} pageTitle={getPageTitle} currentUser={currentUser} />
                 <div className="admin-content-area">
                     <ReactRouterDOM.Routes>
-                        {/* Define form pages first as they are more specific */}
                         <ReactRouterDOM.Route path="/products/new" element={<ProductFormPage />} />
                         <ReactRouterDOM.Route path="/products/edit/:productId" element={<ProductFormPage />} />
-                        <ReactRouterDOM.Route path="/hrm_dashboard/new" element={<UserFormPage />} />
-                        <ReactRouterDOM.Route path="/hrm_dashboard/edit/:userId" element={<UserFormPage />} />
-                        <ReactRouterDOM.Route path="/customers/new" element={<CustomerFormPage />} />
-                        <ReactRouterDOM.Route path="/customers/edit/:customerId" element={<CustomerFormPage />} />
-                        <ReactRouterDOM.Route path="/customers/view/:customerId" element={<CustomerProfilePage />} />
                         <ReactRouterDOM.Route path="/articles/new" element={<ArticleFormPage />} />
                         <ReactRouterDOM.Route path="/articles/edit/:articleId" element={<ArticleFormPage />} />
-                        <ReactRouterDOM.Route path="/discounts/new" element={<DiscountFormPage />} />
-                        <ReactRouterDOM.Route path="/discounts/edit/:discountId" element={<DiscountFormPage />} />
-                        <ReactRouterDOM.Route path="/faqs/new" element={<FaqFormPage />} />
-                        <ReactRouterDOM.Route path="/faqs/edit/:faqId" element={<FaqFormPage />} />
-                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/new" element={<TransactionFormPage />} />
-                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
                         <ReactRouterDOM.Route path="/quotations/new" element={<QuotationFormPage />} />
                         <ReactRouterDOM.Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
                         <ReactRouterDOM.Route path="/orders/new" element={<OrderFormPage />} />
                         <ReactRouterDOM.Route path="/orders/edit/:orderId" element={<OrderFormPage />} />
                         <ReactRouterDOM.Route path="/returns/new" element={<ReturnFormPage />} />
                         <ReactRouterDOM.Route path="/returns/edit/:returnId" element={<ReturnFormPage />} />
-                        <ReactRouterDOM.Route path="/suppliers/new" element={<SupplierFormPage />} />
-                        <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
                         <ReactRouterDOM.Route path="/warranty_tickets/new" element={<WarrantyFormPage />} />
@@ -382,6 +296,22 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/stock_transfers/new" element={<StockTransferFormPage />} />
                         <ReactRouterDOM.Route path="/stock_transfers/edit/:id" element={<StockTransferFormPage />} />
                         
+                        {/* Partner routes */}
+                        <ReactRouterDOM.Route path="/partners/customers/new" element={<CustomerFormPage />} />
+                        <ReactRouterDOM.Route path="/partners/customers/edit/:customerId" element={<CustomerFormPage />} />
+                        <ReactRouterDOM.Route path="/partners/customers/view/:customerId" element={<CustomerProfilePage />} />
+                        <ReactRouterDOM.Route path="/partners/suppliers/new" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/partners/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
+                         <ReactRouterDOM.Route path="/partners/suppliers/view/:supplierId" element={<SupplierProfilePage />} />
+                        
+                        {/* System management routes */}
+                        <ReactRouterDOM.Route path="/system_management/users/new" element={<UserFormPage />} />
+                        <ReactRouterDOM.Route path="/system_management/users/edit/:userId" element={<UserFormPage />} />
+                        
+                        {/* Financials routes */}
+                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/new" element={<TransactionFormPage />} />
+                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
+
                         {/* Generic route for views */}
                         <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />
                         <ReactRouterDOM.Route path="/" element={renderContent('dashboard')} />
@@ -397,7 +327,7 @@ const AdminPage: React.FC = () => {
 const AdminSidebar: React.FC<{
     isOpen: boolean; isCollapsed: boolean; onClose: () => void; onToggleCollapse: () => void;
     activeView: AdminView; openMenus: Record<string, boolean>;
-    onMenuClick: (viewId: string, isParent: boolean) => void;
+    onMenuClick: (viewId: string, isParent: boolean, customPath?: string) => void;
     menuConfig: MenuItemConfig[];
     authContext: { currentUser: User | null; hasPermission: (p: AdminPermission[]) => boolean; };
 }> = ({ isOpen, isCollapsed, onClose, onToggleCollapse, activeView, openMenus, onMenuClick, menuConfig, authContext }) => {
@@ -423,7 +353,15 @@ const AdminSidebar: React.FC<{
                         <i className={`fas fa-chevron-right text-xs transition-transform duration-200 ${isParentOpen ? 'rotate-90' : ''} ${isCollapsed ? 'hidden' : ''}`}></i>
                     </button>
                     <div className={`pl-6 mt-1 border-l-2 border-slate-700 ml-5 transition-all duration-300 ease-in-out overflow-hidden ${isParentOpen ? 'max-h-[500px]' : 'max-h-0'} ${isCollapsed ? 'hidden' : ''}`}>
-                        {item.children.map(child => renderChildItem(child))}
+                        {item.children.map(child => {
+                            if (item.id === 'reports' && child.label.includes('lợi nhuận')) {
+                                return renderChildItem(child, `/admin/reports?type=profit`);
+                            }
+                             if (item.id === 'reports' && child.label.includes('doanh thu')) {
+                                return renderChildItem(child, `/admin/reports?type=revenue`);
+                            }
+                            return renderChildItem(child);
+                        })}
                     </div>
                 </div>
             );
@@ -432,13 +370,26 @@ const AdminSidebar: React.FC<{
         return renderChildItem(item); // Render as a child item if it has no children
     };
 
-    const renderChildItem = (item: MenuItemConfig) => {
+    const renderChildItem = (item: MenuItemConfig, customPath?: string) => {
         if (!authContext.hasPermission(item.permission)) return null;
-        const isActive = activeView === item.id;
+        let isActive = activeView === item.id;
+        
+        if (item.id === 'reports' && location.pathname.startsWith('/admin/reports')) {
+            const params = new URLSearchParams(location.search);
+            if (customPath?.includes('profit') && params.get('type') === 'profit') {
+                isActive = true;
+            } else if (customPath?.includes('revenue') && (params.get('type') === 'revenue' || !params.has('type'))) {
+                isActive = true;
+            } else {
+                isActive = false;
+            }
+        }
+
+
         return (
-             <button key={item.id}
+             <button key={item.label}
                 className={`w-full flex items-center p-2.5 my-0.5 rounded-md transition-colors text-sm ${isActive ? 'bg-primary/90 text-white font-semibold shadow-inner' : 'text-gray-300 hover:bg-slate-700 hover:text-white'}`}
-                onClick={() => onMenuClick(item.id, false)}
+                onClick={() => onMenuClick(item.id, false, customPath)}
             >
                 <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
                 <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>

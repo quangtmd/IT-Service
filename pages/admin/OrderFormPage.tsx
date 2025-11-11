@@ -31,8 +31,10 @@ const OrderFormPage: React.FC = () => {
 
     const staffUsers = useMemo(() => users.filter(u => u.role === 'admin' || u.role === 'staff'), [users]);
     
-    const calculateTotals = useCallback((items: OrderItem[]): number => {
-        return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const calculateTotals = useCallback((items: OrderItem[]): { totalAmount: number; totalCost: number } => {
+        const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const totalCost = items.reduce((sum, item) => sum + (item.purchasePrice || 0) * item.quantity, 0);
+        return { totalAmount, totalCost };
     }, []);
 
     useEffect(() => {
@@ -66,6 +68,8 @@ const OrderFormPage: React.FC = () => {
                         orderDate: new Date().toISOString(),
                         items: [],
                         totalAmount: 0,
+                        cost: 0,
+                        profit: 0,
                         status: 'Phiếu tạm',
                         customerInfo: { fullName: '', phone: '', address: '', email: '' },
                         paymentInfo: { method: 'Tiền mặt', status: 'Chưa thanh toán' },
@@ -83,8 +87,9 @@ const OrderFormPage: React.FC = () => {
     
     useEffect(() => {
         if(formData?.items) {
-            const newTotal = calculateTotals(formData.items);
-            setFormData(prev => prev ? ({...prev, totalAmount: newTotal}) : null);
+            const { totalAmount, totalCost } = calculateTotals(formData.items);
+            const profit = totalAmount - totalCost;
+            setFormData(prev => prev ? ({...prev, totalAmount, cost: totalCost, profit }) : null);
         }
     }, [formData?.items, calculateTotals]);
 
@@ -139,7 +144,13 @@ const OrderFormPage: React.FC = () => {
 
     const addItem = (product: Product) => {
         if (!formData || formData.items?.some(i => i.productId === product.id)) return;
-        const newItem: OrderItem = { productId: product.id, productName: product.name, quantity: 1, price: product.price };
+        const newItem: OrderItem = { 
+            productId: product.id, 
+            productName: product.name, 
+            quantity: 1, 
+            price: product.price,
+            purchasePrice: product.purchasePrice || 0 // Add purchase price for cost calculation
+        };
         setFormData(p => p ? ({ ...p, items: [...(p.items || []), newItem] }) : null);
         setProductSearch('');
     };
@@ -181,6 +192,7 @@ const OrderFormPage: React.FC = () => {
     if (!formData) return null;
 
     const selectedCustomer = customers.find(c => c.id === formData.userId);
+    const totalAmount = formData.totalAmount || 0;
 
     return (
         <div className="admin-card">
@@ -275,9 +287,9 @@ const OrderFormPage: React.FC = () => {
                         {/* Summary */}
                         <div className="flex justify-end mt-4">
                             <div className="w-full max-w-xs text-sm">
-                                <div className="flex justify-between py-1 border-b"><span className="text-gray-600">Tổng tiền hàng:</span><span className="font-semibold">{calculateTotals(formData.items || []).toLocaleString('vi-VN')}₫</span></div>
-                                <div className="flex justify-between py-1 border-b"><span className="text-gray-600">Thuế VAT (10%):</span><span className="font-semibold">{(calculateTotals(formData.items || []) * 0.1).toLocaleString('vi-VN')}₫</span></div>
-                                <div className="flex justify-between py-2 text-base"><span className="font-bold">Tổng cộng:</span><span className="font-bold text-red-600">{(calculateTotals(formData.items || []) * 1.1).toLocaleString('vi-VN')}₫</span></div>
+                                <div className="flex justify-between py-1 border-b"><span className="text-gray-600">Tổng tiền hàng:</span><span className="font-semibold">{totalAmount.toLocaleString('vi-VN')}₫</span></div>
+                                <div className="flex justify-between py-1 border-b"><span className="text-gray-600">Thuế VAT (10%):</span><span className="font-semibold">{(totalAmount * 0.1).toLocaleString('vi-VN')}₫</span></div>
+                                <div className="flex justify-between py-2 text-base"><span className="font-bold">Tổng cộng:</span><span className="font-bold text-red-600">{(totalAmount * 1.1).toLocaleString('vi-VN')}₫</span></div>
                             </div>
                         </div>
 

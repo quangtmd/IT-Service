@@ -196,6 +196,9 @@ export interface GroundingChunk {
 // Updated AdminView to include all new modules
 export type AdminView = 
   | 'dashboard'
+  | 'partners' // New combined view for customers and suppliers
+  | 'reports' // New view for all reports
+  | 'system_management' // New view for system settings like users, permissions etc.
   // Sales & CRM
   | 'customers' | 'quotations' | 'orders' | 'discounts' | 'returns' | 'suppliers' | 'helpdesk_tickets'
   // Service & Warranty
@@ -291,6 +294,7 @@ export interface OrderItem {
   productName: string;
   quantity: number;
   price: number;
+  purchasePrice?: number; // Added for profit calculation
 }
 
 // FIX: Add 'Đang xác nhận' to OrderStatus type to fix type error.
