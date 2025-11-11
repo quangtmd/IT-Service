@@ -2,13 +2,15 @@ import React from 'react';
 // Fix: Use named imports for react-router-dom hooks and components
 import { useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { UserRole } from '../../types';
 
 interface ProtectedRouteProps {
   // Fix: Use React.ReactElement to avoid issues with JSX namespace resolution.
   children: React.ReactElement;
+  roles?: UserRole[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
   const { isAuthenticated, currentUser, isLoading } = useAuth();
   // Fix: Use useLocation directly
   const location = useLocation();
@@ -30,15 +32,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check if the user has admin or staff role for accessing admin routes
-  // This component is now used within an <AdminPage /> route, so this check ensures only authorized roles see the content.
-  if (currentUser?.role !== 'admin' && currentUser?.role !== 'staff') {
-    // If not admin or staff, redirect to a "not authorized" page or homepage
+  // If roles are specified, check if the user has one of the required roles.
+  if (roles && currentUser && !roles.includes(currentUser.role)) {
+    // If user does not have the required role, redirect to homepage or a 'not authorized' page.
     // Fix: Use Navigate directly
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  return children; // If authenticated and authorized, render the children (AdminPage)
+
+  return children; // If authenticated and authorized, render the children
 };
 
 export default ProtectedRoute;

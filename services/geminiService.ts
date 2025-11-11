@@ -1,7 +1,5 @@
-
-
 // Fix: Import correct types from @google/genai
-import { GoogleGenAI, Chat, GenerateContentResponse, Part, Content, Type } from "@google/genai"; // Added Part, Content, Type
+import { GoogleGenAI, Chat, GenerateContentResponse, Part, Content, Type, FunctionDeclaration } from "@google/genai"; // Added Part, Content, Type, FunctionDeclaration
 import * as Constants from '../constants.tsx';
 // Fix: Added SiteSettings, Article, Product
 import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; 
@@ -34,6 +32,21 @@ const getAiClient = (): GoogleGenAI | null => {
   return aiInstance;
 };
 
+const getOrderStatusFunctionDeclaration: FunctionDeclaration = {
+  name: 'getOrderStatus',
+  parameters: {
+    type: Type.OBJECT,
+    description: 'Lấy thông tin và trạng thái của đơn hàng cho người dùng đang đăng nhập. Nếu không có orderId, sẽ lấy đơn hàng gần đây nhất.',
+    properties: {
+      orderId: {
+        type: Type.STRING,
+        description: 'Mã của đơn hàng cần kiểm tra. Ví dụ: order-1721234567890 hoặc chỉ cần phần số.',
+      },
+    },
+  },
+};
+
+
 // Fix: Change history type from GenerateContentParameters[] to Content[]
 export const startChat = (
   siteSettings: SiteSettings, // Added siteSettings
@@ -60,6 +73,11 @@ export const startChat = (
 
 
   const defaultSystemInstruction = `Bạn là một trợ lý AI bán hàng và hỗ trợ khách hàng toàn diện cho cửa hàng ${siteSettings.companyName}. Cửa hàng của chúng ta kinh doanh hai mảng chính: bán sản phẩm công nghệ và cung cấp dịch vụ IT.
+
+**Kiểm tra đơn hàng (Dành cho người dùng đã đăng nhập):**
+- Khi người dùng hỏi về trạng thái đơn hàng (ví dụ: "đơn hàng của tôi đâu?", "check order status"), hãy sử dụng công cụ 'getOrderStatus'.
+- Nếu họ cung cấp một mã đơn hàng, hãy cố gắng trích xuất và truyền mã đó vào 'orderId'. Nếu họ chỉ nói "đơn hàng của tôi", hãy gọi hàm mà không có tham số để lấy thông tin đơn hàng mới nhất.
+- Dựa vào kết quả trả về từ hàm, thông báo cho người dùng một cách rõ ràng về trạng thái, đơn vị vận chuyển và mã vận đơn (nếu có).
 
 **Kiến thức về Sản phẩm của Cửa hàng:**
 Chúng tôi bán đa dạng các sản phẩm. Khi được hỏi, hãy xác nhận rằng chúng ta có bán các mặt hàng này và khuyến khích khách hàng khám phá thêm. Các danh mục chính bao gồm:
@@ -89,6 +107,7 @@ Khi cung cấp link, hãy đảm bảo link đó đầy đủ và có thể nh�
     history: history || [],
     config: {
       systemInstruction: systemInstructionOverride || defaultSystemInstruction,
+      tools: [{functionDeclarations: [getOrderStatusFunctionDeclaration]}],
     },
   });
   return chatSessionInstance;

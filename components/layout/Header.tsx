@@ -100,6 +100,7 @@ const Header: React.FC = () => {
                 // Fix: Use Link directly
                 <Link to="/admin" className="flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted"><i className="fas fa-user-shield w-6"></i>Quản trị</Link>
             )}
+            <Link to="/account/orders" className="flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted"><i className="fas fa-receipt w-6"></i>Đơn hàng của tôi</Link>
             <button onClick={handleLogout} className="w-full flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted">
                 <i className="fas fa-sign-out-alt w-6"></i>Đăng xuất
             </button>
@@ -218,6 +219,12 @@ const Header: React.FC = () => {
                 {link.label}
               </NavLink>
             ))}
+             {isAuthenticated && (
+              <NavLink to="/account/orders" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `flex items-center text-lg py-3 px-4 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'text-gray-200 hover:bg-white/10'}`}>
+                <i className="fas fa-receipt mr-4 w-5 text-center"></i>
+                Đơn hàng của tôi
+              </NavLink>
+            )}
           </nav>
 
           <div className="p-4 border-t border-gray-700 space-y-3">

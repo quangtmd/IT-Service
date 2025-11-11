@@ -19,6 +19,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import ScrollToTop from './components/shared/ScrollToTop';
 import FloatingActionButtons from './components/shared/FloatingActionButtons';
 import PCBuildSuggestionsPage from './pages/PCBuildSuggestionsPage'; // Import the new page
+import CustomerOrdersPage from './pages/CustomerOrdersPage'; // New import for customer orders page
 
 // Auth and Admin
 import AdminPage from './pages/admin/AdminPage';
@@ -57,12 +58,20 @@ const App: React.FC = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
+             <Route
+              path="/account/orders"
+              element={
+                <ProtectedRoute>
+                  <CustomerOrdersPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Protected Admin Route - Updated for v6/v7 */}
             <Route
               path="/admin/*" // Add /* to allow nested routes within AdminPage if any
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={['admin', 'staff']}>
                   <AdminPage />
                 </ProtectedRoute>
               }
