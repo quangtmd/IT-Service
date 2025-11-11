@@ -50,7 +50,6 @@ const FinancialManagementView: React.FC = () => {
         loadData();
     }, [loadData]);
 
-    // FIX: Wrapped addTransaction in useCallback to ensure a stable function reference is passed down.
     const addTransaction = useCallback(async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
         try {
             await addFinancialTransaction(newTransaction);
@@ -325,11 +324,12 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
                 category: 'Chi phí Lương',
                 description: `Thanh toán lương tháng ${payPeriod}`
             });
-            onDataChange();
+            // FIX: The call to onDataChange() here was redundant because onAddTransaction() already triggers a data refresh.
+            // Removing it simplifies the logic and resolves a confusing TypeScript error.
         } catch (error) {
             alert('Lỗi khi chốt lương.');
         }
-    }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
+    }, [localPayroll, payPeriod, onAddTransaction]);
 
     const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);

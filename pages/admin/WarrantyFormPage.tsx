@@ -20,7 +20,12 @@ const PrintableRepairSlip: React.FC<{ ticket: Partial<WarrantyTicket>, settings:
         <div className="print-container max-w-4xl mx-auto p-8 bg-white text-black font-sans text-sm">
             <header className="flex justify-between items-start mb-4 pb-2 border-b-2 border-black">
                 <div className="w-1/3">
-                    {settings.siteLogoUrl ? <img src={settings.siteLogoUrl} alt="Company Logo" className="max-h-20" /> : <h2 className="text-2xl font-bold">{settings.companyName}</h2>}
+                    <svg width="125" height="45" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg">
+                        <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: #ef4444; font-style: italic; } .logo-main-black { font-family: Impact, sans-serif; font-size: 36px; fill: #000000; font-style: italic; } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #000000; letter-spacing: 2px; }`}</style>
+                        <text x="0" y="30" className="logo-main-red">IQ</text>
+                        <text x="38" y="30" className="logo-main-black">TECH</text>
+                        <text x="38" y="42" className="logo-sub">TECHNOLOGY</text>
+                    </svg>
                 </div>
                 <div className="w-2/3 text-right">
                     <h1 className="text-3xl font-bold uppercase">{title}</h1>
@@ -31,7 +36,7 @@ const PrintableRepairSlip: React.FC<{ ticket: Partial<WarrantyTicket>, settings:
 
             <section className="mb-4 p-2 border border-black rounded">
                 <h2 className="text-base font-bold mb-1">Thông Tin Khách Hàng</h2>
-                <div className="grid grid-cols-2 gap-x-4 text-xs">
+                <div className="grid grid-cols-2 gap-x-4">
                     <p><strong>Tên khách hàng:</strong> {ticket.customerName}</p>
                     <p><strong>Điện thoại:</strong> {ticket.customerPhone}</p>
                 </div>
@@ -123,11 +128,27 @@ const PrintableRepairSlip: React.FC<{ ticket: Partial<WarrantyTicket>, settings:
                 </div>
             </main>
             
-            <footer className="mt-24 grid grid-cols-4 gap-4 text-center text-xs">
-                <div><p className="font-bold">Khách hàng</p><p className="mt-12 text-gray-500">(Ký & ghi rõ họ tên)</p></div>
-                <div><p className="font-bold">Nhân viên nhận</p><p className="mt-12 text-gray-500">(Ký & ghi rõ họ tên)</p></div>
-                <div><p className="font-bold">Kỹ thuật viên</p><p className="mt-12 text-gray-500">(Ký & ghi rõ họ tên)</p></div>
-                <div><p className="font-bold">Quản lý TTBH</p><p className="mt-12 text-gray-500">(Ký & ghi rõ họ tên)</p></div>
+            <footer className="mt-16 grid grid-cols-4 gap-4 text-center text-xs">
+                <div className="flex flex-col items-center">
+                    <p className="font-bold">Khách hàng</p>
+                    <div className="border border-dashed border-gray-400 w-full h-20 mt-2"></div>
+                    <p className="mt-2 text-gray-500">(Ký & ghi rõ họ tên)</p>
+                </div>
+                <div className="flex flex-col items-center">
+                    <p className="font-bold">Nhân viên nhận</p>
+                    <div className="border border-dashed border-gray-400 w-full h-20 mt-2"></div>
+                    <p className="mt-2 text-gray-500">(Ký & ghi rõ họ tên)</p>
+                </div>
+                <div className="flex flex-col items-center">
+                    <p className="font-bold">Kỹ thuật viên</p>
+                    <div className="border border-dashed border-gray-400 w-full h-20 mt-2"></div>
+                    <p className="mt-2 text-gray-500">(Ký & ghi rõ họ tên)</p>
+                </div>
+                <div className="flex flex-col items-center">
+                    <p className="font-bold">Quản lý TTBH</p>
+                    <div className="border border-dashed border-gray-400 w-full h-20 mt-2"></div>
+                    <p className="mt-2 text-gray-500">(Ký & ghi rõ họ tên)</p>
+                </div>
             </footer>
         </div>
     );
