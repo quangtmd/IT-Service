@@ -1,15 +1,27 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { WarrantyTicket } from '../../types';
+import { WarrantyTicket, WarrantyTicketStatus } from '../../types';
 import { getWarrantyTickets, deleteWarrantyTicket } from '../../services/localDataService';
 import Button from '../ui/Button';
 import BackendConnectionError from '../shared/BackendConnectionError';
+
+const TICKET_STATUS_FILTERS: Array<{ label: string, value: WarrantyTicketStatus | 'Tất cả' }> = [
+    { label: 'Tất cả', value: 'Tất cả' },
+    { label: 'Mới Tạo', value: 'Mới Tạo' },
+    { label: 'Chờ duyệt', value: 'Chờ duyệt' },
+    { label: 'Đang sửa chữa', value: 'Đang sửa chữa' },
+    { label: 'Hoàn thành', value: 'Hoàn thành' },
+    { label: 'Đã trả khách', value: 'Đã trả khách' },
+    { label: 'Hủy', value: 'Hủy' },
+];
+
 
 const WarrantyManagementView: React.FC = () => {
     const [tickets, setTickets] = useState<WarrantyTicket[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+    const [activeFilter, setActiveFilter] = useState<WarrantyTicketStatus | 'Tất cả'>('Tất cả');
 
     const loadTickets = useCallback(async () => {
         setIsLoading(true);
@@ -27,6 +39,11 @@ const WarrantyManagementView: React.FC = () => {
     useEffect(() => {
         loadTickets();
     }, [loadTickets]);
+
+    const filteredTickets = useMemo(() => {
+        if (activeFilter === 'Tất cả') return tickets;
+        return tickets.filter(t => t.status === activeFilter);
+    }, [tickets, activeFilter]);
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation(); // Prevent row click navigation
@@ -48,86 +65,74 @@ const WarrantyManagementView: React.FC = () => {
     const formatDateTime = (dateString?: string) => {
         if (!dateString) return '';
         const date = new Date(dateString);
-        return `${date.toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'})} ${date.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}`;
+        return `${date.toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'})}`;
     };
-    
-    const formatDateOnly = (dateString?: string) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'});
-    }
 
     return (
-        <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-xl font-bold">PHIẾU BẢO HÀNH</h2>
-                    <p className="text-sm text-gray-500">Danh sách phiếu bảo hành máy ({tickets.length})</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <Button size="sm" onClick={() => navigate('/admin/warranty_tickets/new')} className="bg-blue-600 hover:bg-blue-700 !py-1"><i className="fas fa-plus mr-1"></i>TẠO PHIẾU</Button>
-                    <Button size="sm" className="bg-orange-500 hover:bg-orange-600 !py-1"><i className="fas fa-file-export mr-1"></i>EXPORT</Button>
+        <div className="admin-card">
+            <div className="admin-card-header flex justify-between items-center">
+                <h3 className="admin-card-title">Phiếu Báo Sửa Chữa, Thay Thế ({filteredTickets.length})</h3>
+                <div className="flex items-center gap-2">
+                    <Button size="sm" onClick={() => navigate('/admin/warranty_tickets/new')} leftIcon={<i className="fas fa-plus"></i>}>Tạo Phiếu</Button>
+                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-print"></i>}>In</Button>
+                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-file-export"></i>}>Export</Button>
                 </div>
             </div>
             
-            {/* Data Table */}
-            {error && <BackendConnectionError error={error} />}
-             <div className="overflow-x-auto">
-                <table className="admin-table text-xs">
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" /></th>
-                            <th>#</th>
-                            <th>Số phiếu</th>
-                            <th>Model/Serial</th>
-                            <th>Khách hàng</th>
-                            <th>Người tạo</th>
-                            <th>Số ĐT</th>
-                            <th>Tổng tiền (VND)</th>
-                            <th>Tình trạng</th>
-                            <th>Ngày tạo</th>
-                            <th>Mô tả lỗi</th>
-                            <th>Ngày nhận/trả</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                         {isLoading ? (
-                            <tr><td colSpan={13} className="text-center py-4">Đang tải...</td></tr>
-                        ) : !error && tickets.length > 0 ? (
-                            tickets.map((ticket, index) => (
-                                <tr key={ticket.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/admin/warranty_tickets/edit/${ticket.id}`)}>
-                                    <td><input type="checkbox" onClick={e => e.stopPropagation()}/></td>
-                                    <td>{index + 1}</td>
-                                    <td className="text-blue-600 font-semibold">{ticket.ticketNumber}</td>
-                                    <td>
-                                        <p>{ticket.productModel}</p>
-                                        <p className="text-gray-500">{ticket.productSerial}</p>
-                                    </td>
-                                    <td>{ticket.customerName}</td>
-                                    <td>{ticket.creatorName}</td>
-                                    <td>{ticket.customerPhone}</td>
-                                    <td className="text-right">{formatCurrency(ticket.totalAmount)}</td>
-                                    <td><span className="text-red-600 font-semibold">{ticket.status}</span></td>
-                                    <td>{formatDateTime(ticket.createdAt)}</td>
-                                    <td>{ticket.reportedIssue}</td>
-                                    <td>
-                                        <p>{formatDateOnly(ticket.receiveDate)}</p>
-                                        <p>{formatDateOnly(ticket.returnDate)}</p>
-                                    </td>
-                                    <td>
-                                        <div className="flex gap-2">
-                                            <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/warranty_tickets/edit/${ticket.id}`) }} className="text-blue-600"><i className="fas fa-edit"></i></button>
-                                            <button onClick={(e) => handleDelete(e, ticket.id)} className="text-red-600"><i className="fas fa-times"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            !error && <tr><td colSpan={13} className="text-center py-4 text-textMuted">Không có phiếu bảo hành nào.</td></tr>
-                        )}
-                    </tbody>
-                </table>
-             </div>
+            <div className="admin-card-body">
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                    {TICKET_STATUS_FILTERS.map(filter => (
+                         <Button key={filter.value} onClick={() => setActiveFilter(filter.value)} size="sm" variant={activeFilter === filter.value ? 'primary' : 'outline'} className="!font-normal">
+                             {filter.label}
+                         </Button>
+                    ))}
+                </div>
+                
+                {error && <BackendConnectionError error={error} />}
+                 <div className="overflow-x-auto">
+                    <table className="admin-table text-sm">
+                        <thead>
+                            <tr>
+                                <th>Trạng thái</th>
+                                <th>Số phiếu</th>
+                                <th>Ngày</th>
+                                <th>Người tạo</th>
+                                <th>Khách hàng</th>
+                                <th>Diễn giải</th>
+                                <th>Loại GD</th>
+                                <th>Tổng tiền</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                             {isLoading ? (
+                                <tr><td colSpan={9} className="text-center py-4">Đang tải...</td></tr>
+                            ) : !error && filteredTickets.length > 0 ? (
+                                filteredTickets.map((ticket) => (
+                                    <tr key={ticket.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/admin/warranty_tickets/edit/${ticket.id}`)}>
+                                        <td><span className="text-red-600 font-semibold">{ticket.status}</span></td>
+                                        <td className="text-blue-600 font-semibold">{ticket.ticketNumber}</td>
+                                        <td>{formatDateTime(ticket.createdAt)}</td>
+                                        <td>{ticket.creatorName}</td>
+                                        <td>{ticket.customerName}</td>
+                                        <td className="max-w-xs truncate">{ticket.reportedIssue}</td>
+                                        <td>{ticket.transactionType}</td>
+                                        <td className="text-right font-semibold">{formatCurrency(ticket.totalAmount)}₫</td>
+                                        <td>
+                                            <div className="flex gap-2">
+                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/warranty_tickets/edit/${ticket.id}`) }} className="text-blue-600" title="Sửa"><i className="fas fa-edit"></i></button>
+                                                <button onClick={(e) => handleDelete(e, ticket.id)} className="text-red-600" title="Xóa"><i className="fas fa-times"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                !error && <tr><td colSpan={9} className="text-center py-4 text-textMuted">Không có phiếu nào.</td></tr>
+                            )}
+                        </tbody>
+                    </table>
+                 </div>
+            </div>
         </div>
     );
 };

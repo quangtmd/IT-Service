@@ -719,9 +719,19 @@ export interface Quotation {
   terms?: string;
 }
 
+export interface WarrantyTicketItem {
+    id: string;
+    itemCode?: string;
+    itemName: string;
+    quantity: number;
+    price: number;
+}
+
 export type WarrantyTicketStatus = 
   'Mới Tạo' | 
-  'Đang xử lý' | 
+  'Chờ duyệt' |
+  'Đã duyệt' |
+  'Đang sửa chữa' |
   'Chờ linh kiện' | 
   'Hoàn thành' | 
   'Đã trả khách' | 
@@ -758,6 +768,15 @@ export interface WarrantyTicket {
     repairDate?: string; // Ngày sửa
     returnStaffId?: string; // Nhân viên trả
     returnStaffName?: string; // Denormalized for display
+    
+    // New fields for items and detailed costs from Image 2
+    items?: WarrantyTicketItem[];
+    serviceFee?: number; // Phí dịch vụ
+    discount?: number; // Giảm giá
+    vat?: number; // Thuế VAT
+    
+    // New field from Image 1
+    transactionType?: 'Sửa chữa' | 'Bảo dưỡng' | 'Thay thế';
 }
 
 export interface Supplier {

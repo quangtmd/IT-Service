@@ -212,18 +212,23 @@ CREATE TABLE `WarrantyTickets` (
   `status` varchar(255) NOT NULL,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `reportedIssue` text,
-  `resolution_notes` TEXT NULL,
-  `receiveDate` date DEFAULT NULL,
-  `returnDate` date DEFAULT NULL,
+  `resolution_notes` text,
+  `receiveDate` datetime DEFAULT NULL,
+  `returnDate` datetime DEFAULT NULL,
   `orderId` varchar(255) DEFAULT NULL,
   `productId` varchar(255) DEFAULT NULL,
   `customerId` varchar(255) DEFAULT NULL,
   `warrantyCenter` varchar(255) DEFAULT NULL,
-  `priority` VARCHAR(255) DEFAULT 'Bình thường',
-  `warrantyType` VARCHAR(255) DEFAULT NULL,
-  `technician_notes` TEXT NULL,
-  `repairDate` DATETIME NULL,
-  `returnStaffId` VARCHAR(255) DEFAULT NULL
+  `priority` varchar(255) DEFAULT 'Bình thường',
+  `warrantyType` varchar(255) DEFAULT NULL,
+  `technician_notes` text,
+  `repairDate` datetime DEFAULT NULL,
+  `returnStaffId` varchar(255) DEFAULT NULL,
+  `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`items`)),
+  `serviceFee` decimal(15,2) DEFAULT 0.00,
+  `discount` decimal(15,2) DEFAULT 0.00,
+  `vat` decimal(5,2) DEFAULT 0.00,
+  `transactionType` varchar(50) DEFAULT 'Sửa chữa'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

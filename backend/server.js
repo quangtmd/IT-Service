@@ -984,7 +984,7 @@ app.get('/api/warranty-tickets', async (req, res) => {
             ORDER BY wt.createdAt DESC
         `;
         const [rows] = await pool.query(query);
-        res.json(rows);
+        res.json(rows.map(r => ({...r, items: JSON.parse(r.items || '[]')})));
     } catch (error) {
         console.error("Lỗi khi truy vấn phiếu bảo hành:", error);
         res.status(500).json({ message: 'Lỗi server khi truy vấn phiếu bảo hành.', error: error.message });
@@ -993,15 +993,15 @@ app.get('/api/warranty-tickets', async (req, res) => {
 
 app.post('/api/warranty-tickets', async (req, res) => {
     try {
-        const ticket = req.body;
-        const newTicket = {
-            id: `wt-${Date.now()}`,
-            ticketNumber: `BH-${Date.now()}`,
-            createdAt: new Date(),
-            ...ticket
+        const ticket = {
+             ...req.body, 
+             id: `wt-${Date.now()}`,
+             ticketNumber: `BH-${Date.now()}`,
+             createdAt: new Date(),
+             items: JSON.stringify(req.body.items || []),
         };
-        await pool.query('INSERT INTO WarrantyTickets SET ?', newTicket);
-        res.status(201).json(newTicket);
+        await pool.query('INSERT INTO WarrantyTickets SET ?', ticket);
+        res.status(201).json(ticket);
     } catch (error) {
         console.error("Error creating warranty ticket:", error);
         res.status(500).json({ message: 'Lỗi server', error: error.message });
@@ -1011,7 +1011,10 @@ app.post('/api/warranty-tickets', async (req, res) => {
 app.put('/api/warranty-tickets/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const updates = req.body;
+        const updates = {
+            ...req.body,
+            items: JSON.stringify(req.body.items || []),
+        };
         // Fields that should not be updated via this generic PUT
         delete updates.id;
         delete updates.ticketNumber;

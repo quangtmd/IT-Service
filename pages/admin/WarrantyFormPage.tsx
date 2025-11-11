@@ -6,7 +6,8 @@ import { getWarrantyTickets, addWarrantyTicket, updateWarrantyTicket, getOrders 
 import * as Constants from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
 
-const WARRANTY_STATUS_OPTIONS: Array<WarrantyTicket['status']> = ['Mới Tạo', 'Đang xử lý', 'Chờ linh kiện', 'Hoàn thành', 'Đã trả khách', 'Từ chối bảo hành', 'Hủy'];
+// FIX: Corrected the status options to match the WarrantyTicketStatus type definition.
+const WARRANTY_STATUS_OPTIONS: Array<WarrantyTicket['status']> = ['Mới Tạo', 'Chờ duyệt', 'Đã duyệt', 'Đang sửa chữa', 'Chờ linh kiện', 'Hoàn thành', 'Đã trả khách', 'Từ chối bảo hành', 'Hủy'];
 const PRIORITY_OPTIONS: Array<WarrantyTicket['priority']> = ['Bình thường', 'Gấp'];
 
 
