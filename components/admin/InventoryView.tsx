@@ -1,7 +1,24 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Inventory, Warehouse } from '../../types';
-import { getInventory, getWarehouses } from '../../services/localDataService';
+import { Inventory, Product, Warehouse } from '../../types';
+import { getProducts, getWarehouses } from '../../services/localDataService';
 import Button from '../ui/Button';
+
+// A mock function to get inventory, in a real app this would come from an API
+const getInventoryData = async (products: Product[], warehouses: Warehouse[]): Promise<Inventory[]> => {
+    // This is a placeholder logic. In a real system, you'd fetch this from a dedicated inventory endpoint.
+    // For now, let's just use the 'stock' from the product and assign it to the first warehouse.
+    const mainWarehouse = warehouses[0];
+    if (!mainWarehouse) return [];
+
+    return products.map(product => ({
+        product_id: product.id,
+        warehouse_id: mainWarehouse.id,
+        product_name: product.name,
+        warehouse_name: mainWarehouse.name,
+        quantity: product.stock,
+    }));
+};
+
 
 const InventoryView: React.FC = () => {
     const [inventory, setInventory] = useState<Inventory[]>([]);
@@ -15,13 +32,12 @@ const InventoryView: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            // Using Promise.all to fetch concurrently for better performance
-            const [inventoryData, warehouseData] = await Promise.all([
-                getInventory(),
+            const [productsData, warehouseData] = await Promise.all([
+                getProducts('limit=10000'),
                 getWarehouses()
             ]);
             
-            // Assuming getInventory now returns the combined data as per its type
+            const inventoryData = await getInventoryData(productsData.products, warehouseData);
             setInventory(inventoryData);
             setWarehouses(warehouseData);
 

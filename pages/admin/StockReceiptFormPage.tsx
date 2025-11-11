@@ -115,7 +115,7 @@ const StockReceiptFormPage: React.FC = () => {
 
         try {
             if (isEditing) {
-                await updateStockReceipt(id!, formData);
+                await updateStockReceipt(id!, formData as StockReceipt);
                 alert('Cập nhật phiếu nhập kho thành công!');
             } else {
                 await addStockReceipt(formData as Omit<StockReceipt, 'id'>);
