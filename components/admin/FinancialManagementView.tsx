@@ -39,8 +39,6 @@ const FinancialManagementView: React.FC = () => {
     const navigate = useNavigate();
 
     const renderTabContent = () => {
-        // We pass a key to force re-mount and data fetching when tab changes,
-        // which is simpler than complex state management across tabs.
         switch (activeTab) {
             case 'transactions': return <TransactionsTab key="transactions" navigate={navigate} />;
             case 'debts': return <DebtTab key="debts" />;
@@ -55,8 +53,6 @@ const FinancialManagementView: React.FC = () => {
     
     const handleTabChange = (tab: FinancialTab) => {
         setActiveTab(tab);
-        // Do not change URL for sub-tabs inside Financial Management
-        // navigate(`/admin/accounting_dashboard?tab=${tab}`);
     }
 
     return (
@@ -125,7 +121,7 @@ const OverviewTab: React.FC<{setActiveTab: (tab: FinancialTab) => void}> = ({set
 
     if (isLoading) return <div className="text-center p-8">Đang tải dữ liệu tổng quan...</div>;
 
-    const maxChartValue = Math.max(...summary.chartData.flatMap(d => [d.income, d.expense]));
+    const maxChartValue = Math.max(...summary.chartData.flatMap(d => [d.income, d.expense]), 1);
 
     return (
         <div className="space-y-6">
@@ -230,7 +226,10 @@ const DebtTab: React.FC = () => {
         <div className="admin-card">
             <div className="admin-card-header">
                 <h3 className="admin-card-title">Quản lý Công nợ</h3>
-                <Button size="sm" leftIcon={<i className="fas fa-plus"/>}>Tạo Công nợ</Button>
+                <div className="admin-actions-bar">
+                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-file-excel"/>}>Xuất Excel</Button>
+                    <Button size="sm" leftIcon={<i className="fas fa-plus"/>}>Tạo Công nợ</Button>
+                </div>
             </div>
             <div className="admin-card-body">
                 <div className="filter-tabs">
@@ -268,11 +267,14 @@ const DebtTab: React.FC = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        {d.status !== 'Đã thanh toán' && 
-                                            <Button size="sm" variant="outline" onClick={() => handleMarkAsPaid(d.id)}>
-                                                <i className="fas fa-check mr-1"></i> Đã thanh toán
-                                            </Button>
-                                        }
+                                        <div className="flex gap-2">
+                                            {d.status !== 'Đã thanh toán' && 
+                                                <Button size="sm" variant="outline" onClick={() => handleMarkAsPaid(d.id)}>
+                                                    <i className="fas fa-check mr-1"></i> Đã TT
+                                                </Button>
+                                            }
+                                            <Button size="sm" variant="ghost" className="text-textSubtle"><i className="fas fa-ellipsis-h"></i></Button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

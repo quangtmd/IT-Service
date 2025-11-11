@@ -55,15 +55,17 @@ const StockTransfersView: React.FC = () => {
 
     return (
         <div className="admin-card">
-            <div className="admin-card-header flex justify-between items-center">
+            <div className="admin-card-header">
                 <h3 className="admin-card-title">Quản lý Phiếu Điều Chuyển Kho ({transfers.length})</h3>
-                <Button size="sm" onClick={() => navigate('/admin/stock_transfers/new')} leftIcon={<i className="fas fa-plus" />}>Tạo Phiếu</Button>
+                <div className="admin-actions-bar">
+                    <Button size="sm" onClick={() => navigate('/admin/stock_transfers/new')} leftIcon={<i className="fas fa-plus" />}>Tạo Phiếu</Button>
+                </div>
             </div>
             <div className="admin-card-body">
                 {error && <BackendConnectionError error={error} />}
                 <div className="overflow-x-auto">
                     <table className="admin-table text-sm">
-                        <thead className="bg-blue-800 text-white">
+                        <thead className="thead-brand">
                             <tr>
                                 <th>Số Phiếu</th>
                                 <th>Ngày Lập</th>

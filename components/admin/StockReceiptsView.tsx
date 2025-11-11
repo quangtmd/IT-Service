@@ -26,7 +26,6 @@ const StockReceiptsView: React.FC = () => {
 
     useEffect(() => {
         loadData();
-        // Listen for custom event to reload data when localStorage is updated
         window.addEventListener('localStorageChange', loadData);
         return () => window.removeEventListener('localStorageChange', loadData);
     }, [loadData]);
@@ -45,15 +44,18 @@ const StockReceiptsView: React.FC = () => {
     
     return (
         <div className="admin-card">
-            <div className="admin-card-header flex justify-between items-center">
+            <div className="admin-card-header">
                 <h3 className="admin-card-title">Quản lý Phiếu Nhập Kho ({receipts.length})</h3>
-                <Button size="sm" onClick={() => navigate('/admin/stock_receipts/new')} leftIcon={<i className="fas fa-plus" />}>Tạo Phiếu Nhập</Button>
+                <div className="admin-actions-bar">
+                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-file-excel"/>}>Xuất Excel</Button>
+                    <Button size="sm" onClick={() => navigate('/admin/stock_receipts/new')} leftIcon={<i className="fas fa-plus" />}>Tạo Phiếu Nhập</Button>
+                </div>
             </div>
             <div className="admin-card-body">
                 {error && <BackendConnectionError error={error} />}
                 <div className="overflow-x-auto">
                     <table className="admin-table text-sm">
-                        <thead className="bg-blue-800 text-white">
+                        <thead className="thead-brand">
                             <tr>
                                 <th>Số Phiếu</th>
                                 <th>Ngày Nhập</th>

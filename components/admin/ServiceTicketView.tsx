@@ -19,21 +19,21 @@ const getStatusColorClass = (status: ServiceTicket['status']) => {
     switch (status) {
         case 'Mới':
         case 'Mới tiếp nhận':
-            return 'text-blue-600 font-semibold';
+            return 'bg-blue-100 text-blue-800';
         case 'Đang xử lý':
         case 'Chờ linh kiện':
         case 'Đợi KH đồng ý giá':
         case 'Đợi KH nhận lại':
-            return 'text-yellow-600 font-semibold';
+            return 'bg-yellow-100 text-yellow-800';
         case 'Hoàn thành':
-            return 'text-green-600 font-semibold';
+            return 'bg-green-100 text-green-800';
         case 'Đã đóng':
-            return 'text-gray-600';
+            return 'bg-gray-100 text-gray-800';
         case 'Không đồng ý sửa máy':
         case 'Hủy bỏ':
-            return 'text-red-600 font-semibold';
+            return 'bg-red-100 text-red-800';
         default:
-            return 'text-gray-600';
+            return 'bg-gray-100 text-gray-800';
     }
 };
 
@@ -80,20 +80,14 @@ const ServiceTicketView: React.FC = () => {
 
     return (
         <div className="admin-card">
-            <div className="admin-card-header flex justify-between items-center">
+            <div className="admin-card-header">
                 <h3 className="admin-card-title">Quản lý Phiếu Sửa Chữa ({filteredTickets.length})</h3>
-                 <div className="flex items-center gap-2">
-                    <Button size="sm" onClick={() => navigate('/admin/service_tickets/new')} leftIcon={<i className="fas fa-plus"></i>}>Thêm</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-edit"></i>}>Sửa</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-trash"></i>}>Xóa</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-copy"></i>}>Sao chép</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-print"></i>}>In ấn</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-search"></i>}>Tìm kiếm</Button>
+                 <div className="admin-actions-bar">
+                    <Button size="sm" onClick={() => navigate('/admin/service_tickets/new')} leftIcon={<i className="fas fa-plus"></i>}>Thêm Phiếu</Button>
                 </div>
             </div>
             <div className="admin-card-body">
-                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                    <span className="text-sm font-semibold mr-2">Trạng thái:</span>
+                 <div className="filter-tabs">
                     {STATUS_FILTERS.map(filter => (
                          <Button key={filter.value} onClick={() => setActiveFilter(filter.value)} size="sm" variant={activeFilter === filter.value ? 'primary' : 'outline'} className="!font-normal">
                              {filter.label}
@@ -104,7 +98,7 @@ const ServiceTicketView: React.FC = () => {
                 {error && <BackendConnectionError error={error} />}
                 <div className="overflow-x-auto">
                     <table className="admin-table text-sm">
-                        <thead className="bg-red-800 text-white">
+                        <thead className="thead-brand">
                             <tr>
                                 <th>Mã Phiếu</th>
                                 <th>Khách hàng</th>
@@ -123,7 +117,7 @@ const ServiceTicketView: React.FC = () => {
                                     <td>{ticket.customer_info?.fullName || 'Khách lẻ'}</td>
                                     <td>{ticket.deviceName}</td>
                                     <td>{new Date(ticket.createdAt).toLocaleDateString('vi-VN')}</td>
-                                    <td><span className={getStatusColorClass(ticket.status)}>{ticket.status}</span></td>
+                                    <td><span className={`status-badge ${getStatusColorClass(ticket.status)}`}>{ticket.status}</span></td>
                                     <td>
                                         <div className="flex gap-2 justify-center">
                                             <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/service_tickets/edit/${ticket.id}`) }} className="text-blue-600" title="Sửa"><i className="fas fa-edit"></i></button>

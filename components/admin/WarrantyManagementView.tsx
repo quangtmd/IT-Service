@@ -95,21 +95,17 @@ const WarrantyManagementView: React.FC = () => {
 
     return (
         <div className="admin-card">
-            <div className="admin-card-header flex justify-between items-center">
-                <h3 className="admin-card-title">Phiếu báo đề nghị sửa chữa, thay thế ({filteredTickets.length})</h3>
-                <div className="flex items-center gap-2">
+            <div className="admin-card-header">
+                <h3 className="admin-card-title">Phiếu đề nghị sửa chữa, thay thế ({filteredTickets.length})</h3>
+                <div className="admin-actions-bar">
                     <Button size="sm" onClick={() => navigate('/admin/warranty_tickets/new')} leftIcon={<i className="fas fa-plus"></i>}>Thêm</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-edit"></i>}>Sửa</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-trash"></i>}>Xóa</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-copy"></i>}>Sao chép</Button>
-                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-print"></i>}>In ấn</Button>
+                    <Button size="sm" variant="outline" leftIcon={<i className="fas fa-print"></i>}>In</Button>
                     <Button size="sm" variant="outline" leftIcon={<i className="fas fa-search"></i>}>Tìm kiếm</Button>
                 </div>
             </div>
             
             <div className="admin-card-body">
-                <div className="flex flex-wrap items-center gap-2 mb-4">
-                    <span className="text-sm font-semibold mr-2">Chọn bạn xem lại:</span>
+                <div className="filter-tabs">
                     {TICKET_STATUS_FILTERS.map(filter => (
                          <Button key={filter.value} onClick={() => setActiveFilter(filter.value)} size="sm" variant={activeFilter === filter.value ? 'primary' : 'outline'} className="!font-normal">
                              {filter.label}
@@ -120,41 +116,29 @@ const WarrantyManagementView: React.FC = () => {
                 {error && <BackendConnectionError error={error} />}
                  <div className="overflow-x-auto">
                     <table className="admin-table text-sm">
-                        <thead className="bg-gray-100">
+                        <thead className="thead-brand">
                             <tr>
-                                <th>Đơn vị</th>
                                 <th>Trạng thái</th>
                                 <th>Số c/từ</th>
                                 <th>Ngày c/từ</th>
                                 <th>Người tiếp nhận</th>
-                                <th>Ngoại tệ</th>
-                                <th>Tên người tiếp nhận</th>
-                                <th>Mã bộ phận</th>
                                 <th>Diễn giải</th>
                                 <th className="text-right">Tổng chi phí</th>
-                                <th className="text-right">Số lượng</th>
-                                <th>Giao dịch</th>
                                 <th>Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
                              {isLoading ? (
-                                <tr><td colSpan={13} className="text-center py-4">Đang tải...</td></tr>
+                                <tr><td colSpan={7} className="text-center py-4">Đang tải...</td></tr>
                             ) : !error && filteredTickets.length > 0 ? (
-                                filteredTickets.map((ticket, index) => (
-                                    <tr key={ticket.id} className={`hover:bg-yellow-50 cursor-pointer ${index === 0 ? 'bg-yellow-100' : ''}`} onClick={() => navigate(`/admin/warranty_tickets/edit/${ticket.id}`)}>
-                                        <td>{ticket.department || 'CTV'}</td>
+                                filteredTickets.map((ticket) => (
+                                    <tr key={ticket.id} className="hover:bg-yellow-50 cursor-pointer" onClick={() => navigate(`/admin/warranty_tickets/edit/${ticket.id}`)}>
                                         <td className={getStatusColor(ticket.status)}>{ticket.status}</td>
                                         <td className="font-semibold text-blue-700">{ticket.ticketNumber}</td>
                                         <td>{formatDate(ticket.createdAt)}</td>
                                         <td>{ticket.creatorName}</td>
-                                        <td>{ticket.currency || 'VND'}</td>
-                                        <td>{ticket.creatorName}</td>
-                                        <td>{ticket.departmentCode || 'BAOHANH'}</td>
                                         <td className="max-w-xs truncate">{ticket.reportedIssue}</td>
                                         <td className="text-right font-semibold">{formatCurrency(ticket.totalAmount)}</td>
-                                        <td className="text-right">{ticket.totalQuantity || ticket.items?.reduce((s, i) => s + i.quantity, 0) || 0}</td>
-                                        <td>{ticket.transactionType}</td>
                                         <td>
                                             <div className="flex gap-2 justify-center">
                                                 <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/warranty_tickets/edit/${ticket.id}`) }} className="text-blue-600" title="Sửa"><i className="fas fa-edit"></i></button>
@@ -164,7 +148,7 @@ const WarrantyManagementView: React.FC = () => {
                                     </tr>
                                 ))
                             ) : (
-                                !error && <tr><td colSpan={13} className="text-center py-4 text-textMuted">Không có phiếu nào.</td></tr>
+                                !error && <tr><td colSpan={7} className="text-center py-4 text-textMuted">Không có phiếu nào.</td></tr>
                             )}
                         </tbody>
                     </table>
