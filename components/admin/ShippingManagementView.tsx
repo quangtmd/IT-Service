@@ -89,7 +89,7 @@ const ShippingManagementView: React.FC = () => {
                                             <td><input type="text" value={currentShippingInfo.carrier || ''} onChange={e => handleEditChange(order.id, 'carrier', e.target.value)} className="admin-form-group !p-1 !mb-0 w-32"/></td>
                                             <td><input type="text" value={currentShippingInfo.trackingNumber || ''} onChange={e => handleEditChange(order.id, 'trackingNumber', e.target.value)} className="admin-form-group !p-1 !mb-0 w-32"/></td>
                                             <td>
-                                                <select value={currentShippingInfo.shippingStatus || 'Chưa giao'} onChange={e => handleEditChange(order.id, 'shippingStatus', e.target.value)} className="admin-form-group !p-1 !mb-0">
+                                                <select value={currentShippingInfo.shippingStatus || 'Chưa giao'} onChange={e => handleEditChange(order.id, 'shippingStatus', e.target.value as ShippingInfo['shippingStatus'])} className="admin-form-group !p-1 !mb-0">
                                                     {SHIPPING_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                                 </select>
                                             </td>
