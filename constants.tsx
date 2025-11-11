@@ -72,14 +72,13 @@ const INITIAL_HOMEPAGE_BANNERS: HomepageBannerSettings[] = [
         title: "Đối Tác Công Nghệ Tin Cậy Của Doanh Nghiệp",
         subtitle: "Chúng tôi cung cấp chuyên môn và sự hỗ trợ để giúp bạn vượt qua sự phức tạp của bối cảnh kỹ thuật số, đảm bảo công nghệ của bạn phù hợp với mục tiêu kinh doanh.",
         backgroundImageUrl: "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?q=80&w=1920&auto=format&fit=crop",
+        rightColumnImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group_gLnp.png",
         primaryButtonText: "Dịch Vụ Của Chúng Tôi",
         primaryButtonLink: "/services",
         secondaryButtonText: "Liên Hệ Ngay",
         secondaryButtonLink: "/contact",
         order: 1,
         isActive: true,
-        decorTopLeftImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group-1_p2gL.png",
-        decorBottomRightImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group_gLnp.png"
     },
     {
         id: 'banner2',
@@ -87,14 +86,13 @@ const INITIAL_HOMEPAGE_BANNERS: HomepageBannerSettings[] = [
         title: "Thúc Đẩy Doanh Nghiệp Với Công Nghệ Tiên Tiến",
         subtitle: "Từ giải pháp đám mây đến an ninh mạng, chúng tôi cung cấp các dịch vụ sáng tạo phù hợp với nhu cầu kinh doanh độc đáo của bạn, giúp bạn luôn đi đầu.",
         backgroundImageUrl: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1920&auto=format&fit=crop",
+        rightColumnImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group-1_p2gL.png",
         primaryButtonText: "Khám Phá Giải Pháp",
         primaryButtonLink: "/services",
         secondaryButtonText: "Nhận Báo Giá",
         secondaryButtonLink: "/contact",
         order: 2,
         isActive: true,
-        decorTopLeftImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group-1_p2gL.png",
-        decorBottomRightImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group_gLnp.png"
     },
     {
         id: 'banner3',
@@ -102,14 +100,13 @@ const INITIAL_HOMEPAGE_BANNERS: HomepageBannerSettings[] = [
         title: "Vận Hành Mượt Mà Với Hỗ Trợ IT Chủ Động",
         subtitle: "Đội ngũ tận tâm của chúng tôi cung cấp dịch vụ giám sát và hỗ trợ 24/7 để đảm bảo hệ thống của bạn luôn hoạt động trơn tru, giảm thiểu thời gian chết và tối đa hóa năng suất.",
         backgroundImageUrl: "https://images.unsplash.com/photo-1531403009284-440993d21634?q=80&w=1920&auto=format&fit=crop",
+        rightColumnImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group_gLnp.png",
         primaryButtonText: "Xem Gói Hỗ Trợ",
         primaryButtonLink: "/services",
         secondaryButtonText: "Về Chúng Tôi",
         secondaryButtonLink: "/about",
         order: 3,
         isActive: true,
-        decorTopLeftImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group-1_p2gL.png",
-        decorBottomRightImageUrl: "https://polite-opossum.10web.cloud/wp-content/uploads/sites/91/2024/02/Group_gLnp.png"
     }
 ];
 

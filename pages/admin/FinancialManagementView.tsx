@@ -275,7 +275,14 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => void, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => void }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
+// FIX: Update prop types for async functions to return Promise<void> to match their implementation.
+interface PayrollTabProps {
+    payrollRecords: PayrollRecord[],
+    onDataChange: () => Promise<void>,
+    onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void>
+}
+
+const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
     const { users } = useAuth();
     const staff = users.filter(u => u.role === 'admin' || u.role === 'staff');
     const [payPeriod, setPayPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
@@ -317,7 +324,6 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         try {
             const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
             await savePayrollRecords(recordsToSave);
-            // FIX: Corrected the incorrect call to `onDataChange`. The `onAddTransaction` function already triggers a data refresh, so calling `onDataChange` was both wrong and redundant.
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -334,7 +340,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
-        onDataChange();
+        await onDataChange();
     }, [localPayroll, payPeriod, onDataChange]);
 
 

@@ -5,7 +5,32 @@ import {
     ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
     Quotation, User, WarrantyTicket, ReturnTicket, Supplier, Warehouse, StockReceipt, StockIssue, StockTransfer
 } from '../types';
+// FIX: Import all of Constants to use its properties.
+import * as Constants from '../constants';
 import { BACKEND_API_BASE_URL } from '../constants';
+
+// FIX: Add missing helper functions for localStorage access.
+// --- Helper Functions for localStorage ---
+const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+        console.error(`Error reading localStorage key "${key}":`, error);
+        return defaultValue;
+    }
+};
+
+const setLocalStorageItem = <T,>(key: string, value: T): void => {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+        // Optional: Dispatch a custom event to notify other components of the change
+        window.dispatchEvent(new CustomEvent('localStorageChange', { detail: { key } }));
+    } catch (error) {
+        console.error(`Error setting localStorage key "${key}":`, error);
+    }
+};
+
 
 const API_BASE = BACKEND_API_BASE_URL;
 

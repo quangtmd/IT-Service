@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../../ui/Button';
@@ -36,7 +34,7 @@ const HomeBannerIts: React.FC = () => {
 
     const timer = setInterval(() => {
       setCurrentIndex(prevIndex => (prevIndex + 1) % banners.length);
-    }, 3000); // Change slide every 3 seconds
+    }, 5000); // Change slide every 5 seconds
 
     return () => clearInterval(timer);
   }, [banners]);
@@ -67,46 +65,56 @@ const HomeBannerIts: React.FC = () => {
       ))}
       <div className="absolute inset-0 bg-black/60 z-10"></div>
       
-      {/* Decorative Elements */}
-      {currentBanner.decorTopLeftImageUrl && <img src={currentBanner.decorTopLeftImageUrl} alt="" className="absolute top-0 left-0 w-1/4 max-w-xs opacity-50 z-20 pointer-events-none" />}
-      {currentBanner.decorBottomRightImageUrl && <img src={currentBanner.decorBottomRightImageUrl} alt="" className="absolute bottom-0 right-0 w-1/3 max-w-md opacity-50 z-20 pointer-events-none" />}
-
-      {/* Text Content */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-20 w-full h-full flex items-center text-left">
-        <div className="max-w-2xl">
-          <div key={currentIndex} className="animate-on-scroll fade-in-up is-visible">
-            {currentBanner.preTitle && (
-              <span className="block text-sm font-semibold text-primary uppercase tracking-wider mb-4 drop-shadow-sm">
-                {currentBanner.preTitle}
-              </span>
-            )}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-condensed font-bold mb-6 leading-tight text-white drop-shadow-md"
-                dangerouslySetInnerHTML={{ __html: currentBanner.title }}>
-            </h1>
-            <p className="text-lg text-gray-200 mb-10 drop-shadow-sm">
-              {currentBanner.subtitle}
-            </p>
-            <div className="space-y-3 sm:space-y-0 sm:space-x-4">
-              {currentBanner.primaryButtonLink && currentBanner.primaryButtonText && (
-                <ReactRouterDOM.Link to={currentBanner.primaryButtonLink}>
-                  <Button size="lg" variant="primary" className="w-full sm:w-auto px-8 py-3.5 text-base shadow-lg hover:shadow-primary/40 transform hover:scale-105">
-                    {currentBanner.primaryButtonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
-                  </Button>
-                </ReactRouterDOM.Link>
-              )}
-              {currentBanner.secondaryButtonLink && currentBanner.secondaryButtonText && (
-                <ReactRouterDOM.Link to={currentBanner.secondaryButtonLink}>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="w-full sm:w-auto px-8 py-3.5 text-base shadow-md border-white text-white hover:bg-white hover:text-primary transform hover:scale-105"
-                  >
-                    {currentBanner.secondaryButtonText}
-                  </Button>
-                </ReactRouterDOM.Link>
-              )}
+      {/* Content */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-20 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Left: Text Content */}
+            <div className="max-w-2xl text-center lg:text-left">
+              <div key={currentIndex} className="animate-on-scroll fade-in-up is-visible">
+                {currentBanner.preTitle && (
+                  <span className="block text-sm font-semibold text-primary uppercase tracking-wider mb-4 drop-shadow-sm">
+                    {currentBanner.preTitle}
+                  </span>
+                )}
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-condensed font-bold mb-6 leading-tight text-white drop-shadow-md"
+                    dangerouslySetInnerHTML={{ __html: currentBanner.title }}>
+                </h1>
+                <p className="text-lg text-gray-200 mb-10 drop-shadow-sm">
+                  {currentBanner.subtitle}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                  {currentBanner.primaryButtonLink && currentBanner.primaryButtonText && (
+                    <ReactRouterDOM.Link to={currentBanner.primaryButtonLink}>
+                      <Button size="lg" variant="primary" className="w-full sm:w-auto px-8 py-3.5 text-base shadow-lg hover:shadow-primary/40 transform hover:scale-105">
+                        {currentBanner.primaryButtonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
+                      </Button>
+                    </ReactRouterDOM.Link>
+                  )}
+                  {currentBanner.secondaryButtonLink && currentBanner.secondaryButtonText && (
+                    <ReactRouterDOM.Link to={currentBanner.secondaryButtonLink}>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="w-full sm:w-auto px-8 py-3.5 text-base shadow-md border-white text-white hover:bg-white hover:text-primary transform hover:scale-105"
+                      >
+                        {currentBanner.secondaryButtonText}
+                      </Button>
+                    </ReactRouterDOM.Link>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+            {/* Right: Image */}
+            <div className="hidden lg:flex justify-center items-center">
+                {currentBanner.rightColumnImageUrl && (
+                    <img 
+                        src={currentBanner.rightColumnImageUrl} 
+                        alt={currentBanner.imageAltText || currentBanner.title}
+                        className="max-w-md w-full animate-on-scroll fade-in-up is-visible"
+                        style={{animationDelay: '200ms'}}
+                    />
+                )}
+            </div>
         </div>
       </div>
       
