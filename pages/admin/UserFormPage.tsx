@@ -12,6 +12,8 @@ const UserFormPage: React.FC = () => {
     const isEditing = !!userId;
 
     const [formData, setFormData] = useState<Partial<User> | null>(null);
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -55,18 +57,43 @@ const UserFormPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData) return;
+        setError(null);
+
+        // Password validation
+        if (!isEditing) { // When creating a new user, password is required
+            if (password.length < 6) {
+                setError('Mật khẩu phải có ít nhất 6 ký tự.');
+                return;
+            }
+            if (password !== confirmPassword) {
+                setError('Mật khẩu và xác nhận mật khẩu không khớp.');
+                return;
+            }
+        } else { // When editing, password is optional
+            if (password && password.length < 6) {
+                setError('Mật khẩu mới phải có ít nhất 6 ký tự.');
+                return;
+            }
+            if (password && password !== confirmPassword) {
+                setError('Mật khẩu mới và xác nhận mật khẩu không khớp.');
+                return;
+            }
+        }
 
         try {
             if (isEditing) {
                 const { id, ...updates } = formData;
-                await updateUser(id, updates);
+                if (password) {
+                    (updates as Partial<User>).password = password;
+                }
+                await updateUser(id as string, updates);
                 alert('Cập nhật hồ sơ nhân sự thành công!');
             } else {
                 const { id, ...dto } = formData;
-                await addUser(dto as Omit<User, 'id'>);
+                await addUser({ ...dto, password } as Omit<User, 'id'>);
                 alert('Thêm nhân viên mới thành công!');
             }
-            navigate('/admin/system_management?tab=users');
+            navigate('/admin/hrm_dashboard');
         } catch (err) {
             alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi lưu hồ sơ nhân sự.');
         }
@@ -83,13 +110,13 @@ const UserFormPage: React.FC = () => {
         );
     }
 
-    if (error) {
+    if (error && !formData) {
         return (
             <div className="admin-card">
                 <div className="admin-card-body text-center py-8 text-danger-text">
                     <i className="fas fa-exclamation-triangle text-3xl mb-3"></i>
                     <p>{error}</p>
-                    <Button onClick={() => navigate('/admin/system_management?tab=users')} className="mt-4">Quay lại</Button>
+                    <Button onClick={() => navigate('/admin/hrm_dashboard')} className="mt-4">Quay lại</Button>
                 </div>
             </div>
         );
@@ -102,9 +129,10 @@ const UserFormPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="flex flex-col h-full">
                 <div className="admin-card-header">
                     <h3 className="admin-card-title">{isEditing ? `Chỉnh sửa Hồ sơ Nhân sự: ${formData.username}` : 'Thêm Nhân viên mới'}</h3>
-                    <Button type="button" variant="outline" onClick={() => navigate('/admin/system_management?tab=users')}>Hủy</Button>
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin/hrm_dashboard')}>Hủy</Button>
                 </div>
                 <div className="admin-card-body admin-product-form-page-body"> {/* Using similar class for scrolling */}
+                    {error && <div className="p-3 bg-danger-bg border border-danger-border text-danger-text rounded-md text-sm mb-4">{error}</div>}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-1">
                             <ImageUploadInput
@@ -123,6 +151,17 @@ const UserFormPage: React.FC = () => {
                                 <label htmlFor="email">Email *</label>
                                 <input type="email" name="email" id="email" value={formData.email || ''} onChange={handleChange} required disabled={isEditing} />
                             </div>
+
+                            <div className="admin-form-group">
+                                <label htmlFor="password">{isEditing ? 'Mật khẩu mới' : 'Mật khẩu *'}</label>
+                                <input type="password" name="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required={!isEditing} autoComplete="new-password" />
+                                {isEditing && <p className="form-input-description">Để trống nếu không muốn thay đổi.</p>}
+                            </div>
+                            <div className="admin-form-group">
+                                <label htmlFor="confirmPassword">{isEditing ? 'Xác nhận mật khẩu mới' : 'Xác nhận mật khẩu *'}</label>
+                                <input type="password" name="confirmPassword" id="confirmPassword" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required={!isEditing || !!password} autoComplete="new-password" />
+                            </div>
+
                             <div className="admin-form-group">
                                 <label htmlFor="position">Chức vụ</label>
                                 <input type="text" name="position" id="position" value={formData.position || ''} onChange={handleChange} />
@@ -159,7 +198,7 @@ const UserFormPage: React.FC = () => {
                     </div>
                 </div>
                 <div className="admin-modal-footer">
-                    <Button type="button" variant="outline" onClick={() => navigate('/admin/system_management?tab=users')}>Hủy</Button>
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin/hrm_dashboard')}>Hủy</Button>
                     <Button type="submit" variant="primary">Lưu thay đổi</Button>
                 </div>
             </form>

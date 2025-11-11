@@ -255,6 +255,7 @@ export const getPayrollRecords = async (): Promise<PayrollRecord[]> => {
     return fetchFromApi<PayrollRecord[]>('/api/financials/payroll');
 };
 
+// FIX: Added 'records' parameter to fix type errors where this function was called with an argument.
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/api/financials/payroll', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records),
