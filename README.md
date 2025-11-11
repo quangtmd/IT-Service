@@ -66,7 +66,17 @@ CREATE TABLE `Products` (
   `isVisible` tinyint(1) DEFAULT 1,
   `rating` float DEFAULT NULL,
   `reviews` int(11) DEFAULT NULL,
-  `status` varchar(50) DEFAULT 'Mới'
+  `status` varchar(50) DEFAULT 'Mới',
+  `productCode` varchar(255) DEFAULT NULL,
+  `printName` varchar(255) DEFAULT NULL,
+  `purchasePrice` decimal(15,2) DEFAULT NULL,
+  `wholesalePrice` decimal(15,2) DEFAULT NULL,
+  `hasVAT` tinyint(1) DEFAULT 0,
+  `barcode` varchar(255) DEFAULT NULL,
+  `unit` varchar(50) DEFAULT NULL,
+  `warrantyPeriod` int(11) DEFAULT NULL,
+  `countryOfOrigin` varchar(255) DEFAULT NULL,
+  `yearOfManufacture` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `Orders` (
@@ -233,7 +243,7 @@ ALTER TABLE `Quotations` ADD PRIMARY KEY (`id`), ADD KEY `customer_id` (`custome
 ALTER TABLE `ArticleCategories` ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `name` (`name`), ADD UNIQUE KEY `slug` (`slug`);
 ALTER TABLE `Articles` ADD PRIMARY KEY (`id`);
 ALTER TABLE `Assets` ADD PRIMARY KEY (`id`), ADD KEY `assignedTo` (`assignedTo`);
-ALTER TABLE `AuditLogs` ADD PRIMARY KEY (`id`), ADD KEY `userId` (`userId`);
+ALTER TABLE `AuditLogs` ADD PRIMARY KEY (`id`);
 ALTER TABLE `ChatLogSessions` ADD PRIMARY KEY (`id`);
 ALTER TABLE `Contracts` ADD PRIMARY KEY (`id`);
 ALTER TABLE `Debts` ADD PRIMARY KEY (`id`);

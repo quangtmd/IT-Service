@@ -97,7 +97,7 @@ app.get('/api/health', async (req, res) => {
                 break;
             case 'ER_NO_SUCH_TABLE':
                 errorCode = 'MISSING_TABLES';
-                errorMessage = `Kết nối database thành công nhưng không tìm thấy bảng 'Products'. Vui lòng chạy SQL để tạo bảng.`;
+                errorMessage = `Kết nối database thành công nhưng không tìm thấy bảng 'Products'. Vui lòng chạy lại SQL để tạo bảng.`;
                 break;
         }
         
@@ -218,7 +218,17 @@ app.post('/api/products', async (req, res) => {
             status: productData.status || 'Mới',
             brand: productData.brand || null,
             tags: JSON.stringify(productData.tags || []),
-            isVisible: isVisible === undefined ? true : Boolean(isVisible)
+            isVisible: isVisible === undefined ? true : Boolean(isVisible),
+            productCode: productData.productCode || null,
+            printName: productData.printName || null,
+            purchasePrice: productData.purchasePrice ? Number(productData.purchasePrice) : null,
+            wholesalePrice: productData.wholesalePrice ? Number(productData.wholesalePrice) : null,
+            hasVAT: productData.hasVAT ? 1 : 0,
+            barcode: productData.barcode || null,
+            unit: productData.unit || null,
+            warrantyPeriod: productData.warrantyPeriod ? Number(productData.warrantyPeriod) : null,
+            countryOfOrigin: productData.countryOfOrigin || null,
+            yearOfManufacture: productData.yearOfManufacture ? Number(productData.yearOfManufacture) : null,
         };
 
         await pool.query('INSERT INTO Products SET ?', productToDb);
@@ -250,6 +260,16 @@ app.put('/api/products/:id', async (req, res) => {
             brand: productData.brand || null,
             tags: JSON.stringify(productData.tags || []),
             isVisible: isVisible === undefined ? true : Boolean(isVisible),
+            productCode: productData.productCode,
+            printName: productData.printName,
+            purchasePrice: productData.purchasePrice ? Number(productData.purchasePrice) : null,
+            wholesalePrice: productData.wholesalePrice ? Number(productData.wholesalePrice) : null,
+            hasVAT: productData.hasVAT,
+            barcode: productData.barcode,
+            unit: productData.unit,
+            warrantyPeriod: productData.warrantyPeriod ? Number(productData.warrantyPeriod) : null,
+            countryOfOrigin: productData.countryOfOrigin,
+            yearOfManufacture: productData.yearOfManufacture ? Number(productData.yearOfManufacture) : null,
         };
         
         const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [fieldsToUpdate, id]);

@@ -25,6 +25,18 @@ export interface Product {
   seoMetaTitle?: string; // New SEO field
   seoMetaDescription?: string; // New SEO field
   slug?: string; // New field for custom URL slug
+  
+  // New fields based on image
+  productCode?: string; // Mã Hàng
+  printName?: string; // Tên Hàng (in)
+  purchasePrice?: number; // Giá Nhập
+  wholesalePrice?: number; // Giá Bán Sỉ
+  hasVAT?: boolean; // Phải cộng VAT
+  barcode?: string; // Mã Vạch
+  unit?: string; // ĐVT
+  warrantyPeriod?: number; // Bảo Hành (in months)
+  countryOfOrigin?: string; // Xuất Xứ
+  yearOfManufacture?: number; // Năm SX
 }
 
 export interface Service {
