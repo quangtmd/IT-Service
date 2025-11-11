@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { StockIssue, StockIssueItem, Order, SiteSettings } from '../../types';
 import Button from '../../components/ui/Button';
@@ -16,20 +16,19 @@ const StockIssueFormPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
-    const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
 
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
             try {
-                const ordersData = await getOrders();
-                setOrders(ordersData.filter(o => o.status === 'Đã xác nhận' || o.status === 'Đang chuẩn bị'));
-                
-                const settingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
-                setSiteSettings(settingsRaw ? JSON.parse(settingsRaw) : Constants.INITIAL_SITE_SETTINGS);
+                const [ordersData, allIssues] = await Promise.all([
+                    getOrders(),
+                    isEditing ? getStockIssues() : Promise.resolve([]),
+                ]);
 
+                setOrders(ordersData.filter(o => ['Đã xác nhận', 'Đang chuẩn bị'].includes(o.status)));
+                
                 if (isEditing) {
-                    const allIssues = await getStockIssues();
                     const issueToEdit = allIssues.find(i => i.id === id);
                     if (issueToEdit) {
                         setFormData(issueToEdit);
@@ -112,7 +111,7 @@ const StockIssueFormPage: React.FC = () => {
                     </header>
                     <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                         <div className="no-print">
-                            <label className="admin-form-group">Từ Đơn hàng</label>
+                            <label className="admin-form-group">Từ Đơn hàng *</label>
                             <select name="orderId" value={formData.orderId || ''} onChange={handleOrderChange} className="admin-form-group" required>
                                 <option value="">-- Chọn Đơn hàng --</option>
                                 {orders.map(o => <option key={o.id} value={o.id}>#{o.id.slice(-6)} - {o.customerInfo.fullName}</option>)}

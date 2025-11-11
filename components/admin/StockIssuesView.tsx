@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StockIssue } from '../../types';
-import { getStockIssues } from '../../services/localDataService';
+import { getStockIssues, deleteStockIssue } from '../../services/localDataService';
 import Button from '../ui/Button';
 import BackendConnectionError from '../shared/BackendConnectionError';
 
@@ -26,7 +26,21 @@ const StockIssuesView: React.FC = () => {
 
     useEffect(() => {
         loadData();
+        window.addEventListener('localStorageChange', loadData);
+        return () => window.removeEventListener('localStorageChange', loadData);
     }, [loadData]);
+
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (window.confirm('Bạn có chắc muốn xóa phiếu xuất kho này?')) {
+            try {
+                await deleteStockIssue(id);
+                loadData();
+            } catch (err) {
+                alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi xóa.');
+            }
+        }
+    };
 
     return (
         <div className="admin-card">
@@ -64,6 +78,7 @@ const StockIssuesView: React.FC = () => {
                                         <td>
                                             <div className="flex gap-2 justify-center">
                                                 <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/stock_issues/edit/${issue.id}`) }} className="text-blue-600" title="Sửa"><i className="fas fa-edit" /></button>
+                                                <button onClick={(e) => handleDelete(e, issue.id)} className="text-red-600" title="Xóa"><i className="fas fa-times" /></button>
                                             </div>
                                         </td>
                                     </tr>

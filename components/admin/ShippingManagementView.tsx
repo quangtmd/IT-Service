@@ -1,24 +1,27 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Order, ShippingInfo } from '../../types';
 import { getOrders, updateOrder } from '../../services/localDataService';
 import Button from '../ui/Button';
 import BackendConnectionError from '../shared/BackendConnectionError';
 
-const SHIPPING_STATUS_OPTIONS: ShippingInfo['shippingStatus'][] = ['Chưa giao', 'Đang lấy hàng', 'Đang giao', 'Đã giao', 'Gặp sự cố'];
+const SHIPPING_STATUS_OPTIONS: Array<NonNullable<ShippingInfo['shippingStatus']>> = ['Chưa giao', 'Đang lấy hàng', 'Đang giao', 'Đã giao', 'Gặp sự cố'];
 
 const ShippingManagementView: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [editStates, setEditStates] = useState<Record<string, Partial<ShippingInfo>>>({});
+    const [saveStatus, setSaveStatus] = useState<Record<string, 'idle' | 'saving'>>({});
+
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
             const data = await getOrders();
-            // Only show orders that are confirmed and not yet completed/cancelled
-            setOrders(data.filter(o => ['Đã xác nhận', 'Đang chuẩn bị', 'Đang giao'].includes(o.status)));
+            // Only show orders that need shipping management
+            const filtered = data.filter(o => ['Đã xác nhận', 'Đang chuẩn bị', 'Đang giao'].includes(o.status));
+            setOrders(filtered);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu đơn hàng.');
         } finally {
@@ -41,16 +44,23 @@ const ShippingManagementView: React.FC = () => {
         const updates = editStates[order.id];
         if (!updates) return;
         
+        setSaveStatus(prev => ({...prev, [order.id]: 'saving'}));
         try {
-            await updateOrder(order.id, { shippingInfo: { ...order.shippingInfo, ...updates } });
+            // Merge existing shipping info with the new updates
+            const newShippingInfo = { ...order.shippingInfo, ...updates };
+            await updateOrder(order.id, { shippingInfo: newShippingInfo });
+            
+            // Clear edit state for this order after successful save
             setEditStates(prev => {
                 const newStates = {...prev};
                 delete newStates[order.id];
                 return newStates;
             });
-            loadData(); // Refresh list
+            await loadData(); // Refresh list to get latest data from "source of truth"
         } catch (err) {
             alert(err instanceof Error ? err.message : 'Lỗi khi cập nhật thông tin vận chuyển.');
+        } finally {
+            setSaveStatus(prev => ({...prev, [order.id]: 'idle'}));
         }
     };
 
@@ -81,6 +91,8 @@ const ShippingManagementView: React.FC = () => {
                                 orders.map(order => {
                                     const isEditing = !!editStates[order.id];
                                     const currentShippingInfo = { ...order.shippingInfo, ...editStates[order.id] };
+                                    const isSaving = saveStatus[order.id] === 'saving';
+
                                     return (
                                         <tr key={order.id}>
                                             <td className="font-mono text-xs">{order.id.slice(-6)}</td>
@@ -94,7 +106,7 @@ const ShippingManagementView: React.FC = () => {
                                                 </select>
                                             </td>
                                             <td>
-                                                <Button size="sm" onClick={() => handleSave(order)} disabled={!isEditing}>Lưu</Button>
+                                                <Button size="sm" onClick={() => handleSave(order)} disabled={!isEditing || isSaving} isLoading={isSaving}>Lưu</Button>
                                             </td>
                                         </tr>
                                     );

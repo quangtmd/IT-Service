@@ -488,6 +488,11 @@ export const updateStockIssue = async (id: string, updates: Partial<StockIssue>)
     return updatedIssue;
 };
 
+export const deleteStockIssue = async (id: string): Promise<void> => {
+    const issues = await getStockIssues();
+    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, issues.filter(i => i.id !== id));
+};
+
 // Stock Transfers
 export const getStockTransfers = async (): Promise<StockTransfer[]> => {
     return getLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, []);
@@ -511,4 +516,8 @@ export const updateStockTransfer = async (id: string, updates: Partial<StockTran
     if (!updatedTransfer) throw new Error("Transfer not found");
     setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, newTransfers);
     return updatedTransfer;
+};
+export const deleteStockTransfer = async (id: string): Promise<void> => {
+    const transfers = await getStockTransfers();
+    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, transfers.filter(t => t.id !== id));
 };

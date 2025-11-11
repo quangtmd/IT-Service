@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StockReceipt } from '../../types';
 import { getStockReceipts, deleteStockReceipt } from '../../services/localDataService';
@@ -26,6 +26,9 @@ const StockReceiptsView: React.FC = () => {
 
     useEffect(() => {
         loadData();
+        // Listen for custom event to reload data when localStorage is updated
+        window.addEventListener('localStorageChange', loadData);
+        return () => window.removeEventListener('localStorageChange', loadData);
     }, [loadData]);
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {

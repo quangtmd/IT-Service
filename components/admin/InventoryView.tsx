@@ -15,12 +15,16 @@ const InventoryView: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
+            // Using Promise.all to fetch concurrently for better performance
             const [inventoryData, warehouseData] = await Promise.all([
                 getInventory(),
                 getWarehouses()
             ]);
+            
+            // Assuming getInventory now returns the combined data as per its type
             setInventory(inventoryData);
             setWarehouses(warehouseData);
+
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu tồn kho.');
         } finally {

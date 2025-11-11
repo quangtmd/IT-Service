@@ -18,8 +18,15 @@ import NotificationsView from '../components/admin/NotificationsView';
 import HomepageManagementView from '../components/admin/HomepageManagementView';
 import FinancialManagementView from '../components/admin/FinancialManagementView';
 import DashboardView from '../components/admin/DashboardView';
-import InventoryView from '../components/admin/InventoryView';
 import ServiceTicketView from '../components/admin/ServiceTicketView';
+
+// Import new Inventory & Logistics views
+import InventoryView from '../components/admin/InventoryView';
+import StockReceiptsView from '../components/admin/StockReceiptsView';
+import StockIssuesView from '../components/admin/StockIssuesView';
+import StockTransfersView from '../components/admin/StockTransfersView';
+import ShippingManagementView from '../components/admin/ShippingManagementView';
+
 
 // Import new form pages
 import ProductFormPage from './admin/ProductFormPage';
@@ -35,8 +42,10 @@ import OrderFormPage from './admin/OrderFormPage';
 import ReturnFormPage from './admin/ReturnFormPage';
 import SupplierFormPage from './admin/SupplierFormPage';
 import ServiceTicketFormPage from './admin/ServiceTicketFormPage';
-// FIX: Import WarrantyFormPage to resolve 'Cannot find name' error.
 import WarrantyFormPage from './admin/WarrantyFormPage';
+import StockReceiptFormPage from './admin/StockReceiptFormPage';
+import StockIssueFormPage from './admin/StockIssueFormPage';
+import StockTransferFormPage from './admin/StockTransferFormPage';
 
 
 // Import new placeholder/skeleton views
@@ -44,13 +53,6 @@ import QuotationManagementView from '../components/admin/QuotationManagementView
 import WarrantyManagementView from '../components/admin/WarrantyManagementView';
 import ReturnManagementView from '../components/admin/ReturnManagementView';
 import SupplierManagementView from '../components/admin/SupplierManagementView';
-import StockReceiptsView from '../components/admin/StockReceiptsView';
-import StockIssuesView from '../components/admin/StockIssuesView';
-import StockTransfersView from '../components/admin/StockTransfersView';
-import ShippingManagementView from '../components/admin/ShippingManagementView';
-import StockReceiptFormPage from './admin/StockReceiptFormPage';
-import StockIssueFormPage from './admin/StockIssueFormPage';
-import StockTransferFormPage from './admin/StockTransferFormPage';
 
 
 interface MenuItemConfig {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { StockTransfer, StockTransferItem, Warehouse, Product, User } from '../../types';
 import Button from '../../components/ui/Button';
@@ -24,12 +24,15 @@ const StockTransferFormPage: React.FC = () => {
         const loadData = async () => {
             setIsLoading(true);
             try {
-                const [whData, productsData] = await Promise.all([getWarehouses(), getProducts('limit=10000')]);
+                const [whData, productsData, allTransfers] = await Promise.all([
+                    getWarehouses(), 
+                    getProducts('limit=10000'),
+                    isEditing ? getStockTransfers() : Promise.resolve([])
+                ]);
                 setWarehouses(whData);
                 setProducts(productsData.products);
 
                 if (isEditing) {
-                    const allTransfers = await getStockTransfers();
                     const itemToEdit = allTransfers.find(t => t.id === id);
                     if (itemToEdit) setFormData(itemToEdit);
                     else setError('Không tìm thấy phiếu điều chuyển.');
@@ -53,7 +56,7 @@ const StockTransferFormPage: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        let newFormData = { ...formData, [name]: value };
+        let newFormData: Partial<StockTransfer> = { ...formData, [name]: value };
 
         if (name === 'sourceWarehouseId') {
             const wh = warehouses.find(w => w.id === value);
@@ -121,7 +124,10 @@ const StockTransferFormPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="admin-card">
             <div className="admin-card-header flex justify-between items-center">
                 <h3 className="admin-card-title">{isEditing ? `Sửa Phiếu Điều Chuyển #${formData.transferNumber}` : 'Tạo Phiếu Điều Chuyển Mới'}</h3>
-                <Button type="submit" variant="primary">Lưu</Button>
+                <div>
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin/stock_transfers')} className="mr-2">Hủy</Button>
+                    <Button type="submit" variant="primary">Lưu</Button>
+                </div>
             </div>
             <div className="admin-card-body">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -141,14 +147,14 @@ const StockTransferFormPage: React.FC = () => {
                            {staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
                         </select>
                     </div>
-                    <div className="admin-form-group md:col-span-2"><label>Từ Kho (Nguồn)</label>
-                        <select name="sourceWarehouseId" value={formData.sourceWarehouseId} onChange={handleChange} required>
+                    <div className="admin-form-group md:col-span-2"><label>Từ Kho (Nguồn) *</label>
+                        <select name="sourceWarehouseId" value={formData.sourceWarehouseId || ''} onChange={handleChange} required>
                             <option value="">-- Chọn kho nguồn --</option>
                             {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                         </select>
                     </div>
-                     <div className="admin-form-group md:col-span-2"><label>Đến Kho (Đích)</label>
-                        <select name="destWarehouseId" value={formData.destWarehouseId} onChange={handleChange} required>
+                     <div className="admin-form-group md:col-span-2"><label>Đến Kho (Đích) *</label>
+                        <select name="destWarehouseId" value={formData.destWarehouseId || ''} onChange={handleChange} required>
                             <option value="">-- Chọn kho đích --</option>
                             {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                         </select>
@@ -162,7 +168,7 @@ const StockTransferFormPage: React.FC = () => {
                             <tr key={item.productId} className="border-b">
                                 <td className="p-2">{index + 1}</td>
                                 <td className="p-2">{item.productName}</td>
-                                <td className="p-2"><input className="w-24 text-right" type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} /></td>
+                                <td className="p-2"><input className="w-24 text-right admin-form-group !mb-0 !p-1" type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} /></td>
                                 <td className="p-2"><Button type="button" size="sm" variant="ghost" onClick={() => removeItem(index)}><i className="fas fa-times text-red-500" /></Button></td>
                             </tr>
                         ))}

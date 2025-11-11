@@ -25,7 +25,12 @@ const StockReceiptFormPage: React.FC = () => {
         const loadData = async () => {
             setIsLoading(true);
             try {
-                const [suppliersData, productsData] = await Promise.all([getSuppliers(), getProducts('limit=10000')]);
+                const [suppliersData, productsData, allReceipts] = await Promise.all([
+                    getSuppliers(), 
+                    getProducts('limit=10000'),
+                    isEditing ? getStockReceipts() : Promise.resolve([]),
+                ]);
+
                 setSuppliers(suppliersData);
                 setProducts(productsData.products);
 
@@ -33,7 +38,6 @@ const StockReceiptFormPage: React.FC = () => {
                 setSiteSettings(settingsRaw ? JSON.parse(settingsRaw) : Constants.INITIAL_SITE_SETTINGS);
 
                 if (isEditing) {
-                    const allReceipts = await getStockReceipts();
                     const receiptToEdit = allReceipts.find(r => r.id === id);
                     if (receiptToEdit) {
                         setFormData(receiptToEdit);
@@ -82,7 +86,7 @@ const StockReceiptFormPage: React.FC = () => {
     const handleItemChange = (index: number, field: keyof StockReceiptItem, value: any) => {
         if (!formData.items) return;
         const newItems = [...formData.items];
-        newItems[index] = { ...newItems[index], [field]: value };
+        newItems[index] = { ...newItems[index], [field]: Number(value) };
         setFormData(prev => ({ ...prev, items: newItems }));
     };
 
@@ -149,7 +153,7 @@ const StockReceiptFormPage: React.FC = () => {
                     </header>
                     <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                         <div className="no-print">
-                            <label className="admin-form-group">Nhà Cung Cấp</label>
+                            <label className="admin-form-group">Nhà Cung Cấp *</label>
                             <select name="supplierId" value={formData.supplierId || ''} onChange={handleChange} className="admin-form-group" required>
                                 <option value="">-- Chọn NCC --</option>
                                 {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -175,8 +179,8 @@ const StockReceiptFormPage: React.FC = () => {
                                 <tr key={item.productId} className="border-b">
                                     <td className="p-2">{index + 1}</td>
                                     <td className="p-2">{item.productName}</td>
-                                    <td className="p-2"><input className="w-20 text-right no-print" type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} /><span className="print-only">{item.quantity}</span></td>
-                                    <td className="p-2"><input className="w-32 text-right no-print" type="number" value={item.purchasePrice} onChange={e => handleItemChange(index, 'purchasePrice', Number(e.target.value))} /><span className="print-only">{item.purchasePrice.toLocaleString('vi-VN')}</span></td>
+                                    <td className="p-2"><input className="w-20 text-right no-print admin-form-group !p-1 !mb-0" type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} /><span className="print-only">{item.quantity}</span></td>
+                                    <td className="p-2"><input className="w-32 text-right no-print admin-form-group !p-1 !mb-0" type="number" value={item.purchasePrice} onChange={e => handleItemChange(index, 'purchasePrice', e.target.value)} /><span className="print-only">{item.purchasePrice.toLocaleString('vi-VN')}</span></td>
                                     <td className="p-2 text-right font-semibold">{(item.quantity * item.purchasePrice).toLocaleString('vi-VN')}₫</td>
                                     <td className="p-2 no-print"><Button type="button" size="sm" variant="ghost" onClick={() => removeItem(index)}><i className="fas fa-times text-red-500" /></Button></td>
                                 </tr>

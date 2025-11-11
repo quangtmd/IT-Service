@@ -275,7 +275,6 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-// FIX: Update prop types for async functions to return Promise<void> to match their implementation.
 interface PayrollTabProps {
     payrollRecords: PayrollRecord[],
     onDataChange: () => Promise<void>,

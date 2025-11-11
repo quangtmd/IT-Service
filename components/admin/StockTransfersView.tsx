@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StockTransfer } from '../../types';
-import { getStockTransfers } from '../../services/localDataService';
+import { getStockTransfers, deleteStockTransfer } from '../../services/localDataService';
 import Button from '../ui/Button';
 import BackendConnectionError from '../shared/BackendConnectionError';
 
@@ -26,8 +26,22 @@ const StockTransfersView: React.FC = () => {
 
     useEffect(() => {
         loadData();
+        window.addEventListener('localStorageChange', loadData);
+        return () => window.removeEventListener('localStorageChange', loadData);
     }, [loadData]);
     
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (window.confirm('Bạn có chắc muốn xóa phiếu điều chuyển này?')) {
+            try {
+                await deleteStockTransfer(id);
+                loadData();
+            } catch (err) {
+                alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi xóa.');
+            }
+        }
+    };
+
     const getStatusColor = (status: StockTransfer['status']) => {
         switch (status) {
             case 'Chờ duyệt': return 'bg-yellow-100 text-yellow-800';
@@ -73,6 +87,7 @@ const StockTransfersView: React.FC = () => {
                                         <td>
                                             <div className="flex gap-2 justify-center">
                                                 <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/stock_transfers/edit/${transfer.id}`) }} className="text-blue-600" title="Sửa"><i className="fas fa-edit" /></button>
+                                                <button onClick={(e) => handleDelete(e, transfer.id)} className="text-red-600" title="Xóa"><i className="fas fa-times" /></button>
                                             </div>
                                         </td>
                                     </tr>
