@@ -3,7 +3,7 @@
 import { 
     Product, Order, Article, OrderStatus, MediaItem, ServerInfo, 
     ServiceTicket, Inventory, ChatLogSession, FinancialTransaction, PayrollRecord,
-    Quotation, User, WarrantyTicket, ReturnTicket, Supplier
+    Quotation, User, WarrantyTicket, ReturnTicket, Supplier, Warehouse, StockReceipt, StockIssue, StockTransfer
 } from '../types';
 import { BACKEND_API_BASE_URL } from '../constants';
 
@@ -400,3 +400,66 @@ export const getServerInfo = async (): Promise<ServerInfo> => {
 export const checkBackendHealth = async () => {
     return fetchFromApi<{ status: string; database: string; errorCode?: string; message?: string }>('/api/health');
 };
+// FIX: Exported inventory and logistics functions to resolve import errors.
+// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
+
+// Warehouses
+export const getWarehouses = async (): Promise<Warehouse[]> => {
+    return getLocalStorageItem(Constants.WAREHOUSES_STORAGE_KEY, Constants.INITIAL_WAREHOUSES);
+};
+
+// Stock Receipts
+export const getStockReceipts = async (): Promise<StockReceipt[]> => {
+    return getLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, Constants.INITIAL_STOCK_RECEIPTS);
+};
+
+export const addStockReceipt = async (receipt: Omit<StockReceipt, 'id'>): Promise<StockReceipt> => {
+    const receipts = await getStockReceipts();
+    const newReceipt = { ...receipt, id: `sr-${Date.now()}` };
+    setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, [newReceipt, ...receipts]);
+    return newReceipt;
+};
+
+export const updateStockReceipt = async (id: string, updates: Partial<StockReceipt>): Promise<StockReceipt> => {
+    const receipts = await getStockReceipts();
+    let updatedReceipt: StockReceipt | undefined;
+    const newReceipts = receipts.map(r => {
+        if (r.id === id) {
+            updatedReceipt = { ...r, ...updates };
+            return updatedReceipt;
+        }
+        return r;
+    });
+    if (!updatedReceipt) throw new Error("Receipt not found");
+    setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, newReceipts);
+    return updatedReceipt;
+};
+
+export const deleteStockReceipt = async (id: string): Promise<void> => {
+    const receipts = await getStockReceipts();
+    setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, receipts.filter(r => r.id !== id));
+};
+
+// Stock Issues
+export const getStockIssues = async (): Promise<StockIssue[]> => {
+    return getLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, []);
+};
+export const addStockIssue = async (issue: Omit<StockIssue, 'id'>): Promise<StockIssue> => {
+    const issues = await getStockIssues();
+    const newIssue = { ...issue, id: `si-${Date.now()}` };
+    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, [newIssue, ...issues]);
+    return newIssue;
+};
+// ... Add update and delete for Stock Issues if needed
+
+// Stock Transfers
+export const getStockTransfers = async (): Promise<StockTransfer[]> => {
+    return getLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, []);
+};
+export const addStockTransfer = async (transfer: Omit<StockTransfer, 'id'>): Promise<StockTransfer> => {
+    const transfers = await getStockTransfers();
+    const newTransfer = { ...transfer, id: `stf-${Date.now()}` };
+    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, [newTransfer, ...transfers]);
+    return newTransfer;
+};
+// ... Add update and delete for Stock Transfers if needed

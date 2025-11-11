@@ -844,3 +844,62 @@ export interface ServiceTicket {
   appointment_date?: string; // Thời gian hẹn
   physical_condition?: string; // Tình trạng vật lý & phụ kiện
 }
+
+// --- NEW INVENTORY & LOGISTICS TYPES ---
+export interface Warehouse {
+  id: string;
+  name: string;
+  location?: string;
+}
+
+export interface StockReceiptItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  purchasePrice: number;
+}
+export interface StockReceipt {
+  id: string;
+  receiptNumber: string;
+  supplierId: string;
+  supplierName?: string;
+  date: string; // ISO
+  items: StockReceiptItem[];
+  totalAmount: number;
+  notes?: string;
+  status: 'Nháp' | 'Hoàn thành';
+}
+
+export interface StockIssueItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+}
+export interface StockIssue {
+  id: string;
+  issueNumber: string;
+  orderId: string;
+  date: string; // ISO
+  items: StockIssueItem[];
+  notes?: string;
+  status: 'Nháp' | 'Hoàn thành';
+}
+
+export interface StockTransferItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+}
+export interface StockTransfer {
+  id: string;
+  transferNumber: string;
+  sourceWarehouseId: string;
+  sourceWarehouseName?: string;
+  destWarehouseId: string;
+  destWarehouseName?: string;
+  date: string; // ISO
+  items: StockTransferItem[];
+  notes?: string;
+  status: 'Chờ duyệt' | 'Đã duyệt' | 'Đang vận chuyển' | 'Hoàn thành' | 'Đã hủy';
+  approverId?: string;
+}
