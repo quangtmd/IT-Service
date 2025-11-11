@@ -61,7 +61,7 @@ const InventoryView: React.FC = () => {
 
     const uniqueBrands = useMemo(() => {
         const brands = new Set(allProducts.map(p => p.brand).filter(Boolean));
-        return Array.from(brands);
+        return Array.from(brands) as string[];
     }, [allProducts]);
 
     const handleFilterSubmit = (e: React.FormEvent) => {
@@ -139,7 +139,7 @@ const InventoryView: React.FC = () => {
                      <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">Danh mục</label>
                         <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="admin-form-group !mb-0">
-                            <option value="all">-- Tất cả --</option>
+                            <option value="all">-- Danh mục --</option>
                             {Constants.PRODUCT_CATEGORIES_HIERARCHY.map(cat => (
                                 <option key={cat.slug} value={cat.name}>{cat.name}</option>
                             ))}
@@ -148,7 +148,7 @@ const InventoryView: React.FC = () => {
                      <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">Nhà sản xuất</label>
                         <select value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)} className="admin-form-group !mb-0">
-                            <option value="all">-- Tất cả --</option>
+                            <option value="all">-- Nhà sản xuất --</option>
                             {uniqueBrands.map(brand => <option key={brand} value={brand}>{brand}</option>)}
                         </select>
                     </div>

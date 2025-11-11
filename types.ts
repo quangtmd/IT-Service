@@ -871,9 +871,13 @@ export interface StockReceipt {
   supplierName?: string;
   date: string; // ISO
   items: StockReceiptItem[];
+  subTotal: number;
+  discount: number;
   totalAmount: number;
+  amountPaid: number;
+  paymentMethod: 'Tiền mặt' | 'Thẻ';
   notes?: string;
-  status: 'Nháp' | 'Hoàn thành';
+  status: 'Nháp' | 'Hoàn thành' | 'Công nợ';
 }
 
 export interface StockIssueItem {

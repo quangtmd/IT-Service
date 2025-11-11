@@ -79,8 +79,8 @@ const StockReceiptsView: React.FC = () => {
                                         <td className="text-right font-semibold">{receipt.totalAmount.toLocaleString('vi-VN')}₫</td>
                                         <td>
                                             <div className="flex gap-2 justify-center">
-                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/stock_receipts/edit/${receipt.id}`) }} className="text-blue-600" title="Sửa"><i className="fas fa-edit" /></button>
-                                                <button onClick={(e) => handleDelete(e, receipt.id)} className="text-red-600" title="Xóa"><i className="fas fa-times" /></button>
+                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/stock_receipts/edit/${receipt.id}`) }} className="text-gray-600 hover:text-blue-600" title="Sửa/In"><i className="fas fa-print" /></button>
+                                                <button onClick={(e) => handleDelete(e, receipt.id)} className="text-gray-600 hover:text-red-600" title="Xóa"><i className="fas fa-trash-alt" /></button>
                                             </div>
                                         </td>
                                     </tr>
