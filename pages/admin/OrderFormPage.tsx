@@ -240,9 +240,6 @@ const OrderFormPage: React.FC = () => {
                 <div className="lg:col-span-2 flex flex-col gap-6">
                     {/* Customer Info Card */}
                     <div className="admin-card">
-                         <div className="admin-card-header">
-                            <h3 className="admin-card-title">Thông tin khách hàng</h3>
-                        </div>
                         <div className="admin-card-body">
                             <div className="admin-form-group relative !mb-0">
                                 <label>Tìm kiếm khách hàng</label>
@@ -269,7 +266,7 @@ const OrderFormPage: React.FC = () => {
                     
                     {/* Products Card */}
                     <div className="admin-card">
-                        <div className="admin-card-header">
+                         <div className="admin-card-header">
                             <h3 className="admin-card-title">Sản phẩm/Dịch vụ</h3>
                         </div>
                         <div className="admin-card-body">
@@ -336,100 +333,95 @@ const OrderFormPage: React.FC = () => {
                         <div className="admin-card mt-6">
                              <div className="admin-card-header"><h3 className="admin-card-title">Thanh toán</h3></div>
                              <div className="admin-card-body space-y-3 text-sm">
-                                <InfoItem label="Tổng tiền hàng" value={subtotal.toLocaleString('vi-VN') + '₫'} />
-                                <div className="admin-form-group !mb-0">
-                                    <label className="text-xs text-textMuted">Giảm giá</label>
-                                    <div className="flex items-center gap-1">
-                                        <input type="number" value={discount.value} onChange={e => setDiscount(d => ({...d, value: Number(e.target.value)}))} className="flex-grow !py-1"/>
-                                        <select value={discount.type} onChange={e => setDiscount(d => ({...d, type: e.target.value as any}))} className="!py-1 w-20">
-                                            <option value="fixed">VND</option>
-                                            <option value="percentage">%</option>
-                                        </select>
-                                    </div>
+                                <div className="flex justify-between items-center"><span className="text-gray-600">Tổng tiền hàng:</span><span className="font-semibold">{subtotal.toLocaleString('vi-VN')}₫</span></div>
+                                <div className="flex justify-between items-center">
+                                  <label htmlFor="discountValue" className="text-gray-600">Giảm giá:</label>
+                                  <div className="flex items-center gap-1">
+                                    <input id="discountValue" type="number" value={discount.value} onChange={e => setDiscount(d => ({...d, value: Number(e.target.value)}))} className="w-24 text-right admin-form-group !p-1 !mb-0"/>
+                                    <select value={discount.type} onChange={e => setDiscount(d => ({...d, type: e.target.value as any}))} className="admin-form-group !p-1 !mb-0 w-16">
+                                        <option value="fixed">VND</option>
+                                        <option value="percentage">%</option>
+                                    </select>
+                                  </div>
                                 </div>
-                                <InfoItem label="Tổng cộng" value={totalAmount.toLocaleString('vi-VN') + '₫'} className="!text-lg !font-bold !text-primary pt-2 border-t"/>
-                                <div className="admin-form-group !mb-0">
-                                    <label className="text-xs text-textMuted">Đã thanh toán</label>
-                                    <input type="number" name="paidAmount" value={formData.paidAmount || ''} onChange={e => handleChange(e)} className="!py-1"/>
+                                <div className="flex justify-between items-center py-2 border-t text-base">
+                                  <span className="font-bold">Thành tiền:</span>
+                                  <span className="font-bold text-xl text-primary">{totalAmount.toLocaleString('vi-VN')}₫</span>
                                 </div>
-                                 <InfoItem label="Còn lại" value={amountDue.toLocaleString('vi-VN') + '₫'} className="!text-base !font-semibold !text-red-600"/>
+                                <div className="flex justify-between items-center">
+                                  <label htmlFor="paidAmount" className="text-gray-600">Đã thanh toán:</label>
+                                  <input type="number" name="paidAmount" id="paidAmount" value={formData.paidAmount || ''} onChange={e => handleChange(e)} className="w-32 text-right admin-form-group !p-1 !mb-0"/>
+                                </div>
+                                 <div className="flex justify-between items-center font-semibold text-base">
+                                  <span className="text-textBase">Còn lại:</span>
+                                  <span className="text-red-600">{amountDue.toLocaleString('vi-VN')}₫</span>
+                                </div>
                              </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            {/* --- Print Section (Hidden) --- */}
-            <div className="print-wrapper hidden print:block">
-                 <div className="print-container max-w-4xl mx-auto p-4 bg-white text-black">
-                    {/* Print Header */}
-                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                        <div>
-                            <h2 className="font-bold text-lg">{siteSettings.companyName}</h2>
-                            <p>Địa chỉ: {siteSettings.companyAddress}</p>
-                            <p>Điện thoại: {siteSettings.companyPhone}</p>
+            {/* --- Print Section (Hidden by default) --- */}
+            <div className="print-wrapper hidden">
+                <div className="print-container">
+                    <header className="print-invoice-header">
+                         <div>
+                            <svg width="125" height="45" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg">
+                              <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: #ef4444; font-style: italic; } .logo-main-black { font-family: Impact, sans-serif; font-size: 36px; fill: #000000; font-style: italic; } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #000000; letter-spacing: 2px; }`}</style>
+                              <text x="0" y="30" className="logo-main-red">IQ</text>
+                              <text x="38" y="30" className="logo-main-black">TECH</text>
+                              <text x="38" y="42" className="logo-sub">TECHNOLOGY</text>
+                            </svg>
+                            <p className="text-xs mt-2">{siteSettings.companyAddress}</p>
+                            <p className="text-xs">ĐT: {siteSettings.companyPhone} - Email: {siteSettings.companyEmail}</p>
                         </div>
-                        <div className="text-right">
-                            <p>Số HĐ: <span className="font-bold">{formData.id}</span></p>
-                            <p>Mã số thuế: 010614591</p>
+                        <div className="text-right print-invoice-title-section">
+                            <h1>Hóa Đơn Bán Hàng</h1>
+                            <p>Số HĐ: <span>{formData.id}</span></p>
+                            <p>Ngày: <span>{new Date(formData.orderDate || Date.now()).toLocaleDateString('vi-VN')}</span></p>
                         </div>
-                    </div>
-                    <div className="text-center mb-6">
-                        <h1 className="text-3xl font-bold uppercase">Hóa Đơn Bán Hàng</h1>
-                        <p>Ngày {new Date(formData.orderDate || Date.now()).getDate()} tháng {new Date(formData.orderDate || Date.now()).getMonth() + 1} năm {new Date(formData.orderDate || Date.now()).getFullYear()}</p>
-                    </div>
-
-                    {/* Customer Info */}
-                    <div className="border-t border-b border-dashed border-black py-2 mb-4 text-sm">
-                        <div className="grid grid-cols-2 gap-x-4">
-                            <p><strong className="w-24 inline-block">Khách hàng:</strong> <span className="font-bold">{formData.customerInfo?.fullName}</span></p>
-                            <p><strong className="w-16 inline-block">Mã KH:</strong> {formData.userId || 'Khách lẻ'}</p>
-                            <p><strong className="w-24 inline-block">Địa chỉ:</strong> {formData.customerInfo?.address}</p>
-                            <p><strong className="w-16 inline-block">Điện thoại:</strong> {formData.customerInfo?.phone}</p>
-                        </div>
-                    </div>
-                   
-                    {/* Items Table */}
-                    <div className="overflow-x-auto mb-4">
-                        <table className="w-full text-sm text-left print-table">
-                            <thead className="bg-gray-100">
-                                <tr><th className="p-1">STT</th><th className="p-1">Tên hàng hóa</th><th className="p-1 text-center">ĐVT</th><th className="p-1 text-right">Số lượng</th><th className="p-1 text-right">Đơn giá</th><th className="p-1 text-right">Thành tiền</th></tr>
+                    </header>
+                    <section className="print-customer-info">
+                        <h3>Thông tin khách hàng</h3>
+                        <p><strong>Khách hàng:</strong> {formData.customerInfo?.fullName}</p>
+                        <p><strong>Địa chỉ:</strong> {formData.customerInfo?.address}</p>
+                        <p><strong>Điện thoại:</strong> {formData.customerInfo?.phone}</p>
+                    </section>
+                    <main>
+                        <table className="print-items-table">
+                            <thead>
+                                <tr><th>STT</th><th>Tên hàng hóa/Dịch vụ</th><th>ĐVT</th><th className="text-right">SL</th><th className="text-right">Đơn giá</th><th className="text-right">Thành tiền</th></tr>
                             </thead>
                             <tbody>
                                 {formData.items?.map((item, index) => (
                                     <tr key={item.productId || index}>
-                                        <td className="p-1 text-center">{index + 1}</td>
-                                        <td className="p-1">{item.productName}</td>
-                                        <td className="p-1 text-center">{item.unit}</td>
-                                        <td className="p-1 text-right">{item.quantity}</td>
-                                        <td className="p-1 text-right">{item.price.toLocaleString('vi-VN')}</td>
-                                        <td className="p-1 text-right font-semibold">{(item.quantity * item.price).toLocaleString('vi-VN')}</td>
+                                        <td className="text-center">{index + 1}</td>
+                                        <td>{item.productName}</td>
+                                        <td className="text-center">{item.unit}</td>
+                                        <td className="text-right">{item.quantity}</td>
+                                        <td className="text-right">{item.price.toLocaleString('vi-VN')}</td>
+                                        <td className="text-right font-semibold">{(item.quantity * item.price).toLocaleString('vi-VN')}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </div>
-                    
-                    {/* Summary */}
-                    <div className="flex justify-end mt-4">
-                        <div className="w-full max-w-sm text-sm">
-                            <div className="flex justify-between py-1 border-b"><span className="text-gray-600">Tổng tiền hàng:</span><span className="font-semibold">{subtotal.toLocaleString('vi-VN')}₫</span></div>
-                            <div className="flex justify-between py-1 border-b"><span className="text-gray-600">Giảm giá:</span><span className="font-semibold">{discountAmount.toLocaleString('vi-VN')}₫</span></div>
-                            <div className="flex justify-between py-2 text-base"><span className="font-bold">Tổng cộng thanh toán:</span><span className="font-bold text-red-600">{totalAmount.toLocaleString('vi-VN')}₫</span></div>
+                    </main>
+                    <section className="print-totals-section">
+                      <div className="print-totals-wrapper">
+                        <div className="print-totals-row"><span>Tổng tiền hàng:</span><span>{subtotal.toLocaleString('vi-VN')}₫</span></div>
+                        <div className="print-totals-row"><span>Giảm giá:</span><span>{discountAmount.toLocaleString('vi-VN')}₫</span></div>
+                        <div className="print-totals-row grand-total"><span>THÀNH TIỀN THANH TOÁN:</span><span>{totalAmount.toLocaleString('vi-VN')}₫</span></div>
+                      </div>
+                    </section>
+                     <footer className="print-footer">
+                        <p className="mb-8">Bằng chữ: (...)</p>
+                        <div className="print-signatures">
+                            <div><p className="font-bold">Người mua hàng</p><p>(Ký, ghi rõ họ tên)</p></div>
+                            <div><p className="font-bold">Người bán hàng</p><p>(Ký, ghi rõ họ tên)</p></div>
                         </div>
-                    </div>
-                     <div className="mt-1 text-right text-sm italic">
-                        <p>(Viết bằng chữ: ...)</p>
-                    </div>
-
-                    {/* Signatures */}
-                    <div className="mt-16 grid grid-cols-5 gap-4 text-center text-sm">
-                        <div><p className="font-bold">Người mua hàng</p><p>(Ký, họ tên)</p></div>
-                        <div><p className="font-bold">Người giao hàng</p><p>(Ký, họ tên)</p></div>
-                        <div><p className="font-bold">Thủ kho</p><p>(Ký, họ tên)</p></div>
-                        <div><p className="font-bold">Người lập phiếu</p><p>(Ký, họ tên)</p></div>
-                        <div><p className="font-bold">Kế toán</p><p>(Ký, họ tên)</p></div>
-                    </div>
+                        <p className="mt-8">Cảm ơn quý khách đã mua hàng tại {siteSettings.companyName}!</p>
+                    </footer>
                 </div>
             </div>
         </form>
