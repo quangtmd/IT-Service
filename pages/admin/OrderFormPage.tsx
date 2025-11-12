@@ -9,36 +9,12 @@ import * as Constants from '../../constants';
 
 const ORDER_STATUS_OPTIONS: OrderStatus[] = ['Phiếu tạm', 'Chờ xử lý', 'Đã xác nhận', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'];
 
-const FormattedNumberInput: React.FC<{ value: number; onChange: (value: number) => void; className?: string; }> = ({ value, onChange, className }) => {
-    const [displayValue, setDisplayValue] = useState(value?.toLocaleString('vi-VN') || '0');
-
-    useEffect(() => {
-        if (Number(displayValue.replace(/[^0-9]/g, '')) !== value) {
-            setDisplayValue(value.toLocaleString('vi-VN'));
-        }
-    }, [value]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const rawValue = e.target.value.replace(/[^0-9]/g, '');
-        const numValue = Number(rawValue);
-        setDisplayValue(numValue.toLocaleString('vi-VN'));
-    };
-    
-    const handleBlur = () => {
-        const rawValue = displayValue.replace(/[^0-9]/g, '');
-        onChange(Number(rawValue));
-    };
-
-    return (
-        <input
-            type="text"
-            value={displayValue}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className={className}
-        />
-    );
-};
+const InfoItem: React.FC<{ label: string; value?: string | number | null; children?: React.ReactNode; className?: string }> = ({ label, value, children, className }) => (
+    <div className={className}>
+        <p className="text-xs text-textMuted">{label}</p>
+        {children || <p className="text-sm font-medium text-textBase">{value || 'N/A'}</p>}
+    </div>
+);
 
 
 const OrderFormPage: React.FC = () => {
@@ -228,159 +204,121 @@ const OrderFormPage: React.FC = () => {
     const totalAmount = formData.totalAmount || 0;
 
     return (
-        <div className="admin-card">
-            <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                <div className="admin-card-header flex justify-between items-center no-print">
-                    <h3 className="admin-card-title">{isEditing ? `Sửa Đơn hàng #${formData.id?.slice(-6)}` : 'Tạo Đơn hàng Mới'}</h3>
-                    <div>
-                        <Button type="button" variant="outline" onClick={handlePrint} className="mr-2" leftIcon={<i className="fas fa-print"></i>}>In Phiếu</Button>
-                        <Button type="button" variant="outline" onClick={() => navigate('/admin/orders')}>Hủy</Button>
-                    </div>
-                </div>
-                
-                {/* Main Content & Print Area */}
-                <div className="admin-card-body print-wrapper">
-                     <div className="print-container max-w-4xl mx-auto p-4 bg-white">
-                        {/* Print Header */}
-                        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                            <div>
-                                <h2 className="font-bold text-lg">{siteSettings.companyName}</h2>
-                                <p>Địa chỉ: {siteSettings.companyAddress}</p>
-                                <p>Điện thoại: {siteSettings.companyPhone}</p>
-                                <p>Email: {siteSettings.companyEmail}</p>
-                            </div>
-                            <div className="text-right">
-                                <p>Số HĐ: <span className="font-bold">{formData.id?.slice(-6)}</span></p>
-                                <p>Mã số thuế: 010614591</p>
-                            </div>
-                        </div>
-                        <div className="text-center mb-6">
-                            <h1 className="text-3xl font-bold uppercase">Hóa Đơn Bán Hàng</h1>
-                            <p>Ngày {new Date(formData.orderDate || Date.now()).getDate()} tháng {new Date(formData.orderDate || Date.now()).getMonth() + 1} năm {new Date(formData.orderDate || Date.now()).getFullYear()}</p>
-                        </div>
-
-                        {/* Customer Info */}
-                        <div className="border-t border-b border-dashed border-black py-2 mb-4">
-                            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 no-print">
-                                <div className="lg:col-span-3 space-y-4">
-                                    <h3 className="font-bold text-base">Thông tin khách hàng</h3>
-                                     <div className="admin-form-group relative !mb-0">
-                                        <label>Tìm kiếm khách hàng</label>
-                                        <div className="flex items-center gap-2">
-                                            <input type="text" placeholder="Tìm theo Tên, SĐT, Mã KH, Địa chỉ..." value={customerSearchText} onChange={handleCustomerSearchChange} autoComplete="off" className="flex-grow"/>
-                                            <Button type="button" size="sm" variant="outline" onClick={() => navigate('/admin/partners/customers/new')} title="Thêm khách hàng mới"><i className="fas fa-plus"></i></Button>
-                                        </div>
-                                        {customerResults.length > 0 && (
-                                            <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
-                                                {customerResults.map(c => <li key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{c.username} ({c.phone || c.email})</li>)}
-                                            </ul>
-                                        )}
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="admin-form-group"><label>Mã khách hàng</label><input type="text" value={formData.userId || 'Khách lẻ'} disabled className="bg-gray-100" /></div>
-                                        <div className="admin-form-group"><label>Tên khách hàng</label><input type="text" name="fullName" value={formData.customerInfo?.fullName || ''} onChange={handleCustomerInfoChange}/></div>
-                                        <div className="admin-form-group"><label>Số điện thoại</label><input type="tel" name="phone" value={formData.customerInfo?.phone || ''} onChange={handleCustomerInfoChange}/></div>
-                                        <div className="admin-form-group"><label>Địa chỉ</label><input type="text" name="address" value={formData.customerInfo?.address || ''} onChange={handleCustomerInfoChange}/></div>
-                                    </div>
-                                </div>
-                                <div className="lg:col-span-2 space-y-4">
-                                     <h3 className="font-bold text-base">Thông tin đơn hàng</h3>
-                                     <div className="admin-form-group">
-                                        <label>Trạng thái đơn hàng</label>
-                                        <select name="status" value={formData.status} onChange={handleChange}>
-                                            {ORDER_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="admin-form-group">
-                                        <label>Nhân viên bán hàng</label>
-                                        <select name="creatorId" value={formData.creatorId || ''} onChange={handleChange}>
-                                            <option value="">-- Chọn nhân viên --</option>
-                                            {staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                             <div className="grid grid-cols-2 gap-x-4 text-sm print-only">
-                                <p><strong className="w-24 inline-block">Khách hàng:</strong> {formData.customerInfo?.fullName}</p>
-                                <p><strong className="w-24 inline-block">Mã KH:</strong> {formData.userId || 'Khách lẻ'}</p>
-                                <p><strong className="w-24 inline-block">Địa chỉ:</strong> {formData.customerInfo?.address}</p>
-                                <p><strong className="w-24 inline-block">Điện thoại:</strong> {formData.customerInfo?.phone}</p>
-                                <p><strong className="w-24 inline-block">Mã số thuế:</strong></p>
-                            </div>
-                        </div>
-                       
-                        {/* Items Table */}
-                        <div className="admin-form-subsection-title">Sản phẩm/Dịch vụ</div>
-                        <div className="overflow-x-auto mb-4">
-                            <table className="w-full text-sm text-left print-table">
-                                <thead className="bg-gray-100">
-                                    <tr><th className="p-2 w-8">STT</th><th className="p-2">Tên hàng hóa</th><th className="p-2 text-right">Số lượng</th><th className="p-2 text-center">ĐVT</th><th className="p-2 text-right">Đơn giá</th><th className="p-2 text-right">Thành tiền</th><th className="p-2 no-print"></th></tr>
-                                </thead>
-                                <tbody>
-                                    {formData.items?.length === 0 && <tr><td colSpan={7} className="text-center py-4 text-gray-500">Chưa có sản phẩm nào.</td></tr>}
-                                    {formData.items?.map((item, index) => (
-                                        <tr key={index} className="border-b">
-                                            <td className="p-1 text-center">{index + 1}</td>
-                                            <td className="p-1">{item.productName}</td>
-                                            <td className="p-1"><input className="w-20 text-right no-print admin-form-group !p-1 !mb-0" type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} /><span className="print-only">{item.quantity}</span></td>
-                                            <td className="p-1"><input className="w-16 text-center no-print admin-form-group !p-1 !mb-0" type="text" value={item.unit || ''} onChange={e => handleItemChange(index, 'unit', e.target.value)} /><span className="print-only">{item.unit}</span></td>
-                                            <td className="p-1"><FormattedNumberInput value={item.price} onChange={value => handleItemChange(index, 'price', value)} className="w-32 text-right no-print admin-form-group !p-1 !mb-0" /><span className="print-only">{item.price.toLocaleString('vi-VN')}</span></td>
-                                            <td className="p-1 text-right font-semibold">{(item.quantity * item.price).toLocaleString('vi-VN')}₫</td>
-                                            <td className="p-1 text-center no-print"><Button type="button" size="sm" variant="ghost" className="!text-red-500" onClick={() => removeItem(index)}><i className="fas fa-times"></i></Button></td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className="relative admin-form-group no-print">
-                            <input type="text" placeholder="Tìm kiếm để thêm sản phẩm..." value={productSearch} onChange={e => setProductSearch(e.target.value)} />
-                            {filteredProducts.length > 0 && (
-                                <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto">
-                                    {filteredProducts.map(p => <li key={p.id} onClick={() => addItem(p)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{p.name}</li>)}
-                                </ul>
-                            )}
-                        </div>
-                        
-                        {formData.notes && (
-                            <div className="mt-4 print-only">
-                                <h3 className="font-bold text-sm">Ghi chú:</h3>
-                                <p className="text-sm italic border p-2">{formData.notes}</p>
-                            </div>
-                        )}
-                        
-                        {/* Summary */}
-                        <div className="flex justify-end mt-4">
-                            <div className="w-full max-w-xs text-sm">
-                                <div className="flex justify-between py-1 border-b"><span className="text-gray-600">Tổng tiền hàng:</span><span className="font-semibold">{totalAmount.toLocaleString('vi-VN')}₫</span></div>
-                                <div className="flex justify-between py-1 border-b"><span className="text-gray-600">Thuế VAT (10%):</span><span className="font-semibold">{(totalAmount * 0.1).toLocaleString('vi-VN')}₫</span></div>
-                                <div className="flex justify-between py-2 text-base"><span className="font-bold">Tổng cộng:</span><span className="font-bold text-red-600">{(totalAmount * 1.1).toLocaleString('vi-VN')}₫</span></div>
-                            </div>
-                        </div>
-
-                         <div className="admin-form-group no-print mt-4">
-                            <label>Ghi chú</label>
-                            <textarea name="notes" value={formData.notes || ''} onChange={handleChange} rows={2} className="text-sm"></textarea>
-                        </div>
-
-
-                        {/* Signatures */}
-                        <div className="mt-16 grid grid-cols-5 gap-4 text-center text-sm">
-                            <div><p className="font-bold">Khách hàng</p><p>(Ký & ghi rõ họ tên)</p></div>
-                            <div><p className="font-bold">Nhân viên bán hàng</p><p>(Ký & ghi rõ họ tên)</p><p className="mt-12 font-semibold">{creator?.username || ''}</p></div>
-                            <div><p className="font-bold">Thủ kho</p><p>(Ký & ghi rõ họ tên)</p></div>
-                            <div><p className="font-bold">Nhân viên kế toán</p><p>(Ký & ghi rõ họ tên)</p></div>
-                            <div><p className="font-bold">Giám đốc</p><p>(Ký & ghi rõ họ tên)</p></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="admin-modal-footer no-print">
-                    <Button type="button" variant="outline" onClick={() => navigate('/admin/orders')}>Hủy</Button>
+        <form onSubmit={handleSubmit}>
+            <div className="admin-page-header flex justify-between items-center !m-0 !mb-6 no-print">
+                <h1 className="admin-page-title">{isEditing ? `Chỉnh sửa Đơn hàng` : 'Tạo Đơn hàng Mới'}</h1>
+                 <div>
+                    <Button type="button" variant="outline" onClick={handlePrint} className="mr-2" leftIcon={<i className="fas fa-print"></i>}>In Phiếu</Button>
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin/orders')} className="mr-2">Hủy</Button>
                     <Button type="submit" variant="primary">Lưu Đơn hàng</Button>
                 </div>
-            </form>
-        </div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Content */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Customer Info Card */}
+                    <div className="admin-card">
+                         <div className="admin-card-header">
+                            <h3 className="admin-card-title">Thông tin khách hàng</h3>
+                        </div>
+                        <div className="admin-card-body">
+                            <div className="admin-form-group relative !mb-0">
+                                <label>Tìm kiếm khách hàng</label>
+                                <div className="flex items-center gap-2">
+                                    <input type="text" placeholder="Tìm theo Tên, SĐT, Mã KH, Địa chỉ..." value={customerSearchText} onChange={handleCustomerSearchChange} autoComplete="off" className="flex-grow"/>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => navigate('/admin/customers/new')} title="Thêm khách hàng mới"><i className="fas fa-plus"></i></Button>
+                                </div>
+                                {customerResults.length > 0 && (
+                                    <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
+                                        {customerResults.map(c => <li key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{c.username} ({c.phone || c.email})</li>)}
+                                    </ul>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                <div className="admin-form-group"><label>Mã khách hàng</label><input type="text" value={formData.userId || 'Khách lẻ'} disabled className="bg-gray-100" /></div>
+                                <div className="admin-form-group"><label>Tên khách hàng</label><input type="text" name="fullName" value={formData.customerInfo?.fullName || ''} onChange={handleCustomerInfoChange}/></div>
+                                <div className="admin-form-group"><label>Số điện thoại</label><input type="tel" name="phone" value={formData.customerInfo?.phone || ''} onChange={handleCustomerInfoChange}/></div>
+                                <div className="admin-form-group"><label>Địa chỉ</label><input type="text" name="address" value={formData.customerInfo?.address || ''} onChange={handleCustomerInfoChange}/></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Products Card */}
+                    <div className="admin-card">
+                        <div className="admin-card-header">
+                            <h3 className="admin-card-title">Sản phẩm/Dịch vụ</h3>
+                        </div>
+                        <div className="admin-card-body">
+                            <div className="overflow-x-auto mb-4">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-gray-50">
+                                        <tr><th className="p-2 w-8">STT</th><th className="p-2">Tên hàng hóa</th><th className="p-2 text-right">SL</th><th className="p-2 text-center">ĐVT</th><th className="p-2 text-right">Đơn giá</th><th className="p-2 text-right">Thành tiền</th><th className="p-2"></th></tr>
+                                    </thead>
+                                    <tbody>
+                                        {formData.items?.length === 0 && <tr><td colSpan={7} className="text-center py-4 text-gray-500">Chưa có sản phẩm nào.</td></tr>}
+                                        {formData.items?.map((item, index) => (
+                                            <tr key={index} className="border-b">
+                                                <td className="p-1 text-center">{index + 1}</td>
+                                                <td className="p-1">{item.productName}</td>
+                                                <td className="p-1"><input className="w-20 text-right admin-form-group !p-1 !mb-0" type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} /></td>
+                                                <td className="p-1"><input className="w-16 text-center admin-form-group !p-1 !mb-0" type="text" value={item.unit || ''} onChange={e => handleItemChange(index, 'unit', e.target.value)} /></td>
+                                                <td className="p-1"><input className="w-32 text-right admin-form-group !p-1 !mb-0" type="number" value={item.price} onChange={e => handleItemChange(index, 'price', Number(e.target.value))} /></td>
+                                                <td className="p-1 text-right font-semibold">{(item.quantity * item.price).toLocaleString('vi-VN')}₫</td>
+                                                <td className="p-1 text-center"><Button type="button" size="sm" variant="ghost" className="!text-red-500" onClick={() => removeItem(index)}><i className="fas fa-times"></i></Button></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="relative admin-form-group">
+                                <input type="text" placeholder="Tìm kiếm để thêm sản phẩm..." value={productSearch} onChange={e => setProductSearch(e.target.value)} />
+                                {filteredProducts.length > 0 && (
+                                    <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto">
+                                        {filteredProducts.map(p => <li key={p.id} onClick={() => addItem(p)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{p.name}</li>)}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sidebar */}
+                <div className="lg:col-span-1 space-y-6">
+                    <div className="sticky top-24">
+                        <div className="admin-card">
+                            <div className="admin-card-header"><h3 className="admin-card-title">Thông tin Phiếu</h3></div>
+                            <div className="admin-card-body space-y-4">
+                                <InfoItem label="Mã phiếu" value={formData.id?.slice(-8).toUpperCase()} />
+                                <InfoItem label="Ngày tạo" value={new Date(formData.orderDate || Date.now()).toLocaleString('vi-VN')} />
+                                <div className="admin-form-group">
+                                    <label>Trạng thái đơn hàng</label>
+                                    <select name="status" value={formData.status} onChange={handleChange}>
+                                        {ORDER_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                    </select>
+                                </div>
+                                <div className="admin-form-group">
+                                    <label>Nhân viên bán hàng</label>
+                                    <select name="creatorId" value={formData.creatorId || ''} onChange={handleChange}>
+                                        <option value="">-- Chọn nhân viên --</option>
+                                        {staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+                                    </select>
+                                </div>
+                                 <div className="admin-form-group">
+                                    <label>Ghi chú</label>
+                                    <textarea name="notes" value={formData.notes || ''} onChange={handleChange} rows={3} className="text-sm"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+             {/* --- Print Section (Hidden) --- */}
+            <div className="print-wrapper hidden print:block">
+                {/* Content for printing can be duplicated or specially formatted here */}
+            </div>
+        </form>
     );
 };
 
