@@ -35,13 +35,25 @@ const OrderFormPage: React.FC = () => {
     const [customerSearchText, setCustomerSearchText] = useState('');
     const [customerResults, setCustomerResults] = useState<User[]>([]);
 
+    const [discount, setDiscount] = useState({ type: 'fixed' as 'fixed' | 'percentage', value: 0 });
+
+
     const staffUsers = useMemo(() => users.filter(u => u.role === 'admin' || u.role === 'staff'), [users]);
     
-    const calculateTotals = useCallback((items: OrderItem[]): { totalAmount: number; totalCost: number } => {
-        const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        const totalCost = items.reduce((sum, item) => sum + (item.purchasePrice || 0) * item.quantity, 0);
-        return { totalAmount, totalCost };
-    }, []);
+    const subtotal = useMemo(() => {
+        return formData?.items?.reduce((sum, item) => sum + (item.quantity * item.price), 0) || 0;
+    }, [formData?.items]);
+    
+    const discountAmount = useMemo(() => {
+        if (discount.type === 'percentage') {
+            return subtotal * (discount.value / 100);
+        }
+        return discount.value;
+    }, [subtotal, discount]);
+
+    const totalAmount = useMemo(() => subtotal - discountAmount, [subtotal, discountAmount]);
+    const amountDue = useMemo(() => totalAmount - (formData?.paidAmount || 0), [totalAmount, formData?.paidAmount]);
+
 
     useEffect(() => {
         const loadData = async () => {
@@ -74,6 +86,7 @@ const OrderFormPage: React.FC = () => {
                         orderDate: new Date().toISOString(),
                         items: [],
                         totalAmount: 0,
+                        paidAmount: 0,
                         cost: 0,
                         profit: 0,
                         status: 'Phiếu tạm',
@@ -94,11 +107,13 @@ const OrderFormPage: React.FC = () => {
     
     useEffect(() => {
         if(formData?.items) {
-            const { totalAmount, totalCost } = calculateTotals(formData.items);
+            const totalCost = formData.items.reduce((sum, item) => sum + (item.purchasePrice || 0) * item.quantity, 0);
             const profit = totalAmount - totalCost;
             setFormData(prev => prev ? ({...prev, totalAmount, cost: totalCost, profit }) : null);
+        } else if (formData) {
+            setFormData(prev => prev ? ({...prev, totalAmount }) : null);
         }
-    }, [formData?.items, calculateTotals]);
+    }, [totalAmount, formData?.items]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         if (!formData) return;
@@ -125,6 +140,11 @@ const OrderFormPage: React.FC = () => {
             ).slice(0, 5));
         } else {
             setCustomerResults([]);
+            setFormData(prev => prev ? ({
+                ...prev,
+                userId: undefined,
+                customerInfo: { fullName: '', phone: '', address: '', email: '', notes: prev.customerInfo?.notes || '' }
+            }) : null);
         }
     };
 
@@ -147,7 +167,7 @@ const OrderFormPage: React.FC = () => {
     const handleItemChange = (index: number, field: keyof OrderItem, value: any) => {
         if (!formData?.items) return;
         const newItems = [...formData.items];
-        newItems[index] = { ...newItems[index], [field]: value };
+        newItems[index] = { ...newItems[index], [field]: Number(value) };
         setFormData(p => p ? ({ ...p, items: newItems }) : null);
     };
 
@@ -201,14 +221,12 @@ const OrderFormPage: React.FC = () => {
     if (error) return <div className="admin-card"><div className="admin-card-body text-center text-red-500">{error}</div></div>;
     if (!formData) return null;
 
-    const totalAmount = formData.totalAmount || 0;
-
     return (
         <form onSubmit={handleSubmit}>
             <div className="admin-page-header flex justify-between items-center !m-0 !mb-6 no-print">
                 <h1 className="admin-page-title">{isEditing ? `Chỉnh sửa Đơn hàng` : 'Tạo Đơn hàng Mới'}</h1>
                  <div>
-                    <Button type="button" variant="outline" onClick={handlePrint} className="mr-2" leftIcon={<i className="fas fa-print"></i>}>In Phiếu</Button>
+                    <Button type="button" variant="outline" onClick={handlePrint} className="mr-2" leftIcon={<i className="fas fa-print"></i>}>Lưu & In</Button>
                     <Button type="button" variant="outline" onClick={() => navigate('/admin/orders')} className="mr-2">Hủy</Button>
                     <Button type="submit" variant="primary">Lưu Đơn hàng</Button>
                 </div>
@@ -235,12 +253,14 @@ const OrderFormPage: React.FC = () => {
                                     </ul>
                                 )}
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                                <div className="admin-form-group"><label>Mã khách hàng</label><input type="text" value={formData.userId || 'Khách lẻ'} disabled className="bg-gray-100" /></div>
-                                <div className="admin-form-group"><label>Tên khách hàng</label><input type="text" name="fullName" value={formData.customerInfo?.fullName || ''} onChange={handleCustomerInfoChange}/></div>
-                                <div className="admin-form-group"><label>Số điện thoại</label><input type="tel" name="phone" value={formData.customerInfo?.phone || ''} onChange={handleCustomerInfoChange}/></div>
-                                <div className="admin-form-group"><label>Địa chỉ</label><input type="text" name="address" value={formData.customerInfo?.address || ''} onChange={handleCustomerInfoChange}/></div>
-                            </div>
+                            {customerSearchText && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                    <div className="admin-form-group"><label>Mã khách hàng</label><input type="text" value={formData.userId || 'Khách lẻ'} disabled className="bg-gray-100" /></div>
+                                    <div className="admin-form-group"><label>Tên khách hàng</label><input type="text" name="fullName" value={formData.customerInfo?.fullName || ''} onChange={handleCustomerInfoChange}/></div>
+                                    <div className="admin-form-group"><label>Số điện thoại</label><input type="tel" name="phone" value={formData.customerInfo?.phone || ''} onChange={handleCustomerInfoChange}/></div>
+                                    <div className="admin-form-group"><label>Địa chỉ</label><input type="text" name="address" value={formData.customerInfo?.address || ''} onChange={handleCustomerInfoChange}/></div>
+                                </div>
+                            )}
                         </div>
                     </div>
                     
@@ -250,7 +270,15 @@ const OrderFormPage: React.FC = () => {
                             <h3 className="admin-card-title">Sản phẩm/Dịch vụ</h3>
                         </div>
                         <div className="admin-card-body">
-                            <div className="overflow-x-auto mb-4">
+                             <div className="relative admin-form-group">
+                                <input type="text" placeholder="Tìm kiếm để thêm sản phẩm..." value={productSearch} onChange={e => setProductSearch(e.target.value)} />
+                                {filteredProducts.length > 0 && (
+                                    <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
+                                        {filteredProducts.map(p => <li key={p.id} onClick={() => addItem(p)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{p.name}</li>)}
+                                    </ul>
+                                )}
+                            </div>
+                            <div className="overflow-x-auto">
                                 <table className="w-full text-sm text-left">
                                     <thead className="bg-gray-50">
                                         <tr><th className="p-2 w-8">STT</th><th className="p-2">Tên hàng hóa</th><th className="p-2 text-right">SL</th><th className="p-2 text-center">ĐVT</th><th className="p-2 text-right">Đơn giá</th><th className="p-2 text-right">Thành tiền</th><th className="p-2"></th></tr>
@@ -258,26 +286,18 @@ const OrderFormPage: React.FC = () => {
                                     <tbody>
                                         {formData.items?.length === 0 && <tr><td colSpan={7} className="text-center py-4 text-gray-500">Chưa có sản phẩm nào.</td></tr>}
                                         {formData.items?.map((item, index) => (
-                                            <tr key={index} className="border-b">
+                                            <tr key={item.productId || index} className="border-b">
                                                 <td className="p-1 text-center">{index + 1}</td>
                                                 <td className="p-1">{item.productName}</td>
-                                                <td className="p-1"><input className="w-20 text-right admin-form-group !p-1 !mb-0" type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} /></td>
-                                                <td className="p-1"><input className="w-16 text-center admin-form-group !p-1 !mb-0" type="text" value={item.unit || ''} onChange={e => handleItemChange(index, 'unit', e.target.value)} /></td>
-                                                <td className="p-1"><input className="w-32 text-right admin-form-group !p-1 !mb-0" type="number" value={item.price} onChange={e => handleItemChange(index, 'price', Number(e.target.value))} /></td>
+                                                <td className="p-1"><input className="w-20 text-right admin-form-group !p-1 !mb-0" type="number" min="1" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} /></td>
+                                                <td className="p-1 text-center">{item.unit}</td>
+                                                <td className="p-1"><input className="w-32 text-right admin-form-group !p-1 !mb-0" type="number" value={item.price} onChange={e => handleItemChange(index, 'price', e.target.value)} /></td>
                                                 <td className="p-1 text-right font-semibold">{(item.quantity * item.price).toLocaleString('vi-VN')}₫</td>
                                                 <td className="p-1 text-center"><Button type="button" size="sm" variant="ghost" className="!text-red-500" onClick={() => removeItem(index)}><i className="fas fa-times"></i></Button></td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
-                            </div>
-                            <div className="relative admin-form-group">
-                                <input type="text" placeholder="Tìm kiếm để thêm sản phẩm..." value={productSearch} onChange={e => setProductSearch(e.target.value)} />
-                                {filteredProducts.length > 0 && (
-                                    <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto">
-                                        {filteredProducts.map(p => <li key={p.id} onClick={() => addItem(p)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{p.name}</li>)}
-                                    </ul>
-                                )}
                             </div>
                         </div>
                     </div>
@@ -309,6 +329,28 @@ const OrderFormPage: React.FC = () => {
                                     <textarea name="notes" value={formData.notes || ''} onChange={handleChange} rows={3} className="text-sm"></textarea>
                                 </div>
                             </div>
+                        </div>
+                        <div className="admin-card mt-6">
+                             <div className="admin-card-header"><h3 className="admin-card-title">Thanh toán</h3></div>
+                             <div className="admin-card-body space-y-3 text-sm">
+                                <InfoItem label="Tổng tiền hàng" value={subtotal.toLocaleString('vi-VN') + '₫'} />
+                                <div className="admin-form-group !mb-0">
+                                    <label className="text-xs text-textMuted">Giảm giá</label>
+                                    <div className="flex items-center gap-1">
+                                        <input type="number" value={discount.value} onChange={e => setDiscount(d => ({...d, value: Number(e.target.value)}))} className="flex-grow !py-1"/>
+                                        <select value={discount.type} onChange={e => setDiscount(d => ({...d, type: e.target.value as any}))} className="!py-1 w-16">
+                                            <option value="fixed">VND</option>
+                                            <option value="percentage">%</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <InfoItem label="Tổng cộng" value={totalAmount.toLocaleString('vi-VN') + '₫'} className="!text-lg !font-bold !text-primary pt-2 border-t"/>
+                                <div className="admin-form-group !mb-0">
+                                    <label className="text-xs text-textMuted">Đã thanh toán</label>
+                                    <input type="number" name="paidAmount" value={formData.paidAmount || ''} onChange={handleChange} className="!py-1"/>
+                                </div>
+                                 <InfoItem label="Còn lại" value={amountDue.toLocaleString('vi-VN') + '₫'} className="!text-base !font-semibold !text-red-600"/>
+                             </div>
                         </div>
                     </div>
                 </div>

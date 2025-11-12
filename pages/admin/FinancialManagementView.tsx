@@ -144,12 +144,12 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
     };
 
     // FIX: Wrapped handleEditTransaction in useCallback to ensure stable function reference.
-    const handleEditTransaction = useCallback((transactionId: string): void => {
+    const handleEditTransaction = useCallback((transactionId: string) => {
         navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
     }, [navigate]);
 
     // FIX: Wrapped handleDelete in useCallback to ensure stable function reference.
-    const handleDelete = useCallback(async (id: string): Promise<void> => {
+    const handleDelete = useCallback(async (id: string) => {
         if(window.confirm('Bạn có chắc muốn xóa giao dịch này?')) {
             try {
                 await deleteFinancialTransaction(id);
@@ -316,6 +316,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
     };
     
     // FIX: Converted from useCallback to a regular async function to potentially resolve a closure-related type inference issue.
+    // FIX: Pass arguments to savePayrollRecords to fix type error.
     const handleSettlePayroll = async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
@@ -349,6 +350,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
     };
     
     // FIX: Converted from useCallback to a regular async function.
+    // FIX: Pass arguments to savePayrollRecords and add check for records to save to fix type error and logic bug.
     const handleSaveDraft = async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         if(recordsToSave.length === 0) {
