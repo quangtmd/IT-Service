@@ -11,7 +11,7 @@ import {
 import { useNavigate, NavigateFunction } from 'react-router-dom';
 
 // --- HELPER FUNCTIONS & COMPONENTS ---
-const formatDate = (date: Date) => date.toISOString().split('T')[0];
+const formatDate = (d: Date) => d.toISOString().split('T')[0];
 const getStartOfWeek = (d: Date) => {
     const date = new Date(d);
     const day = date.getDay();
@@ -333,6 +333,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 const shouldSettle = recordsToSettle.some(s => s.id === r.id);
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
+            // FIX: Pass 'recordsToSave' argument to savePayrollRecords to resolve type error.
             await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
@@ -358,6 +359,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             return;
         }
         try {
+            // FIX: Pass 'recordsToSave' argument to savePayrollRecords to resolve type error.
             await savePayrollRecords(recordsToSave);
             alert('Đã lưu nháp lương thành công!');
             await onDataChange();

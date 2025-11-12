@@ -226,7 +226,7 @@ const OrderFormPage: React.FC = () => {
             <div className="admin-page-header flex justify-between items-center !m-0 !mb-6 no-print">
                 <h1 className="admin-page-title">{isEditing ? `Chỉnh sửa Đơn hàng` : 'Tạo Đơn hàng Mới'}</h1>
                  <div>
-                    <Button type="button" variant="outline" onClick={handlePrint} className="mr-2" leftIcon={<i className="fas fa-print"></i>}>Lưu & In</Button>
+                    <Button type="button" variant="outline" onClick={handlePrint} className="mr-2">In Phiếu</Button>
                     <Button type="button" variant="outline" onClick={() => navigate('/admin/orders')} className="mr-2">Hủy</Button>
                     <Button type="submit" variant="primary">Lưu Đơn hàng</Button>
                 </div>
@@ -244,7 +244,7 @@ const OrderFormPage: React.FC = () => {
                             <div className="admin-form-group relative !mb-0">
                                 <label>Tìm kiếm khách hàng</label>
                                 <div className="flex items-center gap-2">
-                                    <input type="text" placeholder="Tìm theo Tên, SĐT, Mã KH, Địa chỉ..." value={customerSearchText} onChange={handleCustomerSearchChange} autoComplete="off" className="flex-grow"/>
+                                    <input type="text" placeholder="Tìm theo Tên, SĐT, Mã KH..." value={customerSearchText} onChange={handleCustomerSearchChange} autoComplete="off" className="flex-grow"/>
                                     <Button type="button" size="sm" variant="outline" onClick={() => navigate('/admin/customers/new')} title="Thêm khách hàng mới"><i className="fas fa-plus"></i></Button>
                                 </div>
                                 {customerResults.length > 0 && (
@@ -253,7 +253,7 @@ const OrderFormPage: React.FC = () => {
                                     </ul>
                                 )}
                             </div>
-                            {customerSearchText && (
+                            {(customerSearchText || formData.userId) && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                                     <div className="admin-form-group"><label>Mã khách hàng</label><input type="text" value={formData.userId || 'Khách lẻ'} disabled className="bg-gray-100" /></div>
                                     <div className="admin-form-group"><label>Tên khách hàng</label><input type="text" name="fullName" value={formData.customerInfo?.fullName || ''} onChange={handleCustomerInfoChange}/></div>
