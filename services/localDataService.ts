@@ -255,7 +255,7 @@ export const getPayrollRecords = async (): Promise<PayrollRecord[]> => {
     return fetchFromApi<PayrollRecord[]>('/api/financials/payroll');
 };
 
-// FIX: Updated savePayrollRecords to accept an argument to resolve TypeScript error. The function was expecting 0 arguments but being called with 1. This also fixes a logic bug where stale data from localStorage was being saved instead of the component's current state.
+// FIX: Updated savePayrollRecords to accept an argument to resolve TypeScript error where 1 argument was passed but 0 were expected. This also fixes a logic bug where stale data from localStorage was being saved instead of the component's current state.
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/api/financials/payroll', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records),
