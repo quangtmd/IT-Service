@@ -10,7 +10,7 @@ import {
 // FIX: Updated imports to use named imports from 'react-router-dom'.
 import { useNavigate, NavigateFunction } from 'react-router-dom';
 
-// --- HELPER FUNCTIONS ---
+// --- HELPER FUNCTIONS & COMPONENTS ---
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
 const getStartOfWeek = (d: Date) => {
     const date = new Date(d);
@@ -313,8 +313,9 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             return [updatedRecord, ...otherRecords];
         });
     };
-
-    const handleSettlePayroll = async () => {
+    
+    // FIX: Wrap handler functions in useCallback to optimize performance and add dependencies.
+    const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -330,7 +331,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 const shouldSettle = recordsToSettle.some(s => s.id === r.id);
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
-            // FIX: Pass the records to be saved to the savePayrollRecords function.
             await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
@@ -345,16 +345,16 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             console.error("Lỗi khi chốt lương:", error);
             alert('Lỗi khi chốt lương.');
         }
-    };
-
-    const handleSaveDraft = async () => {
+    }, [localPayroll, onAddTransaction, onDataChange, payPeriod]);
+    
+    // FIX: Wrap handler functions in useCallback to optimize performance and add dependencies.
+    const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         if(recordsToSave.length === 0) {
             alert("Không có dữ liệu lương để lưu nháp.");
             return;
         }
         try {
-            // FIX: Pass the records to be saved to the savePayrollRecords function.
             await savePayrollRecords(recordsToSave);
             alert('Đã lưu nháp lương thành công!');
             await onDataChange();
@@ -362,7 +362,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             console.error("Lỗi khi lưu nháp lương:", error);
             alert("Đã có lỗi xảy ra khi lưu nháp lương.");
         }
-    };
+    }, [localPayroll, onDataChange, payPeriod]);
 
 
     return (

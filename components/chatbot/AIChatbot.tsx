@@ -337,12 +337,22 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
             if (call.name === 'getOrderStatus') {
                 let orderResult: Order | null = null;
                 try {
-                    const orderIdArg = call.args.orderId?.replace(/[^0-9]/g, '');
-
-                    if (orderIdArg && orderIdArg.length > 0) {
+                    const orderIdArg = call.args.orderId;
+                    // A more robust way to extract the order ID like Txxxxxx
+                    const orderIdMatch = orderIdArg?.match(/T\d{6,}/i);
+                    const cleanOrderId = orderIdMatch ? orderIdMatch[0].toUpperCase() : null;
+        
+                    if (cleanOrderId && currentUser) {
                         const allOrders = await getOrders();
-                        orderResult = allOrders.find(o => o.id.includes(orderIdArg) && o.userId === currentUser?.id) || null;
+                        const formatOrderIdForDisplay = (id: string) => `T${id.replace(/\D/g, '').slice(-6)}`;
+                        
+                        // Find order by matching the formatted ID and ensuring it belongs to the current user
+                        orderResult = allOrders.find(o => 
+                            formatOrderIdForDisplay(o.id).toUpperCase() === cleanOrderId && 
+                            o.userId === currentUser.id
+                        ) || null;
                     } else if (currentUser) {
+                        // If no ID is provided, get the latest order for the user
                         const userOrders = await getCustomerOrders(currentUser.id);
                         if (userOrders && userOrders.length > 0) {
                             orderResult = userOrders[0]; // Latest order

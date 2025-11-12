@@ -5,7 +5,7 @@ import { getOrders, deleteOrder } from '../../services/localDataService';
 import BackendConnectionError from '../../components/shared/BackendConnectionError';
 import * as ReactRouterDOM from 'react-router-dom';
 
-type StatusFilter = 'all' | 'cancelled' | 'unpaid' | 'deposited' | 'paid';
+type StatusFilter = 'all' | OrderStatus;
 
 const PaymentStatusPill: React.FC<{ status: Order['paymentInfo']['status'] }> = ({ status }) => {
     let text = '';
@@ -14,7 +14,7 @@ const PaymentStatusPill: React.FC<{ status: Order['paymentInfo']['status'] }> = 
     switch (status) {
         case 'Chưa thanh toán':
             text = 'CHƯA THANH TOÁN';
-            className = 'bg-indigo-600 text-white';
+            className = 'bg-red-600 text-white';
             break;
         case 'Đã thanh toán':
             text = 'ĐÃ THANH TOÁN';
@@ -42,7 +42,7 @@ const OrderManagementView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
     const navigate = ReactRouterDOM.useNavigate();
-    const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+    const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
     const loadOrders = useCallback(async () => {
         setIsLoading(true);
@@ -64,45 +64,25 @@ const OrderManagementView: React.FC = () => {
     const statusCounts = useMemo(() => {
         return orders.reduce((acc, order) => {
             acc.all++;
-            if (order.status === 'Đã hủy') acc.cancelled++;
-            if (order.paymentInfo?.status === 'Chưa thanh toán') acc.unpaid++;
-            if (order.paymentInfo?.status === 'Đã cọc') acc.deposited++;
-            if (order.paymentInfo?.status === 'Đã thanh toán') acc.paid++;
+            const status = order.status;
+            if (acc[status]) {
+                acc[status]++;
+            } else {
+                acc[status] = 1;
+            }
             return acc;
-        }, { all: 0, cancelled: 0, unpaid: 0, deposited: 0, paid: 0 });
+        }, { all: 0 } as Record<StatusFilter, number>);
     }, [orders]);
 
+
     const filteredOrders = useMemo(() => {
-        return orders.filter(order => {
-            if (activeFilter === 'all') return true;
-            if (activeFilter === 'cancelled') return order.status === 'Đã hủy';
-            if (activeFilter === 'unpaid') return order.paymentInfo?.status === 'Chưa thanh toán';
-            if (activeFilter === 'deposited') return order.paymentInfo?.status === 'Đã cọc';
-            if (activeFilter === 'paid') return order.paymentInfo?.status === 'Đã thanh toán';
-            return true;
-        });
+        if (activeFilter === 'all') return orders;
+        return orders.filter(order => order.status === activeFilter);
     }, [orders, activeFilter]);
 
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.checked) {
-            setSelectedOrders(new Set(filteredOrders.map(o => o.id)));
-        } else {
-            setSelectedOrders(new Set());
-        }
-    };
-    
-    const handleSelectOne = (orderId: string) => {
-        const newSelection = new Set(selectedOrders);
-        if (newSelection.has(orderId)) {
-            newSelection.delete(orderId);
-        } else {
-            newSelection.add(orderId);
-        }
-        setSelectedOrders(newSelection);
-    };
 
-
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
         if (window.confirm('Bạn có chắc muốn xóa đơn hàng này?')) {
             try {
                 await deleteOrder(id);
@@ -123,8 +103,7 @@ const OrderManagementView: React.FC = () => {
     const formatDateTime = (dateString: string) => {
         return new Date(dateString).toLocaleString('vi-VN', {
             day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit', second: '2-digit',
-            hour12: false
+            hour: '2-digit', minute: '2-digit',
         }).replace(',', '');
     };
 
@@ -143,10 +122,9 @@ const OrderManagementView: React.FC = () => {
         return (
             <div className="overflow-x-auto bg-white rounded-lg shadow-sm">
                 <table className="min-w-full text-sm align-middle">
-                    <thead className="bg-blue-800 text-white">
+                    <thead className="bg-slate-800 text-white">
                         <tr>
-                            <th className="p-3 w-4"><input type="checkbox" className="form-checkbox" onChange={handleSelectAll} checked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} /></th>
-                            <th className="p-3">#</th>
+                            <th className="p-3 w-4"></th>
                             <th className="p-3">Mã đơn hàng</th>
                             <th className="p-3">Ngày tạo đơn</th>
                             <th className="p-3">Người tạo đơn</th>
@@ -160,30 +138,88 @@ const OrderManagementView: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {filteredOrders.length > 0 ? filteredOrders.map((order, index) => (
-                            <tr key={order.id} className="hover:bg-gray-50">
-                                <td className="p-3"><input type="checkbox" className="form-checkbox" checked={selectedOrders.has(order.id)} onChange={() => handleSelectOne(order.id)} /></td>
-                                <td className="p-3">{index + 1}</td>
-                                <td className="p-3 font-medium text-blue-600 cursor-pointer">{formatOrderId(order.id)}</td>
-                                <td className="p-3">{formatDateTime(order.orderDate)}</td>
-                                <td className="p-3">{order.creatorName || 'N/A'}</td>
-                                <td className="p-3"><PaymentStatusPill status={order.paymentInfo.status} /></td>
-                                <td className="p-3">{order.customerInfo.fullName}</td>
-                                <td className="p-3 text-right font-semibold">{formatCurrency(order.totalAmount)}</td>
-                                <td className="p-3 text-right">{formatCurrency(order.paidAmount)}</td>
-                                <td className="p-3 text-right">{formatCurrency(order.cost)}</td>
-                                <td className="p-3 text-right font-semibold text-green-600">{formatCurrency(order.profit)}</td>
-                                <td className="p-3">
-                                    <div className="flex justify-center items-center gap-2">
-                                        <button className="text-gray-500 hover:text-gray-800"><i className="fas fa-ellipsis-h"></i></button>
-                                        <button onClick={() => navigate(`/admin/orders/edit/${order.id}`)} className="text-gray-500 hover:text-blue-600"><i className="fas fa-pencil-alt"></i></button>
-                                        <button onClick={() => handleDelete(order.id)} className="text-gray-500 hover:text-red-600"><i className="fas fa-trash-alt"></i></button>
-                                    </div>
-                                </td>
-                            </tr>
+                        {filteredOrders.length > 0 ? filteredOrders.map((order) => (
+                           <React.Fragment key={order.id}>
+                                <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedOrderId(prev => prev === order.id ? null : order.id)}>
+                                    <td className="p-3 text-center"><i className={`fas fa-chevron-right text-xs text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-90' : ''}`}></i></td>
+                                    <td className="p-3 font-medium text-blue-600">{formatOrderId(order.id)}</td>
+                                    <td className="p-3">{formatDateTime(order.orderDate)}</td>
+                                    <td className="p-3">{order.creatorName || 'N/A'}</td>
+                                    <td className="p-3"><PaymentStatusPill status={order.paymentInfo.status} /></td>
+                                    <td className="p-3">{order.customerInfo.fullName}</td>
+                                    <td className="p-3 text-right font-semibold">{formatCurrency(order.totalAmount)}</td>
+                                    <td className="p-3 text-right">{formatCurrency(order.paidAmount)}</td>
+                                    <td className="p-3 text-right">{formatCurrency(order.cost)}</td>
+                                    <td className="p-3 text-right font-semibold text-green-600">{formatCurrency(order.profit)}</td>
+                                    <td className="p-3">
+                                        <div className="flex justify-center items-center gap-2">
+                                            <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/orders/edit/${order.id}`) }} className="text-gray-500 hover:text-blue-600"><i className="fas fa-pencil-alt"></i></button>
+                                            <button onClick={(e) => handleDelete(e, order.id)} className="text-gray-500 hover:text-red-600"><i className="fas fa-trash-alt"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {expandedOrderId === order.id && (
+                                    <tr className="bg-slate-50">
+                                        <td colSpan={11} className="p-0">
+                                            <div className="p-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                                                    <div>
+                                                        <h5 className="font-bold mb-1 text-slate-600">Thông tin Giao hàng</h5>
+                                                        <p><strong>Người nhận:</strong> {order.customerInfo.fullName}</p>
+                                                        <p><strong>SĐT:</strong> {order.customerInfo.phone}</p>
+                                                        <p><strong>Địa chỉ:</strong> {order.customerInfo.address}</p>
+                                                        <hr className="my-2"/>
+                                                        <p><strong>Vận chuyển:</strong> {order.shippingInfo?.carrier || 'Chưa có'}</p>
+                                                        <p><strong>Mã vận đơn:</strong> {order.shippingInfo?.trackingNumber || 'Chưa có'}</p>
+                                                        <p><strong>Trạng thái GH:</strong> {order.shippingInfo?.shippingStatus || 'Chưa giao'}</p>
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <h5 className="font-bold mb-1 text-slate-600">Thông tin Thanh toán</h5>
+                                                        <p><strong>Phương thức:</strong> {order.paymentInfo.method}</p>
+                                                        <p><strong>Trạng thái TT:</strong> {order.paymentInfo.status}</p>
+                                                        <p><strong>Tổng đơn:</strong> {formatCurrency(order.totalAmount)}</p>
+                                                        <p><strong>Đã trả:</strong> {formatCurrency(order.paidAmount || 0)}</p>
+                                                        <p className="font-bold text-red-600"><strong>Còn lại:</strong> {formatCurrency(order.totalAmount - (order.paidAmount || 0))}</p>
+                                                    </div>
+
+                                                    <div>
+                                                        <h5 className="font-bold mb-1 text-slate-600">Ghi chú</h5>
+                                                        <p className="italic bg-yellow-50 p-2 rounded border border-yellow-200">{order.notes || 'Không có ghi chú.'}</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="mt-4">
+                                                    <h5 className="font-bold text-xs mb-1 text-slate-600">Chi tiết Sản phẩm</h5>
+                                                    <table className="w-full text-xs bg-white rounded shadow-sm border">
+                                                        <thead>
+                                                            <tr className="bg-gray-100">
+                                                                <th className="p-1 text-left">Sản phẩm</th>
+                                                                <th className="p-1 text-right">SL</th>
+                                                                <th className="p-1 text-right">Đơn giá</th>
+                                                                <th className="p-1 text-right">Thành tiền</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {order.items.map(item => (
+                                                                <tr key={item.productId} className="border-t">
+                                                                    <td className="p-1">{item.productName}</td>
+                                                                    <td className="p-1 text-right">{item.quantity}</td>
+                                                                    <td className="p-1 text-right">{formatCurrency(item.price)}</td>
+                                                                    <td className="p-1 text-right font-medium">{formatCurrency(item.price * item.quantity)}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                           </React.Fragment>
                         )) : (
                             <tr>
-                                <td colSpan={12} className="text-center py-8 text-textMuted">Không có đơn hàng nào.</td>
+                                <td colSpan={11} className="text-center py-8 text-textMuted">Không có đơn hàng nào.</td>
                             </tr>
                         )}
                     </tbody>
@@ -191,6 +227,17 @@ const OrderManagementView: React.FC = () => {
             </div>
         );
     };
+
+    const filterOptions: {label: string, value: StatusFilter}[] = [
+        { label: 'Tất cả', value: 'all'},
+        { label: 'Chờ xử lý', value: 'Chờ xử lý'},
+        { label: 'Đã xác nhận', value: 'Đã xác nhận'},
+        { label: 'Đang chuẩn bị', value: 'Đang chuẩn bị'},
+        { label: 'Đang giao', value: 'Đang giao'},
+        { label: 'Hoàn thành', value: 'Hoàn thành'},
+        { label: 'Đã hủy', value: 'Đã hủy'},
+        { label: 'Phiếu tạm', value: 'Phiếu tạm'},
+    ];
 
     return (
         <div className="space-y-4">
@@ -209,11 +256,17 @@ const OrderManagementView: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-                <Button onClick={() => setActiveFilter('all')} size="sm" variant={activeFilter === 'all' ? 'primary' : 'outline'} className="!font-normal">Tất cả</Button>
-                <Button onClick={() => setActiveFilter('cancelled')} size="sm" variant={activeFilter === 'cancelled' ? 'primary' : 'outline'} className="!font-normal">Hủy bỏ {statusCounts.cancelled}</Button>
-                <Button onClick={() => setActiveFilter('unpaid')} size="sm" variant={activeFilter === 'unpaid' ? 'primary' : 'outline'} className="!font-normal">Chưa thanh toán {statusCounts.unpaid}</Button>
-                <Button onClick={() => setActiveFilter('deposited')} size="sm" variant={activeFilter === 'deposited' ? 'primary' : 'outline'} className="!font-normal">Đã cọc {statusCounts.deposited}</Button>
-                <Button onClick={() => setActiveFilter('paid')} size="sm" variant={activeFilter === 'paid' ? 'primary' : 'outline'} className="!font-normal">Đã thanh toán {statusCounts.paid}</Button>
+                 {filterOptions.map(opt => (
+                     <Button 
+                        key={opt.value} 
+                        onClick={() => setActiveFilter(opt.value)} 
+                        size="sm" 
+                        variant={activeFilter === opt.value ? 'primary' : 'outline'} 
+                        className="!font-normal"
+                    >
+                        {opt.label} {statusCounts[opt.value] ? `(${statusCounts[opt.value]})` : ''}
+                    </Button>
+                 ))}
             </div>
             
             {renderContent()}
