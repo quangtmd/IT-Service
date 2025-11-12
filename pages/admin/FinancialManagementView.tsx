@@ -315,8 +315,8 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
         });
     };
     
-    // FIX: Wrap handler functions in useCallback to optimize performance and add dependencies.
-    const handleSettlePayroll = useCallback(async () => {
+    // FIX: Converted from useCallback to a regular async function to potentially resolve a closure-related type inference issue.
+    const handleSettlePayroll = async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -346,10 +346,10 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             console.error("Lỗi khi chốt lương:", error);
             alert('Lỗi khi chốt lương.');
         }
-    }, [localPayroll, onAddTransaction, onDataChange, payPeriod]);
+    };
     
-    // FIX: Wrap handler functions in useCallback to optimize performance and add dependencies.
-    const handleSaveDraft = useCallback(async () => {
+    // FIX: Converted from useCallback to a regular async function.
+    const handleSaveDraft = async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         if(recordsToSave.length === 0) {
             alert("Không có dữ liệu lương để lưu nháp.");
@@ -363,7 +363,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             console.error("Lỗi khi lưu nháp lương:", error);
             alert("Đã có lỗi xảy ra khi lưu nháp lương.");
         }
-    }, [localPayroll, onDataChange, payPeriod]);
+    };
 
 
     return (

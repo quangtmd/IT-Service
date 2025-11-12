@@ -338,9 +338,10 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                 let orderResult: Order | null = null;
                 try {
                     const orderIdArg = call.args.orderId;
-                    // A more robust way to extract the order ID like Txxxxxx
-                    const orderIdMatch = orderIdArg?.match(/T\d{6,}/i);
-                    const cleanOrderId = orderIdMatch ? orderIdMatch[0].toUpperCase() : null;
+                    // Match optional 'T' prefix followed by 6 or more digits
+                    const orderIdMatch = orderIdArg?.match(/(T)?(\d{6,})/i);
+                    // Reconstruct the ID to the standard "Txxxxxx" format if found
+                    const cleanOrderId = orderIdMatch ? `T${orderIdMatch[2]}`.toUpperCase() : null;
         
                     if (cleanOrderId && currentUser) {
                         const allOrders = await getOrders();

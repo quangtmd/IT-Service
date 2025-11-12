@@ -795,6 +795,9 @@ export interface WarrantyTicket {
     departmentCode?: string; // Mã bộ phận
     currency?: string; // Ngoại tệ
     totalQuantity?: number; // Số lượng (tổng)
+
+    paymentStatus?: 'Chưa thanh toán' | 'Đã thanh toán' | 'Công nợ';
+    paymentNotes?: string;
 }
 
 export interface Supplier {

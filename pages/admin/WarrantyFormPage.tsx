@@ -188,6 +188,7 @@ const WarrantyFormPage: React.FC = () => {
                         status: 'Mới Tạo', creatorId: currentUser?.id,
                         receiveDate: new Date().toISOString(), priority: 'Bình thường',
                         items: [], serviceFee: 0, discount: 0, vat: 0, totalAmount: 0,
+                        paymentStatus: 'Chưa thanh toán',
                     });
                 }
             } catch (err) {
@@ -329,6 +330,23 @@ const WarrantyFormPage: React.FC = () => {
                                 <div className="admin-form-group"><label>Thuế VAT (%)</label><input type="number" name="vat" value={formData.vat || 0} onChange={handleChange}/></div>
                                 <div className="admin-form-group"><label className="text-lg">Tổng cộng</label><p className="text-xl font-bold text-primary pt-2">{(formData.totalAmount || 0).toLocaleString('vi-VN')}₫</p></div>
                              </div>
+                        </div>
+                        <div className="p-4 border rounded-md">
+                            <h4 className="admin-form-subsection-title !mt-0">Thanh toán</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="admin-form-group">
+                                    <label>Trạng thái Thanh toán</label>
+                                    <select name="paymentStatus" value={formData.paymentStatus || 'Chưa thanh toán'} onChange={handleChange}>
+                                        <option value="Chưa thanh toán">Chưa thanh toán</option>
+                                        <option value="Đã thanh toán">Đã thanh toán</option>
+                                        <option value="Công nợ">Công nợ</option>
+                                    </select>
+                                </div>
+                                <div className="admin-form-group md:col-span-2">
+                                    <label>Ghi chú Thanh toán</label>
+                                    <textarea name="paymentNotes" value={formData.paymentNotes || ''} onChange={handleChange} rows={2}></textarea>
+                                </div>
+                            </div>
                         </div>
                      </div>
                  </div>

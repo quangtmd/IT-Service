@@ -63,15 +63,11 @@ const OrderManagementView: React.FC = () => {
 
     const statusCounts = useMemo(() => {
         return orders.reduce((acc, order) => {
-            acc.all++;
+            acc.all = (acc.all || 0) + 1;
             const status = order.status;
-            if (acc[status]) {
-                acc[status]++;
-            } else {
-                acc[status] = 1;
-            }
+            acc[status] = (acc[status] || 0) + 1;
             return acc;
-        }, { all: 0 } as Record<StatusFilter, number>);
+        }, {} as Record<StatusFilter, number>);
     }, [orders]);
 
 
@@ -138,86 +134,101 @@ const OrderManagementView: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {filteredOrders.length > 0 ? filteredOrders.map((order) => (
-                           <React.Fragment key={order.id}>
-                                <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedOrderId(prev => prev === order.id ? null : order.id)}>
-                                    <td className="p-3 text-center"><i className={`fas fa-chevron-right text-xs text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-90' : ''}`}></i></td>
-                                    <td className="p-3 font-medium text-blue-600">{formatOrderId(order.id)}</td>
-                                    <td className="p-3">{formatDateTime(order.orderDate)}</td>
-                                    <td className="p-3">{order.creatorName || 'N/A'}</td>
-                                    <td className="p-3"><PaymentStatusPill status={order.paymentInfo.status} /></td>
-                                    <td className="p-3">{order.customerInfo.fullName}</td>
-                                    <td className="p-3 text-right font-semibold">{formatCurrency(order.totalAmount)}</td>
-                                    <td className="p-3 text-right">{formatCurrency(order.paidAmount)}</td>
-                                    <td className="p-3 text-right">{formatCurrency(order.cost)}</td>
-                                    <td className="p-3 text-right font-semibold text-green-600">{formatCurrency(order.profit)}</td>
-                                    <td className="p-3">
-                                        <div className="flex justify-center items-center gap-2">
-                                            <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/orders/edit/${order.id}`) }} className="text-gray-500 hover:text-blue-600"><i className="fas fa-pencil-alt"></i></button>
-                                            <button onClick={(e) => handleDelete(e, order.id)} className="text-gray-500 hover:text-red-600"><i className="fas fa-trash-alt"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {expandedOrderId === order.id && (
-                                    <tr className="bg-slate-50">
-                                        <td colSpan={11} className="p-0">
-                                            <div className="p-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                                                    <div>
-                                                        <h5 className="font-bold mb-1 text-slate-600">Thông tin Giao hàng</h5>
-                                                        <p><strong>Người nhận:</strong> {order.customerInfo.fullName}</p>
-                                                        <p><strong>SĐT:</strong> {order.customerInfo.phone}</p>
-                                                        <p><strong>Địa chỉ:</strong> {order.customerInfo.address}</p>
-                                                        <hr className="my-2"/>
-                                                        <p><strong>Vận chuyển:</strong> {order.shippingInfo?.carrier || 'Chưa có'}</p>
-                                                        <p><strong>Mã vận đơn:</strong> {order.shippingInfo?.trackingNumber || 'Chưa có'}</p>
-                                                        <p><strong>Trạng thái GH:</strong> {order.shippingInfo?.shippingStatus || 'Chưa giao'}</p>
-                                                    </div>
-                                                    
-                                                    <div>
-                                                        <h5 className="font-bold mb-1 text-slate-600">Thông tin Thanh toán</h5>
-                                                        <p><strong>Phương thức:</strong> {order.paymentInfo.method}</p>
-                                                        <p><strong>Trạng thái TT:</strong> {order.paymentInfo.status}</p>
-                                                        <p><strong>Tổng đơn:</strong> {formatCurrency(order.totalAmount)}</p>
-                                                        <p><strong>Đã trả:</strong> {formatCurrency(order.paidAmount || 0)}</p>
-                                                        <p className="font-bold text-red-600"><strong>Còn lại:</strong> {formatCurrency(order.totalAmount - (order.paidAmount || 0))}</p>
-                                                    </div>
-
-                                                    <div>
-                                                        <h5 className="font-bold mb-1 text-slate-600">Ghi chú</h5>
-                                                        <p className="italic bg-yellow-50 p-2 rounded border border-yellow-200">{order.notes || 'Không có ghi chú.'}</p>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="mt-4">
-                                                    <h5 className="font-bold text-xs mb-1 text-slate-600">Chi tiết Sản phẩm</h5>
-                                                    <table className="w-full text-xs bg-white rounded shadow-sm border">
-                                                        <thead>
-                                                            <tr className="bg-gray-100">
-                                                                <th className="p-1 text-left">Sản phẩm</th>
-                                                                <th className="p-1 text-right">SL</th>
-                                                                <th className="p-1 text-right">Đơn giá</th>
-                                                                <th className="p-1 text-right">Thành tiền</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {order.items.map(item => (
-                                                                <tr key={item.productId} className="border-t">
-                                                                    <td className="p-1">{item.productName}</td>
-                                                                    <td className="p-1 text-right">{item.quantity}</td>
-                                                                    <td className="p-1 text-right">{formatCurrency(item.price)}</td>
-                                                                    <td className="p-1 text-right font-medium">{formatCurrency(item.price * item.quantity)}</td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
+                        {filteredOrders.length > 0 ? filteredOrders.map((order) => {
+                            const itemsTotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                            const hasInvalidTotal = order.totalAmount === 0 && itemsTotal > 0;
+                            const displayTotal = hasInvalidTotal ? itemsTotal : order.totalAmount;
+                            
+                            const itemsCost = order.items.reduce((sum, item) => sum + (item.purchasePrice || 0) * item.quantity, 0);
+                            const displayCost = (hasInvalidTotal && itemsCost > 0) ? itemsCost : (order.cost || 0);
+                            const displayProfit = displayTotal - displayCost;
+                            
+                            let displayShippingStatus = order.shippingInfo?.shippingStatus || 'Chưa giao';
+                            if (order.status === 'Hoàn thành' && !['Đã giao', 'Gặp sự cố'].includes(displayShippingStatus)) {
+                                displayShippingStatus = 'Đã giao';
+                            }
+                            
+                            return (
+                               <React.Fragment key={order.id}>
+                                    <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedOrderId(prev => prev === order.id ? null : order.id)}>
+                                        <td className="p-3 text-center"><i className={`fas fa-chevron-right text-xs text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-90' : ''}`}></i></td>
+                                        <td className="p-3 font-medium text-blue-600">{formatOrderId(order.id)}</td>
+                                        <td className="p-3">{formatDateTime(order.orderDate)}</td>
+                                        <td className="p-3">{order.creatorName || 'N/A'}</td>
+                                        <td className="p-3"><PaymentStatusPill status={order.paymentInfo.status} /></td>
+                                        <td className="p-3">{order.customerInfo.fullName}</td>
+                                        <td className="p-3 text-right font-semibold">{formatCurrency(displayTotal)}</td>
+                                        <td className="p-3 text-right">{formatCurrency(order.paidAmount)}</td>
+                                        <td className="p-3 text-right">{formatCurrency(displayCost)}</td>
+                                        <td className="p-3 text-right font-semibold text-green-600">{formatCurrency(displayProfit)}</td>
+                                        <td className="p-3">
+                                            <div className="flex justify-center items-center gap-2">
+                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/orders/edit/${order.id}`) }} className="text-gray-500 hover:text-blue-600"><i className="fas fa-pencil-alt"></i></button>
+                                                <button onClick={(e) => handleDelete(e, order.id)} className="text-gray-500 hover:text-red-600"><i className="fas fa-trash-alt"></i></button>
                                             </div>
                                         </td>
                                     </tr>
-                                )}
-                           </React.Fragment>
-                        )) : (
+                                    {expandedOrderId === order.id && (
+                                        <tr className="bg-slate-50">
+                                            <td colSpan={11} className="p-0">
+                                                <div className="p-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                                                        <div>
+                                                            <h5 className="font-bold mb-1 text-slate-600">Thông tin Giao hàng</h5>
+                                                            <p><strong>Người nhận:</strong> {order.customerInfo.fullName}</p>
+                                                            <p><strong>SĐT:</strong> {order.customerInfo.phone}</p>
+                                                            <p><strong>Địa chỉ:</strong> {order.customerInfo.address}</p>
+                                                            <hr className="my-2"/>
+                                                            <p><strong>Vận chuyển:</strong> {order.shippingInfo?.carrier || 'Chưa có'}</p>
+                                                            <p><strong>Mã vận đơn:</strong> {order.shippingInfo?.trackingNumber || 'Chưa có'}</p>
+                                                            <p><strong>Trạng thái GH:</strong> {displayShippingStatus}</p>
+                                                        </div>
+                                                        
+                                                        <div>
+                                                            <h5 className="font-bold mb-1 text-slate-600">Thông tin Thanh toán</h5>
+                                                            <p><strong>Phương thức:</strong> {order.paymentInfo.method}</p>
+                                                            <p><strong>Trạng thái TT:</strong> {order.paymentInfo.status}</p>
+                                                            <p><strong>Tổng đơn:</strong> {formatCurrency(displayTotal)}</p>
+                                                            <p><strong>Đã trả:</strong> {formatCurrency(order.paidAmount || 0)}</p>
+                                                            <p className="font-bold text-red-600"><strong>Còn lại:</strong> {formatCurrency(displayTotal - (order.paidAmount || 0))}</p>
+                                                        </div>
+    
+                                                        <div>
+                                                            <h5 className="font-bold mb-1 text-slate-600">Ghi chú</h5>
+                                                            <p className="italic bg-yellow-50 p-2 rounded border border-yellow-200">{order.notes || 'Không có ghi chú.'}</p>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="mt-4">
+                                                        <h5 className="font-bold text-xs mb-1 text-slate-600">Chi tiết Sản phẩm</h5>
+                                                        <table className="w-full text-xs bg-white rounded shadow-sm border">
+                                                            <thead>
+                                                                <tr className="bg-gray-100">
+                                                                    <th className="p-1 text-left">Sản phẩm</th>
+                                                                    <th className="p-1 text-right">SL</th>
+                                                                    <th className="p-1 text-right">Đơn giá</th>
+                                                                    <th className="p-1 text-right">Thành tiền</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {order.items.map(item => (
+                                                                    <tr key={item.productId} className="border-t">
+                                                                        <td className="p-1">{item.productName}</td>
+                                                                        <td className="p-1 text-right">{item.quantity}</td>
+                                                                        <td className="p-1 text-right">{formatCurrency(item.price)}</td>
+                                                                        <td className="p-1 text-right font-medium">{formatCurrency(item.price * item.quantity)}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                               </React.Fragment>
+                            )
+                        }) : (
                             <tr>
                                 <td colSpan={11} className="text-center py-8 text-textMuted">Không có đơn hàng nào.</td>
                             </tr>
@@ -256,17 +267,21 @@ const OrderManagementView: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-                 {filterOptions.map(opt => (
-                     <Button 
-                        key={opt.value} 
-                        onClick={() => setActiveFilter(opt.value)} 
-                        size="sm" 
-                        variant={activeFilter === opt.value ? 'primary' : 'outline'} 
-                        className="!font-normal"
-                    >
-                        {opt.label} {statusCounts[opt.value] ? `(${statusCounts[opt.value]})` : ''}
-                    </Button>
-                 ))}
+                 {filterOptions.map(opt => {
+                    const count = statusCounts[opt.value];
+                    if (!count && opt.value !== 'all') return null; // Hide filter if no orders have that status
+                    return (
+                        <Button 
+                            key={opt.value} 
+                            onClick={() => setActiveFilter(opt.value)} 
+                            size="sm" 
+                            variant={activeFilter === opt.value ? 'primary' : 'outline'} 
+                            className="!font-normal"
+                        >
+                            {opt.label} ({count || 0})
+                        </Button>
+                    );
+                 })}
             </div>
             
             {renderContent()}
