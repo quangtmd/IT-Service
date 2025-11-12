@@ -315,8 +315,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
         });
     };
     
-    // FIX: Converted from useCallback to a regular async function to potentially resolve a closure-related type inference issue.
-    // FIX: Pass arguments to savePayrollRecords to fix type error.
     const handleSettlePayroll = async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
@@ -333,7 +331,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 const shouldSettle = recordsToSettle.some(s => s.id === r.id);
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
-            // FIX: Pass 'recordsToSave' argument to savePayrollRecords to resolve type error.
+            // FIX: Pass 'recordsToSave' argument to savePayrollRecords to resolve type error where 1 argument was passed but 0 were expected.
             await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
@@ -350,8 +348,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
         }
     };
     
-    // FIX: Converted from useCallback to a regular async function.
-    // FIX: Pass arguments to savePayrollRecords and add check for records to save to fix type error and logic bug.
     const handleSaveDraft = async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         if(recordsToSave.length === 0) {
@@ -359,7 +355,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             return;
         }
         try {
-            // FIX: Pass 'recordsToSave' argument to savePayrollRecords to resolve type error.
+            // FIX: Pass 'recordsToSave' argument to savePayrollRecords to resolve type error where 1 argument was passed but 0 were expected.
             await savePayrollRecords(recordsToSave);
             alert('Đã lưu nháp lương thành công!');
             await onDataChange();

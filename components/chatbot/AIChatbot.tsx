@@ -343,28 +343,21 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                     // Reconstruct the ID to the standard "Txxxxxx" format if found
                     const cleanOrderId = orderIdMatch ? `T${orderIdMatch[2]}`.toUpperCase() : null;
         
-                    if (cleanOrderId && currentUser) {
+                    if (cleanOrderId) {
                         const allOrders = await getOrders();
                         const formatOrderIdForDisplay = (id: string) => `T${id.replace(/\D/g, '').slice(-6)}`;
                         
-                        // Find order by matching the formatted ID and ensuring it belongs to the current user
+                        // Find order by matching the formatted ID, WITHOUT checking for current user
                         orderResult = allOrders.find(o => 
-                            formatOrderIdForDisplay(o.id).toUpperCase() === cleanOrderId && 
-                            o.userId === currentUser.id
+                            formatOrderIdForDisplay(o.id).toUpperCase() === cleanOrderId
                         ) || null;
-                    } else if (currentUser) {
-                        // If no ID is provided, get the latest order for the user
-                        const userOrders = await getCustomerOrders(currentUser.id);
-                        if (userOrders && userOrders.length > 0) {
-                            orderResult = userOrders[0]; // Latest order
-                        }
                     }
 
                     const toolResponseStream = await chatSession.sendToolResponse({
                         functionResponses: [{
                             id: call.id,
                             name: call.name,
-                            response: { result: orderResult ? JSON.stringify(orderResult) : JSON.stringify({ error: "Không tìm thấy đơn hàng nào khớp với yêu cầu của bạn." }) }
+                            response: { result: orderResult ? JSON.stringify(orderResult) : JSON.stringify({ error: "Không tìm thấy đơn hàng nào khớp với mã bạn cung cấp." }) }
                         }]
                     });
 

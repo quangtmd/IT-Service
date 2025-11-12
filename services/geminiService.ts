@@ -36,13 +36,14 @@ const getOrderStatusFunctionDeclaration: FunctionDeclaration = {
   name: 'getOrderStatus',
   parameters: {
     type: Type.OBJECT,
-    description: 'Lấy thông tin và trạng thái của đơn hàng cho người dùng đang đăng nhập. Nếu không có orderId, sẽ lấy đơn hàng gần đây nhất.',
+    description: 'Lấy thông tin và trạng thái của một đơn hàng cụ thể bằng mã đơn hàng. Chức năng này cho phép tra cứu bất kỳ đơn hàng nào, không giới hạn cho người dùng đang đăng nhập.',
     properties: {
       orderId: {
         type: Type.STRING,
-        description: 'Mã của đơn hàng cần kiểm tra. Ví dụ: order-1721234567890 hoặc chỉ cần phần số.',
+        description: 'Mã của đơn hàng cần kiểm tra. Ví dụ: T280649 hoặc 280649.',
       },
     },
+    required: ['orderId'],
   },
 };
 
@@ -74,9 +75,10 @@ export const startChat = (
 
   const defaultSystemInstruction = `Bạn là một trợ lý AI bán hàng và hỗ trợ khách hàng toàn diện cho cửa hàng ${siteSettings.companyName}. Cửa hàng của chúng ta kinh doanh hai mảng chính: bán sản phẩm công nghệ và cung cấp dịch vụ IT.
 
-**Kiểm tra đơn hàng (Dành cho người dùng đã đăng nhập):**
-- Khi người dùng hỏi về trạng thái đơn hàng (ví dụ: "đơn hàng của tôi đâu?", "check order status", "kiểm tra đơn #123456"), hãy sử dụng công cụ 'getOrderStatus'.
-- Nếu họ cung cấp một mã đơn hàng, hãy cố gắng trích xuất và truyền mã đó vào 'orderId'. Nếu họ chỉ nói "đơn hàng của tôi", hãy gọi hàm mà không có tham số để lấy thông tin đơn hàng mới nhất.
+**Kiểm tra đơn hàng:**
+- Khi người dùng hỏi về trạng thái đơn hàng và **cung cấp một mã đơn hàng** (ví dụ: "đơn hàng của tôi đâu #123456?", "check order T280649"), hãy **luôn luôn** sử dụng công cụ 'getOrderStatus'.
+- **BẮT BUỘC** phải trích xuất mã đơn hàng và truyền vào tham số 'orderId' của công cụ. Mã đơn hàng có thể có chữ 'T' ở đầu hoặc không.
+- Nếu người dùng hỏi "đơn hàng của tôi" mà không cung cấp mã, hãy hỏi lại họ "Vui lòng cho tôi biết mã đơn hàng bạn muốn kiểm tra."
 - Kết quả trả về từ hàm 'getOrderStatus' sẽ là một đối tượng JSON của đơn hàng hoặc một thông báo lỗi.
 - Nếu nhận được đối tượng JSON của đơn hàng, hãy tóm tắt các thông tin quan trọng cho người dùng:
   - \`id\`: Mã đơn hàng.
