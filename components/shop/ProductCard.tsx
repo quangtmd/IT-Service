@@ -57,11 +57,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <div className="flex flex-col items-start mb-2">
               {product.originalPrice && product.price < product.originalPrice && (
                 <span className="text-xs text-textSubtle line-through">
-                  {product.originalPrice.toLocaleString('vi-VN')}₫
+                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice)}
                 </span>
               )}
               <span className="text-lg font-bold text-red-600">
-                {product.price.toLocaleString('vi-VN')}₫
+                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
               </span>
             </div>
             

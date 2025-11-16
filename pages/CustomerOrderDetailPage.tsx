@@ -174,14 +174,14 @@ const CustomerOrderDetailPage: React.FC = () => {
                                     <p className="font-medium text-textBase">{item.productName}</p>
                                     <p className="text-textMuted">Số lượng: {item.quantity}</p>
                                 </div>
-                                <p className="text-sm font-semibold text-textBase">{(item.price * item.quantity).toLocaleString('vi-VN')}₫</p>
+                                <p className="text-sm font-semibold text-textBase">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}</p>
                             </div>
                         ))}
                     </div>
                     <div className="mt-4 pt-4 border-t text-sm space-y-2">
                         <div className="flex justify-between">
                             <span className="text-textMuted">Tạm tính:</span>
-                            <span>{order.totalAmount.toLocaleString('vi-VN')}₫</span>
+                            <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount)}</span>
                         </div>
                          <div className="flex justify-between">
                             <span className="text-textMuted">Phí vận chuyển:</span>
@@ -189,7 +189,7 @@ const CustomerOrderDetailPage: React.FC = () => {
                         </div>
                          <div className="flex justify-between font-bold text-base pt-2 border-t mt-2">
                             <span className="text-textBase">Tổng cộng:</span>
-                            <span className="text-primary">{order.totalAmount.toLocaleString('vi-VN')}₫</span>
+                            <span className="text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount)}</span>
                         </div>
                     </div>
                  </div>

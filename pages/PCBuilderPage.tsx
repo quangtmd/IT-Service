@@ -178,7 +178,7 @@ export const PCBuilderPage: React.FC = () => {
       }
     }
 
-    const buildName = `PC Cấu hình Tùy chỉnh (${useCase} - ${totalPrice.toLocaleString('vi-VN')}₫)`;
+    const buildName = `PC Cấu hình Tùy chỉnh (${useCase} - ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)})`;
     const buildDescription = `Cấu hình PC được xây dựng theo yêu cầu: ${buildNameParts.join('; ')}.`;
 
     // FIX: Ensure all required Product fields are populated for CustomPCBuildCartItem.
@@ -303,7 +303,7 @@ export const PCBuilderPage: React.FC = () => {
 
           <div className="mt-6 border-t pt-4 flex justify-between items-center">
             <span className="text-lg font-bold text-textBase">Tổng giá ước tính:</span>
-            <span className="text-2xl font-bold text-primary">{currentTotalPrice.toLocaleString('vi-VN')}₫</span>
+            <span className="text-2xl font-bold text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentTotalPrice)}</span>
           </div>
 
           <Button onClick={handleAddToCart} className="w-full mt-4" size="lg">

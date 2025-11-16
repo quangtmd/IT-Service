@@ -130,7 +130,7 @@ const PCBuildSuggestionsPage: React.FC = () => {
                     {suggestions.map((suggestion, index) => (
                         <Card key={index} className="p-6 border border-borderDefault shadow-lg">
                             <h3 className="text-xl font-bold text-primary mb-2">{suggestion.name}</h3>
-                            <p className="text-lg font-semibold text-textBase mb-3">Tổng chi phí dự kiến: {suggestion.total_price.toLocaleString('vi-VN')}₫</p>
+                            <p className="text-lg font-semibold text-textBase mb-3">Tổng chi phí dự kiến: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(suggestion.total_price)}</p>
                             <p className="text-sm text-textMuted italic mb-4 p-3 bg-bgCanvas rounded-md border border-borderDefault">"{suggestion.reasoning}"</p>
                             
                             <h4 className="font-semibold text-textBase mb-2">Chi tiết linh kiện:</h4>

@@ -132,7 +132,7 @@ const CheckoutPage: React.FC = () => {
           </p>
           <p className="text-textMuted mb-8">
             {isCOD 
-              ? `Chúng tôi sẽ sớm liên hệ với bạn để xác nhận và giao hàng. Bạn sẽ thanh toán ${submittedOrder.totalAmount.toLocaleString('vi-VN')}₫ khi nhận hàng.`
+              ? `Chúng tôi sẽ sớm liên hệ với bạn để xác nhận và giao hàng. Bạn sẽ thanh toán ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(submittedOrder.totalAmount)} khi nhận hàng.`
               : `Chúng tôi sẽ kiểm tra và xác nhận thanh toán của bạn trong thời gian sớm nhất. Đơn hàng sẽ được xử lý ngay sau khi thanh toán được xác nhận.`
             }
           </p>
@@ -165,7 +165,7 @@ const CheckoutPage: React.FC = () => {
             <div className="flex justify-between"><span className="text-textMuted">Ngân hàng:</span><span className="font-semibold text-textBase">{Constants.BANK_NAME}</span></div>
             <div className="flex justify-between"><span className="text-textMuted">Chủ tài khoản:</span><span className="font-semibold text-textBase">{Constants.BANK_ACCOUNT_NAME}</span></div>
             <div className="flex justify-between"><span className="text-textMuted">Số tài khoản:</span><span className="font-semibold text-textBase">{Constants.BANK_ACCOUNT_NUMBER}</span></div>
-            <div className="flex justify-between text-lg text-primary"><span className="font-semibold">Số tiền cần chuyển:</span><span className="font-bold">{amountToPay.toLocaleString('vi-VN')}₫</span></div>
+            <div className="flex justify-between text-lg text-primary"><span className="font-semibold">Số tiền cần chuyển:</span><span className="font-bold">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amountToPay)}</span></div>
             <div className="flex justify-between"><span className="text-textMuted">Nội dung chuyển khoản:</span><span className="font-semibold text-textBase">{qrDescription}</span></div>
           </div>
           <p className="text-xs text-center mt-4 text-danger-text">Lưu ý: Vui lòng ghi đúng nội dung chuyển khoản để đơn hàng được xác nhận tự động.</p>
@@ -219,14 +219,14 @@ const CheckoutPage: React.FC = () => {
                 {cart.map(item => (
                     <div key={item.id} className="flex justify-between items-start text-sm">
                         <span className="text-textMuted pr-4">{item.name} <strong className="text-textBase">x {item.quantity}</strong></span>
-                        <span className="font-medium text-textBase whitespace-nowrap">{(item.price * item.quantity).toLocaleString('vi-VN')}₫</span>
+                        <span className="font-medium text-textBase whitespace-nowrap">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}</span>
                     </div>
                 ))}
              </div>
              <div className="mt-4 pt-4 border-t border-borderDefault">
                 <div className="flex justify-between text-xl font-bold text-textBase">
                     <span>Tổng cộng:</span>
-                    <span className="text-primary">{getTotalPrice().toLocaleString('vi-VN')}₫</span>
+                    <span className="text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(getTotalPrice())}</span>
                 </div>
              </div>
              <div className="border-t border-borderDefault pt-4 mt-4">
@@ -245,11 +245,11 @@ const CheckoutPage: React.FC = () => {
                             <div className="mt-3 pl-7 space-y-2 text-sm">
                                 <label htmlFor="full_payment" className="flex items-center cursor-pointer text-textMuted">
                                     <input type="radio" id="full_payment" name="transferOption" value="full" checked={transferOption === 'full'} onChange={() => setTransferOption('full')} className="h-4 w-4 text-primary focus:ring-primary"/>
-                                    <span className="ml-2">Thanh toán toàn bộ <strong className="text-textBase">{getTotalPrice().toLocaleString('vi-VN')}₫</strong></span>
+                                    <span className="ml-2">Thanh toán toàn bộ <strong className="text-textBase">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(getTotalPrice())}</strong></span>
                                 </label>
                                 <label htmlFor="deposit_payment" className="flex items-center cursor-pointer text-textMuted">
                                     <input type="radio" id="deposit_payment" name="transferOption" value="deposit" checked={transferOption === 'deposit'} onChange={() => setTransferOption('deposit')} className="h-4 w-4 text-primary focus:ring-primary"/>
-                                    <span className="ml-2">Đặt cọc {Constants.DEPOSIT_PERCENTAGE * 100}% (<strong className="text-textBase">{(getTotalPrice() * Constants.DEPOSIT_PERCENTAGE).toLocaleString('vi-VN')}₫</strong>)</span>
+                                    <span className="ml-2">Đặt cọc {Constants.DEPOSIT_PERCENTAGE * 100}% (<strong className="text-textBase">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(getTotalPrice() * Constants.DEPOSIT_PERCENTAGE)}</strong>)</span>
                                 </label>
                             </div>
                         )}

@@ -56,7 +56,7 @@ const OrderCard: React.FC<{ order: Order }> = ({ order }) => {
             </div>
 
             <div className="p-4 border-t border-borderDefault flex justify-end items-center bg-gray-50/50 rounded-b-lg">
-                 <p className="text-sm text-textMuted">Tổng tiền: <span className="font-bold text-lg text-primary">{order.totalAmount.toLocaleString('vi-VN')}₫</span></p>
+                 <p className="text-sm text-textMuted">Tổng tiền: <span className="font-bold text-lg text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount)}</span></p>
             </div>
         </Link>
     );

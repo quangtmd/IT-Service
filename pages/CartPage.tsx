@@ -57,9 +57,9 @@ const CartPage: React.FC = () => {
                       {Object.entries(item.buildComponents).map(([type, comp]) => {
                         const component = comp as { name: string; price?: number };
                         return (
-                        <p key={type} className="truncate" title={`${type}: ${component.name} (${(component.price || 0).toLocaleString('vi-VN')}₫)`}>
+                        <p key={type} className="truncate" title={`${type}: ${component.name} (${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(component.price || 0)})`}>
                           - {type}: {component.name}
-                          {(component.price || 0) > 0 && ` (${(component.price || 0).toLocaleString('vi-VN')}₫)`}
+                          {(component.price || 0) > 0 && ` (${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(component.price || 0)})`}
                         </p>
                         )
                       })}
@@ -99,7 +99,7 @@ const CartPage: React.FC = () => {
                     <p className="text-sm text-textMuted mb-2 sm:mb-0">Số lượng: {item.quantity}</p>
                  )}
                 <p className="font-semibold text-textBase w-28 text-right mb-2 sm:mb-0">
-                  {(item.price * item.quantity).toLocaleString('vi-VN')}₫
+                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}
                 </p>
                 <button onClick={() => removeFromCart(item.id)} className="text-danger-text hover:text-red-700 text-lg sm:text-xl" aria-label="Xóa khỏi giỏ hàng">
                   <i className="fas fa-trash-alt"></i>
@@ -115,7 +115,7 @@ const CartPage: React.FC = () => {
           </Button>
           <div className="text-right">
             <p className="text-xl font-semibold text-textBase">
-              Tổng cộng: <span className="text-primary">{getTotalPrice().toLocaleString('vi-VN')}₫</span>
+              Tổng cộng: <span className="text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(getTotalPrice())}</span>
             </p>
             <p className="text-sm text-textMuted">Đã bao gồm VAT (nếu có)</p>
             <Button

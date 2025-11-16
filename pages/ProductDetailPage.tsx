@@ -178,13 +178,13 @@ const ProductDetailPage: React.FC = () => {
 
               <div className="p-4 bg-bgMuted rounded-lg border border-borderDefault mb-4">
                   <div className="flex items-baseline mb-1">
-                      <span className="text-3xl font-bold text-primary">{product.price.toLocaleString('vi-VN')}₫</span>
+                      <span className="text-3xl font-bold text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}</span>
                       {product.originalPrice && product.originalPrice > product.price && (
-                          <span className="text-lg text-textSubtle line-through ml-3">{product.originalPrice.toLocaleString('vi-VN')}₫</span>
+                          <span className="text-lg text-textSubtle line-through ml-3">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice)}</span>
                       )}
                   </div>
                   {savings > 0 && (
-                      <p className="text-sm text-textMuted">Tiết kiệm: <span className="font-semibold text-primary">{savings.toLocaleString('vi-VN')}₫</span></p>
+                      <p className="text-sm text-textMuted">Tiết kiệm: <span className="font-semibold text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(savings)}</span></p>
                   )}
               </div>
               
