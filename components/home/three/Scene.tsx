@@ -4,23 +4,15 @@
 
 import * as THREE from 'three';
 import React, { useRef } from 'react';
-// FIX: Import `MeshProps` to correctly type the props for a three-fiber mesh component.
-// FIX: Add ThreeElements for manual JSX namespace augmentation.
-// FIX: Replaced ThreeElements with explicit prop types to resolve JSX namespace errors.
-import { useFrame, useThree, MeshProps, GroupProps, PlaneGeometryProps, MeshBasicMaterialProps } from '@react-three/fiber';
+// FIX: Import `ThreeElements` for proper JSX type augmentation and `MeshProps` for component props.
+import { useFrame, useThree, MeshProps, ThreeElements } from '@react-three/fiber';
 import { useScroll, Image, Text, useTexture } from '@react-three/drei';
 
-// FIX: Manually extend JSX.IntrinsicElements to include @react-three/fiber elements using explicit prop types.
-// This resolves "Property '...' does not exist on type 'JSX.IntrinsicElements'" errors
-// when automatic type augmentation fails.
+// FIX: Extend JSX.IntrinsicElements with all elements from @react-three/fiber.
+// This is the canonical way to resolve "Property '...' does not exist on type 'JSX.IntrinsicElements'" errors.
 declare global {
   namespace JSX {
-    interface IntrinsicElements {
-      mesh: MeshProps
-      group: GroupProps
-      planeGeometry: PlaneGeometryProps
-      meshBasicMaterial: MeshBasicMaterialProps
-    }
+    interface IntrinsicElements extends ThreeElements {}
   }
 }
 
@@ -45,7 +37,7 @@ const FadingHeroImage: React.FC<MeshProps> = (props) => {
     
     return (
         <mesh ref={ref} {...props}>
-            <planeGeometry />
+            <planeGeometry args={[1, 1]} />
             <meshBasicMaterial map={texture} transparent opacity={0} />
         </mesh>
     );

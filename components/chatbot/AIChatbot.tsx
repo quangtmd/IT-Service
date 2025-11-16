@@ -361,7 +361,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                         functionResponses: [{
                             id: call.id,
                             name: call.name,
-                            response: { result: orderResult ? JSON.stringify(orderResult) : JSON.stringify({ error: "Không tìm thấy đơn hàng nào khớp với mã bạn cung cấp." }) }
+                            response: { result: orderResult ? JSON.stringify(orderResult) : JSON.stringify({ status: "not_found", message: "Không tìm thấy đơn hàng nào khớp với mã bạn cung cấp." }) }
                         }]
                     });
 
