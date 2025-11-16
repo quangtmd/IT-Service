@@ -6,19 +6,20 @@ import * as THREE from 'three';
 import React, { useRef } from 'react';
 // FIX: Import `MeshProps` to correctly type the props for a three-fiber mesh component.
 // FIX: Add ThreeElements for manual JSX namespace augmentation.
-import { useFrame, useThree, MeshProps, ThreeElements } from '@react-three/fiber';
+// FIX: Replaced ThreeElements with explicit prop types to resolve JSX namespace errors.
+import { useFrame, useThree, MeshProps, GroupProps, PlaneGeometryProps, MeshBasicMaterialProps } from '@react-three/fiber';
 import { useScroll, Image, Text, useTexture } from '@react-three/drei';
 
-// FIX: Manually extend JSX.IntrinsicElements to include @react-three/fiber elements.
+// FIX: Manually extend JSX.IntrinsicElements to include @react-three/fiber elements using explicit prop types.
 // This resolves "Property '...' does not exist on type 'JSX.IntrinsicElements'" errors
 // when automatic type augmentation fails.
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      mesh: ThreeElements['mesh']
-      group: ThreeElements['group']
-      planeGeometry: ThreeElements['planeGeometry']
-      meshBasicMaterial: ThreeElements['meshBasicMaterial']
+      mesh: MeshProps
+      group: GroupProps
+      planeGeometry: PlaneGeometryProps
+      meshBasicMaterial: MeshBasicMaterialProps
     }
   }
 }

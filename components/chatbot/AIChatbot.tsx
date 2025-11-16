@@ -337,20 +337,24 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
             if (call.name === 'getOrderStatus') {
                 let orderResult: Order | null = null;
                 try {
-                    const orderIdArg = call.args.orderId;
-                    // Match optional 'T' prefix followed by 6 or more digits
-                    const orderIdMatch = orderIdArg?.match(/(T)?(\d{6,})/i);
-                    // Reconstruct the ID to the standard "Txxxxxx" format if found
-                    const cleanOrderId = orderIdMatch ? `T${orderIdMatch[2]}`.toUpperCase() : null;
+                    let orderIdArg = call.args.orderId;
+                    // Defensive coding: Ensure orderIdArg is a string before using string methods,
+                    // as the AI might interpret a numeric ID as a number type.
+                    if (typeof orderIdArg !== 'string') {
+                        orderIdArg = String(orderIdArg);
+                    }
+
+                    // Extract only the numeric digits from the user's input.
+                    const userProvidedNumbers = orderIdArg.replace(/\D/g, '');
         
-                    if (cleanOrderId) {
+                    if (userProvidedNumbers) {
                         const allOrders = await getOrders();
-                        const formatOrderIdForDisplay = (id: string) => `T${id.replace(/\D/g, '').slice(-6)}`;
-                        
-                        // Find order by matching the formatted ID, WITHOUT checking for current user
-                        orderResult = allOrders.find(o => 
-                            formatOrderIdForDisplay(o.id).toUpperCase() === cleanOrderId
-                        ) || null;
+                        // Find an order where its numeric ID part *ends with* the number provided by the user.
+                        // This robustly handles both short IDs (e.g., '846422') and long IDs (e.g., 'order-123846422').
+                        orderResult = allOrders.find(o => {
+                            const dbOrderNumbers = o.id.replace(/\D/g, '');
+                            return dbOrderNumbers.endsWith(userProvidedNumbers);
+                        }) || null;
                     }
 
                     const toolResponseStream = await chatSession.sendToolResponse({
