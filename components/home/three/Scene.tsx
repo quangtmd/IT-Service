@@ -16,15 +16,16 @@ declare global {
   }
 }
 
-const TechImage: React.FC<{ url: string; scale: [number, number]; position: THREE.Vector3 }> = ({ url, scale, position }) => {
+// FIX: Changed from React.FC to a standard function component to help with type inference.
+const TechImage = ({ url, scale, position }: { url: string; scale: [number, number]; position: THREE.Vector3 }) => {
   return (
     <Image url={url} scale={scale} position={position} />
   );
 };
 
 // Component for the fading hero image. It handles its own texture loading and animation.
-// FIX: Replaced `JSX.IntrinsicElements['mesh']` with `MeshProps` to resolve the "Cannot find namespace 'JSX'" error.
-const FadingHeroImage: React.FC<MeshProps> = (props) => {
+// FIX: Changed from React.FC to a standard function component.
+const FadingHeroImage = (props: MeshProps) => {
     const ref = useRef<THREE.Mesh>(null!);
     const scroll = useScroll();
     const texture = useTexture("https://images.unsplash.com/photo-1550745165-9bc0b252726a?q=80&w=1920&auto=format&fit=crop");
@@ -45,7 +46,8 @@ const FadingHeroImage: React.FC<MeshProps> = (props) => {
 
 
 // Component for the final hero section text, which also fades in.
-const FadingHeroText: React.FC = () => {
+// FIX: Changed from React.FC to a standard function component.
+const FadingHeroText = () => {
     const { width: w } = useThree(state => state.viewport);
     const scroll = useScroll();
     const text1Ref = useRef<any>(null!);

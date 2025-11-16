@@ -51,6 +51,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
 
   const loadSiteSettings = useCallback(() => {
@@ -335,7 +336,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
             const call = functionCalls[0]; // Process first function call
             if (call.name === 'getOrderStatus') {
-                let orderResult: Order | { status: string, message: string } | null = null;
+                let orderResult: Order | null = null;
                 try {
                     let orderIdArg = call.args.orderId;
                     if (typeof orderIdArg !== 'string') {
@@ -351,11 +352,28 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                         }) || null;
                     }
 
+                    let toolResponsePayload;
+                    if (orderResult) {
+                        toolResponsePayload = {
+                            id: orderResult.id,
+                            status: orderResult.status,
+                            totalAmount: orderResult.totalAmount,
+                            customerInfo: { address: orderResult.customerInfo.address },
+                            shippingInfo: orderResult.shippingInfo ? {
+                                carrier: orderResult.shippingInfo.carrier,
+                                trackingNumber: orderResult.shippingInfo.trackingNumber
+                            } : null
+                        };
+                    } else {
+                        toolResponsePayload = { status: "not_found", message: "Không tìm thấy đơn hàng nào khớp với mã bạn cung cấp." };
+                    }
+
+
                     const toolResponseStream = await chatSession.sendToolResponse({
                         functionResponses: [{
                             id: call.id,
                             name: call.name,
-                            response: { result: orderResult ? orderResult : { status: "not_found", message: "Không tìm thấy đơn hàng nào khớp với mã bạn cung cấp." } }
+                            response: { result: toolResponsePayload }
                         }]
                     });
 
@@ -399,7 +417,10 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     } finally {
       setIsLoading(false);
       setCurrentBotMessageId(null); 
-      saveChatLog(); 
+      saveChatLog();
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
     }
   };
 
@@ -481,6 +502,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                     <i className="fas fa-microphone"></i>
                 </Button>
                 <input
+                  ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
