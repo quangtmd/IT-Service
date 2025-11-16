@@ -8,7 +8,7 @@ import {
     ProductReview, EmailSubscriber, EmailCampaign, AdCampaign,
     AuditLog, Contract, Asset, KPI, EmployeeKPI
 } from '../types';
-import * as Constants from '../constants';
+import * as Constants from '../constants.tsx';
 import { BACKEND_API_BASE_URL } from '../constants';
 
 // --- Helper Functions for localStorage ---

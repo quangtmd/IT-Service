@@ -119,10 +119,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
             {error && <BackendConnectionError error={error} />}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title="Doanh thu tháng" value={summary.revenueThisMonth.toLocaleString('vi-VN')+'₫'} icon="fa-chart-line" color="bg-blue-500" onClick={() => setActiveView('reports')} />
-                <StatCard title="Lợi nhuận tháng" value={summary.profitThisMonth.toLocaleString('vi-VN')+'₫'} icon="fa-dollar-sign" color="bg-green-500" onClick={() => navigate('/admin/reports?type=profit')} />
+                <StatCard title="Doanh thu tháng" value={summary.revenueThisMonth.toLocaleString('vi-VN')+'₫'} icon="fa-chart-line" color="bg-blue-500" onClick={() => setActiveView('accounting_dashboard')} />
+                <StatCard title="Lợi nhuận tháng" value={summary.profitThisMonth.toLocaleString('vi-VN')+'₫'} icon="fa-dollar-sign" color="bg-green-500" onClick={() => navigate('/admin/accounting_dashboard?tab=reports')} />
                 <StatCard title="Đơn hàng mới" value={summary.newOrdersCount} icon="fa-receipt" color="bg-purple-500" onClick={() => setActiveView('orders')} subtitle="Trong tháng này" />
-                <StatCard title="Khách hàng mới" value={summary.newCustomersCount} icon="fa-users" color="bg-orange-500" onClick={() => setActiveView('partners')} subtitle="Trong tháng này" />
+                <StatCard title="Khách hàng mới" value={summary.newCustomersCount} icon="fa-users" color="bg-orange-500" onClick={() => setActiveView('customers')} subtitle="Trong tháng này" />
             </div>
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

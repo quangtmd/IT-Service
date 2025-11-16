@@ -235,7 +235,6 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
         }, {} as Record<string, number>);
 
         return { income, expense, net, incomeByCategory, expenseByCategory };
-    // FIX: The useMemo hook for `summary` had an incorrect dependency `filteredOrders`, which is not defined in this scope. Changed to `filteredTransactions`.
     }, [filteredTransactions]);
 
     return (

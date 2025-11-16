@@ -112,7 +112,8 @@ export interface Testimonial {
 export interface NavLinkItem {
   label: string;
   path: string;
-  icon?: React.ReactNode; 
+  // FIX: Changed icon type from React.ReactNode to string to match usage with FontAwesome class names.
+  icon?: string; 
   authRequired?: boolean;
   hideWhenAuth?: boolean; 
 }

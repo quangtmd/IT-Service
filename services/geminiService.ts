@@ -4,6 +4,7 @@ import * as Constants from '../constants.tsx';
 // Fix: Added SiteSettings, Article, Product
 import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; 
 import { MOCK_SERVICES } from '../data/mockData';
+// FIX: Import PRODUCT_CATEGORIES_HIERARCHY from constants
 import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
 
 
@@ -75,6 +76,11 @@ export const startChat = (
 
   const defaultSystemInstruction = `Bạn là một trợ lý AI bán hàng và hỗ trợ khách hàng toàn diện cho cửa hàng ${siteSettings.companyName}. Cửa hàng của chúng ta kinh doanh hai mảng chính: bán sản phẩm công nghệ và cung cấp dịch vụ IT.
 
+**GIỚI HẠN CỐT LÕI (TUYỆT ĐỐI TUÂN THỦ):**
+- Bạn **KHÔNG** có quyền truy cập vào giá cả, tồn kho, hay thông số kỹ thuật chi tiết của **TỪNG SẢN PHẨM RIÊNG LẺ**.
+- Vì vậy, bạn **TUYỆT ĐỐI KHÔNG ĐƯỢC PHÉP** hứa hẹn hay đề nghị cung cấp các thông tin này. **KHÔNG BAO GIỜ** hỏi những câu như "Bạn có muốn tôi cung cấp thêm thông tin chi tiết về cấu hình, giá cả... không?".
+- Thay vào đó, vai trò của bạn là tư vấn chung và **CHỦ ĐỘNG HƯỚNG DẪN** khách hàng xem thông tin đó trên trang sản phẩm mà họ đang truy cập.
+
 **Kiểm tra đơn hàng:**
 - Khi người dùng hỏi về trạng thái đơn hàng và **cung cấp một mã đơn hàng** (ví dụ: "đơn hàng của tôi đâu #123456?", "check order T280649"), hãy **luôn luôn** sử dụng công cụ 'getOrderStatus'.
 - **BẮT BUỘC** phải trích xuất mã đơn hàng và truyền vào tham số 'orderId' của công cụ. Mã đơn hàng có thể có chữ 'T' ở đầu hoặc không.
@@ -88,20 +94,20 @@ export const startChat = (
   - **Về vận chuyển:** Nếu đối tượng \`shippingInfo\` tồn tại và có \`carrier\` (đơn vị vận chuyển) và \`trackingNumber\` (mã vận đơn), hãy cung cấp thông tin đó. Nếu \`shippingInfo\` không tồn tại, rỗng, hoặc không có các thông tin trên, hãy trả lời rằng "thông tin vận chuyển sẽ sớm được cập nhật" và **TUYỆT ĐỐI KHÔNG** tự bịa ra thông tin.
 - Nếu kết quả trả về là một đối tượng JSON có chứa trường \`status: "not_found"\`, hãy thông báo cho người dùng một cách lịch sự rằng bạn không tìm thấy đơn hàng với mã họ cung cấp. Ví dụ: "Tôi đã kiểm tra nhưng không tìm thấy đơn hàng nào khớp với mã bạn cung cấp. Bạn vui lòng kiểm tra lại mã nhé." **TUYỆT ĐỐI KHÔNG** báo "có lỗi khi truy xuất", vì đây là kết quả tìm kiếm không thành công, không phải lỗi hệ thống.
 
-**Kiến thức về Sản phẩm của Cửa hàng:**
-Chúng tôi bán đa dạng các sản phẩm. Khi được hỏi, hãy xác nhận rằng chúng ta có bán các mặt hàng này và khuyến khích khách hàng khám phá thêm. Các danh mục chính bao gồm:
+**Danh mục sản phẩm chúng tôi bán:**
 ${productCategoriesInfo}
 
-**Kiến thức về Dịch vụ của Cửa hàng:**
-Dưới đây là danh sách các dịch vụ IT mà cửa hàng cung cấp. Hãy sử dụng thông tin này để tư vấn chi tiết cho khách hàng.
+**Dịch vụ IT chúng tôi cung cấp:**
 ${serviceInfo}
 
 **Quy tắc trả lời:**
-1.  **Sử dụng Bối cảnh (Context):** Nếu tin nhắn của người dùng bắt đầu bằng '[Bối cảnh: ...]', hãy sử dụng thông tin đó để ưu tiên trả lời. Ví dụ, nếu bối cảnh là 'đang xem dịch vụ bảo trì', và người dùng hỏi 'giá bao nhiêu?', hãy trả lời về giá của dịch vụ bảo trì đó.
-2.  **Khi người dùng hỏi về sản phẩm (ví dụ: "có bán laptop không?"):** Hãy xác nhận rằng cửa hàng có bán danh mục sản phẩm đó (dựa vào "Kiến thức về Sản phẩm") và khuyến khích họ truy cập trang sản phẩm chung ([${siteSettings.companyName} Shop](${window.location.origin}${window.location.pathname}#/shop)) hoặc hỏi chi tiết hơn để bạn có thể tư vấn.
-3.  **Khi người dùng hỏi về dịch vụ IT:** Hãy dựa vào phần "Kiến thức về Dịch vụ" để trả lời. Cung cấp mô tả chi tiết và luôn kèm theo link chi tiết của dịch vụ đó.
-4.  **Tránh mặc định từ chối:** TUYỆT ĐỐT KHÔNG trả lời rằng bạn "không thể" cung cấp thông tin sản phẩm. Vai trò của bạn là một nhân viên bán hàng, hãy thể hiện rằng cửa hàng có đa dạng sản phẩm.
-5.  **Thông tin liên hệ:** Chỉ cung cấp thông tin liên hệ chung khi người dùng trực tiếp yêu cầu hoặc khi bạn không thể trả lời câu hỏi sau khi đã sử dụng hết kiến thức được cung cấp.
+1.  **Sử dụng Bối cảnh (Context):**
+    - Nếu bối cảnh là một **sản phẩm cụ thể** (ví dụ: '[Bối cảnh: Khách hàng đang xem sản phẩm: "PC GAMING IQ EAGLE"]'), và người dùng hỏi thông tin chi tiết (như "giá bao nhiêu?", "cấu hình thế nào?"), hãy trả lời rằng bạn có thể cung cấp mô tả chung về dòng sản phẩm đó, nhưng để xem thông tin **chính xác và cập nhật nhất** về giá cả, cấu hình chi tiết và tình trạng tồn kho, khách hàng nên **xem trực tiếp trên trang sản phẩm**. Hãy nói rằng họ có thể tìm thấy link trang sản phẩm ngay trên màn hình họ đang xem.
+2.  **Khi người dùng hỏi về một loại sản phẩm chung (ví dụ: "có bán laptop không?"):**
+    - Hãy xác nhận rằng cửa hàng có bán danh mục đó (dựa vào "Danh mục sản phẩm") và khuyến khích họ truy cập trang sản phẩm chung ([${siteSettings.companyName} Shop](${window.location.origin}${window.location.pathname}#/shop)) để khám phá.
+3.  **Hướng dẫn chủ động:**
+    - Thay vì nói "Tôi không thể cung cấp thông tin", hãy chủ động hướng dẫn: "Để có thông tin chính xác nhất về giá cả và cấu hình của sản phẩm bạn đang quan tâm, bạn vui lòng xem trực tiếp trên trang web nhé. Tại đó, mọi thông tin luôn được cập nhật đầy đủ và chính xác nhất."
+    - Vai trò của bạn là một nhân viên bán hàng, hãy luôn tỏ ra hữu ích và hướng dẫn khách hàng đến nơi họ có thể tìm thấy câu trả lời.
 
 **Thông tin liên hệ chung (chỉ dùng khi thật sự cần thiết):**
 - Tên công ty: ${siteSettings.companyName}
@@ -302,6 +308,7 @@ export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
     if (!client) {
         throw new Error(Constants.API_KEY_ERROR_MESSAGE);
     }
+    // FIX: Import and use ARTICLE_CATEGORIES from constants
     const prompt = `Làm một biên tập viên tin tức công nghệ. Sử dụng Google Search để tìm 3 tin tức công nghệ mới và thú vị nhất trong vài ngày qua. 
     Đối với mỗi tin tức, hãy cung cấp một tiêu đề hấp dẫn, một bản tóm tắt (summary) khoảng 2-3 câu, một nội dung chi tiết (content) được định dạng bằng Markdown, một danh mục (category) từ danh sách sau: [${Constants.ARTICLE_CATEGORIES.join(', ')}], và một cụm từ khóa tìm kiếm hình ảnh bằng tiếng Anh (imageSearchQuery) ngắn gọn, phù hợp với nội dung.
     Trả về kết quả dưới dạng một mảng JSON.`;
@@ -322,80 +329,58 @@ export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
         if (match && match[2]) {
             jsonStr = match[2].trim();
         }
-
-        const articles = JSON.parse(jsonStr) as Partial<Article>[];
-        return articles;
+        
+        return JSON.parse(jsonStr) as Partial<Article>[];
 
     } catch (error) {
-        console.error("Error fetching latest tech news from Gemini:", error);
-        throw new Error("Không thể lấy tin tức mới nhất từ AI. Vui lòng thử lại sau.");
+        console.error("Error fetching latest tech news:", error);
+        throw new Error("Không thể lấy tin tức mới nhất từ AI. Vui lòng kiểm tra lại API Key và thử lại.");
     }
-};
-
-
-export const generateImage = async (prompt: string): Promise<string> => {
-  const client = getAiClient(); 
-  if (!client) {
-      throw new Error(Constants.API_KEY_ERROR_MESSAGE);
-  }
-  try {
-    const response = await client.models.generateImages({
-        model: IMAGE_MODEL_NAME,
-        prompt: prompt,
-        config: {numberOfImages: 1, outputMimeType: 'image/jpeg'},
-    });
-
-    if (response.generatedImages && response.generatedImages.length > 0) {
-      const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-      return `data:image/jpeg;base64,${base64ImageBytes}`;
-    }
-    throw new Error("No image generated");
-  } catch (error) {
-    console.error("Error generating image:", error);
-    throw error;
-  }
 };
 
 export const sendMessageWithImage = async (
-  textPrompt: string,
-  base64ImageData: string,
+  message: string,
+  base64Data: string,
   mimeType: string,
   currentChatInstance?: Chat
 ): Promise<AsyncIterable<GenerateContentResponse>> => {
-  const chatToUse = currentChatInstance || chatSessionInstance;
-  if (!chatToUse) {
-     throw new Error("Chat not initialized for image message. Call startChat first.");
-  }
-  
-  const client = getAiClient();
-  if (!client) {
-    throw new Error(Constants.API_KEY_ERROR_MESSAGE);
-  }
+    const chatToUse = currentChatInstance || chatSessionInstance;
+    if (!chatToUse) {
+        throw new Error("Chat not initialized. Call startChat first.");
+    }
 
-  const imagePart: Part = {
-    inlineData: {
-      mimeType: mimeType,
-      data: base64ImageData,
-    },
-  };
-  const textPart: Part = { text: textPrompt };
+    const imagePart: Part = {
+        inlineData: {
+            data: base64Data,
+            mimeType: mimeType
+        }
+    };
 
-  try {
-    // Fix: Changed 'parts' to 'message' to match the SendMessageParameters type for chat sessions.
-    return await chatToUse.sendMessageStream({ message: [textPart, imagePart] });
-  } catch (error) {
-    console.error("Error sending message with image to Gemini (stream):", error);
-    throw error;
-  }
+    const textPart: Part = {
+        text: message
+    };
+    
+    try {
+        const result = await chatToUse.sendMessageStream({
+            // FIX: Ensure 'message' property holds an object with a 'parts' array when sending multi-modal content.
+            // This corrects the type error where a string was being assigned to a property expecting a complex object.
+            message: { parts: [textPart, imagePart] }
+        });
+        return result;
+    } catch (error) {
+        console.error("Error sending message with image to Gemini:", error);
+        throw error;
+    }
 };
 
-export default {
-  startChat,
-  sendMessageToChatStream,
-  generatePCBuildRecommendation,
-  generatePCBuildSuggestions,
-  generateTextWithGoogleSearch,
-  generateImage,
-  sendMessageWithImage,
-  fetchLatestTechNews,
+const geminiService = {
+    startChat,
+    sendMessageToChatStream,
+    sendMessageWithImage,
+    generatePCBuildRecommendation,
+    generateTextWithGoogleSearch,
+    fetchLatestTechNews,
+    generatePCBuildSuggestions,
 };
+
+export default geminiService;

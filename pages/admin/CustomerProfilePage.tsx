@@ -135,7 +135,7 @@ const CustomerProfilePage: React.FC = () => {
                 <div className="admin-card-body text-center py-8 text-danger-text">
                     <i className="fas fa-exclamation-triangle text-3xl mb-3"></i>
                     <p>{error}</p>
-                    <Link to="/admin/partners"><Button className="mt-4">Quay lại</Button></Link>
+                    <Link to="/admin/customers"><Button className="mt-4">Quay lại</Button></Link>
                 </div>
             </div>
         );
@@ -152,7 +152,7 @@ const CustomerProfilePage: React.FC = () => {
             <div className="admin-card">
                 <div className="admin-card-header flex justify-between">
                      <h3 className="admin-card-title">Thông tin khách hàng</h3>
-                     <Link to={`/admin/partners/customers/edit/${customer.id}`}><Button variant="primary" size="sm" leftIcon={<i className="fas fa-edit"/>}>Sửa</Button></Link>
+                     <Link to={`/admin/customers/edit/${customer.id}`}><Button variant="primary" size="sm" leftIcon={<i className="fas fa-edit"/>}>Sửa</Button></Link>
                 </div>
                 <div className="admin-card-body">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

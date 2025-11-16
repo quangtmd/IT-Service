@@ -335,22 +335,16 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
             const call = functionCalls[0]; // Process first function call
             if (call.name === 'getOrderStatus') {
-                let orderResult: Order | null = null;
+                let orderResult: Order | { status: string, message: string } | null = null;
                 try {
                     let orderIdArg = call.args.orderId;
-                    // Defensive coding: Ensure orderIdArg is a string before using string methods,
-                    // as the AI might interpret a numeric ID as a number type.
                     if (typeof orderIdArg !== 'string') {
                         orderIdArg = String(orderIdArg);
                     }
-
-                    // Extract only the numeric digits from the user's input.
                     const userProvidedNumbers = orderIdArg.replace(/\D/g, '');
         
                     if (userProvidedNumbers) {
                         const allOrders = await getOrders();
-                        // Find an order where its numeric ID part *ends with* the number provided by the user.
-                        // This robustly handles both short IDs (e.g., '846422') and long IDs (e.g., 'order-123846422').
                         orderResult = allOrders.find(o => {
                             const dbOrderNumbers = o.id.replace(/\D/g, '');
                             return dbOrderNumbers.endsWith(userProvidedNumbers);
@@ -361,7 +355,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                         functionResponses: [{
                             id: call.id,
                             name: call.name,
-                            response: { result: orderResult ? JSON.stringify(orderResult) : JSON.stringify({ status: "not_found", message: "Không tìm thấy đơn hàng nào khớp với mã bạn cung cấp." }) }
+                            response: { result: orderResult ? orderResult : { status: "not_found", message: "Không tìm thấy đơn hàng nào khớp với mã bạn cung cấp." } }
                         }]
                     });
 
