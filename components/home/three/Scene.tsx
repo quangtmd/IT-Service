@@ -1,7 +1,6 @@
-// FIX: Add a triple-slash directive to include react-three-fiber's JSX type definitions.
-// This resolves errors where JSX elements like <mesh>, <planeGeometry>, <meshBasicMaterial>,
-// and <group> were not recognized by TypeScript.
-/// <reference types="@react-three/fiber/patch-three-ts" />
+// FIX: Removed an outdated and invalid triple-slash directive for '@react-three/fiber/patch-three-ts'.
+// This directive was causing a "type definition not found" error and preventing TypeScript from correctly resolving the JSX types for react-three-fiber elements.
+// In modern versions of react-three-fiber, these types are automatically inferred from the standard module imports.
 
 import * as THREE from 'three';
 import React, { useRef } from 'react';

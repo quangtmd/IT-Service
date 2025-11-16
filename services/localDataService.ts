@@ -84,16 +84,42 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     }
 }
 
+// --- Helper to parse product fields that are stored as JSON strings ---
+const parseProductFields = (product: Product): Product => {
+    const newProduct = { ...product };
+    // Defensively check and parse fields that should be objects/arrays
+    for (const key of ['imageUrls', 'tags', 'specifications'] as const) {
+        const value = newProduct[key];
+        if (typeof value === 'string') {
+            try {
+                (newProduct as any)[key] = JSON.parse(value);
+            } catch (e) {
+                console.error(`Failed to parse ${key} for product ${newProduct.id}:`, value);
+                // Fallback to a safe default
+                (newProduct as any)[key] = (key === 'specifications') ? {} : [];
+            }
+        }
+    }
+    return newProduct;
+};
+
 
 // --- Product Service ---
 export const getProducts = async (queryParamsString: string = ''): Promise<{ products: Product[], totalProducts: number }> => {
     const endpoint = `/api/products${queryParamsString ? `?${queryParamsString}` : ''}`;
-    return fetchFromApi<{ products: Product[], totalProducts: number }>(endpoint);
+    const data = await fetchFromApi<{ products: Product[], totalProducts: number }>(endpoint);
+    // Parse each product after fetching
+    if (data.products) {
+        data.products = data.products.map(parseProductFields);
+    }
+    return data;
 };
 
 export const getProduct = async (id: string): Promise<Product | null> => {
     try {
-        return await fetchFromApi<Product>(`/api/products/${id}`);
+        const product = await fetchFromApi<Product>(`/api/products/${id}`);
+        // Parse the single product after fetching
+        return product ? parseProductFields(product) : null;
     } catch (error) {
         if (error instanceof Error && error.message.includes('404')) return null;
         throw error;
@@ -121,7 +147,9 @@ export const deleteProduct = async (id: string): Promise<void> => {
 };
 
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    return fetchFromApi<Product[]>('/api/products/featured');
+    const products = await fetchFromApi<Product[]>('/api/products/featured');
+    // Parse each product after fetching
+    return products.map(parseProductFields);
 };
 
 
@@ -509,6 +537,7 @@ export const updateStockIssue = async (id: string, updates: Partial<StockIssue>)
 export const deleteStockIssue = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/api/stock-issues/${id}`, { method: 'DELETE' });
 };
+
 
 // Stock Transfers
 export const getStockTransfers = async (): Promise<StockTransfer[]> => {
