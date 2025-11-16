@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 // Fix: Use named import for useNavigate
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
@@ -49,6 +49,7 @@ export const PCBuilderPage: React.FC = () => {
   const { addAdminNotification } = useAuth();
   // Fix: Use useNavigate directly
   const navigate = useNavigate();
+  const location = useLocation();
   const { setCurrentContext } = useChatbotContext();
 
   useEffect(() => {
@@ -108,7 +109,7 @@ export const PCBuilderPage: React.FC = () => {
 
   // Handle loading a custom build from URL (e.g., from CartPage)
   React.useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
+    const query = new URLSearchParams(location.search);
     const loadBuildId = query.get('load');
     if (loadBuildId) {
       // Find this build in the cart and populate the selector
@@ -128,7 +129,7 @@ export const PCBuilderPage: React.FC = () => {
         navigate('/pc-builder', { replace: true });
       }
     }
-  }, [navigate]);
+  }, [navigate, location.search]);
 
 
   const calculateTotalPrice = () => {

@@ -120,7 +120,7 @@ const ProductDetailPage: React.FC = () => {
         <nav aria-label="breadcrumb" className="text-sm text-textMuted mb-6 bg-bgBase p-3 rounded-md border border-borderDefault">
           <ol className="flex items-center space-x-1.5 flex-wrap">
             {/* Fix: Use Link directly */}
-            <li><Link to="/home" className="hover:text-primary">Trang chủ</Link></li>
+            <li><Link to="/" className="hover:text-primary">Trang chủ</Link></li>
             <li><span className="text-textSubtle">/</span></li>
             {/* Fix: Use Link directly */}
             <li><Link to="/shop" className="hover:text-primary">Sản phẩm</Link></li>
@@ -258,7 +258,7 @@ const ProductDetailPage: React.FC = () => {
             <h2 className="text-2xl font-bold text-textBase mb-6 text-center">Sản phẩm liên quan</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map(relatedProduct => (
-                <ProductCard key={relatedProduct.id} product={relatedProduct} context="detail-view" />
+                <ProductCard key={relatedProduct.id} product={relatedProduct} />
               ))}
             </div>
           </div>
