@@ -3,7 +3,7 @@ import React, { Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 import { Canvas } from '@react-three/fiber';
-import ServerTechScene from '../three/ServerTechScene'; // Updated import
+import CloudNetworkScene from '../three/CloudNetworkScene'; // Changed to CloudNetworkScene
 import { useTheme } from '../../../contexts/ThemeContext';
 
 const HomeHero3D: React.FC = () => {
@@ -11,17 +11,17 @@ const HomeHero3D: React.FC = () => {
 
   return (
     <section className="relative w-full h-[85vh] min-h-[600px] overflow-hidden bg-bgCanvas">
-      {/* 3D Background Layer - Server Room Simulation */}
+      {/* 3D Background Layer - Cloud Network Simulation */}
       <div className="absolute inset-0 z-0 bg-black">
         <Canvas className="w-full h-full">
           <Suspense fallback={null}>
-            <ServerTechScene />
+            <CloudNetworkScene />
           </Suspense>
         </Canvas>
       </div>
 
-      {/* Gradient Overlay for text readability - Significantly reduced opacity for visibility of racks */}
-      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/40 via-black/5 to-transparent`}></div>
+      {/* Gradient Overlay for text readability - Subtle gradient */}
+      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/60 via-black/20 to-transparent`}></div>
       
       {/* Content Layer */}
       <div className="absolute inset-0 z-20 flex items-center justify-start pointer-events-none">
