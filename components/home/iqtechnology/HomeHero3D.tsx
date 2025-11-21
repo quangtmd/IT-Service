@@ -20,8 +20,8 @@ const HomeHero3D: React.FC = () => {
         </Canvas>
       </div>
 
-      {/* Gradient Overlay for text readability - Reduced opacity for better visibility of racks */}
-      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/60 via-black/20 to-transparent`}></div>
+      {/* Gradient Overlay for text readability - Significantly reduced opacity for visibility of racks */}
+      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/40 via-black/5 to-transparent`}></div>
       
       {/* Content Layer */}
       <div className="absolute inset-0 z-20 flex items-center justify-start pointer-events-none">

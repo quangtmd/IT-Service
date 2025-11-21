@@ -167,17 +167,17 @@ const ServerTechScene: React.FC = () => {
     <>
       <PerspectiveCamera makeDefault position={[0, 3, 6]} fov={60} />
       
-      {/* Environment & Lighting (Brightened) */}
-      <fog attach="fog" args={['#050505', 10, 40]} /> {/* Pushed fog back to reveal racks */}
-      <ambientLight intensity={1.2} /> {/* Increased general brightness */}
+      {/* Environment & Lighting (Brightened for visibility) */}
+      <fog attach="fog" args={['#050505', 20, 60]} /> {/* Pushed fog back significantly */}
+      <ambientLight intensity={3.0} /> {/* High ambient light to reveal details */}
       
       {/* Key Lights */}
-      <pointLight position={[0, 10, 0]} intensity={3} color="#00aaff" distance={50} />
-      <pointLight position={[10, 5, 5]} intensity={2} color="#ffffff" distance={30} />
-      <pointLight position={[-10, 5, 5]} intensity={2} color="#ffffff" distance={30} />
+      <pointLight position={[0, 10, 0]} intensity={4} color="#00aaff" distance={60} />
+      <pointLight position={[10, 5, 5]} intensity={3} color="#ffffff" distance={40} />
+      <pointLight position={[-10, 5, 5]} intensity={3} color="#ffffff" distance={40} />
       
-      {/* Fill Light from front to illuminate racks */}
-      <directionalLight position={[0, 2, 10]} intensity={2} color="#ffffff" />
+      {/* Strong Fill Light from front to clearly illuminate racks */}
+      <directionalLight position={[0, 2, 10]} intensity={5} color="#ffffff" />
       
       <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
       <Sparkles count={200} scale={20} size={4} speed={0.2} opacity={0.5} color="#00f3ff" position={[0, 2, 0]}/>
