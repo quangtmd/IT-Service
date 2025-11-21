@@ -4,10 +4,9 @@ import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/ui/Card';
 import {
-    getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
+    getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction as apiDeleteFinancialTransaction,
     getPayrollRecords, savePayrollRecords
 } from '../../services/localDataService';
-// FIX: Updated imports to use named imports from 'react-router-dom'.
 import { useNavigate, NavigateFunction } from 'react-router-dom';
 
 // --- HELPER FUNCTIONS & COMPONENTS ---
@@ -28,7 +27,6 @@ const FinancialManagementView: React.FC = () => {
     const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    // FIX: Used named import for useNavigate.
     const navigate = useNavigate();
 
     const loadData = useCallback(async () => {
@@ -136,30 +134,26 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
     );
 };
 
-// FIX: Added `NavigateFunction` to props type.
 const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
 
-    // FIX: Wrapped handleEditTransaction in useCallback to ensure stable function reference.
-    const handleEditTransaction = useCallback((transactionId: string) => {
+    const handleEditTransaction = (transactionId: string) => {
         navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
-    }, [navigate]);
+    };
 
-    // FIX: Wrapped handleDelete in useCallback to ensure stable function reference.
-    const handleDelete = useCallback(async (id: string) => {
+    const handleDelete = async (id: string) => {
         if(window.confirm('Bạn có chắc muốn xóa giao dịch này?')) {
             try {
-                await deleteFinancialTransaction(id);
+                await apiDeleteFinancialTransaction(id);
                 onDataChange();
             } catch (error) {
                 window.alert("Lỗi khi xóa giao dịch.");
             }
         }
-    }, [onDataChange]);
+    };
 
     return (
         <div>
             <div className="flex justify-end mb-4">
-                {/* FIX: Inlined navigation to avoid potential argument mismatch issues */}
                 <Button onClick={() => navigate('/admin/accounting_dashboard/transactions/new')} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
             </div>
              <div className="overflow-x-auto">

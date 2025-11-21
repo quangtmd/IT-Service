@@ -3,7 +3,7 @@ import React, { Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 import { Canvas } from '@react-three/fiber';
-import TechShapes from '../three/TechShapes';
+import ServerTechScene from '../three/ServerTechScene'; // Updated import
 import { useTheme } from '../../../contexts/ThemeContext';
 
 const HomeHero3D: React.FC = () => {
@@ -11,58 +11,57 @@ const HomeHero3D: React.FC = () => {
 
   return (
     <section className="relative w-full h-[85vh] min-h-[600px] overflow-hidden bg-bgCanvas">
-      {/* 3D Background Layer */}
+      {/* 3D Background Layer - Server Room Simulation */}
       <div className="absolute inset-0 z-0 bg-black">
         <Canvas className="w-full h-full">
           <Suspense fallback={null}>
-            <TechShapes />
+            <ServerTechScene />
           </Suspense>
         </Canvas>
       </div>
 
-      {/* Gradient Overlay for readability */}
-      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-b ${theme === 'dark' ? 'from-transparent via-slate-900/10 to-slate-900' : 'from-transparent via-white/10 to-white'}`}></div>
+      {/* Gradient Overlay - Reduced Opacity for brighter scene */}
+      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/70 via-black/20 to-transparent`}></div>
       
       {/* Content Layer */}
       <div className="absolute inset-0 z-20 flex items-center justify-start pointer-events-none">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-left pointer-events-auto">
-          {/* Removed background, border, and shadow classes for transparency */}
-          <div className="animate-on-scroll fade-in-up is-visible max-w-4xl py-12">
+          <div className="animate-on-scroll fade-in-up is-visible max-w-4xl py-12 pl-4 md:pl-0">
             <div className="mb-6 flex justify-start">
-               <span className="inline-flex items-center py-1 px-3 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/50 text-sm font-bold tracking-widest uppercase animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 mr-2 animate-ping"></span>
-                  Công nghệ tương lai
+               <span className="inline-flex items-center py-1.5 px-4 rounded-full bg-cyan-900/60 text-cyan-300 border border-cyan-500/50 text-sm font-bold tracking-widest uppercase animate-pulse backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.5)]">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 mr-3 animate-ping"></span>
+                  Hệ Thống Quản Trị Thông Minh
                </span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight text-white">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]">
+            <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight text-white drop-shadow-xl">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 filter drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]">
                 IQ TECHNOLOGY
               </span>
               <br />
-              <span className="text-4xl md:text-6xl text-gray-100">
-                Giải Pháp IT Toàn Diện
+              <span className="text-4xl md:text-6xl text-gray-100 font-bold">
+                Kỷ Nguyên Dữ Liệu Số
               </span>
             </h1>
             
-            <p className="text-lg md:text-xl mb-10 max-w-2xl leading-relaxed text-gray-300">
-              Chúng tôi mang đến sức mạnh công nghệ để nâng tầm doanh nghiệp của bạn. Từ linh kiện PC cao cấp đến các giải pháp phần mềm đột phá.
+            <p className="text-lg md:text-xl mb-10 max-w-2xl leading-relaxed text-gray-200 font-light border-l-4 border-cyan-500 pl-6 bg-black/10 backdrop-blur-sm p-4 rounded-r-lg">
+              Vận hành doanh nghiệp của bạn với sức mạnh của hạ tầng máy chủ tiên tiến. Giải pháp IT toàn diện, bảo mật tối đa và hiệu năng vượt trội.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-start items-center sm:items-start">
+            <div className="flex flex-col sm:flex-row gap-5 justify-start items-center sm:items-start">
               <Link to="/shop">
                 <Button 
                   size="lg" 
-                  className="px-8 py-4 text-lg font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_20px_rgba(8,145,178,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] hover:scale-105 transition-all duration-300 border-none"
+                  className="px-8 py-4 text-lg font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_20px_rgba(8,145,178,0.6)] hover:shadow-[0_0_30px_rgba(6,182,212,0.8)] hover:scale-105 transition-all duration-300 border-none ring-2 ring-cyan-400/20"
                 >
-                  <i className="fas fa-microchip mr-2"></i> Mua Linh Kiện
+                  <i className="fas fa-server mr-3"></i> Xây Dựng Hạ Tầng
                 </Button>
               </Link>
               <Link to="/services">
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="px-8 py-4 text-lg font-bold border-2 border-white/30 text-white hover:bg-white hover:text-black backdrop-blur-sm hover:border-white transition-all duration-300"
+                  className="px-8 py-4 text-lg font-bold border-2 border-cyan-400/50 text-cyan-100 hover:bg-cyan-900/50 hover:text-white backdrop-blur-md hover:border-cyan-400 transition-all duration-300 shadow-[0_0_15px_rgba(0,0,0,0.5)]"
                 >
                   Dịch Vụ IT <i className="fas fa-arrow-right ml-2"></i>
                 </Button>
