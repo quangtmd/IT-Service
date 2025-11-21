@@ -4,7 +4,7 @@ import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/ui/Card';
 import {
-    getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
+    getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction as apiDeleteFinancialTransaction,
     getPayrollRecords, savePayrollRecords
 } from '../../services/localDataService';
 import { useNavigate, NavigateFunction } from 'react-router-dom';
@@ -141,11 +141,13 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
     };
 
     const handleDelete = async (id: string) => {
-        if(window.confirm('Bạn có chắc muốn xóa giao dịch này?')) {
+        const isConfirmed = window.confirm('Bạn có chắc muốn xóa giao dịch này?');
+        if(isConfirmed) {
             try {
-                await deleteFinancialTransaction(id);
+                await apiDeleteFinancialTransaction(id);
                 onDataChange();
             } catch (error) {
+                console.error("Delete transaction error:", error);
                 window.alert("Lỗi khi xóa giao dịch.");
             }
         }

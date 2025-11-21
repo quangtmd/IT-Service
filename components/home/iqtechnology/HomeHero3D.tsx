@@ -20,15 +20,15 @@ const HomeHero3D: React.FC = () => {
         </Canvas>
       </div>
 
-      {/* Gradient Overlay - Reduced Opacity for brighter scene */}
-      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/70 via-black/20 to-transparent`}></div>
+      {/* Gradient Overlay for text readability - Reduced opacity for better visibility of racks */}
+      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/60 via-black/20 to-transparent`}></div>
       
       {/* Content Layer */}
       <div className="absolute inset-0 z-20 flex items-center justify-start pointer-events-none">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-left pointer-events-auto">
           <div className="animate-on-scroll fade-in-up is-visible max-w-4xl py-12 pl-4 md:pl-0">
             <div className="mb-6 flex justify-start">
-               <span className="inline-flex items-center py-1.5 px-4 rounded-full bg-cyan-900/60 text-cyan-300 border border-cyan-500/50 text-sm font-bold tracking-widest uppercase animate-pulse backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.5)]">
+               <span className="inline-flex items-center py-1.5 px-4 rounded-full bg-cyan-900/50 text-cyan-300 border border-cyan-500/50 text-sm font-bold tracking-widest uppercase animate-pulse backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.5)]">
                   <span className="w-2 h-2 rounded-full bg-cyan-400 mr-3 animate-ping"></span>
                   Hệ Thống Quản Trị Thông Minh
                </span>
@@ -44,7 +44,7 @@ const HomeHero3D: React.FC = () => {
               </span>
             </h1>
             
-            <p className="text-lg md:text-xl mb-10 max-w-2xl leading-relaxed text-gray-200 font-light border-l-4 border-cyan-500 pl-6 bg-black/10 backdrop-blur-sm p-4 rounded-r-lg">
+            <p className="text-lg md:text-xl mb-10 max-w-2xl leading-relaxed text-gray-200 font-light border-l-4 border-cyan-500 pl-6 bg-black/20 backdrop-blur-sm p-4 rounded-r-lg">
               Vận hành doanh nghiệp của bạn với sức mạnh của hạ tầng máy chủ tiên tiến. Giải pháp IT toàn diện, bảo mật tối đa và hiệu năng vượt trội.
             </p>
             

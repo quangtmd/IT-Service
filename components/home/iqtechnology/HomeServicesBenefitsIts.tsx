@@ -6,7 +6,7 @@ import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageServiceBenefit } from '../../../types';
 import TiltCard from '../../ui/TiltCard';
 import { Canvas } from '@react-three/fiber';
-import CloudNetworkScene from '../three/CloudNetworkScene'; // New complex 3D scene
+import { FloatingElements } from '../three/FloatingElements'; // Import the new component
 
 const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number }> = ({ item, index }) => {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
@@ -18,24 +18,25 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
         style={{ animationDelay: `${index * 100}ms` }}
     >
         <TiltCard className="h-full">
-            <div className="modern-card p-8 group flex flex-col text-center items-center relative h-full overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 bg-white/5 backdrop-blur-lg border border-white/10 hover:border-primary/50">
+            <div className="modern-card p-8 group flex flex-col text-center items-center relative h-full overflow-hidden dark:bg-gray-800/80 dark:border-gray-700 shadow-xl hover:shadow-2xl transition-shadow duration-300 backdrop-blur-sm bg-white/90">
                 {/* Background Hover Effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                
-                <div className="modern-card-icon-wrapper relative z-10 bg-white/10 shadow-lg group-hover:scale-110 transition-transform duration-300 translate-z-10 border border-white/20 backdrop-blur-md text-primary">
-                    <i className={`${item.iconClass || 'fas fa-check-circle'} text-3xl`}></i>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all duration-500"></div>
+
+                <div className="modern-card-icon-wrapper relative z-10 bg-white dark:bg-slate-700 shadow-lg group-hover:scale-110 transition-transform duration-300 translate-z-10">
+                <i className={`${item.iconClass || 'fas fa-check-circle'} text-3xl text-primary`}></i>
                 </div>
                 
-                <h3 className="text-xl font-bold mb-3 relative z-10 text-white group-hover:text-primary transition-colors translate-z-10">
-                    <Link to={item.link || '#'} className="line-clamp-2">{item.title}</Link>
+                <h3 className="text-xl font-bold mb-3 relative z-10 text-textBase dark:text-white group-hover:text-primary transition-colors translate-z-10">
+                <Link to={item.link || '#'} className="line-clamp-2">{item.title}</Link>
                 </h3>
                 
-                <p className="text-gray-200 text-sm mb-6 line-clamp-3 flex-grow relative z-10 leading-relaxed translate-z-10 font-light">
-                    {item.description}
+                <p className="text-textMuted dark:text-gray-400 text-sm mb-6 line-clamp-3 flex-grow relative z-10 leading-relaxed translate-z-10">
+                {item.description}
                 </p>
                 
                 <div className="mt-auto relative z-10 w-full translate-z-10">
-                    <Link to={item.link || '#'} className="inline-flex items-center justify-center w-full py-2.5 rounded-lg border border-white/20 text-white font-semibold hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 shadow-sm backdrop-blur-sm">
+                    <Link to={item.link || '#'} className="inline-flex items-center justify-center w-full py-2.5 rounded-lg border border-borderDefault dark:border-gray-600 text-textBase dark:text-white font-semibold hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 shadow-sm">
                     Tìm hiểu thêm <i className="fas fa-arrow-right text-xs ml-2 transform group-hover:translate-x-1 transition-transform"></i>
                     </Link>
                 </div>
@@ -73,24 +74,27 @@ const HomeServicesBenefitsIts: React.FC = () => {
   const sortedBenefits = [...servicesBenefitsConfig.benefits].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="home-section bg-[#050a14] relative overflow-hidden">
+    <section className="home-section bg-bgCanvas dark:bg-slate-900 transition-colors duration-300 relative overflow-hidden">
       
-      {/* 3D Detailed Background - Cloud Network */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
+      {/* 3D Floating Background */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-60">
         <Canvas>
             <Suspense fallback={null}>
-                <CloudNetworkScene />
+                <FloatingElements />
             </Suspense>
         </Canvas>
       </div>
 
-      {/* Gradient Overlay to ensure text is readable - Made lighter */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#050a14]/80 via-transparent to-[#050a14]/80 pointer-events-none z-0"></div>
+      {/* Decorative elements (CSS Blur) - kept for extra depth */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-blue-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-[10%] right-[5%] w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+      </div>
 
       <div className="container mx-auto px-4 relative z-10">
         <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
           {servicesBenefitsConfig.preTitle && (
-            <span className="home-section-pretitle bg-white/10 backdrop-blur-sm text-cyan-300 border border-white/10 shadow-lg">
+            <span className="home-section-pretitle bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
               {servicesBenefitsConfig.sectionTitleIconUrl &&
                 <img
                   src={servicesBenefitsConfig.sectionTitleIconUrl}
@@ -101,10 +105,10 @@ const HomeServicesBenefitsIts: React.FC = () => {
               {servicesBenefitsConfig.preTitle}
             </span>
           )}
-          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold leading-tight text-white drop-shadow-lg">
+          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold leading-tight dark:text-white drop-shadow-sm">
             {servicesBenefitsConfig.title || "Core Service Benefits"}
           </h2>
-          <div className="w-20 h-1 bg-gradient-to-r from-cyan-400 to-blue-600 mx-auto mt-4 rounded-full shadow-lg"></div>
+          <div className="w-20 h-1 bg-primary mx-auto mt-4 rounded-full shadow-lg"></div>
         </div>
         
         {sortedBenefits.length > 0 ? (
@@ -114,7 +118,7 @@ const HomeServicesBenefitsIts: React.FC = () => {
             ))}
             </div>
         ) : (
-            <p className="text-center text-gray-400">Service benefits information is being updated.</p>
+            <p className="text-center text-textMuted dark:text-gray-400">Service benefits information is being updated.</p>
         )}
       </div>
     </section>

@@ -1,125 +1,111 @@
 
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { PerspectiveCamera, Environment, Float } from '@react-three/drei';
+import { Float, PerspectiveCamera, Stars, Sparkles, Instances, Instance, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 
 // --- 1. SERVER RACK COMPONENT ---
 const ServerRack = ({ position, rotation }: { position: [number, number, number], rotation?: [number, number, number] }) => {
-  const rackHeight = 3.5;
-  const rackWidth = 1.2;
-  const rackDepth = 1.2;
-  
-  // Generate server units (blades) inside the rack
-  const serverCount = 10;
-  const servers = useMemo(() => {
-    return new Array(serverCount).fill(0).map((_, i) => ({
-      y: -rackHeight/2 + 0.3 + i * 0.32,
-      blinkSpeed: 0.5 + Math.random() * 2,
-      phase: Math.random() * Math.PI
-    }));
-  }, []);
+  // Procedural generation of a server rack
+  // Frame
+  const frameColor = "#1e293b";
+  const lightColor = "#00f3ff";
+  const activeLightColor = "#ff0055";
 
   return (
     <group position={position} rotation={rotation}>
-      {/* Rack Frame (Cabinet) */}
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[rackWidth, rackHeight, rackDepth]} />
-        <meshStandardMaterial color="#1e293b" roughness={0.2} metalness={0.8} />
+      {/* Main Cabinet Body */}
+      <mesh position={[0, 2, 0]}>
+        <boxGeometry args={[1.2, 4, 1.2]} />
+        <meshStandardMaterial color={frameColor} roughness={0.2} metalness={0.6} />
       </mesh>
       
-      {/* Glass Door Reflection */}
-      <mesh position={[0, 0, rackDepth/2 + 0.01]}>
-        <planeGeometry args={[rackWidth, rackHeight]} />
-        <meshPhysicalMaterial 
-            color="#88ccff" 
-            transparent 
-            opacity={0.2} 
-            roughness={0} 
-            metalness={0.9} 
-            clearcoat={1}
-            emissive="#0044aa"
-            emissiveIntensity={0.1}
-        />
-      </mesh>
-
-      {/* Server Units */}
-      {servers.map((server, i) => (
-        <group key={i} position={[0, server.y, rackDepth/2]}>
-           {/* Server Faceplate */}
-           <mesh position={[0, 0, 0.01]}>
-             <planeGeometry args={[rackWidth - 0.1, 0.25]} />
-             <meshStandardMaterial color="#334155" roughness={0.4} metalness={0.7} />
+      {/* Server Units (Blades) */}
+      {[...Array(8)].map((_, i) => (
+        <group key={i} position={[0, 0.2 + i * 0.45, 0.61]}>
+           {/* Faceplate */}
+           <mesh>
+             <planeGeometry args={[1, 0.4]} />
+             <meshStandardMaterial color="#475569" roughness={0.3} metalness={0.5} />
            </mesh>
-           {/* Blinking LEDs */}
-           <ServerLED position={[-0.4, 0, 0.02]} color="#00ff88" speed={server.blinkSpeed} />
-           <ServerLED position={[-0.35, 0, 0.02]} color="#00ccff" speed={server.blinkSpeed * 1.5} />
-           <ServerLED position={[0.4, 0, 0.02]} color="#ff3366" speed={server.blinkSpeed * 0.3} isError={Math.random() > 0.9} />
-           
-           {/* Vents texture simulation (lines) */}
-           <mesh position={[0, -0.05, 0.02]}>
-              <planeGeometry args={[0.6, 0.05]} />
-              <meshBasicMaterial color="#000000" />
+           {/* Blinking Lights */}
+           <BlinkingLight position={[-0.4, 0, 0.01]} color={lightColor} speed={1 + Math.random()} />
+           <BlinkingLight position={[-0.3, 0, 0.01]} color={Math.random() > 0.7 ? activeLightColor : lightColor} speed={2 + Math.random()} />
+           <BlinkingLight position={[0.35, 0, 0.01]} color="#10b981" speed={0.5} />
+           {/* Vents */}
+           <mesh position={[0, -0.1, 0.01]}>
+              <planeGeometry args={[0.8, 0.05]} />
+              <meshBasicMaterial color="#0f172a" />
            </mesh>
         </group>
       ))}
+
+      {/* Glass Door Effect */}
+      <mesh position={[0, 2, 0.65]}>
+        <boxGeometry args={[1.2, 4, 0.05]} />
+        <meshPhysicalMaterial 
+            color="#a5f3fc" 
+            transparent 
+            opacity={0.15} 
+            roughness={0} 
+            metalness={0.1} 
+            transmission={0.6}
+        />
+      </mesh>
     </group>
   );
 };
 
-const ServerLED = ({ position, color, speed, isError }: { position: [number, number, number], color: string, speed: number, isError?: boolean }) => {
+const BlinkingLight = ({ position, color, speed }: { position: [number, number, number], color: string, speed: number }) => {
     const ref = useRef<THREE.Mesh>(null!);
-    
     useFrame(({ clock }) => {
         if (ref.current) {
-            // Sharp blinking effect
+            // Simple blinking effect
             const t = clock.getElapsedTime();
-            const val = Math.sin(t * speed * 5);
-            const intensity = val > 0.5 ? 3 : 0.2; // Brighter on/off
-            
-            // Random occasional flicker
-            const flicker = Math.random() > 0.95 ? 0 : 1;
-            
-            (ref.current.material as THREE.MeshStandardMaterial).emissiveIntensity = intensity * flicker;
-            if(isError) {
-               (ref.current.material as THREE.MeshStandardMaterial).color.set(val > 0.8 ? "#ff0000" : "#330000"); 
-            }
+            const intensity = (Math.sin(t * speed * 5) + 1) / 2; // 0 to 1
+            // Random glitch
+            const glitch = Math.random() > 0.95 ? 0 : 1;
+            (ref.current.material as THREE.MeshStandardMaterial).emissiveIntensity = (intensity * glitch * 2) + 0.5; // Ensure minimum brightness
         }
     });
 
     return (
         <mesh ref={ref} position={position}>
-            <circleGeometry args={[0.03, 8]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} toneMapped={false} />
+            <circleGeometry args={[0.04, 16]} />
+            <meshStandardMaterial color="black" emissive={color} emissiveIntensity={2} />
         </mesh>
     )
 }
 
-// --- 2. ORGANIZED DATA CABLES (Streams) ---
-const DataCable = ({ start, end, color = "#3b82f6" }: { start: THREE.Vector3, end: THREE.Vector3, color?: string }) => {
+// --- 2. ELECTRIC CURRENT EFFECT ---
+// Moves a glowing pulse along a path
+const DataStream = ({ start, end, speed = 1, delay = 0 }: { start: THREE.Vector3, end: THREE.Vector3, speed?: number, delay?: number }) => {
+    const ref = useRef<THREE.Mesh>(null!);
     const curve = useMemo(() => {
-        const mid1 = new THREE.Vector3(start.x, start.y + 2, start.z); // Go up
-        const mid2 = new THREE.Vector3(end.x, end.y + 2, end.z); // Go over
-        return new THREE.CatmullRomCurve3([start, mid1, mid2, end]);
+        // Create a curved path with a random control point for organic look
+        const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+        mid.y += 1 + Math.random() * 2; // Arch upwards
+        return new THREE.CatmullRomCurve3([start, mid, end]);
     }, [start, end]);
 
-    const packetRef = useRef<THREE.Mesh>(null!);
-
     useFrame(({ clock }) => {
-        if (packetRef.current) {
-            const t = (clock.getElapsedTime() * 0.5) % 1;
+        if (ref.current) {
+            const t = (clock.getElapsedTime() * speed + delay) % 1;
             const pos = curve.getPoint(t);
-            packetRef.current.position.copy(pos);
+            ref.current.position.copy(pos);
             
+            // Scale creates a trail effect stretch
             const tangent = curve.getTangent(t).normalize();
-            packetRef.current.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+            ref.current.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
         }
     });
 
-    const points = useMemo(() => curve.getPoints(30), [curve]);
+    // Draw the path faintly
+    const points = useMemo(() => curve.getPoints(50), [curve]);
 
     return (
         <group>
+            {/* The Path Wire */}
             <line>
                 <bufferGeometry>
                     <bufferAttribute
@@ -129,29 +115,35 @@ const DataCable = ({ start, end, color = "#3b82f6" }: { start: THREE.Vector3, en
                         itemSize={3}
                     />
                 </bufferGeometry>
-                <lineBasicMaterial color={color} opacity={0.3} transparent linewidth={2} />
+                <lineBasicMaterial color="#0044aa" opacity={0.5} transparent />
             </line>
-            <mesh ref={packetRef}>
-                <capsuleGeometry args={[0.08, 0.6, 4, 8]} />
-                <meshBasicMaterial color={color} />
-                <pointLight distance={2.5} intensity={4} color={color} />
+
+            {/* The Electric Pulse */}
+            <mesh ref={ref}>
+                <capsuleGeometry args={[0.05, 0.3, 4, 8]} />
+                <meshBasicMaterial color="#00ffff" />
+                <pointLight distance={2} intensity={2} color="#00ffff" />
             </mesh>
         </group>
     );
 };
 
-// --- 3. REFLECTIVE FLOOR ---
-const TechFloor = () => {
+// --- 3. DIGITAL FLOOR GRID ---
+const DigitalFloor = () => {
+    const gridRef = useRef<THREE.Group>(null!);
+    useFrame((state, delta) => {
+        if(gridRef.current) {
+            // Move grid slowly to simulate moving forward
+            gridRef.current.position.z = (gridRef.current.position.z + delta * 0.5) % 2;
+        }
+    });
+
     return (
-        <group position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-             <gridHelper args={[40, 40, 0x445566, 0x1e293b]} rotation={[-Math.PI/2, 0, 0]} position={[0, 0, 0.01]} />
-             <mesh>
-                 <planeGeometry args={[100, 100]} />
-                 <meshStandardMaterial 
-                    color="#0a1120" 
-                    roughness={0.05} 
-                    metalness={0.9} 
-                 />
+        <group position={[0, -0.1, 0]}>
+             <gridHelper args={[60, 60, 0x00f3ff, 0x112233]} position={[0, 0, 0]} />
+             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
+                 <planeGeometry args={[60, 60]} />
+                 <meshBasicMaterial color="#050505" transparent opacity={0.9} />
              </mesh>
         </group>
     )
@@ -159,74 +151,80 @@ const TechFloor = () => {
 
 // --- MAIN SCENE ---
 const ServerTechScene: React.FC = () => {
-  // Define positions for 2 rows of racks (Aisle layout)
-  const leftRowX = -2.5;
-  const rightRowX = 2.5;
-  const rackZStart = -2;
-  const rackGap = 2;
+  // Define positions for racks
+  const rackPositions = [
+      { pos: [-4, 0, -2], rot: 0.2 },
+      { pos: [-3, 0, -5], rot: 0.1 },
+      { pos: [-5, 0, 1], rot: 0.3 },
+      { pos: [4, 0, -2], rot: -0.2 },
+      { pos: [3, 0, -5], rot: -0.1 },
+      { pos: [5, 0, 1], rot: -0.3 },
+  ];
+
+  const hubPosition = new THREE.Vector3(0, 1, -8); // Central Hub far back
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 0, 6]} fov={60} />
+      <PerspectiveCamera makeDefault position={[0, 3, 6]} fov={60} />
       
-      {/* Environment Lighting - BRIGHTER */}
-      <ambientLight intensity={0.6} color="#ccccff" />
+      {/* Environment & Lighting (Brightened) */}
+      <fog attach="fog" args={['#050505', 10, 40]} /> {/* Pushed fog back to reveal racks */}
+      <ambientLight intensity={1.2} /> {/* Increased general brightness */}
       
-      {/* Overhead Panel Lights */}
-      <directionalLight position={[0, 10, 0]} intensity={1.5} color="#ffffff" castShadow />
-      <pointLight position={[0, 5, 5]} intensity={1} color="#ffffff" />
+      {/* Key Lights */}
+      <pointLight position={[0, 10, 0]} intensity={3} color="#00aaff" distance={50} />
+      <pointLight position={[10, 5, 5]} intensity={2} color="#ffffff" distance={30} />
+      <pointLight position={[-10, 5, 5]} intensity={2} color="#ffffff" distance={30} />
       
-      {/* Aisle Glow */}
-      <pointLight position={[0, 2, -10]} intensity={3} color="#3b82f6" distance={30} />
+      {/* Fill Light from front to illuminate racks */}
+      <directionalLight position={[0, 2, 10]} intensity={2} color="#ffffff" />
       
-      {/* Subtle Fill */}
-      <hemisphereLight groundColor="#000000" intensity={0.5} />
+      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+      <Sparkles count={200} scale={20} size={4} speed={0.2} opacity={0.5} color="#00f3ff" position={[0, 2, 0]}/>
 
-      {/* Fog for depth - slightly lighter */}
-      <fog attach="fog" args={['#050a14', 5, 25]} />
+      {/* Floor */}
+      <DigitalFloor />
 
-      {/* Racks - Left Row */}
-      {[0, 1, 2, 3].map(i => (
-          <group key={`L-${i}`}>
-            <ServerRack position={[leftRowX, 0, rackZStart - i * rackGap]} rotation={[0, 0.2, 0]} />
-            <DataCable 
-                start={new THREE.Vector3(leftRowX, 1.5, rackZStart - i * rackGap)} 
-                end={new THREE.Vector3(0, 1.5, -10)} 
-                color="#00ccff"
-            />
-          </group>
-      ))}
+      {/* Server Racks */}
+      <group>
+          {rackPositions.map((rack, i) => (
+              <group key={i}>
+                  <ServerRack position={[rack.pos[0], rack.pos[1], rack.pos[2]]} rotation={[0, rack.rot, 0]} />
+                  {/* Connections to Hub */}
+                  <DataStream 
+                    start={new THREE.Vector3(rack.pos[0], 3.5, rack.pos[2])} 
+                    end={hubPosition} 
+                    speed={0.5 + Math.random() * 0.5}
+                    delay={Math.random()}
+                  />
+                  {/* Connections between racks (Mesh network look) */}
+                  {i > 0 && i % 2 !== 0 && (
+                      <DataStream 
+                        start={new THREE.Vector3(rack.pos[0], 2, rack.pos[2])} 
+                        end={new THREE.Vector3(rackPositions[i-1].pos[0], 2, rackPositions[i-1].pos[2])} 
+                        speed={0.3}
+                        delay={Math.random()}
+                      />
+                  )}
+              </group>
+          ))}
+      </group>
 
-      {/* Racks - Right Row */}
-      {[0, 1, 2, 3].map(i => (
-          <group key={`R-${i}`}>
-            <ServerRack position={[rightRowX, 0, rackZStart - i * rackGap]} rotation={[0, -0.2, 0]} />
-             <DataCable 
-                start={new THREE.Vector3(rightRowX, 1.5, rackZStart - i * rackGap)} 
-                end={new THREE.Vector3(0, 1.5, -10)} 
-                color="#ff00aa"
-            />
-          </group>
-      ))}
+      {/* Central Core/Hub (The "Brain") */}
+      <group position={[0, 2, -8]}>
+          <mesh>
+              <sphereGeometry args={[1.5, 32, 32]} />
+              <meshStandardMaterial color="#000" emissive="#00f3ff" emissiveIntensity={0.8} wireframe />
+          </mesh>
+          <mesh>
+              <sphereGeometry args={[1, 32, 32]} />
+              <meshStandardMaterial color="#00f3ff" emissive="#00f3ff" emissiveIntensity={3} />
+          </mesh>
+          <pointLight distance={15} intensity={5} color="#00f3ff" />
+      </group>
 
-      <TechFloor />
-      
-      {/* Camera Movement */}
-      <CameraDolly />
     </>
   );
 };
-
-// Simple camera movement
-const CameraDolly = () => {
-    useFrame((state) => {
-        const x = state.pointer.x * 0.5;
-        const y = state.pointer.y * 0.2;
-        state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, x, 0.05);
-        state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, y, 0.05);
-        state.camera.lookAt(0, 0, -8); 
-    });
-    return null;
-}
 
 export default ServerTechScene;
