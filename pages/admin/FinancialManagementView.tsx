@@ -139,10 +139,6 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
 // FIX: Added `NavigateFunction` to props type.
 const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
 
-    const handleAddNewTransaction = () => {
-        navigate('/admin/accounting_dashboard/transactions/new');
-    };
-
     // FIX: Wrapped handleEditTransaction in useCallback to ensure stable function reference.
     const handleEditTransaction = useCallback((transactionId: string) => {
         navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
@@ -155,7 +151,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
                 await deleteFinancialTransaction(id);
                 onDataChange();
             } catch (error) {
-                alert("Lỗi khi xóa giao dịch.");
+                window.alert("Lỗi khi xóa giao dịch.");
             }
         }
     }, [onDataChange]);
@@ -163,7 +159,8 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
     return (
         <div>
             <div className="flex justify-end mb-4">
-                <Button onClick={handleAddNewTransaction} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
+                {/* FIX: Inlined navigation to avoid potential argument mismatch issues */}
+                <Button onClick={() => navigate('/admin/accounting_dashboard/transactions/new')} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
             </div>
              <div className="overflow-x-auto">
                 <table className="admin-table">
@@ -369,8 +366,8 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                <Button onClick={handleSaveDraft} size="sm" variant="outline">Lưu Nháp</Button>
-                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

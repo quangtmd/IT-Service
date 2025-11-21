@@ -24,10 +24,11 @@ const HomeHero3D: React.FC = () => {
       <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-b ${theme === 'dark' ? 'from-transparent via-slate-900/10 to-slate-900' : 'from-transparent via-white/10 to-white'}`}></div>
       
       {/* Content Layer */}
-      <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-        <div className="container mx-auto px-4 text-center pointer-events-auto">
-          <div className="animate-on-scroll fade-in-up is-visible backdrop-blur-md bg-black/40 p-8 rounded-2xl border border-white/10 shadow-[0_0_30px_rgba(0,243,255,0.1)] inline-block max-w-4xl">
-            <div className="mb-6 flex justify-center">
+      <div className="absolute inset-0 z-20 flex items-center justify-start pointer-events-none">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-left pointer-events-auto">
+          {/* Removed background, border, and shadow classes for transparency */}
+          <div className="animate-on-scroll fade-in-up is-visible max-w-4xl py-12">
+            <div className="mb-6 flex justify-start">
                <span className="inline-flex items-center py-1 px-3 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/50 text-sm font-bold tracking-widest uppercase animate-pulse">
                   <span className="w-2 h-2 rounded-full bg-cyan-400 mr-2 animate-ping"></span>
                   Công nghệ tương lai
@@ -44,11 +45,11 @@ const HomeHero3D: React.FC = () => {
               </span>
             </h1>
             
-            <p className="text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed text-gray-300">
+            <p className="text-lg md:text-xl mb-10 max-w-2xl leading-relaxed text-gray-300">
               Chúng tôi mang đến sức mạnh công nghệ để nâng tầm doanh nghiệp của bạn. Từ linh kiện PC cao cấp đến các giải pháp phần mềm đột phá.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-start items-center sm:items-start">
               <Link to="/shop">
                 <Button 
                   size="lg" 
