@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 // Fix: Use named imports for react-router-dom components and hooks
 import { Link, NavLink, useNavigate } from 'react-router-dom';
@@ -8,15 +9,16 @@ import Button from '../ui/Button';
 import { CustomMenuLink, SiteSettings, NavLinkItem } from '../../types';
 import HeaderSearchBar from '../shared/GlobalSearch';
 import MegaMenu from './MegaMenu'; // Import the new MegaMenu component
+import { useTheme } from '../../contexts/ThemeContext'; // Import useTheme
 
 // New component for right-side action links, styled as per the image
 const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badgeCount?: number }> = ({ to, icon, label, badgeCount }) => (
     // Fix: Use Link directly
-    <Link to={to} className="hidden lg:flex flex-col items-center text-white hover:text-primary transition-colors text-xs font-medium space-y-1 w-[70px] text-center">
-        <div className="relative">
+    <Link to={to} className="hidden lg:flex flex-col items-center text-white hover:text-primary transition-colors text-xs font-medium space-y-1 w-[70px] text-center group">
+        <div className="relative transition-transform duration-300 group-hover:scale-110">
             <i className={`fas ${icon} text-2xl`}></i>
             {badgeCount && badgeCount > 0 ? (
-                <span className="absolute -top-1 -right-2 bg-secondary text-white text-[10px] font-bold rounded-full h-4 min-w-[1rem] px-1 flex items-center justify-center">
+                <span className="absolute -top-1 -right-2 bg-secondary text-white text-[10px] font-bold rounded-full h-4 min-w-[1rem] px-1 flex items-center justify-center animate-bounce">
                     {badgeCount > 9 ? '9+' : badgeCount}
                 </span>
             ) : null}
@@ -29,6 +31,7 @@ const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cart } = useCart();
   const { isAuthenticated, currentUser, logout, isLoading } = useAuth();
+  const { theme, toggleTheme } = useTheme(); // Use theme context
   // Fix: Use useNavigate directly
   const navigate = useNavigate();
   const totalItemsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -91,8 +94,8 @@ const Header: React.FC = () => {
             <span className={`text-xs font-semibold ${isMobile ? '' : 'hidden md:inline'}`}>{currentUser.username}</span>
             <i className="fas fa-chevron-down text-xs transition-transform duration-200 group-hover:rotate-180"></i>
           </button>
-          <div className={`absolute top-full ${isMobile ? 'bottom-full top-auto' : 'right-0 mt-2'} w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto`}>
-            <div className="px-3 py-2 border-b border-gray-200">
+          <div className={`absolute top-full ${isMobile ? 'bottom-full top-auto' : 'right-0 mt-2'} w-48 bg-bgBase rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto border border-borderDefault`}>
+            <div className="px-3 py-2 border-b border-borderDefault">
                 <p className="text-sm font-semibold text-textBase">{currentUser.username}</p>
                 <p className="text-xs text-textMuted truncate">{currentUser.email}</p>
             </div>
@@ -125,7 +128,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 w-full z-50 shadow-lg">
+      <header className="fixed top-0 w-full z-50 shadow-lg transition-colors duration-300">
         {/* TOP BAR */}
         <div className="bg-primary text-white text-xs h-8">
           <div className="container mx-auto px-4 h-full flex justify-between items-center">
@@ -133,14 +136,21 @@ const Header: React.FC = () => {
               {siteSettings.companyPhone && <span><i className="fas fa-phone-alt mr-1"></i> {siteSettings.companyPhone}</span>}
               {siteSettings.companyEmail && <span className="hidden sm:inline"><i className="fas fa-envelope mr-1"></i> {siteSettings.companyEmail}</span>}
             </div>
-            <div className="hidden lg:block">
+            <div className="hidden lg:flex items-center gap-4">
               {renderUserAuth()}
+              <button 
+                onClick={toggleTheme} 
+                className="text-white hover:text-yellow-300 transition-colors focus:outline-none" 
+                title={theme === 'light' ? "Chuyển sang chế độ tối" : "Chuyển sang chế độ sáng"}
+              >
+                <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun'} text-sm`}></i>
+              </button>
             </div>
           </div>
         </div>
 
         {/* MAIN HEADER */}
-        <div className="bg-black text-white">
+        <div className="bg-black/95 dark:bg-slate-900 text-white backdrop-blur-md border-b border-white/10 transition-colors duration-300">
           <div className="container mx-auto px-4 flex items-center justify-between gap-4 h-20">
             {/* Fix: Use Link directly */}
             <Link to="/" className="flex-shrink-0">
@@ -200,10 +210,18 @@ const Header: React.FC = () => {
       ></div>
 
       {/* Mobile Menu Panel */}
-      <div className={`fixed top-0 right-0 h-full w-full max-w-xs bg-gray-800 shadow-xl z-50 transition-transform duration-300 ease-in-out lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="flex flex-col h-full">
+      <div className={`fixed top-0 right-0 h-full w-full max-w-xs bg-gray-800 dark:bg-slate-900 shadow-xl z-50 transition-transform duration-300 ease-in-out lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex flex-col h-full text-white">
           <div className="p-4 flex justify-between items-center border-b border-gray-700">
-            <h3 className="text-lg font-semibold text-white">Menu</h3>
+            <div className="flex items-center gap-3">
+                <h3 className="text-lg font-semibold">Menu</h3>
+                <button 
+                    onClick={toggleTheme} 
+                    className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-yellow-400 hover:bg-gray-600 transition-colors"
+                >
+                    <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
+                </button>
+            </div>
             <button className="text-2xl text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)} aria-label="Đóng menu"><i className="fas fa-times"></i></button>
           </div>
           
