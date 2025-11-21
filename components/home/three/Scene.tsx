@@ -8,16 +8,12 @@ import React, { useRef } from 'react';
 import { useFrame, useThree, MeshProps, ThreeElements } from '@react-three/fiber';
 import { useScroll, Image, Text, useTexture } from '@react-three/drei';
 
-// FIX: Extend JSX.IntrinsicElements with all elements from @react-three/fiber.
-// This is the canonical way to resolve "Property '...' does not exist on type 'JSX.IntrinsicElements'" errors.
-declare global {
-  namespace JSX {
-    interface IntrinsicElements extends ThreeElements {}
-  }
-}
+// FIX: Removed the global JSX namespace augmentation that was overwriting React's IntrinsicElements.
+// This was causing 'Property div does not exist on type JSX.IntrinsicElements' errors across the entire project.
+// The R3F types should be inferred automatically or handled by @react-three/fiber module augmentation.
 
 // FIX: Changed from React.FC to a standard function component to help with type inference.
-const TechImage = ({ url, scale, position }: { url: string; scale: [number, number]; position: THREE.Vector3 }) => {
+const TechImage: React.FC<{ url: string; scale: [number, number]; position: THREE.Vector3 }> = ({ url, scale, position }) => {
   return (
     <Image url={url} scale={scale} position={position} />
   );

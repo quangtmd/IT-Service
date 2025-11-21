@@ -112,6 +112,13 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
   useEffect(scrollToBottom, [messages]);
   
+  useEffect(() => {
+    // When the bot is not loading and the chat is open, focus the input
+    if (!isLoading && isOpen && inputRef.current) {
+        inputRef.current.focus();
+    }
+  }, [isLoading, isOpen]);
+
   const initializeChat = useCallback(async () => {
     // Check if user info is submitted (either by form or auto-filled) and chat isn't already active
     if (!isUserInfoSubmitted || !isOpen || chatSession) return; 
@@ -342,30 +349,44 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                     if (typeof orderIdArg !== 'string') {
                         orderIdArg = String(orderIdArg);
                     }
-                    const userProvidedNumbers = orderIdArg.replace(/\D/g, '');
+                    
+                    // Normalize input for better matching
+                    const cleanInput = orderIdArg.trim().toLowerCase();
+                    // Also prepare a digit-only version for looser matching if strict fails
+                    const cleanInputDigits = cleanInput.replace(/\D/g, '');
         
-                    if (userProvidedNumbers) {
+                    if (cleanInput) {
                         const allOrders = await getOrders();
                         orderResult = allOrders.find(o => {
-                            const dbOrderNumbers = o.id.replace(/\D/g, '');
-                            return dbOrderNumbers.endsWith(userProvidedNumbers);
+                            const id = o.id.toLowerCase();
+                            // 1. Exact match (case-insensitive)
+                            if (id === cleanInput) return true;
+                            
+                            // 2. Ends with (e.g. user types "123456", DB has "order-171...123456")
+                            if (id.endsWith(cleanInput)) return true;
+                            
+                            // 3. Digit suffix match (fallback for different formatting)
+                            const idDigits = id.replace(/\D/g, '');
+                            // Only match digits if user provided at least 4 digits to avoid broad matches
+                            if (cleanInputDigits.length >= 4 && idDigits.endsWith(cleanInputDigits)) return true;
+                            
+                            return false;
                         }) || null;
                     }
 
                     let toolResponsePayload;
                     if (orderResult) {
+                        // Create a simplified, flat summary object for the AI.
                         toolResponsePayload = {
                             id: orderResult.id,
                             status: orderResult.status,
                             totalAmount: orderResult.totalAmount,
-                            customerInfo: { address: orderResult.customerInfo.address },
-                            shippingInfo: orderResult.shippingInfo ? {
-                                carrier: orderResult.shippingInfo.carrier,
-                                trackingNumber: orderResult.shippingInfo.trackingNumber
-                            } : null
+                            shippingAddress: orderResult.customerInfo.address,
+                            shippingCarrier: orderResult.shippingInfo?.carrier,
+                            shippingTrackingNumber: orderResult.shippingInfo?.trackingNumber
                         };
                     } else {
-                        toolResponsePayload = { status: "not_found", message: "Không tìm thấy đơn hàng nào khớp với mã bạn cung cấp." };
+                        toolResponsePayload = { status: "not_found", message: `Không tìm thấy đơn hàng nào khớp với mã "${orderIdArg}".` };
                     }
 
 
@@ -418,9 +439,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
       setIsLoading(false);
       setCurrentBotMessageId(null); 
       saveChatLog();
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
     }
   };
 
