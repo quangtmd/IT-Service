@@ -1,91 +1,137 @@
 
 import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, PerspectiveCamera, Environment, Stars } from '@react-three/drei';
+import { Float, PerspectiveCamera, Stars, Sparkles, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
-const FloatingShape = ({ position, color, speed, geometryType }: { position: [number, number, number], color: string, speed: number, geometryType: 'box' | 'torus' | 'octahedron' }) => {
-  const meshRef = useRef<THREE.Mesh>(null!);
+// A complex "Tech Core" shape: A wireframe sphere surrounding a solid glowing core
+const CyberCore = ({ position }: { position: [number, number, number] }) => {
+  const outerRef = useRef<THREE.Mesh>(null!);
+  const innerRef = useRef<THREE.Mesh>(null!);
   const [hovered, setHover] = useState(false);
 
   useFrame((state, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x += delta * speed;
-      meshRef.current.rotation.y += delta * speed * 0.5;
-      
-      // Gentle floating movement independent of Float component
-      meshRef.current.position.y += Math.sin(state.clock.elapsedTime * speed) * 0.002;
+    if (outerRef.current) {
+      outerRef.current.rotation.y -= delta * 0.2;
+      outerRef.current.rotation.x += delta * 0.1;
+    }
+    if (innerRef.current) {
+      innerRef.current.rotation.y += delta * 0.5;
+      // Pulsing effect
+      const scale = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.1;
+      innerRef.current.scale.set(scale, scale, scale);
     }
   });
 
-  let Geometry;
-  switch (geometryType) {
-    case 'torus':
-      Geometry = <torusKnotGeometry args={[0.6, 0.2, 128, 32]} />;
-      break;
-    case 'octahedron':
-      Geometry = <octahedronGeometry args={[1, 0]} />;
-      break;
-    case 'box':
-    default:
-      Geometry = <boxGeometry args={[1, 1, 1]} />;
-      break;
-  }
+  return (
+    <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
+      <group position={position} 
+             onPointerOver={() => setHover(true)}
+             onPointerOut={() => setHover(false)}>
+        
+        {/* Outer Wireframe Shield */}
+        <mesh ref={outerRef} scale={hovered ? 2.2 : 2}>
+          <icosahedronGeometry args={[1, 2]} />
+          <meshStandardMaterial 
+            color="#00f3ff" 
+            wireframe 
+            transparent 
+            opacity={0.3} 
+            emissive="#00f3ff"
+            emissiveIntensity={0.5}
+          />
+        </mesh>
+
+        {/* Inner Energy Core */}
+        <mesh ref={innerRef}>
+          <octahedronGeometry args={[0.8, 0]} />
+          <meshStandardMaterial 
+            color="#3b82f6" 
+            roughness={0.1}
+            metalness={0.8}
+            emissive="#2563eb"
+            emissiveIntensity={2}
+          />
+        </mesh>
+      </group>
+    </Float>
+  );
+};
+
+// Floating data blocks appearing as chips or data packets
+const DataBlock = ({ position, rotationSpeed }: { position: [number, number, number], rotationSpeed: number }) => {
+  const meshRef = useRef<THREE.Mesh>(null!);
+
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.x += delta * rotationSpeed;
+      meshRef.current.rotation.y += delta * rotationSpeed;
+    }
+  });
 
   return (
-    <Float speed={speed * 2} rotationIntensity={1} floatIntensity={1}>
-      <mesh 
-        ref={meshRef} 
-        position={position}
-        onPointerOver={() => setHover(true)}
-        onPointerOut={() => setHover(false)}
-        scale={hovered ? 1.2 : 1}
-      >
-        {Geometry}
+    <Float speed={4} rotationIntensity={2} floatIntensity={2}>
+      <mesh ref={meshRef} position={position}>
+        <boxGeometry args={[0.5, 0.5, 0.5]} />
         <meshStandardMaterial 
-          color={color} 
+          color="#64748b" 
           roughness={0.2} 
-          metalness={0.8} 
-          emissive={color}
-          emissiveIntensity={hovered ? 2 : 0.5}
-          wireframe={geometryType === 'octahedron'} // Wireframe for tech look
+          metalness={0.9} 
+          wireframe
         />
       </mesh>
     </Float>
   );
 };
 
+// A digital grid floor to give perspective
+const DigitalGrid = () => {
+    const gridRef = useRef<THREE.Group>(null!);
+    
+    useFrame((state, delta) => {
+        if(gridRef.current) {
+            gridRef.current.rotation.z += delta * 0.05;
+        }
+    });
+
+    return (
+        <group ref={gridRef} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -5]}>
+             <gridHelper args={[40, 40, 0x00f3ff, 0x1e293b]} />
+        </group>
+    )
+}
+
 const TechShapes: React.FC = () => {
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 0, 10]} />
+      <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={50} />
       
-      {/* Lighting */}
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} intensity={1.5} color="#ef4444" />
-      <pointLight position={[-10, -10, -10]} intensity={1.5} color="#3b82f6" />
-      <spotLight position={[0, 10, 0]} intensity={1} angle={0.5} penumbra={1} />
+      {/* Cyber Lighting */}
+      <ambientLight intensity={0.2} />
+      <pointLight position={[10, 10, 10]} intensity={2} color="#00f3ff" distance={20} />
+      <pointLight position={[-10, -10, 10]} intensity={2} color="#ec4899" distance={20} />
+      <spotLight position={[0, 0, 10]} intensity={1} angle={0.5} penumbra={1} color="#ffffff" />
 
-      {/* Background Elements */}
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+      {/* Environment / Atmosphere */}
+      <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
       
-      {/* Floating 3D Objects */}
+      {/* Digital Particles (Data Stream) */}
+      <Sparkles count={200} scale={12} size={2} speed={0.4} opacity={0.5} color="#00f3ff" />
+      <Sparkles count={100} scale={10} size={4} speed={0.2} opacity={0.3} color="#ec4899" />
+
+      {/* Floating Tech Objects */}
       <group>
-        {/* Main Red Shape */}
-        <FloatingShape position={[3, 1, 0]} color="#ef4444" speed={0.5} geometryType="torus" />
+        {/* Main Core - The "Brain" */}
+        <CyberCore position={[3, 0, 0]} />
         
-        {/* Secondary Blue Shape */}
-        <FloatingShape position={[-3, -1, 1]} color="#3b82f6" speed={0.4} geometryType="box" />
+        {/* Satellite Nodes */}
+        <DataBlock position={[-3, 2, 2]} rotationSpeed={0.5} />
+        <DataBlock position={[-4, -2, 0]} rotationSpeed={0.3} />
+        <DataBlock position={[-2, 0, 3]} rotationSpeed={0.7} />
         
-        {/* Wireframe Tech Shape */}
-        <FloatingShape position={[-2, 2, -2]} color="#10b981" speed={0.3} geometryType="octahedron" />
-        
-        {/* Small decorative shapes */}
-        <FloatingShape position={[4, -2, -3]} color="#f59e0b" speed={0.6} geometryType="box" />
-        <FloatingShape position={[0, 3, -5]} color="#8b5cf6" speed={0.2} geometryType="octahedron" />
+        {/* Background Grid for Depth */}
+        <DigitalGrid />
       </group>
-
-      <Environment preset="city" />
     </>
   );
 };
