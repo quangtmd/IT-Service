@@ -359,13 +359,17 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                         const allOrders = await getOrders();
                         orderResult = allOrders.find(o => {
                             const id = o.id.toLowerCase();
-                            // 1. Exact match (case-insensitive)
+                            
+                            // 1. Exact match
                             if (id === cleanInput) return true;
                             
-                            // 2. Ends with (e.g. user types "123456", DB has "order-171...123456")
+                            // 2. Ends with (common for finding by suffix)
                             if (id.endsWith(cleanInput)) return true;
+
+                            // 3. Contains (if input is significant enough, e.g. > 5 chars)
+                            if (cleanInput.length > 5 && id.includes(cleanInput)) return true;
                             
-                            // 3. Digit suffix match (fallback for different formatting)
+                            // 4. Digit suffix match (fallback)
                             const idDigits = id.replace(/\D/g, '');
                             // Only match digits if user provided at least 4 digits to avoid broad matches
                             if (cleanInputDigits.length >= 4 && idDigits.endsWith(cleanInputDigits)) return true;

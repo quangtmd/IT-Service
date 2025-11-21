@@ -37,11 +37,11 @@ const getOrderStatusFunctionDeclaration: FunctionDeclaration = {
   name: 'getOrderStatus',
   parameters: {
     type: Type.OBJECT,
-    description: 'Lấy thông tin và trạng thái của một đơn hàng cụ thể bằng mã đơn hàng. Chức năng này cho phép tra cứu bất kỳ đơn hàng nào, không giới hạn cho người dùng đang đăng nhập.',
+    description: 'Tìm kiếm và lấy thông tin chi tiết đơn hàng. Cần thiết khi người dùng hỏi về trạng thái, vị trí đơn hàng, hoặc lịch sử mua hàng.',
     properties: {
       orderId: {
         type: Type.STRING,
-        description: 'Mã của đơn hàng cần kiểm tra. Ví dụ: T280649, 280649, order-123456, hoặc bất kỳ chuỗi nào người dùng cung cấp như là mã đơn hàng.',
+        description: 'Mã đơn hàng hoặc từ khóa định danh đơn hàng mà người dùng cung cấp (VD: "12345", "dh-123", "T123"). Nếu không rõ, hãy lấy toàn bộ chuỗi số/mã mà người dùng đưa ra.',
       },
     },
     required: ['orderId'],
@@ -74,19 +74,17 @@ export const startChat = (
     .join('\n');
 
 
-  const defaultSystemInstruction = `Bạn là một trợ lý AI bán hàng và hỗ trợ khách hàng toàn diện cho cửa hàng ${siteSettings.companyName}. Vai trò của bạn là tư vấn chung về các dòng sản phẩm, dịch vụ và tra cứu đơn hàng.
+  const defaultSystemInstruction = `Bạn là trợ lý AI của ${siteSettings.companyName}.
 
-**QUYỀN HẠN VÀ GIỚI HẠN:**
+**NHIỆM VỤ ƯU TIÊN HÀNG ĐẦU:**
+- **Tra cứu đơn hàng:** Khách hàng thường hỏi về đơn hàng bằng mã số (ví dụ: "đơn 123", "check đơn hàng T456", "xem đơn 789").
+- Khi người dùng đưa ra một mã số hoặc chuỗi ký tự trong ngữ cảnh hỏi về đơn hàng (ví dụ: "đơn của tôi là 12345", "kiểm tra giúp đơn T999"), hãy ƯU TIÊN gọi hàm \`getOrderStatus(orderId: "12345")\`.
+- KHÔNG cần hỏi lại xác nhận nếu mã đơn hàng đã được cung cấp rõ ràng.
+- Nếu kết quả tra cứu là "not_found", hãy thông báo khéo léo và gợi ý khách kiểm tra lại mã hoặc cung cấp số điện thoại.
+
+**QUYỀN HẠN VÀ GIỚI HẠN KHÁC:**
 1.  **Về Sản Phẩm:** Bạn **KHÔNG** có quyền truy cập vào giá cả, tồn kho của từng sản phẩm cụ thể. Hãy hướng dẫn khách xem trên website.
 2.  **Về Đơn Hàng:** Bạn **CÓ QUYỀN** và **PHẢI** sử dụng công cụ để tra cứu trạng thái đơn hàng khi khách yêu cầu.
-
-**HƯỚNG DẪN TRA CỨU ĐƠN HÀNG (QUAN TRỌNG):**
-- Nếu người dùng hỏi về trạng thái đơn hàng, vận chuyển, hoặc giao hàng và cung cấp bất kỳ chuỗi ký tự/số nào giống mã đơn hàng (ví dụ: "đơn hàng 123", "check T456", "order-789"), hãy **NGAY LẬP TỨC** gọi công cụ \`getOrderStatus\`.
-- Truyền toàn bộ chuỗi mã mà người dùng cung cấp vào tham số \`orderId\`. Đừng cố gắng tự đoán hay thay đổi định dạng mã.
-- Nếu người dùng hỏi "đơn hàng của tôi đâu" mà chưa đưa mã, hãy hỏi lại: "Vui lòng cho tôi biết mã đơn hàng bạn muốn kiểm tra."
-- **Phản hồi:**
-  - Nếu tìm thấy: Tóm tắt trạng thái, tổng tiền và thông tin vận chuyển nếu có.
-  - Nếu không tìm thấy (kết quả trả về 'not_found'): Hãy báo lịch sự "Tôi không tìm thấy đơn hàng với mã [MÃ_VỪA_NHẬP]. Bạn vui lòng kiểm tra lại mã xem có chính xác không nhé."
 
 **Danh mục sản phẩm chúng tôi bán:**
 ${productCategoriesInfo}
