@@ -105,13 +105,16 @@ body {
   animation: pulse-glow 2s infinite;
 }
 
+/* Smoother Scroll Animations */
 .animate-on-scroll {
   opacity: 0;
-  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  /* Increased duration and changed easing for smoother feel */
+  transition: opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1), transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
 }
-.fade-in-up { transform: translateY(20px); }
-.slide-in-left { transform: translateX(-30px); }
-.slide-in-right { transform: translateX(30px); }
+.fade-in-up { transform: translateY(40px); } /* Increased distance for more dramatic effect */
+.slide-in-left { transform: translateX(-50px); }
+.slide-in-right { transform: translateX(50px); }
 
 .animate-on-scroll.is-visible {
   opacity: 1;
@@ -132,12 +135,14 @@ body {
 
 /* Glass Effect */
 .glass-effect {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 .dark .glass-effect {
-  background: rgba(30, 41, 59, 0.7);
+  background: rgba(30, 41, 59, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 

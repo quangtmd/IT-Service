@@ -324,8 +324,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 const shouldSettle = recordsToSettle.some(s => s.id === r.id);
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
-            // Fix TS error by casting if definition mismatch persists in environment
-            await (savePayrollRecords as unknown as (r: PayrollRecord[]) => Promise<void>)(recordsToSave);
+            await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -348,8 +347,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             return;
         }
         try {
-            // Fix TS error by casting if definition mismatch persists in environment
-            await (savePayrollRecords as unknown as (r: PayrollRecord[]) => Promise<void>)(recordsToSave);
+            await savePayrollRecords(recordsToSave);
             alert('Đã lưu nháp lương thành công!');
             await onDataChange();
         } catch (error) {
