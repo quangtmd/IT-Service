@@ -51,7 +51,7 @@ const HeroLEDBoard: React.FC = () => {
   const currentItem = items[currentIndex];
 
   return (
-    <div className="relative w-full max-w-2xl transform rotate-y-12 hover:rotate-0 transition-transform duration-500 perspective-1000">
+    <div className="relative w-full max-w-2xl transform rotate-y-12 hover:rotate-0 transition-transform duration-500 perspective-1000 hidden lg:block">
         {/* Outer Frame - Glass Effect */}
         <div className="bg-gray-900/30 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-[0_0_50px_rgba(6,182,212,0.15)] relative overflow-hidden group">
             
@@ -67,14 +67,26 @@ const HeroLEDBoard: React.FC = () => {
             {/* Inner Screen Container */}
             <div className="bg-black/40 h-80 rounded-lg relative overflow-hidden flex flex-col font-sans border border-white/5 shadow-inner backdrop-blur-md">
                 
+                {/* Dynamic Ambient Background Image */}
+                <div 
+                    className={`absolute inset-0 bg-cover bg-center transition-opacity duration-500 ease-in-out ${isTransitioning ? 'opacity-0' : 'opacity-20'}`}
+                    style={{ 
+                        backgroundImage: currentItem.imageUrl ? `url('${currentItem.imageUrl}')` : 'none',
+                        filter: 'blur(3px)'
+                    }}
+                ></div>
+                
+                {/* Gradient Overlay to ensure text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40 z-0 pointer-events-none"></div>
+
                 {/* Scanline Effect (Subtle) */}
-                <div className="scanline opacity-20"></div>
+                <div className="scanline opacity-10 z-10"></div>
                 
                 {/* Screen Glare/Reflection */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none z-30"></div>
 
                 {/* Header Bar */}
-                <div className="bg-cyan-900/30 border-b border-cyan-500/20 p-3 flex justify-between items-center z-10 backdrop-blur-sm relative">
+                <div className="bg-cyan-900/30 border-b border-cyan-500/20 p-3 flex justify-between items-center z-20 backdrop-blur-sm relative">
                     <div className="flex items-center gap-3">
                         <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_red]"></div>
                         <span className="text-cyan-300 text-[10px] font-bold tracking-widest uppercase drop-shadow-md">System Notice</span>
@@ -83,7 +95,7 @@ const HeroLEDBoard: React.FC = () => {
                 </div>
 
                 {/* Content Area */}
-                <div className={`p-6 flex-grow flex flex-col justify-center items-center relative z-10 transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+                <div className={`p-6 flex-grow flex flex-col justify-center items-center relative z-20 transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
                     
                     {/* Layout logic based on image presence */}
                     {currentItem.imageUrl ? (
@@ -100,7 +112,7 @@ const HeroLEDBoard: React.FC = () => {
                                 <h3 className="text-yellow-300 font-bold text-2xl mb-2 tracking-wide text-glow-yellow leading-tight">
                                     {currentItem.title}
                                 </h3>
-                                <p className="text-gray-100 text-sm md:text-base leading-relaxed mb-4 font-medium text-shadow-sm">
+                                <p className="text-gray-100 text-sm md:text-base leading-relaxed mb-4 font-medium text-shadow-sm line-clamp-3">
                                     {currentItem.content}
                                 </p>
                                 <div className="inline-block bg-cyan-500/20 border border-cyan-400/50 text-cyan-200 px-3 py-1 rounded text-xs font-bold uppercase animate-pulse shadow-[0_0_10px_rgba(6,182,212,0.3)]">
@@ -124,7 +136,7 @@ const HeroLEDBoard: React.FC = () => {
                 </div>
 
                 {/* Footer Bar (Marquee) */}
-                <div className="bg-black/60 border-t border-white/10 py-2 px-4 z-10 overflow-hidden whitespace-nowrap backdrop-blur-sm relative">
+                <div className="bg-black/60 border-t border-white/10 py-2 px-4 z-20 overflow-hidden whitespace-nowrap backdrop-blur-sm relative">
                     <div className="inline-block animate-[marquee_15s_linear_infinite] text-green-400 text-xs font-mono font-semibold text-glow-green tracking-wide">
                         +++ CẬP NHẬT CÔNG NGHỆ MỚI NHẤT +++ LIÊN HỆ NGAY ĐỂ NHẬN TƯ VẤN MIỄN PHÍ +++ HOTLINE: 0911.855.055 +++ GIẢI PHÁP IT TOÀN DIỆN CHO DOANH NGHIỆP +++
                     </div>

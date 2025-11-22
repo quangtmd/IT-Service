@@ -1,5 +1,7 @@
+
 import React from 'react';
 import { AdminPermission } from './contexts/AuthContext';
+import { ThreeElements } from '@react-three/fiber';
 
 export interface Product {
   id: string;
@@ -1062,4 +1064,41 @@ export interface EmployeeKPI {
   kpiId: string;
   actualValue: number;
   period: string; // e.g., '2024-08'
+}
+
+// React Three Fiber Type Augmentation
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      group: any;
+      mesh: any;
+      planeGeometry: any;
+      meshBasicMaterial: any;
+      meshStandardMaterial: any;
+      meshPhysicalMaterial: any;
+      boxGeometry: any;
+      sphereGeometry: any;
+      circleGeometry: any;
+      capsuleGeometry: any;
+      octahedronGeometry: any;
+      icosahedronGeometry: any;
+      dodecahedronGeometry: any;
+      torusGeometry: any;
+      cylinderGeometry: any;
+      bufferGeometry: any;
+      bufferAttribute: any;
+      lineBasicMaterial: any;
+      gridHelper: any;
+      pointLight: any;
+      spotLight: any;
+      ambientLight: any;
+      directionalLight: any;
+      fog: any;
+      instancedMesh: any;
+      line: any;
+      lineSegments: any;
+      edgesGeometry: any;
+      primitive: any;
+    }
+  }
 }

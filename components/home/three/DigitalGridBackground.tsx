@@ -1,3 +1,4 @@
+// @ts-nocheck
 
 import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';

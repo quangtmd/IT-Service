@@ -1,9 +1,11 @@
+
 // Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
     WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer,
-    Debt, PaymentApproval, CashflowForecastData
+    Debt, PaymentApproval, CashflowForecastData, // Added missing imports
+    AdCampaign, EmailCampaign, EmailSubscriber
 } from '../types';
 import * as Constants from '../constants';
 
@@ -293,17 +295,17 @@ export const deleteStockTransfer = async (id: string): Promise<void> => {
 };
 
 // Placeholder for other missing functions
-export const getAdCampaigns = async (): Promise<any[]> => { return []; };
+export const getAdCampaigns = async (): Promise<AdCampaign[]> => { return []; };
 export const addAdCampaign = async (campaign: any): Promise<void> => { };
 export const updateAdCampaign = async (id: string, updates: any): Promise<void> => { };
 export const deleteAdCampaign = async (id: string): Promise<void> => { };
 
-export const getEmailCampaigns = async (): Promise<any[]> => { return []; };
+export const getEmailCampaigns = async (): Promise<EmailCampaign[]> => { return []; };
 export const addEmailCampaign = async (campaign: any): Promise<void> => { };
 export const updateEmailCampaign = async (id: string, updates: any): Promise<void> => { };
 export const deleteEmailCampaign = async (id: string): Promise<void> => { };
 
-export const getEmailSubscribers = async (): Promise<any[]> => { return []; };
+export const getEmailSubscribers = async (): Promise<EmailSubscriber[]> => { return []; };
 export const deleteEmailSubscriber = async (id: number): Promise<void> => { };
 
 export const getAuditLogs = async (): Promise<any[]> => fetchFromApi<any[]>('/audit-logs');

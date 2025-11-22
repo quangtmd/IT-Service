@@ -2,7 +2,8 @@
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
-    WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer
+    WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer,
+    Debt, PaymentApproval, CashflowForecastData // Added missing imports
 } from './types';
 import * as Constants from './constants';
 
@@ -290,3 +291,21 @@ export const deleteStockTransfer = async (id: string): Promise<void> => {
     const transfers = await getStockTransfers();
     setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, transfers.filter(t => t.id !== id));
 };
+
+// Placeholder for other missing functions
+export const getAdCampaigns = async (): Promise<any[]> => { return []; };
+export const addAdCampaign = async (campaign: any): Promise<void> => { };
+export const updateAdCampaign = async (id: string, updates: any): Promise<void> => { };
+export const deleteAdCampaign = async (id: string): Promise<void> => { };
+
+export const getEmailCampaigns = async (): Promise<any[]> => { return []; };
+export const addEmailCampaign = async (campaign: any): Promise<void> => { };
+export const updateEmailCampaign = async (id: string, updates: any): Promise<void> => { };
+export const deleteEmailCampaign = async (id: string): Promise<void> => { };
+
+export const getEmailSubscribers = async (): Promise<any[]> => { return []; };
+export const deleteEmailSubscriber = async (id: number): Promise<void> => { };
+
+export const getAuditLogs = async (): Promise<any[]> => fetchFromApi<any[]>('/audit-logs');
+
+export const checkBackendHealth = (): Promise<any> => fetchFromApi('/health');

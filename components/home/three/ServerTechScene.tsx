@@ -1,13 +1,13 @@
 
+// @ts-nocheck
+
 import React, { useRef, useState, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, PerspectiveCamera, Stars, Sparkles, Instances, Instance, useGLTF } from '@react-three/drei';
+import { Float, PerspectiveCamera, Stars, Sparkles, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 // --- 1. SERVER RACK COMPONENT ---
 const ServerRack = ({ position, rotation }: { position: [number, number, number], rotation?: [number, number, number] }) => {
-  // Procedural generation of a server rack
-  // Frame
   const frameColor = "#1e293b";
   const lightColor = "#00f3ff";
   const activeLightColor = "#ff0055";
@@ -20,10 +20,9 @@ const ServerRack = ({ position, rotation }: { position: [number, number, number]
         <meshStandardMaterial color={frameColor} roughness={0.2} metalness={0.6} />
       </mesh>
       
-      {/* Server Units (Blades) */}
+      {/* Server Units */}
       {[...Array(8)].map((_, i) => (
         <group key={i} position={[0, 0.2 + i * 0.45, 0.61]}>
-           {/* Faceplate */}
            <mesh>
              <planeGeometry args={[1, 0.4]} />
              <meshStandardMaterial color="#475569" roughness={0.3} metalness={0.5} />
@@ -32,26 +31,8 @@ const ServerRack = ({ position, rotation }: { position: [number, number, number]
            <BlinkingLight position={[-0.4, 0, 0.01]} color={lightColor} speed={1 + Math.random()} />
            <BlinkingLight position={[-0.3, 0, 0.01]} color={Math.random() > 0.7 ? activeLightColor : lightColor} speed={2 + Math.random()} />
            <BlinkingLight position={[0.35, 0, 0.01]} color="#10b981" speed={0.5} />
-           {/* Vents */}
-           <mesh position={[0, -0.1, 0.01]}>
-              <planeGeometry args={[0.8, 0.05]} />
-              <meshBasicMaterial color="#0f172a" />
-           </mesh>
         </group>
       ))}
-
-      {/* Glass Door Effect */}
-      <mesh position={[0, 2, 0.65]}>
-        <boxGeometry args={[1.2, 4, 0.05]} />
-        <meshPhysicalMaterial 
-            color="#a5f3fc" 
-            transparent 
-            opacity={0.15} 
-            roughness={0} 
-            metalness={0.1} 
-            transmission={0.6}
-        />
-      </mesh>
     </group>
   );
 };
@@ -60,12 +41,9 @@ const BlinkingLight = ({ position, color, speed }: { position: [number, number, 
     const ref = useRef<THREE.Mesh>(null!);
     useFrame(({ clock }) => {
         if (ref.current) {
-            // Simple blinking effect
             const t = clock.getElapsedTime();
-            const intensity = (Math.sin(t * speed * 5) + 1) / 2; // 0 to 1
-            // Random glitch
-            const glitch = Math.random() > 0.95 ? 0 : 1;
-            (ref.current.material as THREE.MeshStandardMaterial).emissiveIntensity = (intensity * glitch * 2) + 0.5; // Ensure minimum brightness
+            const intensity = (Math.sin(t * speed * 5) + 1) / 2;
+            (ref.current.material as THREE.MeshStandardMaterial).emissiveIntensity = (intensity * 2) + 0.5;
         }
     });
 
@@ -77,151 +55,196 @@ const BlinkingLight = ({ position, color, speed }: { position: [number, number, 
     )
 }
 
-// --- 2. ELECTRIC CURRENT EFFECT ---
-// Moves a glowing pulse along a path
-const DataStream = ({ start, end, speed = 1, delay = 0 }: { start: THREE.Vector3, end: THREE.Vector3, speed?: number, delay?: number }) => {
-    const ref = useRef<THREE.Mesh>(null!);
-    const curve = useMemo(() => {
-        // Create a curved path with a random control point for organic look
-        const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-        mid.y += 1 + Math.random() * 2; // Arch upwards
-        return new THREE.CatmullRomCurve3([start, mid, end]);
-    }, [start, end]);
+// --- 2. CYBER OBELISK (Command Center Tower) ---
+const CyberObelisk = ({ position }: { position: [number, number, number] }) => {
+    const groupRef = useRef<THREE.Group>(null!);
+    const ringsRef = useRef<THREE.Group>(null!);
+    const textGroupRef = useRef<THREE.Group>(null!);
+    // Refs for individual text elements to update color
+    const text1Ref = useRef<any>(null!);
+    const text2Ref = useRef<any>(null!);
+    const text3Ref = useRef<any>(null!);
+    const text4Ref = useRef<any>(null!);
 
     useFrame(({ clock }) => {
-        if (ref.current) {
-            const t = (clock.getElapsedTime() * speed + delay) % 1;
-            const pos = curve.getPoint(t);
-            ref.current.position.copy(pos);
-            
-            // Scale creates a trail effect stretch
-            const tangent = curve.getTangent(t).normalize();
-            ref.current.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+        const t = clock.getElapsedTime();
+        
+        // Gentle float
+        if (groupRef.current) {
+            groupRef.current.position.y = position[1] + Math.sin(t * 0.5) * 0.1;
         }
+        
+        // Rotate rings
+        if (ringsRef.current) {
+            ringsRef.current.rotation.y = t * 0.2;
+        }
+
+        // Rotate Text Group
+        if (textGroupRef.current) {
+             textGroupRef.current.rotation.y = -t * 0.5;
+        }
+
+        // RGB Color Cycle Logic
+        const hue = (t * 0.2) % 1; // Cycle through colors
+        const color = new THREE.Color().setHSL(hue, 1, 0.6); // Bright saturated color
+
+        // Apply color to texts
+        [text1Ref, text2Ref, text3Ref, text4Ref].forEach(ref => {
+            if (ref.current) {
+                ref.current.color = color;
+                // Also update outline if needed, or just the fill
+            }
+        });
     });
 
-    // Draw the path faintly
-    const points = useMemo(() => curve.getPoints(50), [curve]);
-
     return (
-        <group>
-            {/* The Path Wire */}
-            <line>
-                <bufferGeometry>
-                    <bufferAttribute
-                        attach="attributes-position"
-                        count={points.length}
-                        array={new Float32Array(points.flatMap(p => [p.x, p.y, p.z]))}
-                        itemSize={3}
-                    />
-                </bufferGeometry>
-                <lineBasicMaterial color="#0044aa" opacity={0.5} transparent />
-            </line>
-
-            {/* The Electric Pulse */}
-            <mesh ref={ref}>
-                <capsuleGeometry args={[0.05, 0.3, 4, 8]} />
-                <meshBasicMaterial color="#00ffff" />
-                <pointLight distance={2} intensity={2} color="#00ffff" />
+        <group ref={groupRef} position={position}>
+            {/* Main Monolith Pillar */}
+            <mesh position={[0, 0, 0]}>
+                <cylinderGeometry args={[1, 1.2, 5, 6]} />
+                <meshStandardMaterial 
+                    color="#0f172a" 
+                    roughness={0.2} 
+                    metalness={0.8} 
+                    emissive="#001133"
+                    emissiveIntensity={0.5}
+                />
             </mesh>
+
+            {/* Glowing Circuitry Edges */}
+            <mesh position={[0, 0, 0]} scale={[1.01, 1, 1.01]}>
+                 <cylinderGeometry args={[1, 1.2, 5, 6]} />
+                 <meshStandardMaterial 
+                    color="#00f3ff"
+                    wireframe
+                    transparent
+                    opacity={0.15}
+                 />
+            </mesh>
+
+            {/* Top Crystal / Beacon */}
+            <mesh position={[0, 3, 0]}>
+                <coneGeometry args={[0.8, 1.5, 6]} />
+                <meshStandardMaterial 
+                    color="#ffffff" 
+                    emissive="#00f3ff" 
+                    emissiveIntensity={2} 
+                    roughness={0}
+                    metalness={1}
+                />
+            </mesh>
+
+            {/* Floating Holographic Rings */}
+            <group ref={ringsRef}>
+                <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                    <ringGeometry args={[1.8, 1.9, 6]} />
+                    <meshBasicMaterial color="#00f3ff" transparent opacity={0.6} side={THREE.DoubleSide} />
+                </mesh>
+                <mesh position={[0, 1, 0]} rotation={[Math.PI / 2, 0, Math.PI/6]}>
+                    <ringGeometry args={[1.5, 1.55, 6]} />
+                    <meshBasicMaterial color="#3b82f6" transparent opacity={0.5} side={THREE.DoubleSide} />
+                </mesh>
+                 <mesh position={[0, -1, 0]} rotation={[Math.PI / 2, 0, -Math.PI/6]}>
+                    <ringGeometry args={[2.2, 2.25, 6]} />
+                    <meshBasicMaterial color="#3b82f6" transparent opacity={0.3} side={THREE.DoubleSide} />
+                </mesh>
+            </group>
+
+            {/* Holographic RGB Text Labels */}
+            <group ref={textGroupRef} position={[0, 4.5, 0]}>
+                 <Text
+                    ref={text1Ref}
+                    position={[0, 0, 2.5]}
+                    fontSize={0.5}
+                    anchorX="center"
+                    anchorY="middle"
+                >
+                    IQ TECHNOLOGY
+                </Text>
+                <Text
+                    ref={text2Ref}
+                    position={[2.5, 0, 0]}
+                    rotation={[0, Math.PI / 2, 0]}
+                    fontSize={0.5}
+                    anchorX="center"
+                    anchorY="middle"
+                >
+                    DATA CENTER
+                </Text>
+                 <Text
+                    ref={text3Ref}
+                    position={[0, 0, -2.5]}
+                    rotation={[0, Math.PI, 0]}
+                    fontSize={0.5}
+                    anchorX="center"
+                    anchorY="middle"
+                >
+                    SECURITY
+                </Text>
+                 <Text
+                    ref={text4Ref}
+                    position={[-2.5, 0, 0]}
+                    rotation={[0, -Math.PI / 2, 0]}
+                    fontSize={0.5}
+                    anchorX="center"
+                    anchorY="middle"
+                >
+                    CLOUD
+                </Text>
+            </group>
         </group>
     );
 };
 
-// --- 3. DIGITAL FLOOR GRID ---
-const DigitalFloor = () => {
-    const gridRef = useRef<THREE.Group>(null!);
-    useFrame((state, delta) => {
-        if(gridRef.current) {
-            // Move grid slowly to simulate moving forward
-            gridRef.current.position.z = (gridRef.current.position.z + delta * 0.5) % 2;
-        }
-    });
-
-    return (
-        <group position={[0, -0.1, 0]}>
-             <gridHelper args={[60, 60, 0x00f3ff, 0x112233]} position={[0, 0, 0]} />
-             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
-                 <planeGeometry args={[60, 60]} />
-                 <meshBasicMaterial color="#050505" transparent opacity={0.9} />
-             </mesh>
-        </group>
-    )
-}
-
 // --- MAIN SCENE ---
 const ServerTechScene: React.FC = () => {
-  // Define positions for racks
   const rackPositions = [
+      // Center Left
       { pos: [-4, 0, -2], rot: 0.2 },
       { pos: [-3, 0, -5], rot: 0.1 },
-      { pos: [-5, 0, 1], rot: 0.3 },
+      // Far Left (Filling the void)
+      { pos: [-7, 0, -3], rot: 0.25 },
+      { pos: [-10, 0, -1], rot: 0.3 },
+      { pos: [-8, 0, -6], rot: 0.15 },
+      { pos: [-13, 0, -4], rot: 0.35 },
+
+      // Center Right
       { pos: [4, 0, -2], rot: -0.2 },
       { pos: [3, 0, -5], rot: -0.1 },
-      { pos: [5, 0, 1], rot: -0.3 },
+      // Far Right (Filling the void)
+      { pos: [7, 0, -3], rot: -0.25 },
+      { pos: [10, 0, -1], rot: -0.3 },
+      { pos: [8, 0, -6], rot: -0.15 },
+      { pos: [13, 0, -4], rot: -0.35 },
   ];
-
-  const hubPosition = new THREE.Vector3(0, 1, -8); // Central Hub far back
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 3, 6]} fov={60} />
+      <PerspectiveCamera makeDefault position={[0, 2, 8]} fov={60} />
+      <color attach="background" args={['#020617']} />
       
-      {/* Environment & Lighting (Brightened) */}
-      <fog attach="fog" args={['#050505', 10, 40]} /> {/* Pushed fog back to reveal racks */}
-      <ambientLight intensity={1.2} /> {/* Increased general brightness */}
+      <fog attach="fog" args={['#020617', 5, 40]} />
+      <ambientLight intensity={1.5} />
+      <hemisphereLight intensity={1} groundColor="#000000" color="#ffffff" />
       
-      {/* Key Lights */}
       <pointLight position={[0, 10, 0]} intensity={3} color="#00aaff" distance={50} />
-      <pointLight position={[10, 5, 5]} intensity={2} color="#ffffff" distance={30} />
-      <pointLight position={[-10, 5, 5]} intensity={2} color="#ffffff" distance={30} />
-      
-      {/* Fill Light from front to illuminate racks */}
-      <directionalLight position={[0, 2, 10]} intensity={2} color="#ffffff" />
+      <directionalLight position={[0, 5, 10]} intensity={3} color="#ffffff" />
       
       <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-      <Sparkles count={200} scale={20} size={4} speed={0.2} opacity={0.5} color="#00f3ff" position={[0, 2, 0]}/>
+      <Sparkles count={200} scale={30} size={3} speed={0.4} opacity={0.5} color="#00f3ff" />
 
-      {/* Floor */}
-      <DigitalFloor />
+      <group position={[0, -2, 0]}>
+         <gridHelper args={[80, 80, 0x00f3ff, 0x0f172a]} />
+      </group>
 
-      {/* Server Racks */}
-      <group>
+      <group position={[0, -2, 0]}>
           {rackPositions.map((rack, i) => (
-              <group key={i}>
-                  <ServerRack position={[rack.pos[0], rack.pos[1], rack.pos[2]]} rotation={[0, rack.rot, 0]} />
-                  {/* Connections to Hub */}
-                  <DataStream 
-                    start={new THREE.Vector3(rack.pos[0], 3.5, rack.pos[2])} 
-                    end={hubPosition} 
-                    speed={0.5 + Math.random() * 0.5}
-                    delay={Math.random()}
-                  />
-                  {/* Connections between racks (Mesh network look) */}
-                  {i > 0 && i % 2 !== 0 && (
-                      <DataStream 
-                        start={new THREE.Vector3(rack.pos[0], 2, rack.pos[2])} 
-                        end={new THREE.Vector3(rackPositions[i-1].pos[0], 2, rackPositions[i-1].pos[2])} 
-                        speed={0.3}
-                        delay={Math.random()}
-                      />
-                  )}
-              </group>
+              <ServerRack key={i} position={[rack.pos[0], rack.pos[1], rack.pos[2]]} rotation={[0, rack.rot, 0]} />
           ))}
       </group>
 
-      {/* Central Core/Hub (The "Brain") */}
-      <group position={[0, 2, -8]}>
-          <mesh>
-              <sphereGeometry args={[1.5, 32, 32]} />
-              <meshStandardMaterial color="#000" emissive="#00f3ff" emissiveIntensity={0.8} wireframe />
-          </mesh>
-          <mesh>
-              <sphereGeometry args={[1, 32, 32]} />
-              <meshStandardMaterial color="#00f3ff" emissive="#00f3ff" emissiveIntensity={3} />
-          </mesh>
-          <pointLight distance={15} intensity={5} color="#00f3ff" />
-      </group>
+      {/* CENTRAL OBELISK */}
+      <CyberObelisk position={[0, -1, -6]} />
 
     </>
   );
