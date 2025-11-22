@@ -144,7 +144,7 @@ export const getCashflowForecast = (): Promise<CashflowForecastData> => fetchFro
 
 // --- Service Tickets ---
 export const getServiceTickets = (): Promise<ServiceTicket[]> => fetchFromApi<ServiceTicket[]>('/service-tickets');
-export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
+export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id' | 'ticket_code' | 'createdAt'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
 export const updateServiceTicket = (id: string, updates: Partial<ServiceTicket>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>(`/service-tickets/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteServiceTicket = (id: string): Promise<void> => fetchFromApi<void>(`/service-tickets/${id}`, { method: 'DELETE' });
 
@@ -295,17 +295,17 @@ export const deleteStockTransfer = async (id: string): Promise<void> => {
 };
 
 // Placeholder for other missing functions
-export const getAdCampaigns = async (): Promise<AdCampaign[]> => { return []; };
+export const getAdCampaigns = async (): Promise<any[]> => { return []; };
 export const addAdCampaign = async (campaign: any): Promise<void> => { };
 export const updateAdCampaign = async (id: string, updates: any): Promise<void> => { };
 export const deleteAdCampaign = async (id: string): Promise<void> => { };
 
-export const getEmailCampaigns = async (): Promise<EmailCampaign[]> => { return []; };
+export const getEmailCampaigns = async (): Promise<any[]> => { return []; };
 export const addEmailCampaign = async (campaign: any): Promise<void> => { };
 export const updateEmailCampaign = async (id: string, updates: any): Promise<void> => { };
 export const deleteEmailCampaign = async (id: string): Promise<void> => { };
 
-export const getEmailSubscribers = async (): Promise<EmailSubscriber[]> => { return []; };
+export const getEmailSubscribers = async (): Promise<any[]> => { return []; };
 export const deleteEmailSubscriber = async (id: number): Promise<void> => { };
 
 export const getAuditLogs = async (): Promise<any[]> => fetchFromApi<any[]>('/audit-logs');
