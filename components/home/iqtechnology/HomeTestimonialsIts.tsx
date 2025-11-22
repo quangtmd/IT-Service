@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageTestimonialItem } from '../../../types';
+import { Canvas } from '@react-three/fiber';
+import CyberShape from '../three/CyberShape';
+import TiltCard from '../../ui/TiltCard';
 
 interface TestimonialCardProps {
   testimonial: HomepageTestimonialItem;
@@ -13,25 +17,30 @@ const TestimonialCardIts: React.FC<TestimonialCardProps> = ({ testimonial, index
   return (
     <div 
         ref={ref} 
-        className={`testimonial-card-its p-6 md:p-8 animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col`}
-        style={{ animationDelay: `${index * 150}ms` }}
+        className={`animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} h-full`}
+        style={{ animationDelay: `${index * 100}ms` }}
     >
-        <i className="fas fa-quote-right quote-icon"></i>
-        <div className="flex items-center mb-4">
-            <img src={testimonial.avatarUrl || `https://picsum.photos/seed/avatarModern${index}/100/100`} alt={testimonial.name} className="w-14 h-14 rounded-full shadow-lg border-2 border-white object-cover" />
-            <div className="ml-4 text-left">
-                <h5 className="text-md font-bold text-textBase">{testimonial.name}</h5>
-                <span className="text-xs text-primary font-medium">{testimonial.role || 'Khách hàng'}</span>
-            </div>
-        </div>
-      
-        <blockquote className="text-textMuted italic mb-4 leading-relaxed flex-grow text-md text-left">
-          <p>"{testimonial.quote}"</p>
-        </blockquote>
+      <TiltCard className="h-full">
+        <div className="relative p-6 md:p-8 flex flex-col h-full bg-slate-800/40 backdrop-blur-lg rounded-2xl border-2 border-white/10 shadow-2xl hover:border-primary/70 hover:shadow-primary/20 transition-all duration-300">
+          <i className="fas fa-quote-right absolute top-6 right-6 text-5xl text-white/5"></i>
+          
+          <div className="flex items-center mb-4 relative z-10">
+              <img src={testimonial.avatarUrl || `https://picsum.photos/seed/avatarModern${index}/100/100`} alt={testimonial.name} className="w-14 h-14 rounded-full shadow-lg border-2 border-white/20 object-cover" />
+              <div className="ml-4 text-left">
+                  <h5 className="text-md font-bold text-white">{testimonial.name}</h5>
+                  <span className="text-xs text-primary font-medium">{testimonial.role || 'Khách hàng'}</span>
+              </div>
+          </div>
+        
+          <blockquote className="text-gray-300 italic mb-4 leading-relaxed flex-grow text-md text-left relative z-10">
+            <p>"{testimonial.quote}"</p>
+          </blockquote>
 
-        <div className="mt-auto text-left text-yellow-400">
-            <i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star-half-alt"></i>
+          <div className="mt-auto text-left text-yellow-400 relative z-10">
+              <i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star-half-alt"></i>
+          </div>
         </div>
+      </TiltCard>
     </div>
   );
 };
@@ -64,19 +73,26 @@ const HomeTestimonialsIts: React.FC = () => {
   const sortedTestimonials = [...testimonialsConfig.testimonials].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="home-section bg-bgCanvas">
-      <div className="container mx-auto px-4">
+    <section className="home-section relative bg-[#0B1120] text-white overflow-hidden">
+        <div className="absolute inset-0 z-0 opacity-50">
+            <Canvas>
+                <Suspense fallback={null}>
+                    <CyberShape />
+                </Suspense>
+            </Canvas>
+        </div>
+      <div className="container mx-auto px-4 relative z-10">
         <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
           {testimonialsConfig.preTitle && (
-            <span className="home-section-pretitle">
+            <span className="home-section-pretitle bg-black/40 backdrop-blur-md border border-primary/30 text-primary">
               {testimonialsConfig.sectionTitleIconUrl && <img src={testimonialsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
               {testimonialsConfig.preTitle}
             </span>
           )}
-          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold">
+          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold text-white">
             {testimonialsConfig.title || "Khách Hàng Nói Gì Về Chúng Tôi"}
           </h2>
-           <p className="home-section-subtitle">
+           <p className="home-section-subtitle text-gray-300">
             Lắng nghe trực tiếp từ những người đã trải nghiệm dịch vụ và sự hỗ trợ hàng đầu của chúng tôi.
           </p>
         </div>

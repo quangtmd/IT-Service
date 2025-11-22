@@ -1,10 +1,15 @@
 services:
   - type: web
-    name: it-service-frontend
-    env: static
-    buildCommand: npm install --legacy-peer-deps && npm run build
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    name: it-service-app
+    env: node
+    plan: free
+    buildCommand: |
+      npm install --legacy-peer-deps
+      npm run build
+      cd backend
+      npm install
+    startCommand: "cd backend && node server.js"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - fromGroup: it-service-db-credentials # Group for DB_HOST, DB_USER, etc. on Render
