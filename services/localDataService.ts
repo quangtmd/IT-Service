@@ -1,11 +1,9 @@
-
 // Fix: Correct relative imports by moving up one directory level
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
     WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer,
-    Debt, PaymentApproval, CashflowForecastData,
-    AdCampaign, EmailCampaign, EmailSubscriber
+    Debt, PaymentApproval, CashflowForecastData, AdCampaign, EmailCampaign, EmailSubscriber
 } from '../types';
 import * as Constants from '../constants';
 
@@ -170,12 +168,12 @@ export const deleteStockTransfer = (id: string): Promise<void> => { const transf
 
 // --- Placeholder Marketing APIs ---
 export const getAdCampaigns = (): Promise<AdCampaign[]> => Promise.resolve([]);
-export const addAdCampaign = (campaign: any): Promise<void> => Promise.resolve();
-export const updateAdCampaign = (id: string, updates: any): Promise<void> => Promise.resolve();
+export const addAdCampaign = (campaign: AdCampaign): Promise<void> => Promise.resolve();
+export const updateAdCampaign = (id: string, updates: Partial<AdCampaign>): Promise<void> => Promise.resolve();
 export const deleteAdCampaign = (id: string): Promise<void> => Promise.resolve();
 export const getEmailCampaigns = (): Promise<EmailCampaign[]> => Promise.resolve([]);
-export const addEmailCampaign = (campaign: any): Promise<void> => Promise.resolve();
-export const updateEmailCampaign = (id: string, updates: any): Promise<void> => Promise.resolve();
+export const addEmailCampaign = (campaign: EmailCampaign): Promise<void> => Promise.resolve();
+export const updateEmailCampaign = (id: string, updates: Partial<EmailCampaign>): Promise<void> => Promise.resolve();
 export const deleteEmailCampaign = (id: string): Promise<void> => Promise.resolve();
 export const getEmailSubscribers = (): Promise<EmailSubscriber[]> => Promise.resolve([]);
 export const deleteEmailSubscriber = (id: number): Promise<void> => Promise.resolve();
