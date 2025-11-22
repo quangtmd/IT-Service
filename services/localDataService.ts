@@ -1,10 +1,10 @@
 
-// Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
+// Fix: Correct relative imports by moving up one directory level
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
     WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer,
-    Debt, PaymentApproval, CashflowForecastData, // Added missing imports
+    Debt, PaymentApproval, CashflowForecastData,
     AdCampaign, EmailCampaign, EmailSubscriber
 } from '../types';
 import * as Constants from '../constants';
@@ -23,7 +23,6 @@ const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
 const setLocalStorageItem = <T,>(key: string, value: T): void => {
     try {
         localStorage.setItem(key, JSON.stringify(value));
-        // Optional: Dispatch a custom event to notify other components of the change
         window.dispatchEvent(new CustomEvent('localStorageChange', { detail: { key } }));
     } catch (error) {
         console.error(`Error setting localStorage key "${key}":`, error);
@@ -31,14 +30,9 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 
-// The base URL is now an empty string. This assumes the frontend is served
-// from the same domain as the backend, which simplifies deployment.
-// All API requests will be relative, e.g., /api/users.
 const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // All API endpoints are prefixed with /api on the server.
-    // This ensures the correct path is always used.
     const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
@@ -53,27 +47,22 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            // Simplified, more robust error message for a monolithic setup.
             const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
             throw new Error(errorMessage);
         }
         
-        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            // This now more clearly indicates a server-down issue.
             throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động.');
         }
-        // Re-throw other errors (like the custom one from response.ok check)
         throw error;
     }
 }
 
 // --- User Service ---
-// Note: The endpoint now starts with /users, and /api is prepended by fetchFromApi
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
 export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
@@ -100,7 +89,7 @@ export const deleteArticle = (id: string): Promise<void> => fetchFromApi<void>(`
 
 // --- Order Service ---
 export const getOrders = (): Promise<Order[]> => fetchFromApi<Order[]>('/orders');
-export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
+export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/users/${customerId}/orders`);
 export const addOrder = (order: Order): Promise<Order> => fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
 export const updateOrder = (id: string, updates: Partial<Order>): Promise<Order> => fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const updateOrderStatus = (id: string, status: OrderStatus): Promise<Order> => fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
@@ -124,31 +113,18 @@ export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 
 export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
-// FIX: Updated savePayrollRecords to accept an argument to resolve TypeScript error.
-export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
-    return fetchFromApi<void>('/financials/payroll', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(records)
-    });
-};
-
+export const savePayrollRecords = (records: PayrollRecord[]): Promise<void> => fetchFromApi<void>('/financials/payroll', { method: 'POST', body: JSON.stringify(records) });
 export const getDebts = (): Promise<Debt[]> => fetchFromApi<Debt[]>('/debts');
 export const updateDebt = (id: string, updates: Partial<Debt>): Promise<Debt> => fetchFromApi<Debt>(`/debts/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-
 export const getPaymentApprovals = (): Promise<PaymentApproval[]> => fetchFromApi<PaymentApproval[]>('/payment-approvals');
 export const updatePaymentApproval = (id: string, updates: Partial<PaymentApproval>): Promise<PaymentApproval> => fetchFromApi<PaymentApproval>(`/payment-approvals/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-
 export const getCashflowForecast = (): Promise<CashflowForecastData> => fetchFromApi<CashflowForecastData>('/financials/forecast');
-
 
 // --- Service Tickets ---
 export const getServiceTickets = (): Promise<ServiceTicket[]> => fetchFromApi<ServiceTicket[]>('/service-tickets');
-// Fix: Cast to any to prevent type errors with backend generated fields like ticket_code
-export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
+export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id' | 'ticket_code' | 'createdAt'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
 export const updateServiceTicket = (id: string, updates: Partial<ServiceTicket>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>(`/service-tickets/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteServiceTicket = (id: string): Promise<void> => fetchFromApi<void>(`/service-tickets/${id}`, { method: 'DELETE' });
-
 
 // --- Inventory ---
 export const getInventory = (): Promise<Inventory[]> => fetchFromApi<Inventory[]>('/inventory');
@@ -172,143 +148,38 @@ export const updateSupplier = (id: string, updates: Partial<Supplier>): Promise<
 export const deleteSupplier = (id: string): Promise<void> => fetchFromApi<void>(`/suppliers/${id}`, { method: 'DELETE' });
 
 // --- Warranty Ticket Service ---
-export const getWarrantyTickets = async (): Promise<WarrantyTicket[]> => {
-    return fetchFromApi<WarrantyTicket[]>('/api/warranty-tickets');
-};
-
-export const addWarrantyTicket = async (ticket: Omit<WarrantyTicket, 'id' | 'ticketNumber' | 'createdAt'>): Promise<WarrantyTicket> => {
-    return fetchFromApi<WarrantyTicket>('/api/warranty-tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ticket),
-    });
-};
-
-export const updateWarrantyTicket = async (id: string, updates: Partial<WarrantyTicket>): Promise<WarrantyTicket> => {
-    return fetchFromApi<WarrantyTicket>(`/api/warranty-tickets/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-    });
-};
-
-export const deleteWarrantyTicket = async (id: string): Promise<void> => {
-    return fetchFromApi<void>(`/api/warranty-tickets/${id}`, { method: 'DELETE' });
-};
-
+export const getWarrantyTickets = (): Promise<WarrantyTicket[]> => fetchFromApi<WarrantyTicket[]>('/warranty-tickets');
+export const addWarrantyTicket = (ticket: Omit<WarrantyTicket, 'id' | 'ticketNumber' | 'createdAt'>): Promise<WarrantyTicket> => fetchFromApi<WarrantyTicket>('/warranty-tickets', { method: 'POST', body: JSON.stringify(ticket) });
+export const updateWarrantyTicket = (id: string, updates: Partial<WarrantyTicket>): Promise<WarrantyTicket> => fetchFromApi<WarrantyTicket>(`/warranty-tickets/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+export const deleteWarrantyTicket = (id: string): Promise<void> => fetchFromApi<void>(`/warranty-tickets/${id}`, { method: 'DELETE' });
 
 // --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
+export const getWarehouses = (): Promise<Warehouse[]> => Promise.resolve(getLocalStorageItem(Constants.WAREHOUSES_STORAGE_KEY, Constants.INITIAL_WAREHOUSES));
+export const getStockReceipts = (): Promise<StockReceipt[]> => Promise.resolve(getLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, Constants.INITIAL_STOCK_RECEIPTS));
+export const addStockReceipt = (receipt: Omit<StockReceipt, 'id'>): Promise<StockReceipt> => { const receipts = getLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, Constants.INITIAL_STOCK_RECEIPTS); const newReceipt = { ...receipt, id: `sr-${Date.now()}` }; setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, [newReceipt, ...receipts]); return Promise.resolve(newReceipt); };
+export const updateStockReceipt = (id: string, updates: Partial<StockReceipt>): Promise<StockReceipt> => { let updatedReceipt: StockReceipt | undefined; const newReceipts = getLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, Constants.INITIAL_STOCK_RECEIPTS).map(r => { if (r.id === id) { updatedReceipt = { ...r, ...updates }; return updatedReceipt; } return r; }); if (!updatedReceipt) return Promise.reject(new Error("Receipt not found")); setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, newReceipts); return Promise.resolve(updatedReceipt); };
+export const deleteStockReceipt = (id: string): Promise<void> => { const receipts = getLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, Constants.INITIAL_STOCK_RECEIPTS); setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, receipts.filter(r => r.id !== id)); return Promise.resolve(); };
+export const getStockIssues = (): Promise<StockIssue[]> => Promise.resolve(getLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, []));
+export const addStockIssue = (issue: Omit<StockIssue, 'id'>): Promise<StockIssue> => { const issues = getLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, []); const newIssue = { ...issue, id: `si-${Date.now()}` }; setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, [newIssue, ...issues]); return Promise.resolve(newIssue); };
+export const updateStockIssue = (id: string, updates: Partial<StockIssue>): Promise<StockIssue> => { let updated: StockIssue | undefined; const newItems = getLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, []).map(i => { if (i.id === id) { updated = { ...i, ...updates }; return updated; } return i; }); if (!updated) return Promise.reject(new Error("Issue not found")); setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, newItems); return Promise.resolve(updated); };
+export const deleteStockIssue = (id: string): Promise<void> => { const issues = getLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, []); setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, issues.filter(i => i.id !== id)); return Promise.resolve(); };
+export const getStockTransfers = (): Promise<StockTransfer[]> => Promise.resolve(getLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, []));
+export const addStockTransfer = (transfer: Omit<StockTransfer, 'id'>): Promise<StockTransfer> => { const transfers = getLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, []); const newTransfer = { ...transfer, id: `stf-${Date.now()}` }; setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, [newTransfer, ...transfers]); return Promise.resolve(newTransfer); };
+export const updateStockTransfer = (id: string, updates: Partial<StockTransfer>): Promise<StockTransfer> => { let updated: StockTransfer | undefined; const newItems = getLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, []).map(t => { if (t.id === id) { updated = { ...t, ...updates }; return updated; } return t; }); if (!updated) return Promise.reject(new Error("Transfer not found")); setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, newItems); return Promise.resolve(updated); };
+export const deleteStockTransfer = (id: string): Promise<void> => { const transfers = getLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, []); setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, transfers.filter(t => t.id !== id)); return Promise.resolve(); };
 
-// Warehouses
-export const getWarehouses = async (): Promise<Warehouse[]> => {
-    return getLocalStorageItem(Constants.WAREHOUSES_STORAGE_KEY, Constants.INITIAL_WAREHOUSES);
-};
+// --- Placeholder Marketing APIs ---
+export const getAdCampaigns = (): Promise<AdCampaign[]> => Promise.resolve([]);
+export const addAdCampaign = (campaign: any): Promise<void> => Promise.resolve();
+export const updateAdCampaign = (id: string, updates: any): Promise<void> => Promise.resolve();
+export const deleteAdCampaign = (id: string): Promise<void> => Promise.resolve();
+export const getEmailCampaigns = (): Promise<EmailCampaign[]> => Promise.resolve([]);
+export const addEmailCampaign = (campaign: any): Promise<void> => Promise.resolve();
+export const updateEmailCampaign = (id: string, updates: any): Promise<void> => Promise.resolve();
+export const deleteEmailCampaign = (id: string): Promise<void> => Promise.resolve();
+export const getEmailSubscribers = (): Promise<EmailSubscriber[]> => Promise.resolve([]);
+export const deleteEmailSubscriber = (id: number): Promise<void> => Promise.resolve();
 
-// Stock Receipts
-export const getStockReceipts = async (): Promise<StockReceipt[]> => {
-    return getLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, Constants.INITIAL_STOCK_RECEIPTS);
-};
-
-export const addStockReceipt = async (receipt: Omit<StockReceipt, 'id'>): Promise<StockReceipt> => {
-    const receipts = await getStockReceipts();
-    const newReceipt = { ...receipt, id: `sr-${Date.now()}` };
-    setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, [newReceipt, ...receipts]);
-    return newReceipt;
-};
-
-export const updateStockReceipt = async (id: string, updates: Partial<StockReceipt>): Promise<StockReceipt> => {
-    const receipts = await getStockReceipts();
-    let updatedReceipt: StockReceipt | undefined;
-    const newReceipts = receipts.map(r => {
-        if (r.id === id) {
-            updatedReceipt = { ...r, ...updates };
-            return updatedReceipt;
-        }
-        return r;
-    });
-    if (!updatedReceipt) throw new Error("Receipt not found");
-    setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, newReceipts);
-    return updatedReceipt;
-};
-
-export const deleteStockReceipt = async (id: string): Promise<void> => {
-    const receipts = await getStockReceipts();
-    setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, receipts.filter(r => r.id !== id));
-};
-
-// Stock Issues
-export const getStockIssues = async (): Promise<StockIssue[]> => {
-    return getLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, []);
-};
-export const addStockIssue = async (issue: Omit<StockIssue, 'id'>): Promise<StockIssue> => {
-    const issues = await getStockIssues();
-    const newIssue = { ...issue, id: `si-${Date.now()}` };
-    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, [newIssue, ...issues]);
-    return newIssue;
-};
-export const updateStockIssue = async (id: string, updates: Partial<StockIssue>): Promise<StockIssue> => {
-    const issues = await getStockIssues();
-    let updated: StockIssue | undefined;
-    const newItems = issues.map(i => {
-        if (i.id === id) {
-            updated = { ...i, ...updates };
-            return updated;
-        }
-        return i;
-    });
-    if (!updated) throw new Error("Issue not found");
-    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, newItems);
-    return updated;
-};
-export const deleteStockIssue = async (id: string): Promise<void> => {
-    const issues = await getStockIssues();
-    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, issues.filter(i => i.id !== id));
-};
-
-
-// Stock Transfers
-export const getStockTransfers = async (): Promise<StockTransfer[]> => {
-    return getLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, []);
-};
-export const addStockTransfer = async (transfer: Omit<StockTransfer, 'id'>): Promise<StockTransfer> => {
-    const transfers = await getStockTransfers();
-    const newTransfer = { ...transfer, id: `stf-${Date.now()}` };
-    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, [newTransfer, ...transfers]);
-    return newTransfer;
-};
-export const updateStockTransfer = async (id: string, updates: Partial<StockTransfer>): Promise<StockTransfer> => {
-    const transfers = await getStockTransfers();
-    let updated: StockTransfer | undefined;
-    const newItems = transfers.map(t => {
-        if (t.id === id) {
-            updated = { ...t, ...updates };
-            return updated;
-        }
-        return t;
-    });
-    if (!updated) throw new Error("Transfer not found");
-    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, newItems);
-    return updated;
-};
-export const deleteStockTransfer = async (id: string): Promise<void> => {
-    const transfers = await getStockTransfers();
-    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, transfers.filter(t => t.id !== id));
-};
-
-// Placeholder for other missing functions
-export const getAdCampaigns = async (): Promise<any[]> => { return []; };
-export const addAdCampaign = async (campaign: any): Promise<void> => { };
-export const updateAdCampaign = async (id: string, updates: any): Promise<void> => { };
-export const deleteAdCampaign = async (id: string): Promise<void> => { };
-
-export const getEmailCampaigns = async (): Promise<any[]> => { return []; };
-export const addEmailCampaign = async (campaign: any): Promise<void> => { };
-export const updateEmailCampaign = async (id: string, updates: any): Promise<void> => { };
-export const deleteEmailCampaign = async (id: string): Promise<void> => { };
-
-export const getEmailSubscribers = async (): Promise<any[]> => { return []; };
-export const deleteEmailSubscriber = async (id: number): Promise<void> => { };
-
-export const getAuditLogs = async (): Promise<any[]> => fetchFromApi<any[]>('/audit-logs');
-
+// --- System APIs ---
+export const getAuditLogs = (): Promise<any[]> => fetchFromApi<any[]>('/audit-logs');
 export const checkBackendHealth = (): Promise<any> => fetchFromApi('/health');
