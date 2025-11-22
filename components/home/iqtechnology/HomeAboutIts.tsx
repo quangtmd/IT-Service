@@ -1,12 +1,11 @@
-
-
-import React, { useState, useEffect, useCallback } from 'react';
-// Fix: Use named import for Link
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageAboutFeature } from '../../../types';
+import { Canvas } from '@react-three/fiber';
+import TechShapes from '../three/TechShapes';
 
 const HomeAboutIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
@@ -34,52 +33,49 @@ const HomeAboutIts: React.FC = () => {
   if (!aboutConfig.enabled) return null;
 
   return (
-    <section ref={sectionRef} className={`home-section bg-bgBase animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
+    <section ref={sectionRef} className={`home-section bg-[#0B1120] text-white animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          {/* Image Column */}
-          <div className="lg:w-1/2">
-            <div className={`relative animate-on-scroll ${isSectionVisible ? 'slide-in-left is-visible' : 'slide-in-left'}`} style={{animationDelay:'0.1s'}}>
-              <img
-                src={aboutConfig.imageUrl || "https://picsum.photos/seed/professionalOfficeV2/600/520"}
-                alt={aboutConfig.imageAltText || "Our Professional Team"}
-                className="rounded-xl shadow-2xl w-full object-cover border-4 border-white"
-              />
-              {aboutConfig.imageDetailUrl && (
-                <img
-                  src={aboutConfig.imageDetailUrl}
-                  alt={aboutConfig.imageDetailAltText || "Detail Image"}
-                  className="absolute -bottom-8 -right-8 w-40 h-40 rounded-lg shadow-xl border-4 border-white object-cover hidden md:block transform transition-all duration-300 hover:scale-105"
-                />
-              )}
+          
+          {/* 3D Scene Column (Replacing Image) */}
+          <div className="lg:w-1/2 h-[400px] lg:h-[500px] w-full relative rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black/40">
+            <div className={`absolute inset-0 animate-on-scroll ${isSectionVisible ? 'slide-in-left is-visible' : 'slide-in-left'}`} style={{animationDelay:'0.1s'}}>
+               <Canvas className="w-full h-full">
+                  <Suspense fallback={null}>
+                     <TechShapes />
+                  </Suspense>
+               </Canvas>
+               {/* Overlay for depth */}
+               <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#0B1120] to-transparent opacity-20"></div>
             </div>
           </div>
+
           {/* Text Content Column */}
           <div className="lg:w-1/2">
             <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay:'0.2s'}}>
                 {aboutConfig.preTitle && (
-                  <span className="home-section-pretitle">
-                    <img src={settings.siteLogoUrl || ''} onError={(e) => (e.currentTarget.style.display = 'none')} alt={`${settings.companyName} logo`} className="inline h-6 mr-2 object-contain" />
+                  <span className="inline-flex items-center py-1 px-3 rounded-full bg-blue-900/50 text-blue-300 border border-blue-500/30 text-xs font-bold tracking-widest uppercase mb-4">
+                    <img src={settings.siteLogoUrl || ''} onError={(e) => (e.currentTarget.style.display = 'none')} alt={`${settings.companyName} logo`} className="inline h-4 mr-2 object-contain" />
                     {aboutConfig.preTitle}
                   </span>
                 )}
-                <h2 className="home-section-title text-left text-4xl md:text-5xl font-extrabold">
+                <h2 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
                     {aboutConfig.title || "Default About Us Title"}
                 </h2>
-                <p className="text-textMuted mt-4 mb-8 leading-relaxed">
+                <p className="text-gray-300 mt-4 mb-8 leading-relaxed text-lg">
                     {aboutConfig.description || "Default about us description."}
                 </p>
 
                 {aboutConfig.features && aboutConfig.features.length > 0 && (
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
                         {aboutConfig.features.map((item: HomepageAboutFeature, index) => (
-                        <li key={item.id || index} className={`flex items-start animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay: `${0.3 + index * 0.1}s`}}>
-                            <div className="flex-shrink-0 modern-card-icon-wrapper !w-12 !h-12 !p-3 !mr-4 bg-primary/10">
-                                <i className={`${item.icon || 'fas fa-star'} text-primary !text-xl`}></i>
+                        <li key={item.id || index} className={`flex items-start p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay: `${0.3 + index * 0.1}s`}}>
+                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 mr-4">
+                                <i className={`${item.icon || 'fas fa-star'} text-lg`}></i>
                             </div>
                             <div>
-                                <h4 className="text-lg font-semibold text-textBase">{item.title}</h4>
-                                <p className="text-textMuted text-sm mt-1 leading-relaxed">{item.description}</p>
+                                <h4 className="text-lg font-semibold text-white">{item.title}</h4>
+                                <p className="text-gray-400 text-sm mt-1 leading-relaxed">{item.description}</p>
                             </div>
                         </li>
                         ))}
@@ -88,9 +84,8 @@ const HomeAboutIts: React.FC = () => {
                 
                 {aboutConfig.buttonLink && aboutConfig.buttonText && (
                     <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{ animationDelay: '0.5s' }}>
-                        {/* Fix: Use Link directly */}
                         <Link to={aboutConfig.buttonLink}>
-                        <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-md hover:shadow-primary/30">
+                        <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.8)] transition-all border border-blue-500">
                             {aboutConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                         </Button>
                         </Link>
