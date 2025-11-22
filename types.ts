@@ -426,6 +426,22 @@ export interface HomepageBannerSettings { // Renamed from SiteBanner to Homepage
   isActive: boolean; // Added for managing multiple banners
 }
 
+// New LED Board Item Type
+export interface LEDBoardItem {
+  id: string;
+  title: string;
+  content: string;
+  highlight: string;
+  imageUrl?: string;
+  isEnabled: boolean;
+  order: number;
+}
+
+export interface HomepageLEDBoardSettings {
+  enabled: boolean;
+  items: LEDBoardItem[];
+}
+
 export interface HomepageAboutFeature {
   id: string;
   icon: string; 
@@ -646,6 +662,7 @@ export interface SiteSettings {
 
   // Homepage Content Sections
   homepageBanners: HomepageBannerSettings[]; // Changed to array for multiple banners
+  homepageLEDBoard: HomepageLEDBoardSettings; // New LED Board settings
   homepageAbout: HomepageAboutSettings;
   homepageServicesBenefits: HomepageServicesBenefitsSettings;
   homepageWhyChooseUs: HomepageWhyChooseUsSettings;

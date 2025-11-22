@@ -6,7 +6,7 @@ import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageServiceBenefit } from '../../../types';
 import TiltCard from '../../ui/TiltCard';
 import { Canvas } from '@react-three/fiber';
-import CloudNetworkScene from '../three/CloudNetworkScene';
+import CloudNetworkScene from '../three/CloudNetworkScene'; // Use the new modern tech scene
 
 const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number }> = ({ item, index }) => {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
@@ -18,15 +18,15 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
         style={{ animationDelay: `${index * 100}ms` }}
     >
         <TiltCard className="h-full">
-            {/* Glassmorphism Card Styling */}
-            <div className="modern-card p-8 group flex flex-col text-center items-center relative h-full overflow-hidden bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl hover:shadow-cyan-500/20 transition-all duration-300 rounded-2xl">
+            {/* Modified Card Styling for Transparency/Glassmorphism */}
+            <div className="modern-card p-8 group flex flex-col text-center items-center relative h-full overflow-hidden bg-white/10 backdrop-blur-md border border-white/20 shadow-xl hover:shadow-cyan-500/20 transition-all duration-300">
                 {/* Subtle internal gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-30 pointer-events-none"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-50 pointer-events-none"></div>
                 
                 {/* Hover glow effect */}
-                <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/20 rounded-full blur-3xl group-hover:bg-cyan-400/40 transition-all duration-500 group-hover:scale-150"></div>
+                <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/30 rounded-full blur-3xl group-hover:bg-primary/50 transition-all duration-500 group-hover:scale-150"></div>
 
-                <div className="modern-card-icon-wrapper relative z-10 bg-white/10 backdrop-blur-md shadow-inner group-hover:scale-110 transition-transform duration-300 text-cyan-400 border border-white/20 p-4 rounded-full mb-5">
+                <div className="modern-card-icon-wrapper relative z-10 bg-black/20 backdrop-blur-sm shadow-inner group-hover:scale-110 transition-transform duration-300 text-cyan-400 border border-white/10">
                     <i className={`${item.iconClass || 'fas fa-check-circle'} text-3xl`}></i>
                 </div>
                 
@@ -34,12 +34,12 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
                     <Link to={item.link || '#'} className="line-clamp-2">{item.title}</Link>
                 </h3>
                 
-                <p className="text-gray-300 text-sm mb-6 line-clamp-3 flex-grow relative z-10 leading-relaxed drop-shadow-sm font-light">
+                <p className="text-gray-200 text-sm mb-6 line-clamp-3 flex-grow relative z-10 leading-relaxed drop-shadow-sm">
                     {item.description}
                 </p>
                 
                 <div className="mt-auto relative z-10 w-full">
-                    <Link to={item.link || '#'} className="inline-flex items-center justify-center w-full py-2.5 rounded-lg border border-white/20 bg-white/5 text-white font-semibold hover:bg-cyan-600 hover:border-cyan-600 hover:text-white transition-all duration-300 shadow-lg backdrop-blur-sm">
+                    <Link to={item.link || '#'} className="inline-flex items-center justify-center w-full py-2.5 rounded-lg border border-white/20 bg-white/5 text-white font-semibold hover:bg-cyan-500 hover:border-cyan-500 transition-all duration-300 shadow-lg backdrop-blur-sm">
                         Tìm hiểu thêm <i className="fas fa-arrow-right text-xs ml-2 transform group-hover:translate-x-1 transition-transform"></i>
                     </Link>
                 </div>
@@ -78,8 +78,8 @@ const HomeServicesBenefitsIts: React.FC = () => {
 
   return (
     <section className="home-section relative overflow-hidden min-h-[800px]">
-      {/* 3D Background Layer - Shared Cloud Network Scene */}
-      <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#1e293b] z-0">
+      {/* 3D Background Layer */}
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black via-[#050a14] to-[#0f172a] z-0">
         <Canvas>
             <Suspense fallback={null}>
                 <CloudNetworkScene />
@@ -91,7 +91,7 @@ const HomeServicesBenefitsIts: React.FC = () => {
       <div className="container mx-auto px-4 relative z-10 pt-10">
         <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
           {servicesBenefitsConfig.preTitle && (
-            <span className="home-section-pretitle bg-white/5 backdrop-blur-md border border-cyan-500/30 text-cyan-300">
+            <span className="home-section-pretitle bg-black/40 backdrop-blur-md border border-cyan-500/30 text-cyan-400">
               {servicesBenefitsConfig.sectionTitleIconUrl &&
                 <img
                   src={servicesBenefitsConfig.sectionTitleIconUrl}
@@ -102,10 +102,10 @@ const HomeServicesBenefitsIts: React.FC = () => {
               {servicesBenefitsConfig.preTitle}
             </span>
           )}
-          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold leading-tight text-white drop-shadow-lg mt-4">
+          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold leading-tight text-white drop-shadow-lg">
             {servicesBenefitsConfig.title || "Core Service Benefits"}
           </h2>
-          <div className="w-24 h-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 mx-auto mt-6 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.8)]"></div>
+          <div className="w-24 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 mx-auto mt-4 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
         </div>
         
         {sortedBenefits.length > 0 ? (

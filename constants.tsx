@@ -10,7 +10,8 @@ import {
     HomepageProcessStep, HomepageProcessSettings,
     HomepageCallToActionSettings, HomepageBlogPreviewSettings, HomepageContactSectionSettings,
     SMTPSettings, PaymentGatewaySettings, MediaItem, Warehouse, StockReceipt,
-    TeamMember, StoreImage, Testimonial
+    TeamMember, StoreImage, Testimonial,
+    LEDBoardItem, HomepageLEDBoardSettings
 } from './types';
 
 export const ADMIN_EMAIL = "quangtmdit@gmail.com"; 
@@ -126,6 +127,17 @@ export const INITIAL_HOMEPAGE_BANNERS: HomepageBannerSettings[] = [
         isActive: true,
     }
 ];
+
+export const INITIAL_LED_BOARD_ITEMS: LEDBoardItem[] = [
+  { id: 'led1', title: 'KHUYẾN MÃI HOT', content: 'Giảm ngay 20% cho dịch vụ Build PC Gaming trọn gói trong tháng này!', highlight: 'Ưu đãi có hạn', isEnabled: true, order: 1 },
+  { id: 'led2', title: 'DỊCH VỤ MỚI', content: 'Miễn phí vệ sinh & bảo dưỡng PC khi nâng cấp Ram/SSD tại cửa hàng.', highlight: 'Đặt lịch ngay', isEnabled: true, order: 2 },
+  { id: 'led3', title: 'HỖ TRỢ 24/7', content: 'Đội ngũ kỹ thuật viên sẵn sàng hỗ trợ sự cố tận nơi cho doanh nghiệp.', highlight: 'Hotline: 0911.855.055', isEnabled: true, order: 3 },
+];
+
+export const INITIAL_HOMEPAGE_LED_BOARD: HomepageLEDBoardSettings = {
+  enabled: true,
+  items: INITIAL_LED_BOARD_ITEMS,
+};
 
 export const INITIAL_HOMEPAGE_ABOUT_FEATURES: HomepageAboutFeature[] = [
   { id: 'feat1', icon: 'fas fa-briefcase', title: 'Dịch vụ IT Doanh Nghiệp', description: 'Giảm chi phí và lao động phòng CNTT.', link: '/services' },
@@ -324,6 +336,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
     socialYoutubeUrl: 'https://youtube.com',
 
     homepageBanners: INITIAL_HOMEPAGE_BANNERS,
+    homepageLEDBoard: INITIAL_HOMEPAGE_LED_BOARD, // Add this
     homepageAbout: INITIAL_HOMEPAGE_ABOUT,
     homepageServicesBenefits: INITIAL_HOMEPAGE_SERVICES_BENEFITS,
     homepageWhyChooseUs: INITIAL_HOMEPAGE_WHY_CHOOSE_US,

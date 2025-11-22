@@ -1,6 +1,6 @@
 
 import React, { useRef, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, ThreeElements } from '@react-three/fiber';
 import { Float, PerspectiveCamera, Stars, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -195,6 +195,8 @@ const CloudNetworkScene: React.FC = () => {
             {/* 3. ATMOSPHERE */}
             <Sparkles count={100} scale={15} size={2} speed={0.4} opacity={0.2} color="#ffffff" />
             <Stars radius={50} depth={0} count={2000} factor={4} saturation={0} fade speed={1} />
+            
+            {/* Grid Removed based on feedback */}
         </>
     );
 };

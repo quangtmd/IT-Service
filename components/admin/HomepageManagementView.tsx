@@ -14,12 +14,14 @@ import ProcessSettingsForm from './homepage_management/ProcessSettingsForm';
 import CallToActionSettingsForm from './homepage_management/CallToActionSettingsForm';
 import BlogPreviewSettingsForm from './homepage_management/BlogPreviewSettingsForm';
 import ContactSectionSettingsForm from './homepage_management/ContactSectionSettingsForm';
+import LEDBoardSettingsForm from './homepage_management/LEDBoardSettingsForm';
 
 
-type HomepageTab = 'banners' | 'about' | 'services_benefits' | 'why_choose_us' | 'stats_counter' | 'featured_projects' | 'testimonials' | 'brand_logos' | 'process' | 'cta' | 'blog_preview' | 'contact';
+type HomepageTab = 'banners' | 'led_board' | 'about' | 'services_benefits' | 'why_choose_us' | 'stats_counter' | 'featured_projects' | 'testimonials' | 'brand_logos' | 'process' | 'cta' | 'blog_preview' | 'contact';
 
 const TABS: { id: HomepageTab; label: string }[] = [
     { id: 'banners', label: 'Banners' },
+    { id: 'led_board', label: 'Bảng LED Hero' }, // New Tab
     { id: 'about', label: 'Giới thiệu' },
     { id: 'services_benefits', label: 'Lợi ích Dịch vụ' },
     { id: 'why_choose_us', label: 'Vì sao chọn IQ' },
@@ -76,6 +78,7 @@ const HomepageManagementView: React.FC = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'banners': return <BannerSettingsForm banners={settings.homepageBanners} onChange={(val) => handleSectionChange('homepageBanners', val)} />;
+            case 'led_board': return <LEDBoardSettingsForm settings={settings.homepageLEDBoard || Constants.INITIAL_HOMEPAGE_LED_BOARD} onChange={(val) => handleSectionChange('homepageLEDBoard', val)} />;
             case 'about': return <AboutSettingsForm about={settings.homepageAbout} onChange={(val) => handleSectionChange('homepageAbout', val)} />;
             case 'services_benefits': return <ServicesBenefitsSettingsForm settings={settings.homepageServicesBenefits} onChange={(val) => handleSectionChange('homepageServicesBenefits', val)} />;
             case 'why_choose_us': return <WhyChooseUsSettingsForm settings={settings.homepageWhyChooseUs} onChange={(val) => handleSectionChange('homepageWhyChooseUs', val)} />;

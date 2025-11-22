@@ -356,3 +356,60 @@ body {
 body.admin-panel-active { background-color: #f1f5f9; } /* Admin keeps light theme usually */
 .admin-wrapper { display: flex; min-height: 100vh; }
 /* ... (keep existing admin styles largely as they are for stability) ... */
+
+/* LED Board Effects */
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8k93ph55xtQ.woff2') format('woff2');
+  font-display: swap;
+}
+
+.font-digital {
+  font-family: 'Courier Prime', 'Courier New', monospace;
+}
+
+.led-dot-matrix {
+  background-image: 
+    radial-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 1) 50%), 
+    linear-gradient(0deg, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.2) 50%);
+  background-size: 3px 3px;
+  background-color: rgba(0,0,0,0.2);
+}
+
+.text-glow-cyan {
+  text-shadow: 0 0 5px #00f3ff, 0 0 10px #00f3ff;
+}
+
+.text-glow-yellow {
+  text-shadow: 0 0 5px #facc15, 0 0 10px #facc15;
+}
+
+.text-glow-red {
+  text-shadow: 0 0 5px #ef4444, 0 0 10px #ef4444;
+}
+
+.scanline {
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0.3;
+  position: absolute;
+  pointer-events: none;
+  z-index: 20;
+  animation: scanline 6s linear infinite;
+}
+
+@keyframes scanline {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+.animate-glitch {
+  animation: glitch 1s linear infinite;
+}
+
+@keyframes glitch {
+  2%, 64% { transform: translate(2px,0) skew(0deg); }
+  4%, 60% { transform: translate(-2px,0) skew(0deg); }
+  62% { transform: translate(0,0) skew(5deg); }
+}
