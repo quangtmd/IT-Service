@@ -1,9 +1,7 @@
-
 // @ts-nocheck
-
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, PerspectiveCamera, Stars, Sparkles, Text } from '@react-three/drei';
+import { PerspectiveCamera, Stars, Sparkles, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 // --- 1. SERVER RACK COMPONENT ---
@@ -17,7 +15,7 @@ const ServerRack = ({ position, rotation }: { position: [number, number, number]
       {/* Main Cabinet Body */}
       <mesh position={[0, 2, 0]}>
         <boxGeometry args={[1.2, 4, 1.2]} />
-        <meshStandardMaterial color={frameColor} roughness={0.2} metalness={0.6} />
+        <meshStandardMaterial color={frameColor} roughness={0.2} metalness={0.8} />
       </mesh>
       
       {/* Server Units */}
@@ -25,12 +23,12 @@ const ServerRack = ({ position, rotation }: { position: [number, number, number]
         <group key={i} position={[0, 0.2 + i * 0.45, 0.61]}>
            <mesh>
              <planeGeometry args={[1, 0.4]} />
-             <meshStandardMaterial color="#475569" roughness={0.3} metalness={0.5} />
+             <meshStandardMaterial color="#334155" roughness={0.3} metalness={0.6} />
            </mesh>
            {/* Blinking Lights */}
-           <BlinkingLight position={[-0.4, 0, 0.01]} color={lightColor} speed={1 + Math.random()} />
-           <BlinkingLight position={[-0.3, 0, 0.01]} color={Math.random() > 0.7 ? activeLightColor : lightColor} speed={2 + Math.random()} />
-           <BlinkingLight position={[0.35, 0, 0.01]} color="#10b981" speed={0.5} />
+           <BlinkingLight position={[-0.4, 0, 0.02]} color={lightColor} speed={1 + Math.random()} />
+           <BlinkingLight position={[-0.3, 0, 0.02]} color={Math.random() > 0.7 ? activeLightColor : lightColor} speed={2 + Math.random()} />
+           <BlinkingLight position={[0.35, 0, 0.02]} color="#10b981" speed={0.5} />
         </group>
       ))}
     </group>
@@ -43,13 +41,15 @@ const BlinkingLight = ({ position, color, speed }: { position: [number, number, 
         if (ref.current) {
             const t = clock.getElapsedTime();
             const intensity = (Math.sin(t * speed * 5) + 1) / 2;
-            (ref.current.material as THREE.MeshStandardMaterial).emissiveIntensity = (intensity * 2) + 0.5;
+            if (ref.current.material instanceof THREE.MeshStandardMaterial) {
+                ref.current.material.emissiveIntensity = (intensity * 3) + 0.5;
+            }
         }
     });
 
     return (
         <mesh ref={ref} position={position}>
-            <circleGeometry args={[0.04, 16]} />
+            <circleGeometry args={[0.03, 8]} />
             <meshStandardMaterial color="black" emissive={color} emissiveIntensity={2} />
         </mesh>
     )
@@ -60,7 +60,8 @@ const CyberObelisk = ({ position }: { position: [number, number, number] }) => {
     const groupRef = useRef<THREE.Group>(null!);
     const ringsRef = useRef<THREE.Group>(null!);
     const textGroupRef = useRef<THREE.Group>(null!);
-    // Refs for individual text elements to update color
+    
+    // Refs for text coloring - using any to bypass strict type checking on custom props for Text
     const text1Ref = useRef<any>(null!);
     const text2Ref = useRef<any>(null!);
     const text3Ref = useRef<any>(null!);
@@ -69,30 +70,26 @@ const CyberObelisk = ({ position }: { position: [number, number, number] }) => {
     useFrame(({ clock }) => {
         const t = clock.getElapsedTime();
         
-        // Gentle float
         if (groupRef.current) {
             groupRef.current.position.y = position[1] + Math.sin(t * 0.5) * 0.1;
         }
         
-        // Rotate rings
         if (ringsRef.current) {
             ringsRef.current.rotation.y = t * 0.2;
         }
 
-        // Rotate Text Group
         if (textGroupRef.current) {
-             textGroupRef.current.rotation.y = -t * 0.5;
+             textGroupRef.current.rotation.y = -t * 0.3;
         }
 
         // RGB Color Cycle Logic
-        const hue = (t * 0.2) % 1; // Cycle through colors
-        const color = new THREE.Color().setHSL(hue, 1, 0.6); // Bright saturated color
+        const hue = (t * 0.1) % 1; 
+        const color = new THREE.Color().setHSL(hue, 1, 0.5);
 
-        // Apply color to texts
         [text1Ref, text2Ref, text3Ref, text4Ref].forEach(ref => {
             if (ref.current) {
                 ref.current.color = color;
-                // Also update outline if needed, or just the fill
+                // Force update if needed, though React-Three-Fiber usually handles prop updates
             }
         });
     });
@@ -100,97 +97,56 @@ const CyberObelisk = ({ position }: { position: [number, number, number] }) => {
     return (
         <group ref={groupRef} position={position}>
             {/* Main Monolith Pillar */}
-            <mesh position={[0, 0, 0]}>
-                <cylinderGeometry args={[1, 1.2, 5, 6]} />
+            <mesh position={[0, 1.5, 0]}>
+                <cylinderGeometry args={[1.2, 1.5, 6, 6]} />
                 <meshStandardMaterial 
                     color="#0f172a" 
-                    roughness={0.2} 
-                    metalness={0.8} 
-                    emissive="#001133"
-                    emissiveIntensity={0.5}
+                    roughness={0.1} 
+                    metalness={0.9} 
                 />
             </mesh>
 
-            {/* Glowing Circuitry Edges */}
-            <mesh position={[0, 0, 0]} scale={[1.01, 1, 1.01]}>
-                 <cylinderGeometry args={[1, 1.2, 5, 6]} />
+            {/* Glowing Edges */}
+            <mesh position={[0, 1.5, 0]} scale={[1.02, 1, 1.02]}>
+                 <cylinderGeometry args={[1.2, 1.5, 6, 6]} />
                  <meshStandardMaterial 
                     color="#00f3ff"
                     wireframe
                     transparent
-                    opacity={0.15}
+                    opacity={0.2}
                  />
             </mesh>
 
-            {/* Top Crystal / Beacon */}
-            <mesh position={[0, 3, 0]}>
-                <coneGeometry args={[0.8, 1.5, 6]} />
+            {/* Top Pyramid */}
+            <mesh position={[0, 5.2, 0]}>
+                <coneGeometry args={[1.2, 1.5, 4]} />
                 <meshStandardMaterial 
                     color="#ffffff" 
                     emissive="#00f3ff" 
-                    emissiveIntensity={2} 
+                    emissiveIntensity={1.5} 
                     roughness={0}
                     metalness={1}
                 />
             </mesh>
 
             {/* Floating Holographic Rings */}
-            <group ref={ringsRef}>
+            <group ref={ringsRef} position={[0, 2, 0]}>
                 <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                    <ringGeometry args={[1.8, 1.9, 6]} />
-                    <meshBasicMaterial color="#00f3ff" transparent opacity={0.6} side={THREE.DoubleSide} />
+                    <ringGeometry args={[2.5, 2.6, 6]} />
+                    <meshBasicMaterial color="#00f3ff" transparent opacity={0.4} side={THREE.DoubleSide} />
                 </mesh>
-                <mesh position={[0, 1, 0]} rotation={[Math.PI / 2, 0, Math.PI/6]}>
-                    <ringGeometry args={[1.5, 1.55, 6]} />
-                    <meshBasicMaterial color="#3b82f6" transparent opacity={0.5} side={THREE.DoubleSide} />
-                </mesh>
-                 <mesh position={[0, -1, 0]} rotation={[Math.PI / 2, 0, -Math.PI/6]}>
-                    <ringGeometry args={[2.2, 2.25, 6]} />
+                 <mesh position={[0, -2, 0]} rotation={[Math.PI / 2, 0, Math.PI/6]}>
+                    <ringGeometry args={[3, 3.1, 6]} />
                     <meshBasicMaterial color="#3b82f6" transparent opacity={0.3} side={THREE.DoubleSide} />
                 </mesh>
             </group>
 
             {/* Holographic RGB Text Labels */}
-            <group ref={textGroupRef} position={[0, 4.5, 0]}>
-                 <Text
-                    ref={text1Ref}
-                    position={[0, 0, 2.5]}
-                    fontSize={0.5}
-                    anchorX="center"
-                    anchorY="middle"
-                >
-                    IQ TECHNOLOGY
-                </Text>
-                <Text
-                    ref={text2Ref}
-                    position={[2.5, 0, 0]}
-                    rotation={[0, Math.PI / 2, 0]}
-                    fontSize={0.5}
-                    anchorX="center"
-                    anchorY="middle"
-                >
-                    DATA CENTER
-                </Text>
-                 <Text
-                    ref={text3Ref}
-                    position={[0, 0, -2.5]}
-                    rotation={[0, Math.PI, 0]}
-                    fontSize={0.5}
-                    anchorX="center"
-                    anchorY="middle"
-                >
-                    SECURITY
-                </Text>
-                 <Text
-                    ref={text4Ref}
-                    position={[-2.5, 0, 0]}
-                    rotation={[0, -Math.PI / 2, 0]}
-                    fontSize={0.5}
-                    anchorX="center"
-                    anchorY="middle"
-                >
-                    CLOUD
-                </Text>
+            <group ref={textGroupRef} position={[0, 6.5, 0]}>
+                 <Text ref={text1Ref} position={[0, 0, 3]} fontSize={0.6} anchorX="center" anchorY="middle">IQ TECHNOLOGY</Text>
+                 <Text ref={text2Ref} position={[3, 0, 0]} rotation={[0, Math.PI / 2, 0]} fontSize={0.6} anchorX="center" anchorY="middle">DATA CENTER</Text>
+                 <Text ref={text3Ref} position={[0, 0, -3]} rotation={[0, Math.PI, 0]} fontSize={0.6} anchorX="center" anchorY="middle">SECURITY</Text>
+                 <Text ref={text4Ref} position={[-3, 0, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.6} anchorX="center" anchorY="middle">CLOUD</Text>
             </group>
         </group>
     );
@@ -198,53 +154,68 @@ const CyberObelisk = ({ position }: { position: [number, number, number] }) => {
 
 // --- MAIN SCENE ---
 const ServerTechScene: React.FC = () => {
+  // Generate lots of racks to fill the wide screen
   const rackPositions = [
-      // Center Left
-      { pos: [-4, 0, -2], rot: 0.2 },
-      { pos: [-3, 0, -5], rot: 0.1 },
-      // Far Left (Filling the void)
-      { pos: [-7, 0, -3], rot: 0.25 },
-      { pos: [-10, 0, -1], rot: 0.3 },
-      { pos: [-8, 0, -6], rot: 0.15 },
-      { pos: [-13, 0, -4], rot: 0.35 },
+      // Center cluster
+      { pos: [-3, 0, -4], rot: 0.2 },
+      { pos: [3, 0, -4], rot: -0.2 },
+      
+      // Mid range
+      { pos: [-6, 0, -2], rot: 0.3 },
+      { pos: [6, 0, -2], rot: -0.3 },
+      { pos: [-7, 0, -6], rot: 0.1 },
+      { pos: [7, 0, -6], rot: -0.1 },
 
-      // Center Right
-      { pos: [4, 0, -2], rot: -0.2 },
-      { pos: [3, 0, -5], rot: -0.1 },
-      // Far Right (Filling the void)
-      { pos: [7, 0, -3], rot: -0.25 },
-      { pos: [10, 0, -1], rot: -0.3 },
-      { pos: [8, 0, -6], rot: -0.15 },
-      { pos: [13, 0, -4], rot: -0.35 },
+      // Far range (filling the sides)
+      { pos: [-10, 0, -1], rot: 0.4 },
+      { pos: [10, 0, -1], rot: -0.4 },
+      { pos: [-11, 0, -5], rot: 0.2 },
+      { pos: [11, 0, -5], rot: -0.2 },
+      
+      // Extra wide
+      { pos: [-14, 0, 0], rot: 0.5 },
+      { pos: [14, 0, 0], rot: -0.5 },
+      { pos: [-15, 0, -4], rot: 0.3 },
+      { pos: [15, 0, -4], rot: -0.3 },
   ];
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 2, 8]} fov={60} />
+      <PerspectiveCamera makeDefault position={[0, 2, 10]} fov={60} />
+      
+      {/* Background Color - Deep space blue/black */}
       <color attach="background" args={['#020617']} />
       
-      <fog attach="fog" args={['#020617', 5, 40]} />
-      <ambientLight intensity={1.5} />
+      {/* Fog to blend distant objects */}
+      <fog attach="fog" args={['#020617', 8, 45]} />
+
+      {/* Lighting - Brighter global illumination */}
+      <ambientLight intensity={2} />
       <hemisphereLight intensity={1} groundColor="#000000" color="#ffffff" />
       
-      <pointLight position={[0, 10, 0]} intensity={3} color="#00aaff" distance={50} />
-      <directionalLight position={[0, 5, 10]} intensity={3} color="#ffffff" />
-      
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-      <Sparkles count={200} scale={30} size={3} speed={0.4} opacity={0.5} color="#00f3ff" />
+      {/* Spotlights for dramatic effect on the Obelisk */}
+      <spotLight position={[0, 20, 0]} angle={0.5} penumbra={1} intensity={5} color="#00f3ff" distance={50} />
+      <pointLight position={[-10, 5, 5]} intensity={2} color="#3b82f6" />
+      <pointLight position={[10, 5, 5]} intensity={2} color="#ec4899" />
 
+      {/* Stars & Particles */}
+      <Stars radius={100} depth={50} count={6000} factor={5} saturation={0} fade speed={1} />
+      <Sparkles count={300} scale={40} size={4} speed={0.5} opacity={0.6} color="#00f3ff" />
+
+      {/* Floor Grid */}
       <group position={[0, -2, 0]}>
-         <gridHelper args={[80, 80, 0x00f3ff, 0x0f172a]} />
+         <gridHelper args={[100, 100, 0x00f3ff, 0x0f172a]} />
       </group>
 
+      {/* Server Racks */}
       <group position={[0, -2, 0]}>
           {rackPositions.map((rack, i) => (
-              <ServerRack key={i} position={[rack.pos[0], rack.pos[1], rack.pos[2]]} rotation={[0, rack.rot, 0]} />
+              <ServerRack key={i} position={[rack.pos[0], rack.pos[1], rack.pos[2]] as [number, number, number]} rotation={[0, rack.rot, 0]} />
           ))}
       </group>
 
-      {/* CENTRAL OBELISK */}
-      <CyberObelisk position={[0, -1, -6]} />
+      {/* Central Command Center Obelisk */}
+      <CyberObelisk position={[0, -2, -8]} />
 
     </>
   );

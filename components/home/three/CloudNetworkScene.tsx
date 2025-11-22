@@ -1,6 +1,5 @@
 // @ts-nocheck
-
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Float, PerspectiveCamera, Stars, Sparkles, Text } from '@react-three/drei';
 import * as THREE from 'three';
@@ -16,7 +15,9 @@ const DataBeam = ({ position, delay = 0, color = "#00f3ff" }: { position: [numbe
             ref.current.position.y = -1 + t * 6;
             // Fade out at top
             const opacity = 1 - t;
-            (ref.current.material as THREE.MeshBasicMaterial).opacity = opacity * 0.5;
+            if (ref.current.material instanceof THREE.MeshBasicMaterial) {
+                ref.current.material.opacity = opacity * 0.5;
+            }
             // Scale down as it goes up
             ref.current.scale.setScalar(1 - t * 0.5);
         }
