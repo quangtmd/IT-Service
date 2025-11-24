@@ -87,7 +87,7 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    const products = await fetchFromApi<Product[]>('/products/featured');
+    const { products } = await getProducts('is_featured=true&limit=4');
     return products;
 }
 

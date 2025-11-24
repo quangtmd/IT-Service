@@ -217,20 +217,22 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     }, [transactions, startDate, endDate]);
 
     const summary = useMemo(() => {
-        const income = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-        const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+        let income = 0;
+        let expense = 0;
+        const incomeByCategory: Record<string, number> = {};
+        const expenseByCategory: Record<string, number> = {};
+
+        filteredTransactions.forEach(t => {
+            if (t.type === 'income') {
+                income += t.amount;
+                incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
+            } else if (t.type === 'expense') {
+                expense += t.amount;
+                expenseByCategory[t.category] = (expenseByCategory[t.category] || 0) + t.amount;
+            }
+        });
+
         const net = income - expense;
-
-        const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce<Record<string, number>>((acc, t) => {
-            acc[t.category] = (acc[t.category] || 0) + t.amount;
-            return acc;
-        }, {});
-        
-        const expenseByCategory = filteredTransactions.filter(t => t.type === 'expense').reduce<Record<string, number>>((acc, t) => {
-            acc[t.category] = (acc[t.category] || 0) + t.amount;
-            return acc;
-        }, {});
-
         return { income, expense, net, incomeByCategory, expenseByCategory };
     }, [filteredTransactions]);
 
