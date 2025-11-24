@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, User, Debt, PaymentApproval, CashflowForecastData } from '../../types';
-import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
 import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction as apiDeleteFinancialTransaction,
@@ -277,12 +277,10 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-// Fix: The onAddTransaction prop was expecting 0 arguments, but was called with 1.
-// Updated the type to accept one argument of type Omit<FinancialTransaction, 'id'>.
 interface PayrollTabProps {
-    payrollRecords: PayrollRecord[],
-    onDataChange: () => Promise<void>,
-    onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void>
+    payrollRecords: PayrollRecord[];
+    onDataChange: () => Promise<void>;
+    onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void>;
 }
 
 const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
