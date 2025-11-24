@@ -65,7 +65,7 @@ const RegisterPage: React.FC = () => {
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-md px-4 sm:px-6 lg:px-8 animate-fade-in-up">
-        <div className="bg-black/30 backdrop-blur-xl p-8 sm:p-10 rounded-2xl shadow-[0_0_40px_rgba(236,72,153,0.1)] border border-white/10">
+        <div className="bg-black/20 backdrop-blur-xl p-8 sm:p-10 rounded-2xl shadow-[0_0_40px_rgba(236,72,153,0.1)] border border-white/20">
             <div className="text-center mb-8">
                 <div className="mx-auto w-16 h-16 bg-gradient-to-tr from-pink-500 to-rose-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-pink-500/30">
                     <i className="fas fa-user-plus text-2xl text-white"></i>

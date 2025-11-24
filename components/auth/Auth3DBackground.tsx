@@ -71,16 +71,15 @@ const SceneContent = () => {
             <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
             <Sparkles count={150} scale={15} size={3} speed={0.4} opacity={0.5} color="#ffffff" />
             
-            <fog attach="fog" args={['#050a14', 5, 30]} />
-            <color attach="background" args={['#050a14']} />
+            {/* Fog and solid color removed to allow CSS gradient to show through */}
         </>
     )
 }
 
 const Auth3DBackground: React.FC = () => {
   return (
-    <div className="absolute inset-0 z-0 w-full h-full">
-      <Canvas>
+    <div className="absolute inset-0 z-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-800 via-[#0B1120] to-black">
+      <Canvas gl={{ alpha: true }}>
          <SceneContent />
       </Canvas>
       {/* Overlay to ensure text contrast */}
