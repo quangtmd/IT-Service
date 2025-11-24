@@ -326,7 +326,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
 
         try {
-            const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod).map(r => {
+            const recordsToSave: PayrollRecord[] = localPayroll.filter(p => p.payPeriod === payPeriod).map(r => {
                 const shouldSettle = recordsToSettle.some(s => s.id === r.id);
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
@@ -347,7 +347,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
     };
     
     const handleSaveDraft = async () => {
-        const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+        const recordsToSave: PayrollRecord[] = localPayroll.filter(p => p.payPeriod === payPeriod);
         if(recordsToSave.length === 0) {
             alert("Không có dữ liệu lương để lưu nháp.");
             return;

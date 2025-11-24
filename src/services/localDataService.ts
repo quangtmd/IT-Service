@@ -30,15 +30,10 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
     }
 };
 
-
-// The base URL is now an empty string. This assumes the frontend is served
-// from the same domain as the backend, which simplifies deployment.
-// All API requests will be relative, e.g., /api/users.
+// Sử dụng URL tương đối cho Monolith deploy (Render)
 const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // All API endpoints are prefixed with /api on the server.
-    // This ensures the correct path is always used.
     const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
@@ -53,27 +48,22 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            // Simplified, more robust error message for a monolithic setup.
-            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
+            const errorMessage = `Lỗi API (${response.status}): ${errorData.message || response.statusText || 'Lỗi không xác định'}.`;
             throw new Error(errorMessage);
         }
         
-        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            // This now more clearly indicates a server-down issue.
-            throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động.');
+            throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra đường truyền hoặc thử lại sau.');
         }
-        // Re-throw other errors (like the custom one from response.ok check)
         throw error;
     }
 }
 
 // --- User Service ---
-// Note: The endpoint now starts with /users, and /api is prepended by fetchFromApi
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
 export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
@@ -86,9 +76,15 @@ export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
+
+// FIX: Use the specific endpoint for featured products to ensure performance and correctness
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    const products = await fetchFromApi<Product[]>('/products/featured');
-    return products;
+    try {
+        return await fetchFromApi<Product[]>('/products/featured');
+    } catch (error) {
+        console.warn("Failed to fetch featured products, falling back to standard list.", error);
+        return [];
+    }
 }
 
 // --- Article Service ---
@@ -143,7 +139,6 @@ export const getCashflowForecast = (): Promise<CashflowForecastData> => fetchFro
 
 // --- Service Tickets ---
 export const getServiceTickets = (): Promise<ServiceTicket[]> => fetchFromApi<ServiceTicket[]>('/service-tickets');
-// Fix: Cast to any to prevent type errors with backend generated fields like ticket_code
 export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
 export const updateServiceTicket = (id: string, updates: Partial<ServiceTicket>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>(`/service-tickets/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteServiceTicket = (id: string): Promise<void> => fetchFromApi<void>(`/service-tickets/${id}`, { method: 'DELETE' });

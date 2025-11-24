@@ -13,7 +13,12 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+  keepAliveInitialDelay: 0,
+  // Thêm cấu hình SSL để đảm bảo kết nối được với các provider yêu cầu (như Aiven, Azure, DigitalOcean)
+  // rejectUnauthorized: false cho phép kết nối kể cả khi chứng chỉ self-signed
+  ssl: {
+      rejectUnauthorized: false
+  }
 });
 
 export default pool;
