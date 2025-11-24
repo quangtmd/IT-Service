@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants.tsx';
+import * as Constants from '../../../constants';
 import { SiteSettings, HomepageWhyChooseUsFeature } from '../../../types';
 import { Canvas } from '@react-three/fiber';
 import FloatingElements from '../three/FloatingElements';

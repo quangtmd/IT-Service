@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants.tsx';
+import * as Constants from '../../../constants';
 import { SiteSettings, HomepageServiceBenefit } from '../../../types';
 import TiltCard from '../../ui/TiltCard';
 import { Canvas } from '@react-three/fiber';

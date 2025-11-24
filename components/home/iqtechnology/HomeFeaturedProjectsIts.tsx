@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants.tsx';
+import * as Constants from '../../../constants';
 import { MOCK_SERVICES } from '../../../data/mockData';
 import { SiteSettings, Service } from '../../../types';
 import { Canvas } from '@react-three/fiber';

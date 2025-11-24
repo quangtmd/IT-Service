@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver.ts';
-import * as Constants from '../../../constants.tsx';
-import { SiteSettings } from '../../../types.ts';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
+import * as Constants from '../../../constants';
+import { SiteSettings } from '../../../types';
 import { Canvas } from '@react-three/fiber';
-import PulsingCoreScene from '../three/PulsingCoreScene.tsx';
+import PulsingCoreScene from '../three/PulsingCoreScene';
 
 const HomeCallToActionIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
