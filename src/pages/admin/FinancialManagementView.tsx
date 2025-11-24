@@ -14,15 +14,22 @@ import {
 import { useNavigate, useLocation, NavigateFunction } from 'react-router-dom';
 
 // --- HELPER FUNCTIONS & COMPONENTS ---
-const formatDate = (d: Date) => d.toISOString().split('T')[0];
-const getStartOfWeek = (d: Date) => {
-    const date = new Date(d);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    return new Date(date.setDate(diff));
-};
+const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('vi-VN');
+const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + '₫';
 
-type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll';
+type FinancialTab = 'overview' | 'transactions' | 'debts' | 'payroll' | 'forecast' | 'approvals' | 'reports';
+
+const StatCard: React.FC<{ title: string; value: string; icon: string; color: string; onClick?: () => void }> = ({ title, value, icon, color, onClick }) => (
+    <div onClick={onClick} className={`p-4 rounded-lg shadow flex items-center cursor-pointer hover:shadow-lg transition-shadow ${color} stat-card-pattern`}>
+        <div className="p-3 rounded-full bg-white/30 mr-4">
+            <i className={`fas ${icon} text-2xl text-white`}></i>
+        </div>
+        <div>
+            <p className="text-sm font-medium text-white/90">{title}</p>
+            <p className="text-2xl font-bold text-white">{value}</p>
+        </div>
+    </div>
+);
 
 // --- MAIN COMPONENT ---
 const FinancialManagementView: React.FC = () => {
@@ -73,7 +80,7 @@ const FinancialManagementView: React.FC = () => {
             case 'reports': return <ReportsTab transactions={transactions} />;
             case 'payroll': return <PayrollTab payrollRecords={payrollRecords} onDataChange={loadData} onAddTransaction={addTransaction} />;
             case 'overview':
-            default: return <OverviewTab transactions={transactions} />;
+            default: return <OverviewTab transactions={transactions} setActiveTab={setActiveTab} />;
         }
     };
 
@@ -99,7 +106,7 @@ const FinancialManagementView: React.FC = () => {
 
 // --- TAB COMPONENTS ---
 
-const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
+const OverviewTab: React.FC<{ transactions: FinancialTransaction[], setActiveTab: (tab: FinancialTab) => void }> = ({ transactions, setActiveTab }) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -115,9 +122,9 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
         <div>
             <h4 className="admin-form-subsection-title">Tổng quan Tháng {now.getMonth() + 1}/{now.getFullYear()}</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Card className="!p-4 !bg-green-50 !border-green-200"><h5 className="text-sm text-green-700">Tổng Thu</h5><p className="text-2xl font-bold text-green-800">{totalIncome.toLocaleString('vi-VN')}₫</p></Card>
-                <Card className="!p-4 !bg-red-50 !border-red-200"><h5 className="text-sm text-red-700">Tổng Chi</h5><p className="text-2xl font-bold text-red-800">{totalExpense.toLocaleString('vi-VN')}₫</p></Card>
-                <Card className={`!p-4 ${netProfit >= 0 ? '!bg-blue-50 !border-blue-200' : '!bg-orange-50 !border-orange-200'}`}><h5 className={`text-sm ${netProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>Lợi nhuận</h5><p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>{netProfit.toLocaleString('vi-VN')}₫</p></Card>
+                <StatCard title="Tổng Thu" value={formatCurrency(totalIncome)} icon="fa-arrow-up" color="bg-green-500" onClick={() => setActiveTab('transactions')} />
+                <StatCard title="Tổng Chi" value={formatCurrency(totalExpense)} icon="fa-arrow-down" color="bg-red-500" onClick={() => setActiveTab('transactions')} />
+                <StatCard title="Lợi Nhuận" value={formatCurrency(netProfit)} icon="fa-chart-line" color="bg-blue-500" onClick={() => setActiveTab('reports')} />
             </div>
              <h4 className="admin-form-subsection-title">Giao dịch gần đây</h4>
              <div className="overflow-x-auto">
@@ -189,27 +196,31 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
 };
 
 const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
-    const [startDate, setStartDate] = useState<string>(formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
-    const [endDate, setEndDate] = useState<string>(formatDate(new Date()));
+    const [startDate, setStartDate] = useState<string>(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
     const setDateRange = (period: 'week' | 'month' | 'year') => {
         const today = new Date();
         if (period === 'week') {
-            setStartDate(formatDate(getStartOfWeek(today)));
-            setEndDate(formatDate(today));
+            const start = new Date(today);
+            start.setDate(today.getDate() - 7);
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(today.toISOString().split('T')[0]);
         } else if (period === 'month') {
-            setStartDate(formatDate(new Date(today.getFullYear(), today.getMonth(), 1)));
-            setEndDate(formatDate(today));
+            const start = new Date(today.getFullYear(), today.getMonth(), 1);
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(today.toISOString().split('T')[0]);
         } else if (period === 'year') {
-            setStartDate(formatDate(new Date(today.getFullYear(), 0, 1)));
-            setEndDate(formatDate(today));
+            const start = new Date(today.getFullYear(), 0, 1);
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(today.toISOString().split('T')[0]);
         }
     };
 
     const filteredTransactions = useMemo(() => {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999); // Include entire end day
+        end.setHours(23, 59, 59, 999);
 
         return transactions.filter(t => {
             const tDate = new Date(t.date);
@@ -330,7 +341,9 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 const shouldSettle = recordsToSettle.some(s => s.id === r.id);
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
+            // Explicitly wait for records to save
             await savePayrollRecords(recordsToSave);
+            // Explicitly wait for transaction to be added
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,

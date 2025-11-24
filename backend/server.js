@@ -12,268 +12,163 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.set('trust proxy', true); // Enable trusting proxy headers for req.ip
+app.set('trust proxy', true);
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Increase limit for media uploads
+app.use(express.json({ limit: '10mb' }));
 
-// Helper function to filter an object based on allowed keys
-const filterObject = (obj, allowedKeys) => {
-    if (!obj) return {};
-    return Object.keys(obj)
-        .filter(key => allowedKeys.includes(key) && obj[key] !== undefined)
-        .reduce((newObj, key) => {
-            newObj[key] = obj[key];
-            return newObj;
-        }, {});
-};
+// --- LOGGING MIDDLEWARE ---
+// Giúp debug xem request nào đang được gọi và trạng thái trả về
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
 
-// Biến lưu trạng thái DB để báo cáo cho Frontend
-let dbStatus = {
-    status: 'unknown',
-    error: null,
-    lastCheck: null,
-    tableExists: false
-};
+// --- DB CONNECTION CHECK ---
+let dbStatus = { status: 'unknown', error: null, tableExists: false };
 
-// Hàm kiểm tra kết nối DB và sự tồn tại của Bảng
 const checkDbConnection = async () => {
     try {
         const connection = await pool.getConnection();
-        
-        // Kiểm tra xem bảng Products có tồn tại không
         try {
             await connection.query('SELECT 1 FROM Products LIMIT 1');
-            dbStatus = { status: 'connected', error: null, lastCheck: new Date(), tableExists: true };
+            dbStatus = { status: 'connected', error: null, tableExists: true };
             console.log("✅ Kết nối tới database MySQL thành công và bảng Products đã tồn tại!");
         } catch (tableError) {
             if (tableError.code === 'ER_NO_SUCH_TABLE') {
-                console.warn("⚠️ Kết nối DB thành công NHƯNG chưa tìm thấy bảng 'Products'. Bạn cần chạy script SQL.");
-                dbStatus = { status: 'connected', error: { code: 'MISSING_TABLES', message: 'Database chưa có dữ liệu (thiếu bảng Products).' }, lastCheck: new Date(), tableExists: false };
+                console.warn("⚠️ Kết nối DB thành công NHƯNG chưa tìm thấy bảng 'Products'.");
+                dbStatus = { status: 'connected', error: { code: 'MISSING_TABLES', message: 'Database chưa có dữ liệu (thiếu bảng Products).' }, tableExists: false };
             } else {
                 throw tableError;
             }
         } finally {
             connection.release();
         }
-
     } catch (error) {
         console.error("\n⚠️ CẢNH BÁO: KHÔNG THỂ KẾT NỐI DATABASE");
-        
-        let friendlyError = error.message;
-        switch (error.code) {
-            case 'ER_ACCESS_DENIED_ERROR':
-                friendlyError = "Sai Tên người dùng (DB_USER) hoặc Mật khẩu (DB_PASSWORD).";
-                break;
-            case 'ER_BAD_DB_ERROR':
-                friendlyError = `Database '${process.env.DB_NAME}' không tồn tại.`;
-                break;
-            case 'ENOTFOUND':
-            case 'ETIMEDOUT':
-            case 'ECONNREFUSED':
-                friendlyError = `Không thể kết nối tới Host '${process.env.DB_HOST}'. Kiểm tra IP Whitelist hoặc Host.`;
-                break;
-        }
-        console.error("Chi tiết:", friendlyError);
-        
-        dbStatus = { 
-            status: 'error', 
-            error: { code: error.code, message: friendlyError, originalMessage: error.message },
-            lastCheck: new Date(),
-            tableExists: false
-        };
+        console.error("Chi tiết lỗi:", error.message);
+        dbStatus = { status: 'error', error: { code: error.code, message: error.message }, tableExists: false };
     }
 };
-
-// Khởi chạy kiểm tra DB khi server start
 checkDbConnection();
 
-// --- Audit Log Middleware/Helper ---
-const logActivity = async (req, action, targetType, targetId, details = {}) => {
-  // Nếu DB lỗi hoặc chưa có bảng, không ghi log
-  if (dbStatus.status !== 'connected' || !dbStatus.tableExists) return;
-
-  try {
-    const userId = req.body.userId || req.params.id || 'system'; 
-    const username = req.body.username || 'System Action'; 
-
-    const logEntry = {
-      userId,
-      username,
-      action,
-      targetType,
-      targetId,
-      details: JSON.stringify(details),
-      ipAddress: req.ip,
-    };
-    await pool.query('INSERT INTO AuditLogs SET ?', logEntry);
-  } catch (error) {
-    // Silent fail for logs
-  }
-};
-
-
+// --- API HEALTH CHECK ---
 app.get('/api/health', async (req, res) => {
-    // Nếu lần trước lỗi, thử kết nối lại
-    if (dbStatus.status !== 'connected' || !dbStatus.tableExists) {
-        await checkDbConnection();
-    }
-
+    if (dbStatus.status !== 'connected') await checkDbConnection();
+    
     if (dbStatus.status === 'connected') {
-        if (dbStatus.tableExists) {
-            res.status(200).json({ status: 'ok', database: 'connected' });
-        } else {
-            res.status(500).json({ 
-                status: 'error', 
-                database: 'connected_but_empty', 
-                message: 'Kết nối thành công nhưng chưa có dữ liệu. Vui lòng chạy script SQL trong admin.' 
-            });
-        }
+        res.status(200).json({ status: 'ok', database: 'connected', tableExists: dbStatus.tableExists });
     } else {
-        res.status(500).json({ 
-            status: 'error', 
-            database: 'disconnected', 
-            errorCode: dbStatus.error?.code || 'UNKNOWN', 
-            message: dbStatus.error?.message || 'Lỗi kết nối Database' 
-        });
+        res.status(500).json({ status: 'error', database: 'disconnected', error: dbStatus.error });
     }
 });
 
-// Middleware kiểm tra DB
-const dbCheckMiddleware = (req, res, next) => {
-    if (dbStatus.status !== 'connected' && !req.path.includes('/health')) {
-        return res.status(500).json({ 
-            message: "Mất kết nối cơ sở dữ liệu.",
-            error: dbStatus.error?.message
-        });
-    }
-    if (!dbStatus.tableExists && !req.path.includes('/health')) {
-        return res.status(500).json({
-            message: "Database chưa được khởi tạo.",
-            error: "Bảng dữ liệu không tồn tại. Vui lòng chạy script SQL."
-        });
-    }
-    next();
-};
-
-app.use('/api', (req, res, next) => {
-    if (req.path === '/health') return next();
-    dbCheckMiddleware(req, res, next);
-});
-
-// --- Helper to deserialize product rows ---
+// --- DATA DESERIALIZATION HELPER ---
 const deserializeProduct = (p) => ({
     ...p,
-    imageUrls: JSON.parse(p.imageUrls || '[]'),
-    specifications: JSON.parse(p.specifications || '{}'),
-    tags: JSON.parse(p.tags || '[]'),
-    isVisible: p.isVisible, 
+    imageUrls: typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls || '[]') : p.imageUrls,
+    specifications: typeof p.specifications === 'string' ? JSON.parse(p.specifications || '{}') : p.specifications,
+    tags: typeof p.tags === 'string' ? JSON.parse(p.tags || '[]') : p.tags,
+    isVisible: Boolean(p.isVisible), 
 });
 
-// --- PRODUCTS API ---
+// ==================================================================
+// QUAN TRỌNG: CÁC ROUTE CỤ THỂ PHẢI ĐẶT TRƯỚC CÁC ROUTE DYNAMIC (/:id)
+// ==================================================================
 
+// 1. API: Lấy sản phẩm nổi bật (Featured) - ĐẶT ĐẦU TIÊN
 app.get('/api/products/featured', async (req, res) => {
     try {
-        // Cập nhật query để đảm bảo lấy đúng sản phẩm nổi bật
-        const query = `
-            SELECT p.*
-            FROM Products p
-            WHERE p.isVisible = TRUE
-            ORDER BY p.price DESC 
-            LIMIT 4;
-        `;
-        const [products] = await pool.query(query);
-        res.json(products.map(deserializeProduct));
+        // Lấy 4 sản phẩm có giá cao nhất làm sản phẩm nổi bật (hoặc lọc theo tags nếu muốn)
+        const query = `SELECT * FROM Products ORDER BY price DESC LIMIT 4`;
+        const [rows] = await pool.query(query);
+        res.json(rows.map(deserializeProduct));
     } catch (error) {
-        console.error("Lỗi khi truy vấn sản phẩm nổi bật:", error);
-        res.status(500).json({ message: "Lỗi server khi lấy sản phẩm nổi bật", error: error.sqlMessage || error.message });
+        console.error("Lỗi lấy sản phẩm nổi bật:", error);
+        res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 });
 
+// 2. API: Lấy danh sách sản phẩm (có lọc)
+app.get('/api/products', async (req, res) => {
+    try {
+        const { mainCategory, subCategory, q, tags, limit = 12, page = 1 } = req.query;
+        let baseQuery = `FROM Products p`;
+        const whereClauses = ['1=1']; // Mặc định luôn đúng để dễ nối chuỗi AND
+        const params = [];
+        
+        // Có thể bỏ comment dòng dưới nếu muốn chỉ hiện sản phẩm isVisible=1
+        // whereClauses.push('p.isVisible = 1');
+
+        if (mainCategory) { whereClauses.push('p.mainCategory = ?'); params.push(mainCategory); }
+        if (subCategory) { whereClauses.push('p.subCategory = ?'); params.push(subCategory); }
+        if (q) { whereClauses.push('(p.name LIKE ? OR p.brand LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+        if (tags) { whereClauses.push('p.tags LIKE ?'); params.push(`%${tags}%`); }
+
+        const whereString = ' WHERE ' + whereClauses.join(' AND ');
+        
+        // Count total
+        const [countRows] = await pool.query(`SELECT COUNT(p.id) as total ${baseQuery} ${whereString}`, params);
+        const totalProducts = countRows[0].total;
+
+        // Get data
+        const offset = (Number(page) - 1) * Number(limit);
+        const productQuery = `SELECT p.* ${baseQuery} ${whereString} ORDER BY p.id DESC LIMIT ? OFFSET ?`;
+        const [products] = await pool.query(productQuery, [...params, Number(limit), offset]);
+        
+        res.json({ products: products.map(deserializeProduct), totalProducts });
+    } catch (error) {
+        console.error("Lỗi lấy danh sách sản phẩm:", error);
+        res.status(500).json({ message: "Lỗi server", error: error.message });
+    }
+});
+
+// 3. API: Lấy chi tiết sản phẩm theo ID - ĐẶT CUỐI CÙNG trong nhóm product
+// Nếu đặt cái này lên đầu, nó sẽ bắt luôn chữ "featured" và coi đó là ID -> gây lỗi 404
 app.get('/api/products/:id', async (req, res) => {
     try {
-        const query = `SELECT p.* FROM Products p WHERE p.id = ?`;
-        const [rows] = await pool.query(query, [req.params.id]);
+        const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);
         if (rows.length > 0) {
             res.json(deserializeProduct(rows[0]));
         } else {
             res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+        console.error("Lỗi lấy chi tiết sản phẩm:", error);
+        res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 });
 
-app.get('/api/products', async (req, res) => {
-    try {
-        const { mainCategory, subCategory, q, tags, limit = 12, page = 1 } = req.query;
-
-        let baseQuery = `FROM Products p`;
-        const whereClauses = ['p.isVisible = TRUE'];
-        const params = [];
-        
-        if (mainCategory) {
-            whereClauses.push('p.mainCategory = ?');
-            params.push(mainCategory);
-        }
-        if (subCategory) {
-            whereClauses.push('p.subCategory = ?');
-            params.push(subCategory);
-        }
-        if (q) {
-            whereClauses.push('(p.name LIKE ? OR p.brand LIKE ?)');
-            params.push(`%${q}%`, `%${q}%`);
-        }
-        // Note: JSON_CONTAINS might be slow or behave differently on some MariaDB versions/configurations
-        if (tags) {
-             // Simple LIKE check for better compatibility if JSON_CONTAINS fails
-             whereClauses.push('p.tags LIKE ?');
-             params.push(`%${tags}%`);
-        }
-
-        const whereString = ' WHERE ' + whereClauses.join(' AND ');
-        
-        const countQuery = `SELECT COUNT(p.id) as total ${baseQuery} ${whereString}`;
-        const [countRows] = await pool.query(countQuery, params);
-        const totalProducts = countRows[0].total;
-
-        const offset = (Number(page) - 1) * Number(limit);
-        const productQuery = `SELECT p.* ${baseQuery} ${whereString} ORDER BY p.id DESC LIMIT ? OFFSET ?`;
-        const productParams = [...params, Number(limit), offset];
-
-        const [products] = await pool.query(productQuery, productParams);
-        
-        res.json({ products: products.map(deserializeProduct), totalProducts });
-    } catch (error) {
-        console.error("Lỗi khi truy vấn sản phẩm:", error);
-        res.status(500).json({ message: "Lỗi server khi lấy dữ liệu sản phẩm", error: error.sqlMessage || error.message });
-    }
-});
-
-// ... (Rest of the CRUD operations remain mostly the same, simplified for brevity)
-
+// --- LOGIN API ---
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         const [rows] = await pool.query('SELECT * FROM Users WHERE email = ?', [email]);
-        if (rows.length === 0) return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+        if (rows.length === 0) return res.status(401).json({ message: 'Email không tồn tại.' });
         
         const user = rows[0];
-        if (user.password !== password) return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+        if (user.password !== password) return res.status(401).json({ message: 'Mật khẩu không đúng.' });
         
-        delete user.password;
-        res.json(user);
+        const { password: _, ...userWithoutPassword } = user;
+        res.json(userWithoutPassword);
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
-// Serve static files in production
+// --- SERVE STATIC FILES (PRODUCTION) ---
 if (process.env.NODE_ENV === 'production') {
     const projectRoot = path.resolve(__dirname, '..');
     const frontendDistPath = path.join(projectRoot, 'dist');
+    
+    console.log("Serving static files from:", frontendDistPath);
     app.use(express.static(frontendDistPath));
+
+    // Handle React Routing, return all requests to React app
     app.get('*', (req, res, next) => {
-        if (req.path.startsWith('/api/')) return next();
+        // Nếu request bắt đầu bằng /api/ mà không khớp route nào ở trên -> Trả về 404 JSON thay vì HTML
+        if (req.path.startsWith('/api/')) {
+            return res.status(404).json({ message: `API endpoint not found: ${req.path}` });
+        }
         res.sendFile(path.resolve(frontendDistPath, 'index.html'));
     });
 }

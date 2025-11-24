@@ -30,7 +30,8 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
     }
 };
 
-// Sử dụng URL tương đối cho Monolith deploy (Render)
+// Sử dụng URL tương đối cho Monolith deploy (Render). 
+// Khi deploy chung (monolith), backend phục vụ frontend nên không cần domain đầy đủ.
 const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -47,8 +48,10 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         });
 
         if (!response.ok) {
+            // Try to parse error message from JSON, fallback to status text
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
             const errorMessage = `Lỗi API (${response.status}): ${errorData.message || response.statusText || 'Lỗi không xác định'}.`;
+            console.error(`API Error at ${fullEndpoint}:`, errorMessage);
             throw new Error(errorMessage);
         }
         
@@ -77,7 +80,6 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
-// FIX: Use the specific endpoint for featured products to ensure performance and correctness
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
         return await fetchFromApi<Product[]>('/products/featured');
