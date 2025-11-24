@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
+import { FinancialTransaction, PayrollRecord, User, Debt, PaymentApproval, CashflowForecastData } from '../../types';
 import Button from '../../components/ui/Button';
-import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/ui/Card';
+import { useAuth } from '../../contexts/AuthContext';
 import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction as apiDeleteFinancialTransaction,
-    getPayrollRecords, savePayrollRecords
+    getPayrollRecords, savePayrollRecords,
+    getDebts, updateDebt,
+    getPaymentApprovals, updatePaymentApproval,
+    getCashflowForecast
 } from '../../services/localDataService';
-import { useNavigate, NavigateFunction } from 'react-router-dom';
+import { useNavigate, useLocation, NavigateFunction } from 'react-router-dom';
 
 // --- HELPER FUNCTIONS & COMPONENTS ---
 const formatDate = (d: Date) => d.toISOString().split('T')[0];
@@ -275,9 +278,9 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
 };
 
 interface PayrollTabProps {
-    payrollRecords: PayrollRecord[],
-    onDataChange: () => Promise<void>,
-    onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void>
+    payrollRecords: PayrollRecord[];
+    onDataChange: () => Promise<void>;
+    onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void>;
 }
 
 const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
