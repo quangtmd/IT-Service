@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, User, Debt, PaymentApproval, CashflowForecastData } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import Button from '../../components/ui/Button';
+import Card from '../../components/ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
 import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction as apiDeleteFinancialTransaction,

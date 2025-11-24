@@ -27,54 +27,62 @@ const filterObject = (obj, allowedKeys) => {
         }, {});
 };
 
+// Biến lưu trạng thái DB để báo cáo cho Frontend
+let dbStatus = {
+    status: 'unknown',
+    error: null,
+    lastCheck: null
+};
 
-(async () => {
+// Hàm kiểm tra kết nối DB mà KHÔNG làm crash server
+const checkDbConnection = async () => {
     try {
         const connection = await pool.getConnection();
         console.log("✅ Kết nối tới database MySQL thành công!");
         connection.release();
+        dbStatus = { status: 'connected', error: null, lastCheck: new Date() };
     } catch (error) {
-        console.error("\n\n❌ LỖI KẾT NỐI DATABASE NGHIÊM TRỌNG ❌");
+        console.error("\n⚠️ CẢNH BÁO: KHÔNG THỂ KẾT NỐI DATABASE");
+        console.error("Server vẫn sẽ khởi động để Frontend có thể nhận diện lỗi này.");
         console.error("------------------------------------------------------------------");
         
+        let friendlyError = error.message;
         switch (error.code) {
             case 'ER_ACCESS_DENIED_ERROR':
-                console.error("👉 NGUYÊN NHÂN: Sai Tên người dùng (DB_USER) hoặc Mật khẩu (DB_PASSWORD).");
-                console.error("   HƯỚNG DẪN: Vui lòng kiểm tra lại các biến môi trường DB_USER và DB_PASSWORD trên Render.");
+                friendlyError = "Sai Tên người dùng (DB_USER) hoặc Mật khẩu (DB_PASSWORD).";
                 break;
             case 'ER_BAD_DB_ERROR':
-                console.error(`👉 NGUYÊN NHÂN: Tên database '${process.env.DB_NAME}' không tồn tại.`);
-                console.error("   HƯỚNG DẪN: Kiểm tra lại biến môi trường DB_NAME và đảm bảo database này đã được tạo trên máy chủ MySQL của bạn.");
+                friendlyError = `Database '${process.env.DB_NAME}' không tồn tại.`;
                 break;
             case 'ENOTFOUND':
             case 'ETIMEDOUT':
             case 'ECONNREFUSED':
-                console.error(`👉 NGUYÊN NHÂN: Không thể kết nối tới Host ('${process.env.DB_HOST}').`);
-                console.error("   Lý do phổ biến nhất là do IP của server Render chưa được cho phép (whitelisted) trên Hostinger (hoặc nhà cung cấp database của bạn).");
-                console.error("   HƯỚNG DẪN:");
-                console.error("   1. Vào trang quản lý database trên Hostinger.");
-                console.error("   2. Tìm mục 'Remote MySQL'.");
-                console.error("   3. Thêm địa chỉ IP của Render vào danh sách cho phép. Bạn có thể tìm IP này trong tab 'Networking' của service backend trên Render.");
-                console.error("   4. Nếu vẫn không được, hãy kiểm tra lại biến môi trường DB_HOST.");
+                friendlyError = `Không thể kết nối tới Host '${process.env.DB_HOST}'. Kiểm tra IP Whitelist hoặc Host.`;
                 break;
-            default:
-                console.error("👉 NGUYÊN NHÂN: Một lỗi không xác định đã xảy ra.");
-                console.error("   CHI TIẾT LỖI:", error.message);
-                console.error("   HƯỚNG DẪN: Kiểm tra lại toàn bộ các biến môi trường (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME).");
         }
-        
+        console.error("Chi tiết:", friendlyError);
         console.error("------------------------------------------------------------------");
-        console.error("Backend không thể khởi động do lỗi kết nối database.");
-        process.exit(1); // Exit the process
+        
+        dbStatus = { 
+            status: 'error', 
+            error: { code: error.code, message: friendlyError, originalMessage: error.message },
+            lastCheck: new Date() 
+        };
+        // KHÔNG gọi process.exit(1) để server vẫn sống
     }
-})();
+};
+
+// Khởi chạy kiểm tra DB khi server start
+checkDbConnection();
 
 // --- Audit Log Middleware/Helper ---
 const logActivity = async (req, action, targetType, targetId, details = {}) => {
+  // Nếu DB lỗi, không ghi log để tránh crash
+  if (dbStatus.status !== 'connected') return;
+
   try {
-    // In a real app, you'd get userId from a verified JWT token or session
     const userId = req.body.userId || req.params.id || 'system'; 
-    const username = req.body.username || 'System Action'; // Placeholder
+    const username = req.body.username || 'System Action'; 
 
     const logEntry = {
       userId,
@@ -93,40 +101,39 @@ const logActivity = async (req, action, targetType, targetId, details = {}) => {
 
 
 app.get('/api/health', async (req, res) => {
-    try {
-        const connection = await pool.getConnection();
-        // Check for a critical table
-        await connection.query("SELECT 1 FROM Products LIMIT 1;");
-        connection.release();
-        res.status(200).json({ status: 'ok', database: 'connected' });
-    } catch (error) {
-        let errorCode = 'UNKNOWN_DB_ERROR';
-        let errorMessage = 'Lỗi không xác định khi truy vấn database.';
-
-        switch (error.code) {
-            case 'ER_ACCESS_DENIED_ERROR':
-                errorCode = 'ER_ACCESS_DENIED_ERROR';
-                errorMessage = 'Sai tên người dùng hoặc mật khẩu database.';
-                break;
-            case 'ER_BAD_DB_ERROR':
-                errorCode = 'ER_BAD_DB_ERROR';
-                errorMessage = `Database '${process.env.DB_NAME}' không tồn tại.`;
-                break;
-            case 'ENOTFOUND':
-            case 'ETIMEDOUT':
-            case 'ECONNREFUSED':
-                errorCode = 'ETIMEDOUT';
-                errorMessage = `Không thể kết nối tới host '${process.env.DB_HOST}'. Rất có thể IP của Render chưa được whitelist.`;
-                break;
-            case 'ER_NO_SUCH_TABLE':
-                errorCode = 'MISSING_TABLES';
-                errorMessage = `Kết nối database thành công nhưng không tìm thấy bảng 'Products'. Vui lòng chạy lại SQL để tạo bảng.`;
-                break;
-        }
-        
-        console.error("Lỗi health check:", error);
-        res.status(500).json({ status: 'error', database: 'disconnected', errorCode, message: errorMessage });
+    // Nếu lần trước lỗi, thử kết nối lại một lần nữa
+    if (dbStatus.status !== 'connected') {
+        await checkDbConnection();
     }
+
+    if (dbStatus.status === 'connected') {
+        res.status(200).json({ status: 'ok', database: 'connected' });
+    } else {
+        // Trả về lỗi chi tiết để Frontend hiển thị
+        res.status(500).json({ 
+            status: 'error', 
+            database: 'disconnected', 
+            errorCode: dbStatus.error?.code || 'UNKNOWN', 
+            message: dbStatus.error?.message || 'Lỗi kết nối Database' 
+        });
+    }
+});
+
+// Middleware kiểm tra DB trước khi xử lý các route khác
+const dbCheckMiddleware = (req, res, next) => {
+    if (dbStatus.status !== 'connected' && !req.path.includes('/health')) {
+        return res.status(500).json({ 
+            message: "Mất kết nối cơ sở dữ liệu. Vui lòng liên hệ quản trị viên.",
+            error: dbStatus.error?.message
+        });
+    }
+    next();
+};
+
+// Áp dụng middleware cho tất cả các route API ngoại trừ health check
+app.use('/api', (req, res, next) => {
+    if (req.path === '/health') return next();
+    dbCheckMiddleware(req, res, next);
 });
 
 // --- Helper to deserialize product rows ---
