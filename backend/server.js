@@ -108,8 +108,7 @@ apiRouter.post('/users/login', async (req, res) => {
 
 // === PRODUCTS ===
 
-// 1. Featured Products (EXPLICIT ROUTE)
-// This route must be defined BEFORE /products/:id to avoid conflicts
+// 1. Featured Products (EXPLICIT ROUTE - Keeping for backward compatibility, though frontend now uses query param)
 const getFeaturedHandler = async (req, res) => {
     console.log("DEBUG: Hit featured products endpoint");
     try {
@@ -146,7 +145,13 @@ apiRouter.get('/products', async (req, res) => {
         const totalProducts = countRows[0].total;
 
         const offset = (Number(page) - 1) * Number(limit);
-        const productQuery = `SELECT p.* ${baseQuery} ${whereString} ORDER BY p.id DESC LIMIT ? OFFSET ?`;
+        // Add specific ordering for featured requests
+        let orderBy = 'p.id DESC';
+        if (is_featured === 'true') {
+             orderBy = 'p.is_featured DESC, p.price DESC';
+        }
+
+        const productQuery = `SELECT p.* ${baseQuery} ${whereString} ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
         const [products] = await pool.query(productQuery, [...params, Number(limit), offset]);
         
         res.json({ products: products.map(deserializeProduct), totalProducts });

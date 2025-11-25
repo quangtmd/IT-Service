@@ -29,8 +29,6 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-// In development (empty env), this is empty string -> request goes to http://localhost:3000/api/... -> Proxy to 3001
-// In production, this is the full backend URL.
 const RAW_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
 // Remove trailing slash and trailing /api if present to avoid duplication (e.g. /api/api/...)
 const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
@@ -85,9 +83,10 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
-// Use standard REST endpoint /products/featured
+// Use standard REST query params for featured products
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    return fetchFromApi<Product[]>('/products/featured');
+    const { products } = await getProducts('is_featured=true&limit=4');
+    return products;
 }
 
 // --- Article Service ---

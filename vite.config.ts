@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
             host: '0.0.0.0',
             proxy: {
                 '/api': {
-                    target: 'http://localhost:3001',
+                    target: 'http://127.0.0.1:3001', // Changed from localhost to 127.0.0.1
                     changeOrigin: true,
                     secure: false,
                 },
@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
             allowedHosts: ['.onrender.com'],
             proxy: {
                 '/api': {
-                    target: 'http://localhost:3001',
+                    target: 'http://127.0.0.1:3001', // Changed from localhost to 127.0.0.1
                     changeOrigin: true,
                     secure: false,
                 },
