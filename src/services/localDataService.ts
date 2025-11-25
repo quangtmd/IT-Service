@@ -31,7 +31,7 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 
 // --- API BASE URL CONFIGURATION ---
 const getApiBaseUrl = () => {
-    // Fix: Use process.env directly as defined in vite.config.ts define options
+    // Use process.env directly as defined in vite.config.ts define options
     let url = process.env.VITE_BACKEND_API_BASE_URL || "";
     // Remove trailing slash if present
     if (url.endsWith('/')) {
@@ -51,10 +51,11 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
     // Final URL: BASE + /api + /endpoint
-    const url = `${API_BASE_URL}/api${path}`;
+    // If BASE is empty (dev), result is /api/endpoint, triggering proxy.
+    const fullUrl = `${API_BASE_URL}/api${path}`;
     
     try {
-        const response = await fetch(url, {
+        const response = await fetch(fullUrl, {
             headers: {
                 'Content-Type': 'application/json',
                 ...options.headers,
@@ -65,9 +66,11 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
-            // Simplify error for 404s to avoid "File not found" confusion if it comes from Vite
-            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}. Endpoint: ${path}`;
-            console.error(`API Request Failed: ${url}`, errorMessage);
+            // Use statusText or 'Unknown Error' if both are missing
+            const statusText = errorMessageDetails || 'Unknown Error';
+            
+            const errorMessage = `Lỗi API (${response.status}): ${statusText}. Endpoint: ${path}`;
+            console.error(`API Request Failed: ${fullUrl}`, errorMessage);
             throw new Error(errorMessage);
         }
         
@@ -75,9 +78,9 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
-        console.error(`Fetch error for ${url}:`, error);
+        console.error(`Fetch error for ${fullUrl}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra backend (Port 3001).`);
+            throw new Error(`Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra backend (Port 3001). Endpoint: ${path}`);
         }
         throw error;
     }
@@ -97,10 +100,12 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
-// Use specific alias endpoint to ensure reliable routing and avoid collisions with /products/:id
+// Use standard REST endpoint structure. Backend should alias if needed.
+// Using /products/featured to match the error log observed.
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
-        const products = await fetchFromApi<Product[]>('/featured-products');
+        // Try explicit featured endpoint
+        const products = await fetchFromApi<Product[]>('/products/featured');
         return products;
     } catch (error) {
         console.error("Failed to fetch featured products", error);
