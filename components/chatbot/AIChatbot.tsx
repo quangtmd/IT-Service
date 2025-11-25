@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product, Order } from '../../types';
 import ChatMessage from './ChatMessage';
@@ -456,7 +457,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
       aria-labelledby="chatbot-title"
     >
       <header className="bg-primary text-white p-4 flex justify-between items-center rounded-t-lg sm:rounded-t-lg">
-        <h3 id="chatbot-title" className="font-semibold text-lg">AI Chatbot {siteSettings.companyName}</h3>
+        <h3 id="chatbot-title" className="font-semibold text-lg">Trợ lý AI {siteSettings.companyName}</h3>
         <button onClick={() => setIsOpen(false)} className="text-xl hover:text-red-100" aria-label="Đóng chatbot">
           <i className="fas fa-times"></i>
         </button>

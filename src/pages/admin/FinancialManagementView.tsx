@@ -312,14 +312,14 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
              const existingRecord = currentPayroll.find(p => p.payPeriod === payPeriod && p.employeeId === employeeId);
              let updatedRecord: PayrollRecord;
             if (existingRecord) {
-                updatedRecord = { ...existingRecord, [field]: value };
+                updatedRecord = { ...existingRecord, [field]: value } as PayrollRecord;
             } else {
                 const employee = staff.find(s => s.id === employeeId)!;
                 updatedRecord = {
                     id: `payroll-${payPeriod}-${employeeId}`, employeeId, employeeName: employee.username, payPeriod,
                     baseSalary: 0, bonus: 0, deduction: 0, finalSalary: 0, notes: '', status: 'Chưa thanh toán',
                     [field]: value
-                };
+                } as PayrollRecord;
             }
             updatedRecord.finalSalary = Number(updatedRecord.baseSalary) + Number(updatedRecord.bonus) - Number(updatedRecord.deduction);
             const otherRecords = currentPayroll.filter(p => p.id !== updatedRecord.id);
