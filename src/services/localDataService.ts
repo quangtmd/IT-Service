@@ -32,15 +32,16 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 
 
 // Use environment variable for API base URL if available (e.g. in production with separate backend)
-// Otherwise default to relative path (which uses proxy in dev or same-origin in prod monolith)
+// Otherwise default to relative path (which uses proxy in dev/preview or same-origin in prod monolith)
 const API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // All API endpoints are prefixed with /api on the server.
-    // This ensures the correct path is always used.
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const fullEndpoint = `/api${cleanEndpoint}`;
-    const url = `${API_BASE_URL}${fullEndpoint}`;
+    // Ensure API_BASE_URL doesn't have trailing slash
+    const baseUrl = API_BASE_URL.replace(/\/$/, '');
+    // Ensure endpoint starts with /
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    // Construct full URL. In dev, baseUrl is "" so it becomes "/api/users".
+    const url = `${baseUrl}/api${path}`;
     
     try {
         const response = await fetch(url, {
@@ -52,9 +53,12 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: response.statusText }));
+            // Try to parse error message from JSON, fallback to status text
+            const errorData = await response.json().catch(() => null);
+            const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
+            
             // Simplified, more robust error message for a monolithic setup.
-            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
+            const errorMessage = `Lỗi API: ${response.status} ${errorMessageDetails}. Endpoint: ${path}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
             throw new Error(errorMessage);
         }
         
@@ -65,7 +69,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
             // This now more clearly indicates a server-down issue.
-            throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động.');
+            throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động hoặc URL API sai.');
         }
         // Re-throw other errors (like the custom one from response.ok check)
         throw error;
@@ -73,7 +77,6 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 }
 
 // --- User Service ---
-// Note: The endpoint now starts with /users, and /api is prepended by fetchFromApi
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
 export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
@@ -87,7 +90,7 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    // Use the specific endpoint alias to avoid routing conflicts or filter issues
+    // Use the specific alias endpoint for robustness
     return fetchFromApi<Product[]>('/featured-products');
 }
 
@@ -124,7 +127,6 @@ export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 
 export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
-// Updated to accept array of records
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/financials/payroll', { 
         method: 'POST', 
@@ -196,7 +198,7 @@ export const deleteWarrantyTicket = async (id: string): Promise<void> => {
 };
 
 
-// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
+// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage for now) ---
 
 // Warehouses
 export const getWarehouses = async (): Promise<Warehouse[]> => {

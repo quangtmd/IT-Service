@@ -76,6 +76,12 @@ checkDbConnection();
 // ==========================================================================
 const apiRouter = express.Router();
 
+// Debug middleware specifically for /api routes
+apiRouter.use((req, res, next) => {
+    console.log(`API Request received: ${req.method} ${req.url}`);
+    next();
+});
+
 apiRouter.get('/health', async (req, res) => {
     if (dbStatus.status !== 'connected') await checkDbConnection();
     res.json(dbStatus);
@@ -87,6 +93,7 @@ apiRouter.get('/users', async (req, res) => {
         const [rows] = await pool.query('SELECT * FROM Users');
         res.json(rows.map(deserializeUser));
     } catch (error) {
+        console.error('Error fetching users:', error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -148,6 +155,7 @@ apiRouter.get('/products', async (req, res) => {
         
         res.json({ products: products.map(deserializeProduct), totalProducts });
     } catch (error) {
+        console.error("Error fetching products:", error);
         res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 });
@@ -229,12 +237,21 @@ apiRouter.get('/users/:userId/orders', async (req, res) => {
 // Mount API Router
 app.use('/api', apiRouter);
 
+// 404 Handler for API requests
+app.use('/api/*', (req, res) => {
+    console.log(`404 Not Found (API catch-all): ${req.originalUrl}`);
+    res.status(404).json({ message: `API endpoint not found: ${req.originalUrl}` });
+});
+
 // Serve Static Files
 if (process.env.NODE_ENV === 'production') {
     const projectRoot = path.resolve(__dirname, '..');
     app.use(express.static(path.join(projectRoot, 'dist')));
     app.get('*', (req, res) => {
-        if (req.path.startsWith('/api/')) return res.status(404).json({ message: `API not found: ${req.path}` });
+        if (req.path.startsWith('/api/')) {
+             console.log(`404 Not Found (Production Fallback): ${req.path}`);
+             return res.status(404).json({ message: `API not found: ${req.path}` });
+        }
         res.sendFile(path.resolve(projectRoot, 'dist', 'index.html'));
     });
 }

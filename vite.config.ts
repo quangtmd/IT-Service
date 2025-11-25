@@ -1,3 +1,4 @@
+
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -19,13 +20,21 @@ export default defineConfig(({ mode }) => {
                 '/api': {
                     target: 'http://localhost:3001',
                     changeOrigin: true,
+                    secure: false,
                 },
             },
         },
         preview: {
-            host: true, // This is equivalent to --host, allows network access
-            // Allow requests from Render's preview domains to prevent host header errors.
+            port: 3000,
+            host: true, 
             allowedHosts: ['.onrender.com'],
+            proxy: {
+                '/api': {
+                    target: 'http://localhost:3001',
+                    changeOrigin: true,
+                    secure: false,
+                },
+            },
         },
         plugins: [react()],
         resolve: {
