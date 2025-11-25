@@ -3,13 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Product } from '../types';
 import Button from '../components/ui/Button';
-import CustomButton from '../components/ui/CustomButton'; // Import CustomButton
+import CustomButton from '../components/ui/CustomButton';
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
 import { getProduct, getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError'; 
 import { useChatbotContext } from '../contexts/ChatbotContext'; 
+import ImageMagnifier from '../components/ui/ImageMagnifier'; // Import the new component
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -133,10 +134,15 @@ const ProductDetailPage: React.FC = () => {
             
             {/* Image Section */}
             <div className="lg:col-span-2 p-4 md:p-0">
-              <div className="mb-4 border border-borderDefault rounded-lg overflow-hidden bg-white relative group">
-                <img src={mainImage} alt={product.name} className="w-full h-auto object-contain max-h-[300px] md:max-h-[450px] mx-auto transition-transform duration-300 group-hover:scale-105" />
+              <div className="mb-4 border border-borderDefault rounded-lg bg-white relative group flex justify-center items-center p-2 min-h-[300px] md:min-h-[400px]">
+                <ImageMagnifier 
+                    src={mainImage} 
+                    alt={product.name} 
+                    className="h-auto max-h-[300px] md:max-h-[450px] w-auto max-w-full object-contain mx-auto cursor-crosshair"
+                    zoomLevel={2.5}
+                />
                 {savings > 0 && (
-                    <span className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow">-{Math.round((savings / (product.originalPrice || 1)) * 100)}%</span>
+                    <span className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow z-10">-{Math.round((savings / (product.originalPrice || 1)) * 100)}%</span>
                 )}
               </div>
               {product.imageUrls && product.imageUrls.length > 1 && (
