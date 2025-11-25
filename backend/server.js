@@ -19,7 +19,7 @@ app.use(express.json({ limit: '10mb' }));
 
 // --- LOGGING MIDDLEWARE ---
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log(`[Server] ${req.method} ${req.url}`);
     next();
 });
 
@@ -163,22 +163,8 @@ const initializeDatabase = async (connection) => {
           \`notes\` text,
            PRIMARY KEY (\`id\`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-
-        `CREATE TABLE IF NOT EXISTS \`Debts\` (\`id\` varchar(255) NOT NULL, \`entityId\` varchar(255) NOT NULL, \`entityName\` varchar(255) DEFAULT NULL, \`entityType\` enum('customer','supplier') NOT NULL, \`type\` enum('receivable','payable') NOT NULL, \`amount\` decimal(15,2) NOT NULL, \`dueDate\` date DEFAULT NULL, \`relatedTransactionId\` varchar(255) DEFAULT NULL, \`status\` enum('Chưa thanh toán','Đã thanh toán','Quá hạn') NOT NULL DEFAULT 'Chưa thanh toán', PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`PaymentApprovals\` ( \`id\` varchar(255) NOT NULL, \`requestorId\` varchar(255) NOT NULL, \`approverId\` varchar(255) DEFAULT NULL, \`amount\` decimal(15,2) NOT NULL, \`description\` text NOT NULL, \`relatedTransactionId\` varchar(255) DEFAULT NULL, \`status\` enum('Chờ duyệt','Đã duyệt','Đã từ chối') NOT NULL DEFAULT 'Chờ duyệt', \`createdAt\` timestamp NULL DEFAULT current_timestamp(), \`updatedAt\` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(), PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`Suppliers\` ( \`id\` varchar(255) NOT NULL, \`name\` varchar(255) NOT NULL, \`contactInfo\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`contactInfo\`)), \`paymentTerms\` text, PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`Warehouses\` ( \`id\` varchar(255) NOT NULL, \`name\` varchar(255) NOT NULL, \`location\` text, PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`StockReceipts\` ( \`id\` varchar(255) NOT NULL, \`receiptNumber\` varchar(255) NOT NULL, \`supplierId\` varchar(255) NOT NULL, \`supplierName\` varchar(255) DEFAULT NULL, \`date\` datetime NOT NULL, \`items\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(\`items\`)), \`totalAmount\` decimal(15,2) NOT NULL, \`notes\` text, \`status\` enum('Nháp','Hoàn thành', 'Công nợ') NOT NULL, \`subTotal\` decimal(15,2) NOT NULL DEFAULT 0, \`discount\` decimal(15,2) NOT NULL DEFAULT 0, \`amountPaid\` decimal(15,2) NOT NULL DEFAULT 0, \`paymentMethod\` enum('Tiền mặt','Thẻ') NOT NULL DEFAULT 'Tiền mặt', PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`StockIssues\` ( \`id\` varchar(255) NOT NULL, \`issueNumber\` varchar(255) NOT NULL, \`orderId\` varchar(255) NOT NULL, \`date\` datetime NOT NULL, \`items\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(\`items\`)), \`notes\` text, \`status\` enum('Nháp','Hoàn thành') NOT NULL, PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`StockTransfers\` ( \`id\` varchar(255) NOT NULL, \`transferNumber\` varchar(255) NOT NULL, \`sourceWarehouseId\` varchar(255) NOT NULL, \`sourceWarehouseName\` varchar(255) DEFAULT NULL, \`destWarehouseId\` varchar(255) NOT NULL, \`destWarehouseName\` varchar(255) DEFAULT NULL, \`date\` datetime NOT NULL, \`items\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(\`items\`)), \`notes\` text, \`status\` enum('Chờ duyệt','Đã duyệt','Đang vận chuyển','Hoàn thành','Đã hủy') NOT NULL, \`approverId\` varchar(255) DEFAULT NULL, PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`ServiceTickets\` ( \`id\` varchar(255) NOT NULL, \`ticket_code\` varchar(255) DEFAULT NULL, \`customerId\` varchar(255) DEFAULT NULL, \`deviceName\` varchar(255) DEFAULT NULL, \`reported_issue\` text, \`status\` varchar(255) DEFAULT NULL, \`createdAt\` timestamp NULL DEFAULT current_timestamp(), \`assigneeId\` varchar(255) DEFAULT NULL, \`rating\` tinyint(1) DEFAULT NULL, \`customer_info\` JSON, \`invoiceId\` VARCHAR(255) NULL, \`receiverId\` VARCHAR(255) NULL, \`work_items\` TEXT NULL, \`appointment_date\` DATETIME NULL, \`physical_condition\` TEXT NULL, PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`WarrantyTickets\` ( \`id\` varchar(255) NOT NULL, \`ticketNumber\` varchar(255) NOT NULL, \`productModel\` varchar(255) DEFAULT NULL, \`productSerial\` varchar(255) DEFAULT NULL, \`customerName\` varchar(255) NOT NULL, \`customerPhone\` varchar(255) DEFAULT NULL, \`creatorId\` varchar(255) DEFAULT NULL, \`totalAmount\` decimal(15,2) NOT NULL DEFAULT 0.00, \`status\` varchar(255) NOT NULL, \`createdAt\` timestamp NOT NULL DEFAULT current_timestamp(), \`reportedIssue\` text, \`resolution_notes\` text, \`receiveDate\` datetime DEFAULT NULL, \`returnDate\` datetime DEFAULT NULL, \`orderId\` varchar(255) DEFAULT NULL, \`productId\` varchar(255) DEFAULT NULL, \`customerId\` varchar(255) DEFAULT NULL, \`priority\` varchar(255) DEFAULT 'Bình thường', \`warrantyType\` varchar(255) DEFAULT NULL, \`technician_notes\` text, \`repairDate\` datetime DEFAULT NULL, \`returnStaffId\` varchar(255) DEFAULT NULL, \`items\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '[]' CHECK (json_valid(\`items\`)), \`serviceFee\` decimal(15,2) NOT NULL DEFAULT 0.00, \`discount\` decimal(15,2) NOT NULL DEFAULT 0.00, \`vat\` decimal(5,2) NOT NULL DEFAULT 0.00, \`transactionType\` varchar(50) DEFAULT 'Sửa chữa', \`department\` varchar(255) DEFAULT NULL, \`departmentCode\` varchar(255) DEFAULT NULL, \`currency\` varchar(10) DEFAULT 'VND', \`totalQuantity\` int(11) DEFAULT 0, PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`Returns\` (\`id\` varchar(255) NOT NULL, \`orderId\` varchar(255) NOT NULL, \`reason\` text, \`status\` ENUM('Đang chờ','Đã duyệt','Đã từ chối') NOT NULL DEFAULT 'Đang chờ', \`refundAmount\` decimal(15,2) DEFAULT NULL, \`createdAt\` timestamp NULL DEFAULT current_timestamp(), PRIMARY KEY (\`id\`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`Quotations\` ( \`id\` varchar(255) NOT NULL, \`customer_id\` varchar(255) DEFAULT NULL, \`customerInfo\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`customerInfo\`)), \`creation_date\` datetime NOT NULL, \`expiry_date\` datetime DEFAULT NULL, \`items\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(\`items\`)), \`subtotal\` decimal(15,2) NOT NULL, \`discount_amount\` decimal(15,2) DEFAULT NULL, \`tax_amount\` decimal(15,2) DEFAULT NULL, \`total_amount\` decimal(15,2) NOT NULL, \`status\` enum('Nháp','Đã gửi','Đã chấp nhận','Hết hạn','Đã hủy') NOT NULL, \`terms\` text, PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`Faqs\` (\`id\` varchar(255) NOT NULL, \`question\` text NOT NULL, \`answer\` text NOT NULL, \`category\` varchar(255) DEFAULT NULL, \`isVisible\` tinyint(1) DEFAULT 1, PRIMARY KEY (\`id\`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`DiscountCodes\` (\`id\` varchar(255) NOT NULL, \`code\` varchar(255) NOT NULL, \`type\` enum('percentage','fixed_amount') NOT NULL, \`value\` decimal(10,2) NOT NULL, \`description\` text, \`expiryDate\` date DEFAULT NULL, \`isActive\` tinyint(1) DEFAULT 1, PRIMARY KEY (\`id\`), UNIQUE KEY \`code\` (\`code\`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`ChatLogSessions\` (\`id\` varchar(255) NOT NULL, \`userName\` varchar(255) DEFAULT NULL, \`userPhone\` varchar(20) DEFAULT NULL, \`startTime\` timestamp NULL DEFAULT current_timestamp(), \`messages\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`messages\`))) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        `CREATE TABLE IF NOT EXISTS \`MediaLibrary\` ( \`id\` varchar(255) NOT NULL, \`url\` text NOT NULL, \`name\` varchar(255) DEFAULT NULL, \`type\` varchar(100) DEFAULT NULL, \`uploadedAt\` timestamp NULL DEFAULT current_timestamp(), \`altText\` varchar(255) DEFAULT NULL, \`associatedEntityType\` varchar(50) DEFAULT NULL, \`associatedEntityId\` varchar(255) DEFAULT NULL, PRIMARY KEY (\`id\`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`
+        
+        `CREATE TABLE IF NOT EXISTS \`ChatLogSessions\` (\`id\` varchar(255) NOT NULL, \`userName\` varchar(255) DEFAULT NULL, \`userPhone\` varchar(20) DEFAULT NULL, \`startTime\` timestamp NULL DEFAULT current_timestamp(), \`messages\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`messages\`))) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`
     ];
 
     try {
@@ -268,6 +254,7 @@ apiRouter.get('/health', async (req, res) => {
 
 // === USERS ===
 apiRouter.get('/users', async (req, res) => {
+    console.log("[API] Getting users list");
     try {
         const [rows] = await pool.query('SELECT * FROM Users');
         res.json(rows.map(deserializeUser));
@@ -294,9 +281,8 @@ apiRouter.post('/users/login', async (req, res) => {
 });
 
 // === PRODUCTS ===
-// Define getFeatured handler for multiple routes
 const getFeaturedHandler = async (req, res) => {
-    console.log('Fetching featured products...');
+    console.log('[API] Fetching featured products...');
     try {
         const query = `SELECT * FROM Products ORDER BY price DESC LIMIT 4`;
         const [rows] = await pool.query(query);
@@ -307,12 +293,13 @@ const getFeaturedHandler = async (req, res) => {
     }
 };
 
-// IMPORTANT: Explicitly define ALL route variations for featured products BEFORE generic /:id
-apiRouter.get('/featured-products', getFeaturedHandler);
-apiRouter.get('/products/featured', getFeaturedHandler); // Handles calls to /api/products/featured
+// IMPORTANT: Define SPECIFIC routes first to avoid collision with /products/:id
+apiRouter.get('/featured-products', getFeaturedHandler); // Primary Alias for frontend
+apiRouter.get('/products/featured', getFeaturedHandler); // Legacy path
 
 // Products List
 apiRouter.get('/products', async (req, res) => {
+    console.log("[API] Getting products list with query:", req.query);
     try {
         const { mainCategory, subCategory, q, tags, limit = 1000, page = 1 } = req.query;
         let baseQuery = `FROM Products p`;
@@ -339,7 +326,7 @@ apiRouter.get('/products', async (req, res) => {
     }
 });
 
-// Product Detail (Dynamic ID) - This must be AFTER /products/featured
+// Product Detail (Dynamic ID) - This MUST be AFTER /products/featured
 apiRouter.get('/products/:id', async (req, res) => {
     try {
         const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);

@@ -31,7 +31,7 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 
-// Use empty string for relative path in monolith deployment
+// Use empty string for relative path in monolith deployment (frontend and backend on same origin)
 const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -93,7 +93,7 @@ export const deleteArticle = (id: string): Promise<void> => fetchFromApi<void>(`
 
 // --- Order Service ---
 export const getOrders = (): Promise<Order[]> => fetchFromApi<Order[]>('/orders');
-export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
+export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/users/${customerId}/orders`);
 export const addOrder = (order: Order): Promise<Order> => fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
 export const updateOrder = (id: string, updates: Partial<Order>): Promise<Order> => fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const updateOrderStatus = (id: string, status: OrderStatus): Promise<Order> => fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
@@ -187,6 +187,7 @@ export const updateWarrantyTicket = async (id: string, updates: Partial<Warranty
 export const deleteWarrantyTicket = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/warranty-tickets/${id}`, { method: 'DELETE' });
 };
+
 
 // --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
 
