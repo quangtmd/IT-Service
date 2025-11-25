@@ -109,25 +109,7 @@ apiRouter.post('/users/login', async (req, res) => {
 
 // === PRODUCTS ===
 
-// 1. Featured Products (Explicit Handler)
-const getFeaturedHandler = async (req, res) => {
-    console.log("DEBUG: Hit featured products endpoint");
-    try {
-        // Prioritize products marked as featured, then expensive ones
-        const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
-        const [rows] = await pool.query(query);
-        res.json(rows.map(deserializeProduct));
-    } catch (error) {
-        console.error("Lỗi lấy sản phẩm nổi bật:", error);
-        res.status(500).json({ message: "Lỗi server", error: error.message });
-    }
-};
-
-// Define both routes to ensure compatibility and prevent 404s
-apiRouter.get('/products/featured', getFeaturedHandler); 
-apiRouter.get('/featured-products', getFeaturedHandler); 
-
-// 2. Product List & Filter
+// Product List & Filter (Handles query params including is_featured)
 apiRouter.get('/products', async (req, res) => {
     try {
         const { mainCategory, subCategory, q, tags, limit = 1000, page = 1, is_featured } = req.query;
@@ -146,7 +128,8 @@ apiRouter.get('/products', async (req, res) => {
         const totalProducts = countRows[0].total;
 
         const offset = (Number(page) - 1) * Number(limit);
-        // Add specific ordering for featured requests
+        
+        // Ordering logic
         let orderBy = 'p.id DESC';
         if (is_featured === 'true') {
              orderBy = 'p.is_featured DESC, p.price DESC';
@@ -162,7 +145,7 @@ apiRouter.get('/products', async (req, res) => {
     }
 });
 
-// 3. Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes
+// Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes
 apiRouter.get('/products/:id', async (req, res) => {
     try {
         const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);

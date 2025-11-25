@@ -1,5 +1,4 @@
 
-// Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
@@ -31,17 +30,27 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 
 // --- API BASE URL CONFIGURATION ---
 const getApiBaseUrl = () => {
-    // Use process.env directly as defined in vite.config.ts define options
-    let url = process.env.VITE_BACKEND_API_BASE_URL || "";
-    // Remove trailing slash if present
-    if (url.endsWith('/')) {
-        url = url.slice(0, -1);
+    // 1. Priority: Check for explicit environment variable (Production/Docker/Render)
+    // @ts-ignore
+    const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
+    if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+        let url = envUrl;
+        if (url.endsWith('/')) url = url.slice(0, -1);
+        if (url.endsWith('/api')) url = url.slice(0, -4); 
+        return url;
     }
-    // Remove trailing /api if present to avoid double /api/api later
-    if (url.endsWith('/api')) {
-        url = url.slice(0, -4);
+
+    // 2. Priority: Localhost Fallback (Development)
+    // Forces connection to backend port 3001 to avoid 404s from Vite's static server
+    if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return "http://127.0.0.1:3001";
+        }
     }
-    return url;
+
+    // 3. Priority: Relative path (Production same-domain)
+    return "";
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -51,7 +60,6 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
     // Final URL: BASE + /api + /endpoint
-    // If BASE is empty (dev), result is /api/endpoint, triggering proxy.
     const fullUrl = `${API_BASE_URL}/api${path}`;
     
     try {
@@ -66,10 +74,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
-            // Use statusText or 'Unknown Error' if both are missing
-            const statusText = errorMessageDetails || 'Unknown Error';
             
-            const errorMessage = `Lỗi API (${response.status}): ${statusText}. Endpoint: ${path}`;
+            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}. Endpoint: ${path}`;
             console.error(`API Request Failed: ${fullUrl}`, errorMessage);
             throw new Error(errorMessage);
         }
@@ -100,15 +106,14 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
-// Use standard REST endpoint structure. Backend should alias if needed.
-// Using /products/featured to match the error log observed.
+// Standardized to use query params to avoid routing issues
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
-        // Try explicit featured endpoint
-        const products = await fetchFromApi<Product[]>('/products/featured');
+        // Calls /api/products?is_featured=true&limit=4
+        const { products } = await getProducts('is_featured=true&limit=4');
         return products;
     } catch (error) {
-        console.error("Failed to fetch featured products", error);
+        console.error("Failed to fetch featured products, falling back to empty list", error);
         return [];
     }
 }
@@ -217,7 +222,7 @@ export const deleteWarrantyTicket = async (id: string): Promise<void> => {
 };
 
 
-// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
+// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage for mock data mostly but keeping structure) ---
 
 // Warehouses
 export const getWarehouses = async (): Promise<Warehouse[]> => {
