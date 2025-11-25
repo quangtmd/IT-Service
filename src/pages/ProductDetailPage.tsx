@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Product } from '../types';
 import Button from '../components/ui/Button';
+import CustomButton from '../components/ui/CustomButton'; // Import CustomButton
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
@@ -280,20 +281,20 @@ const ProductDetailPage: React.FC = () => {
               <span className="text-lg font-bold text-primary leading-none">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}</span>
           </div>
           <div className="flex-grow flex gap-2">
-             <button 
+             <CustomButton 
                 onClick={handleAddToCart} 
                 disabled={product.stock <= 0}
-                className="flex-1 bg-primary/10 text-primary border border-primary font-bold py-2.5 rounded-lg text-sm active:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-             >
-                <i className="fas fa-cart-plus"></i>
-             </button>
-             <button 
+                variant="outline"
+                className="flex-1"
+                icon="fas fa-cart-plus"
+             />
+             <CustomButton 
                 onClick={handleBuyNow} 
                 disabled={product.stock <= 0}
-                className="flex-[2] bg-primary text-white font-bold py-2.5 rounded-lg text-sm shadow-md active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-[2]"
              >
                 {product.stock > 0 ? 'Mua Ngay' : 'Hết Hàng'}
-             </button>
+             </CustomButton>
           </div>
       </div>
     </div>
