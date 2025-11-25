@@ -30,17 +30,25 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
     }
 };
 
+// --- API BASE URL CONFIGURATION ---
+// 1. Try to get from environment variable (Vite injects this via define)
+// 2. If development mode and no env var, force localhost:3001 to bypass proxy issues
+// 3. Otherwise default to empty string (relative path for production same-domain)
+let API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
 
-// Use environment variable for API base URL if available (e.g. in production with separate backend)
-// Otherwise default to relative path (which uses proxy in dev/preview or same-origin in prod monolith)
-const API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
+// Detect if we are running in a local development environment
+if (!API_BASE_URL && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    console.log("Development mode detected: Defaulting API to http://localhost:3001");
+    API_BASE_URL = "http://localhost:3001";
+}
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // Ensure API_BASE_URL doesn't have trailing slash
     const baseUrl = API_BASE_URL.replace(/\/$/, '');
     // Ensure endpoint starts with /
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    // Construct full URL. In dev, baseUrl is "" so it becomes "/api/users".
+    
+    // Construct full URL.
     const url = `${baseUrl}/api${path}`;
     
     try {
@@ -57,8 +65,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
             
-            // Simplified, more robust error message for a monolithic setup.
-            const errorMessage = `Lỗi API: ${response.status} ${errorMessageDetails}. Endpoint: ${path}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
+            const errorMessage = `Lỗi API: ${response.status} ${errorMessageDetails}. Endpoint: ${path}`;
             throw new Error(errorMessage);
         }
         
@@ -68,10 +75,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            // This now more clearly indicates a server-down issue.
-            throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động hoặc URL API sai.');
+            throw new Error(`Không thể kết nối đến Server tại ${url}. Vui lòng đảm bảo Backend đang chạy (port 3001).`);
         }
-        // Re-throw other errors (like the custom one from response.ok check)
         throw error;
     }
 }
@@ -89,9 +94,10 @@ export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
+
+// Fix: Use the specific path that matches the error logs to ensure compatibility
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    // Use the specific alias endpoint for robustness
-    return fetchFromApi<Product[]>('/featured-products');
+    return fetchFromApi<Product[]>('/products/featured');
 }
 
 // --- Article Service ---

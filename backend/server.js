@@ -14,7 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.set('trust proxy', true);
-app.use(cors());
+app.use(cors()); // Allow all CORS requests for development
 app.use(express.json({ limit: '10mb' }));
 
 // --- LOGGING MIDDLEWARE ---
@@ -113,9 +113,9 @@ apiRouter.post('/users/login', async (req, res) => {
 });
 
 // === PRODUCTS ===
-// QUAN TRỌNG: Định nghĩa các route cụ thể TRƯỚC route động /:id
 
-// 1. Featured Products (Alias để tránh xung đột và hỗ trợ legacy)
+// 1. Featured Products (EXPLICIT ROUTE for /api/products/featured)
+// This handles the request that was 404ing on the client
 const getFeaturedHandler = async (req, res) => {
     try {
         // Prioritize products marked as featured, then expensive ones
@@ -128,8 +128,9 @@ const getFeaturedHandler = async (req, res) => {
     }
 };
 
+// Map multiple paths to the same handler to catch all variations
+apiRouter.get('/products/featured', getFeaturedHandler); 
 apiRouter.get('/featured-products', getFeaturedHandler);
-apiRouter.get('/products/featured', getFeaturedHandler); // Handle legacy URL
 
 // 2. Product List & Filter
 apiRouter.get('/products', async (req, res) => {
@@ -160,7 +161,7 @@ apiRouter.get('/products', async (req, res) => {
     }
 });
 
-// 3. Product Detail (Dynamic ID) - Đặt cuối cùng trong nhóm products
+// 3. Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes
 apiRouter.get('/products/:id', async (req, res) => {
     try {
         const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);
