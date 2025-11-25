@@ -276,7 +276,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
                     <h5 className="admin-form-subsection-title">Chi tiết Khoản Thu</h5>
                     {Object.keys(summary.incomeByCategory).length > 0 ? (
                         <ul className="text-sm space-y-1">
-                            {Object.entries(summary.incomeByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-green-600">{formatCurrency(amount)}</strong></li>)}
+                            {Object.entries(summary.incomeByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-green-600">{formatCurrency(amount as number)}</strong></li>)}
                         </ul>
                     ) : <p className="text-sm text-gray-500">Không có khoản thu nào trong kỳ.</p>}
                 </div>
@@ -284,7 +284,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
                     <h5 className="admin-form-subsection-title">Chi tiết Khoản Chi</h5>
                     {Object.keys(summary.expenseByCategory).length > 0 ? (
                         <ul className="text-sm space-y-1">
-                            {Object.entries(summary.expenseByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-red-600">{formatCurrency(amount)}</strong></li>)}
+                            {Object.entries(summary.expenseByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-red-600">{formatCurrency(amount as number)}</strong></li>)}
                         </ul>
                     ) : <p className="text-sm text-gray-500">Không có khoản chi nào trong kỳ.</p>}
                 </div>

@@ -2,8 +2,8 @@
 // Fix: Import correct types from @google/genai
 import { GoogleGenAI, Chat, GenerateContentResponse, Part, Content, Type, FunctionDeclaration } from "@google/genai"; // Added Part, Content, Type, FunctionDeclaration
 import * as Constants from '../constants.tsx';
-// Fix: Added SiteSettings, Article, Product
-import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; 
+// Fix: Added SiteSettings, Article, Product, User
+import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse, User } from "../types"; 
 import { MOCK_SERVICES } from '../data/mockData';
 // FIX: Import PRODUCT_CATEGORIES_HIERARCHY from constants
 import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
@@ -38,21 +38,37 @@ const getOrderStatusFunctionDeclaration: FunctionDeclaration = {
   name: 'getOrderStatus',
   parameters: {
     type: Type.OBJECT,
-    description: 'Tìm kiếm và lấy thông tin chi tiết đơn hàng. Cần thiết khi người dùng hỏi về trạng thái, vị trí đơn hàng, hoặc lịch sử mua hàng.',
+    description: 'Tìm kiếm và lấy thông tin chi tiết CỤ THỂ một đơn hàng dựa trên Mã Đơn Hàng. Dùng khi khách hàng cung cấp mã số cụ thể (VD: T123456).',
     properties: {
       orderId: {
         type: Type.STRING,
-        description: 'Mã đơn hàng hoặc từ khóa định danh đơn hàng mà người dùng cung cấp (VD: "12345", "dh-123", "T123"). Nếu không rõ, hãy lấy toàn bộ chuỗi số/mã mà người dùng đưa ra.',
+        description: 'Mã đơn hàng hoặc từ khóa định danh đơn hàng mà người dùng cung cấp (VD: "12345", "dh-123", "T123").',
       },
     },
     required: ['orderId'],
   },
 };
 
+const lookupCustomerOrdersFunctionDeclaration: FunctionDeclaration = {
+  name: 'lookupCustomerOrders',
+  parameters: {
+    type: Type.OBJECT,
+    description: 'Tra cứu danh sách lịch sử mua hàng của khách hàng dựa trên thông tin định danh (Số điện thoại hoặc Email). Dùng khi khách hỏi "Tôi đã mua gì?", "Kiểm tra đơn hàng của tôi".',
+    properties: {
+      identifier: {
+        type: Type.STRING,
+        description: 'Số điện thoại hoặc Email của khách hàng để tìm kiếm đơn hàng.',
+      },
+    },
+    required: ['identifier'],
+  },
+};
+
 
 // Fix: Change history type from GenerateContentParameters[] to Content[]
 export const startChat = (
-  siteSettings: SiteSettings, // Added siteSettings
+  siteSettings: SiteSettings, 
+  currentUser?: User | null, // Added currentUser to inject context
   history?: Content[], 
   systemInstructionOverride?: string
 ): Chat => {
@@ -74,6 +90,19 @@ export const startChat = (
     .map(cat => `- ${cat.name}`)
     .join('\n');
 
+  // User context block
+  let userContext = "";
+  if (currentUser) {
+    userContext = `
+**THÔNG TIN KHÁCH HÀNG ĐANG CHAT:**
+- Tên: ${currentUser.username}
+- Email: ${currentUser.email}
+- Số điện thoại: ${currentUser.phone || 'Chưa cung cấp'}
+- Địa chỉ: ${currentUser.address || 'Chưa cung cấp'}
+Hãy sử dụng thông tin này để xưng hô và hỗ trợ tra cứu đơn hàng mà không cần hỏi lại, trừ khi cần xác nhận.
+`;
+  }
+
 
   const defaultSystemInstruction = `Bạn là trợ lý AI của ${siteSettings.companyName}.
 
@@ -81,14 +110,15 @@ export const startChat = (
 Bạn là một nhân viên tư vấn nhiệt tình, am hiểu công nghệ. Nhiệm vụ của bạn là hỗ trợ khách hàng bằng **Tiếng Việt**.
 
 **NGUYÊN TẮC PHẢN HỒI:**
-1.  **Luôn sử dụng Tiếng Việt:** Kể cả khi khách hàng hỏi bằng tiếng Anh hoặc ngôn ngữ khác, hãy trả lời lại bằng Tiếng Việt một cách lịch sự (trừ khi họ yêu cầu cụ thể khác).
+1.  **Luôn sử dụng Tiếng Việt:** Kể cả khi khách hàng hỏi bằng tiếng Anh, hãy trả lời lại bằng Tiếng Việt lịch sự.
 2.  **Thân thiện & Chuyên nghiệp:** Dùng từ ngữ tự nhiên, có thể dùng emoji nhẹ nhàng 😊.
-3.  **Ngắn gọn & Đi thẳng vào vấn đề:** Tránh viết quá dài dòng.
+3.  **Ngắn gọn:** Đi thẳng vào vấn đề.
 
-**NHIỆM VỤ CỤ THỂ:**
-- **Tra cứu đơn hàng:** Khách hàng thường hỏi về đơn hàng bằng mã số (ví dụ: "đơn 123", "check đơn hàng T456"). Hãy ƯU TIÊN gọi hàm \`getOrderStatus(orderId: "...")\` khi thấy mã số.
-- **Tư vấn sản phẩm:** Dựa vào danh mục sản phẩm bên dưới để gợi ý. Nếu khách hỏi chi tiết giá/kho, hãy hướng dẫn xem trên website.
-- **Tư vấn cấu hình PC:** Đưa ra lời khuyên cơ bản về chọn linh kiện phù hợp nhu cầu.
+${userContext}
+
+**CÔNG CỤ HỖ TRỢ (TOOLS):**
+1.  **getOrderStatus(orderId):** Dùng khi khách hàng hỏi về một đơn hàng CỤ THỂ và cung cấp mã đơn (VD: "Đơn hàng T123456 đi đến đâu rồi?").
+2.  **lookupCustomerOrders(identifier):** Dùng khi khách hàng hỏi chung chung về lịch sử mua hàng (VD: "Tôi có đơn hàng nào không?", "Kiểm tra đơn hàng qua số điện thoại 0905..."). Nếu khách hàng ĐÃ ĐĂNG NHẬP (có thông tin ở trên), hãy tự động dùng số điện thoại hoặc email của họ để gọi hàm này mà không cần hỏi lại.
 
 **THÔNG TIN CỬA HÀNG:**
 - Danh mục sản phẩm:
@@ -110,7 +140,7 @@ ${socialLinksInfo}
     history: history || [],
     config: {
       systemInstruction: systemInstructionOverride || defaultSystemInstruction,
-      tools: [{functionDeclarations: [getOrderStatusFunctionDeclaration]}],
+      tools: [{functionDeclarations: [getOrderStatusFunctionDeclaration, lookupCustomerOrdersFunctionDeclaration]}],
     },
   });
   return chatSessionInstance;
