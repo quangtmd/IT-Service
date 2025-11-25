@@ -19,7 +19,7 @@ app.use(express.json({ limit: '10mb' }));
 
 // --- LOGGING MIDDLEWARE ---
 app.use((req, res, next) => {
-    console.log(`[Server] ${req.method} ${req.url}`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
 
@@ -38,194 +38,33 @@ const deserializeUser = (u) => {
     return userWithoutPassword;
 };
 
-// --- AUTO-MIGRATION & SEEDING ---
-const initializeDatabase = async (connection) => {
-    console.log("🔄 Đang khởi tạo cấu trúc Database...");
-    const schemaQueries = [
-        `CREATE TABLE IF NOT EXISTS \`Users\` (
-          \`id\` varchar(255) NOT NULL,
-          \`username\` varchar(255) NOT NULL,
-          \`email\` varchar(255) NOT NULL,
-          \`password\` varchar(255) NOT NULL,
-          \`role\` enum('admin','staff','customer') NOT NULL,
-          \`staffRole\` varchar(255) DEFAULT NULL,
-          \`createdAt\` timestamp NULL DEFAULT current_timestamp(),
-          \`updatedAt\` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-          \`isLocked\` tinyint(1) DEFAULT 0,
-          \`phone\` varchar(20) DEFAULT NULL,
-          \`address\` text,
-          \`imageUrl\` text,
-          \`status\` enum('Đang hoạt động','Tạm nghỉ','Đã nghỉ việc') DEFAULT 'Đang hoạt động',
-          \`dateOfBirth\` date DEFAULT NULL,
-          \`origin\` varchar(255) DEFAULT NULL,
-          \`loyaltyPoints\` int(11) DEFAULT 0,
-          \`debtStatus\` enum('Không có','Có nợ','Quá hạn') DEFAULT 'Không có',
-          \`assignedStaffId\` varchar(255) DEFAULT NULL,
-          PRIMARY KEY (\`id\`),
-          UNIQUE KEY \`email\` (\`email\`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        
-        `CREATE TABLE IF NOT EXISTS \`Products\` (
-          \`id\` varchar(255) NOT NULL,
-          \`name\` varchar(255) NOT NULL,
-          \`description\` text,
-          \`shortDescription\` text,
-          \`price\` decimal(15,2) NOT NULL,
-          \`originalPrice\` decimal(15,2) DEFAULT NULL,
-          \`costPrice\` decimal(15,2) DEFAULT NULL,
-          \`stock\` int(11) NOT NULL,
-          \`categoryId\` varchar(255) DEFAULT NULL,
-          \`mainCategory\` varchar(255) DEFAULT NULL,
-          \`subCategory\` varchar(255) DEFAULT NULL,
-          \`brand\` varchar(255) DEFAULT NULL,
-          \`imageUrls\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`imageUrls\`)),
-          \`specifications\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`specifications\`)),
-          \`tags\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`tags\`)),
-          \`isVisible\` tinyint(1) DEFAULT 1,
-          \`rating\` float DEFAULT NULL,
-          \`reviews\` int(11) DEFAULT NULL,
-          \`status\` varchar(50) DEFAULT 'Mới',
-          \`productCode\` varchar(255) DEFAULT NULL,
-          \`printName\` varchar(255) DEFAULT NULL,
-          \`purchasePrice\` decimal(15,2) DEFAULT NULL,
-          \`wholesalePrice\` decimal(15,2) DEFAULT NULL,
-          \`hasVAT\` tinyint(1) DEFAULT 0,
-          \`barcode\` varchar(255) DEFAULT NULL,
-          \`unit\` varchar(50) DEFAULT NULL,
-          \`warrantyPeriod\` int(11) DEFAULT NULL,
-          \`countryOfOrigin\` varchar(255) DEFAULT NULL,
-          \`yearOfManufacture\` int(11) DEFAULT NULL,
-          \`slug\` varchar(255) DEFAULT NULL,
-          \`seoMetaTitle\` varchar(255) DEFAULT NULL,
-          \`seoMetaDescription\` text,
-          \`supplierId\` varchar(255) DEFAULT NULL,
-          \`supplierName\` varchar(255) DEFAULT NULL,
-          PRIMARY KEY (\`id\`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-
-        `CREATE TABLE IF NOT EXISTS \`Orders\` (
-          \`id\` varchar(255) NOT NULL,
-          \`userId\` varchar(255) DEFAULT NULL,
-          \`creatorId\` varchar(255) DEFAULT NULL,
-          \`customerInfo\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(\`customerInfo\`)),
-          \`items\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(\`items\`)),
-          \`subtotal\` decimal(15,2) DEFAULT 0.00,
-          \`totalAmount\` decimal(15,2) NOT NULL,
-          \`paidAmount\` decimal(15,2) DEFAULT 0.00,
-          \`cost\` decimal(15,2) DEFAULT 0.00,
-          \`profit\` decimal(15,2) DEFAULT 0.00,
-          \`status\` enum('Chờ xử lý','Đang xác nhận','Đã xác nhận','Đang chuẩn bị','Đang giao','Hoàn thành','Đã hủy','Phiếu tạm') NOT NULL,
-          \`paymentInfo\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`paymentInfo\`)),
-          \`shippingInfo\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`shippingInfo\`)),
-          \`orderDate\` datetime NOT NULL,
-          \`notes\` text DEFAULT NULL,
-          \`createdAt\` timestamp NULL DEFAULT current_timestamp(),
-          PRIMARY KEY (\`id\`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-
-        `CREATE TABLE IF NOT EXISTS \`Articles\` (
-            \`id\` varchar(255) NOT NULL,
-            \`title\` varchar(255) NOT NULL,
-            \`summary\` text,
-            \`content\` longtext,
-            \`author\` varchar(255) DEFAULT NULL,
-            \`category\` varchar(255) DEFAULT NULL,
-            \`imageUrl\` text,
-            \`date\` datetime NOT NULL,
-            \`tags\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`tags\`)),
-            \`slug\` varchar(255) DEFAULT NULL,
-            PRIMARY KEY (\`id\`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-
-        `CREATE TABLE IF NOT EXISTS \`FinancialTransactions\` (
-          \`id\` varchar(255) NOT NULL,
-          \`accountId\` varchar(255) DEFAULT NULL,
-          \`type\` enum('income','expense') NOT NULL,
-          \`category\` varchar(255) DEFAULT NULL,
-          \`amount\` decimal(15,2) NOT NULL,
-          \`description\` text,
-          \`transactionDate\` date NOT NULL,
-          \`relatedEntity\` varchar(255) DEFAULT NULL,
-          \`invoiceNumber\` varchar(255) DEFAULT NULL,
-           PRIMARY KEY (\`id\`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-
-        `CREATE TABLE IF NOT EXISTS \`PayrollRecords\` (
-          \`id\` varchar(255) NOT NULL,
-          \`employeeId\` varchar(255) NOT NULL,
-          \`employeeName\` varchar(255) DEFAULT NULL,
-          \`payPeriod\` varchar(7) NOT NULL,
-          \`baseSalary\` decimal(15,2) DEFAULT NULL,
-          \`bonus\` decimal(15,2) DEFAULT NULL,
-          \`deduction\` decimal(15,2) DEFAULT NULL,
-          \`finalSalary\` decimal(15,2) DEFAULT NULL,
-          \`status\` enum('Chưa thanh toán','Đã thanh toán') NOT NULL,
-          \`notes\` text,
-           PRIMARY KEY (\`id\`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
-        
-        `CREATE TABLE IF NOT EXISTS \`ChatLogSessions\` (\`id\` varchar(255) NOT NULL, \`userName\` varchar(255) DEFAULT NULL, \`userPhone\` varchar(20) DEFAULT NULL, \`startTime\` timestamp NULL DEFAULT current_timestamp(), \`messages\` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(\`messages\`))) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`
-    ];
-
-    try {
-        for (const query of schemaQueries) {
-            await connection.query(query);
-        }
-        console.log("✅ Cấu trúc Database đã được cập nhật!");
-    } catch (error) {
-        console.error("❌ Lỗi khởi tạo cấu trúc DB:", error);
-    }
-};
-
-const seedDatabase = async (connection) => {
-    console.log("🌱 Đang kiểm tra dữ liệu mẫu...");
-    try {
-        const [countRows] = await connection.query('SELECT COUNT(*) as count FROM Products');
-        if (countRows[0].count > 0) {
-            console.log("👌 Database đã có dữ liệu, bỏ qua seeding.");
-            return;
-        }
-        console.log("⚠️ Database trống. Đang thêm dữ liệu mẫu...");
-        
-         await connection.query(`
-            INSERT IGNORE INTO \`Users\` (\`id\`, \`username\`, \`email\`, \`password\`, \`role\`, \`staffRole\`, \`status\`, \`isLocked\`, \`phone\`, \`address\`) VALUES
-            ('staff001', 'Lê Hùng', 'hung.le@iqtechnology.com.vn', 'password123', 'staff', 'Trưởng nhóm Kỹ thuật', 'Đang hoạt động', 0, '0911855055', 'Văn phòng IQ Tech'),
-            ('staff002', 'Nguyễn Thị Lan', 'lan.nguyen@iqtechnology.com.vn', 'password123', 'staff', 'Quản lý Bán hàng', 'Đang hoạt động', 0, '0911855056', 'Văn phòng IQ Tech'),
-            ('user001', 'Duy Quang', 'quang.tran@iqtechnology.com.vn', 'password123', 'admin', 'Nhân viên Toàn quyền', 'Đang hoạt động', 0, '0911855055', 'Văn phòng IQ Tech'),
-            ('cust001', 'Nguyễn Văn An', 'an.nguyen@email.com', 'password123', 'customer', NULL, 'Đang hoạt động', 0, '0905123456', '123 Nguyễn Văn Linh, Đà Nẵng');
-        `);
-         await connection.query(`
-            INSERT IGNORE INTO \`Products\` (\`id\`, \`name\`, \`mainCategory\`, \`subCategory\`, \`price\`, \`originalPrice\`, \`stock\`, \`brand\`, \`tags\`, \`imageUrls\`, \`specifications\`, \`purchasePrice\`, \`wholesalePrice\`, \`productCode\`, \`supplierId\`, \`unit\`, \`isVisible\`) VALUES
-            ('CPU001', 'CPU Intel Core i9-14900K', 'Linh kiện máy tính', 'CPU (Vi xử lý Intel, AMD)', 15990000, 17500000, 15, 'Intel', '["Nổi bật", "Gaming", "Mới"]', '["https://hanoicomputercdn.com/media/product/84214_cpu_intel_core_i9_14900k_1.png"]', '{}', 14500000, 15000000, 'CPU-INT-14900K', 'SUP001', 'Cái', 1),
-            ('VGA001', 'VGA GIGABYTE GeForce RTX 4070 Ti SUPER', 'Linh kiện máy tính', 'VGA (Card màn hình)', 25490000, 27000000, 10, 'GIGABYTE', '["Nổi bật", "Gaming"]', '["https://hanoicomputercdn.com/media/product/85223_vga_gigabyte_geforce_rtx_4070_ti_super_gaming_oc_16gb_gddr6x_1.png"]', '{}', 23000000, 24000000, 'VGA-GIGA-4070TIS', 'SUP002', 'Cái', 1),
-            ('RAM001', 'RAM Kingston Fury Beast RGB 32GB (2x16GB) DDR5 6000MHz', 'Linh kiện máy tính', 'RAM (DDR4, DDR5…)', 3290000, 3500000, 30, 'Kingston', '["Bán chạy"]', '["https://hanoicomputercdn.com/media/product/78396_ram_kingston_fury_beast_rgb_32gb_2x16gb_ddr5_bus_6000mhz_kf560c36bbeak2_32_1.png"]', '{}', 2800000, 3000000, 'RAM-KING-D532GB6000', 'SUP003', 'Bộ', 1);
-        `);
-        console.log("✅ Đã thêm dữ liệu mẫu thành công!");
-    } catch (error) {
-        console.error("❌ Lỗi khi thêm dữ liệu mẫu:", error);
-    }
-};
-
-// --- DB CONNECTION CHECK ---
+// --- DB CONNECTION CHECK & INIT ---
 let dbStatus = { status: 'unknown', error: null, tableExists: false };
 const checkDbConnection = async () => {
     try {
         const connection = await pool.getConnection();
         try {
             await connection.query('SELECT 1');
-            await initializeDatabase(connection);
-            await seedDatabase(connection);
+            console.log("✅ Kết nối DB thành công!");
+            
+            // Auto-migration: Ensure is_featured column exists
+            try {
+                await connection.query("SELECT is_featured FROM Products LIMIT 1");
+            } catch (err) {
+                console.log("⚠️ Cột is_featured chưa tồn tại, đang thêm...");
+                await connection.query("ALTER TABLE Products ADD COLUMN is_featured BOOLEAN DEFAULT FALSE");
+                console.log("✅ Đã thêm cột is_featured.");
+            }
+
             dbStatus = { status: 'connected', error: null, tableExists: true };
-            console.log("✅ Kết nối DB thành công và đã cập nhật Schema!");
         } catch (tableError) {
-             console.error("⚠️ Lỗi khi khởi tạo DB:", tableError);
+             console.error("⚠️ Lỗi DB:", tableError);
              dbStatus = { status: 'error', error: tableError, tableExists: false };
         } finally {
             connection.release();
         }
     } catch (error) {
         console.error("\n⚠️ CẢNH BÁO: KHÔNG THỂ KẾT NỐI DATABASE");
-        console.error("Chi tiết lỗi:", error.message);
         dbStatus = { status: 'error', error: { code: error.code, message: error.message }, tableExists: false };
     }
 };
@@ -237,29 +76,17 @@ checkDbConnection();
 // ==========================================================================
 const apiRouter = express.Router();
 
-// --- Middleware for API Router ---
-apiRouter.use((req, res, next) => {
-    console.log(`[API Router] ${req.method} ${req.url}`);
-    next();
-});
-
 apiRouter.get('/health', async (req, res) => {
     if (dbStatus.status !== 'connected') await checkDbConnection();
-    if (dbStatus.status === 'connected') {
-        res.status(200).json({ status: 'ok', database: 'connected', tableExists: dbStatus.tableExists });
-    } else {
-        res.status(500).json({ status: 'error', database: 'disconnected', error: dbStatus.error });
-    }
+    res.json(dbStatus);
 });
 
 // === USERS ===
 apiRouter.get('/users', async (req, res) => {
-    console.log("[API] Getting users list");
     try {
         const [rows] = await pool.query('SELECT * FROM Users');
         res.json(rows.map(deserializeUser));
     } catch (error) {
-        console.error("Lỗi lấy danh sách users:", error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -269,10 +96,8 @@ apiRouter.post('/users/login', async (req, res) => {
         const { email, password } = req.body;
         const [rows] = await pool.query('SELECT * FROM Users WHERE email = ?', [email]);
         if (rows.length === 0) return res.status(401).json({ message: 'Email không tồn tại.' });
-        
         const user = rows[0];
         if (user.password !== password) return res.status(401).json({ message: 'Mật khẩu không đúng.' });
-        
         const { password: _, ...userWithoutPassword } = user;
         res.json(userWithoutPassword);
     } catch (error) {
@@ -281,10 +106,13 @@ apiRouter.post('/users/login', async (req, res) => {
 });
 
 // === PRODUCTS ===
+// QUAN TRỌNG: Định nghĩa các route cụ thể TRƯỚC route động /:id
+
+// 1. Featured Products (Alias để tránh xung đột và hỗ trợ legacy)
 const getFeaturedHandler = async (req, res) => {
-    console.log('[API] Fetching featured products...');
     try {
-        const query = `SELECT * FROM Products ORDER BY price DESC LIMIT 4`;
+        // Prioritize products marked as featured, then expensive ones
+        const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
         const [rows] = await pool.query(query);
         res.json(rows.map(deserializeProduct));
     } catch (error) {
@@ -293,13 +121,11 @@ const getFeaturedHandler = async (req, res) => {
     }
 };
 
-// IMPORTANT: Define SPECIFIC routes first to avoid collision with /products/:id
-apiRouter.get('/featured-products', getFeaturedHandler); // Primary Alias for frontend
-apiRouter.get('/products/featured', getFeaturedHandler); // Legacy path
+apiRouter.get('/featured-products', getFeaturedHandler);
+apiRouter.get('/products/featured', getFeaturedHandler); // Handle legacy URL
 
-// Products List
+// 2. Product List & Filter
 apiRouter.get('/products', async (req, res) => {
-    console.log("[API] Getting products list with query:", req.query);
     try {
         const { mainCategory, subCategory, q, tags, limit = 1000, page = 1 } = req.query;
         let baseQuery = `FROM Products p`;
@@ -321,12 +147,11 @@ apiRouter.get('/products', async (req, res) => {
         
         res.json({ products: products.map(deserializeProduct), totalProducts });
     } catch (error) {
-        console.error("Lỗi lấy danh sách sản phẩm:", error);
         res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 });
 
-// Product Detail (Dynamic ID) - This MUST be AFTER /products/featured
+// 3. Product Detail (Dynamic ID) - Đặt cuối cùng trong nhóm products
 apiRouter.get('/products/:id', async (req, res) => {
     try {
         const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);
@@ -336,7 +161,6 @@ apiRouter.get('/products/:id', async (req, res) => {
             res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
         }
     } catch (error) {
-        console.error("Lỗi lấy chi tiết sản phẩm:", error);
         res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 });
@@ -346,67 +170,74 @@ apiRouter.get('/financials/transactions', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM FinancialTransactions ORDER BY transactionDate DESC');
         res.json(rows);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
 apiRouter.get('/financials/payroll', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM PayrollRecords');
         res.json(rows);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
 apiRouter.post('/financials/payroll', async (req, res) => {
     try {
         const records = req.body;
-        if (!Array.isArray(records)) {
-            return res.status(400).json({ message: "Input must be an array of payroll records" });
-        }
+        if (!Array.isArray(records)) return res.status(400).json({ message: "Input must be array" });
         for (const record of records) {
             const { id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, status, notes } = record;
             await pool.query(
                 `INSERT INTO PayrollRecords (id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, status, notes)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE
-                 baseSalary=VALUES(baseSalary), bonus=VALUES(bonus), deduction=VALUES(deduction), finalSalary=VALUES(finalSalary), status=VALUES(status), notes=VALUES(notes)`,
+                 ON DUPLICATE KEY UPDATE baseSalary=VALUES(baseSalary), bonus=VALUES(bonus), deduction=VALUES(deduction), finalSalary=VALUES(finalSalary), status=VALUES(status), notes=VALUES(notes)`,
                 [id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, status, notes]
             );
         }
-        res.status(200).json({ message: "Payroll records saved successfully" });
-    } catch (error) {
-        console.error("Error saving payroll:", error);
-        res.status(500).json({ message: error.message });
-    }
+        res.json({ message: "Saved" });
+    } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// === API 404 HANDLER ===
-apiRouter.use('*', (req, res) => {
-    console.log(`[API 404] Endpoint not found: ${req.originalUrl}`);
-    res.status(404).json({ message: `API Endpoint not found: ${req.originalUrl}` });
+// === ORDERS ===
+apiRouter.get('/orders', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Orders ORDER BY orderDate DESC');
+        res.json(rows.map(order => ({
+            ...order,
+            items: JSON.parse(order.items || '[]'),
+            customerInfo: JSON.parse(order.customerInfo || '{}'),
+            paymentInfo: JSON.parse(order.paymentInfo || '{}'),
+            shippingInfo: JSON.parse(order.shippingInfo || '{}'),
+        })));
+    } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// Register the API Router at /api
+apiRouter.get('/users/:userId/orders', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [req.params.userId]);
+        res.json(rows.map(order => ({
+            ...order,
+            items: JSON.parse(order.items || '[]'),
+            customerInfo: JSON.parse(order.customerInfo || '{}'),
+            paymentInfo: JSON.parse(order.paymentInfo || '{}'),
+            shippingInfo: JSON.parse(order.shippingInfo || '{}'),
+        })));
+    } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+
+// Mount API Router
 app.use('/api', apiRouter);
 
-// --- SERVE STATIC FILES (PRODUCTION) ---
+// Serve Static Files
 if (process.env.NODE_ENV === 'production') {
     const projectRoot = path.resolve(__dirname, '..');
-    const frontendDistPath = path.join(projectRoot, 'dist');
-    
-    app.use(express.static(frontendDistPath));
-
+    app.use(express.static(path.join(projectRoot, 'dist')));
     app.get('*', (req, res) => {
-        if (req.path.startsWith('/api/')) {
-             return res.status(404).json({ message: `API endpoint not found (Static Fallback): ${req.path}` });
-        }
-        res.sendFile(path.resolve(frontendDistPath, 'index.html'));
+        if (req.path.startsWith('/api/')) return res.status(404).json({ message: `API not found: ${req.path}` });
+        res.sendFile(path.resolve(projectRoot, 'dist', 'index.html'));
     });
 }
 
 app.listen(PORT, () => {
-    console.log(`🚀 Backend server đang chạy tại http://localhost:${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });

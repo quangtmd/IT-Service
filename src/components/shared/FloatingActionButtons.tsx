@@ -1,0 +1,119 @@
+
+import React, { useState, useEffect, useCallback } from 'react';
+import * as Constants from '../../constants';
+import { SiteSettings } from '../../types';
+import AIChatbot from '../chatbot/AIChatbot';
+import { useLocation } from 'react-router-dom';
+
+// 3D Robot Image for better visuals
+const ROBOT_3D_ICON = "https://cdn3d.iconscout.com/3d/premium/thumb/robot-assistant-5229582-4385800.png";
+
+const WELCOME_MESSAGES = [
+    "Xin chào! 👋",
+    "Cần tư vấn PC? 🖥️",
+    "Săn sale sốc? 🎁",
+    "Hỏi tôi ngay! 🤖",
+    "Tra cứu đơn hàng? 📦"
+];
+
+const FloatingActionButtons: React.FC = () => {
+    const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+    const [fadeClass, setFadeClass] = useState('opacity-100'); // Controls opacity for smooth text transitions
+    const location = useLocation();
+    
+    const isAiEnabled = process.env.API_KEY && process.env.API_KEY !== 'undefined';
+
+    const loadSiteSettings = useCallback(() => {
+        const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
+        if (storedSettingsRaw) {
+            setSiteSettings(JSON.parse(storedSettingsRaw));
+        }
+    }, []);
+
+    useEffect(() => {
+        loadSiteSettings();
+        window.addEventListener('siteSettingsUpdated', loadSiteSettings);
+        return () => window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
+    }, [loadSiteSettings]);
+    
+    // Carousel Text Effect - Changing text every few seconds with fade animation
+    useEffect(() => {
+        if (!isAiEnabled || isChatOpen) return;
+        const intervalId = setInterval(() => {
+            setFadeClass('opacity-0 translate-y-1'); // Fade out & slight move down
+            setTimeout(() => {
+                setCurrentMessageIndex((prev) => (prev + 1) % WELCOME_MESSAGES.length);
+                setFadeClass('opacity-100 translate-y-0'); // Fade in & move up
+            }, 300); // Wait for fade out to complete
+        }, 4000);
+        return () => clearInterval(intervalId);
+    }, [isAiEnabled, isChatOpen]);
+
+    // Auto open chat once per session on homepage
+    useEffect(() => {
+        if (isAiEnabled && location.pathname === '/') { 
+            const alreadyOpened = sessionStorage.getItem(Constants.CHATBOT_AUTO_OPENED_KEY);
+            if (!alreadyOpened) {
+              const timer = setTimeout(() => {
+                setIsChatOpen(true); 
+                sessionStorage.setItem(Constants.CHATBOT_AUTO_OPENED_KEY, 'true');
+              }, 5000);
+              return () => clearTimeout(timer);
+            }
+        }
+    }, [isAiEnabled, location.pathname]);
+
+    const quickContactClasses = "w-11 h-11 text-white rounded-full p-2.5 shadow-lg transition-all duration-300 flex items-center justify-center text-lg hover:scale-110";
+
+    return (
+        <>
+            <div className={`fixed bottom-6 right-4 z-[60] flex flex-col items-end space-y-3 transition-all duration-500 ${isChatOpen ? 'translate-y-20 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
+                {/* Secondary Contact Buttons */}
+                <div className="flex flex-col space-y-2 items-end">
+                    {siteSettings.companyPhone && (
+                        <a href={`tel:${siteSettings.companyPhone.replace(/\./g, '')}`} className={`${quickContactClasses} bg-green-500 hover:bg-green-600`} title="Gọi ngay">
+                            <i className="fas fa-phone-alt"></i>
+                        </a>
+                    )}
+                    {siteSettings.socialZaloUrl && (
+                        <a href={siteSettings.socialZaloUrl} target="_blank" rel="noopener noreferrer" className={`${quickContactClasses} bg-blue-500 hover:bg-blue-600`} title="Chat Zalo">
+                            <i className="fas fa-comment-dots"></i>
+                        </a>
+                    )}
+                </div>
+                
+                {/* AI Chatbot Button */}
+                {isAiEnabled && (
+                    <div className="relative flex items-center cursor-pointer group" onClick={() => setIsChatOpen(true)}>
+                        {/* Animated Bubble with Carousel Text */}
+                        <div className="mr-3 bg-white text-gray-800 px-4 py-2 rounded-2xl rounded-br-none shadow-xl border border-gray-100 flex items-center max-w-[200px] transform transition-transform group-hover:scale-105 origin-bottom-right">
+                            <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse shrink-0"></span>
+                            <p className={`text-sm font-bold whitespace-nowrap transition-all duration-300 ease-in-out ${fadeClass}`} style={{fontFamily: 'Inter, sans-serif'}}>
+                                {WELCOME_MESSAGES[currentMessageIndex]}
+                            </p>
+                        </div>
+
+                        {/* 3D Robot Icon */}
+                        <div className="w-16 h-16 relative hover:scale-110 transition-transform duration-300">
+                            {/* Pulse effect behind robot */}
+                            <div className="absolute inset-0 bg-blue-500 rounded-full opacity-20 animate-ping"></div>
+                            <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full shadow-2xl border-2 border-white flex items-center justify-center overflow-hidden relative z-10">
+                                 <img src={ROBOT_3D_ICON} alt="AI Assistant" className="w-12 h-12 object-cover pt-1 drop-shadow-md" />
+                            </div>
+                            {/* Notification Dot */}
+                            <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center z-20">
+                                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                            </span>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {isAiEnabled && <AIChatbot isOpen={isChatOpen} setIsOpen={setIsChatOpen} />}
+        </>
+    );
+};
+
+export default FloatingActionButtons;
