@@ -344,7 +344,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
             
-            // Correctly pass the array of records to the service function
             await savePayrollRecords(recordsToSave);
             
             await onAddTransaction({
@@ -369,7 +368,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             return;
         }
         try {
-            // Correctly pass the array of records to the service function
             await savePayrollRecords(recordsToSave);
             alert('Đã lưu nháp lương thành công!');
             await onDataChange();

@@ -14,8 +14,7 @@ const pool = mysql.createPool({
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
-  // Thêm cấu hình SSL để đảm bảo kết nối được với các provider yêu cầu (như Aiven, Azure, DigitalOcean)
-  // rejectUnauthorized: false cho phép kết nối kể cả khi chứng chỉ self-signed
+  // Allow self-signed certs for cloud DBs (Render, Aiven, etc.)
   ssl: {
       rejectUnauthorized: false
   }
