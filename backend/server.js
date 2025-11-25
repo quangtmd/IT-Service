@@ -83,6 +83,7 @@ apiRouter.get('/health', async (req, res) => {
 
 // === USERS ===
 apiRouter.get('/users', async (req, res) => {
+    console.log("DEBUG: Fetching users...");
     try {
         const [rows] = await pool.query('SELECT * FROM Users');
         res.json(rows.map(deserializeUser));

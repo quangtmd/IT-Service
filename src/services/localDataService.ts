@@ -30,17 +30,27 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-// Priority 1: Environment variable (Production/Custom)
-// Priority 2: Empty string (Development) - This forces relative paths (e.g. /api/users)
-// which allows the Vite Proxy (configured in vite.config.ts) to intercept and forward requests.
-const API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
+const getApiBaseUrl = () => {
+    // Fix: Use process.env directly as defined in vite.config.ts define options
+    let url = process.env.VITE_BACKEND_API_BASE_URL || "";
+    // Remove trailing slash if present
+    if (url.endsWith('/')) {
+        url = url.slice(0, -1);
+    }
+    // Remove trailing /api if present to avoid double /api/api later
+    if (url.endsWith('/api')) {
+        url = url.slice(0, -4);
+    }
+    return url;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // Ensure endpoint starts with /
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
     // Final URL: BASE + /api + /endpoint
-    // If BASE is empty, it becomes /api/endpoint (Relative -> Proxy)
     const url = `${API_BASE_URL}/api${path}`;
     
     try {
@@ -55,6 +65,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
+            // Simplify error for 404s to avoid "File not found" confusion if it comes from Vite
             const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}. Endpoint: ${path}`;
             console.error(`API Request Failed: ${url}`, errorMessage);
             throw new Error(errorMessage);
@@ -66,7 +77,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     } catch (error) {
         console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra backend đã chạy chưa.`);
+            throw new Error(`Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra backend (Port 3001).`);
         }
         throw error;
     }
@@ -86,10 +97,10 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
-// Use the standard query parameter filter supported by the backend
+// Use specific alias endpoint to ensure reliable routing and avoid collisions with /products/:id
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
-        const { products } = await getProducts('is_featured=true&limit=4');
+        const products = await fetchFromApi<Product[]>('/featured-products');
         return products;
     } catch (error) {
         console.error("Failed to fetch featured products", error);
@@ -201,7 +212,7 @@ export const deleteWarrantyTicket = async (id: string): Promise<void> => {
 };
 
 
-// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage for now) ---
+// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
 
 // Warehouses
 export const getWarehouses = async (): Promise<Warehouse[]> => {
