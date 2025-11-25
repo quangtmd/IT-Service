@@ -30,11 +30,13 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
     }
 };
 
-// Sử dụng URL tương đối cho Monolith deploy (Render). 
-// Khi deploy chung (monolith), backend phục vụ frontend nên không cần domain đầy đủ.
+// FORCE EMPTY STRING for Monolith deployment.
+// This ensures the frontend always requests /api/... on the same domain it is served from.
 const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // All API endpoints are prefixed with /api on the server.
+    // This ensures the correct path is always used.
     const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
@@ -48,27 +50,29 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         });
 
         if (!response.ok) {
-            // Try to parse error message from JSON, fallback to status text
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
+            // Simplified, more robust error message for a monolithic setup.
             const errorMessage = `Lỗi API (${response.status}): ${errorData.message || response.statusText || 'Lỗi không xác định'}.`;
-            console.error(`API Error at ${fullEndpoint}:`, errorMessage);
             throw new Error(errorMessage);
         }
         
+        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            // This now more clearly indicates a server-down issue.
             throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra đường truyền hoặc thử lại sau.');
         }
+        // Re-throw other errors (like the custom one from response.ok check)
         throw error;
     }
 }
 
 // --- User Service ---
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
-export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/login', { method: 'POST', body: JSON.stringify(credentials) });
+export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
 export const updateUser = (id: string, updates: Partial<User>): Promise<User> => fetchFromApi<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteUser = (id: string): Promise<void> => fetchFromApi<void>(`/users/${id}`, { method: 'DELETE' });
@@ -80,11 +84,12 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
+// Fix: Ensure this uses the explicit /products/featured endpoint that the backend provides.
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
         return await fetchFromApi<Product[]>('/products/featured');
     } catch (error) {
-        console.warn("Failed to fetch featured products, falling back to standard list.", error);
+        console.warn("Failed to fetch featured products.", error);
         return [];
     }
 }
@@ -98,7 +103,7 @@ export const deleteArticle = (id: string): Promise<void> => fetchFromApi<void>(`
 
 // --- Order Service ---
 export const getOrders = (): Promise<Order[]> => fetchFromApi<Order[]>('/orders');
-export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/users/${customerId}/orders`);
+export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
 export const addOrder = (order: Order): Promise<Order> => fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
 export const updateOrder = (id: string, updates: Partial<Order>): Promise<Order> => fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const updateOrderStatus = (id: string, status: OrderStatus): Promise<Order> => fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
@@ -122,6 +127,7 @@ export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 
 export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
+
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/financials/payroll', { 
         method: 'POST', 

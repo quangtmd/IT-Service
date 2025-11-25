@@ -15,7 +15,9 @@ import { useNavigate, useLocation, NavigateFunction } from 'react-router-dom';
 
 // --- HELPER FUNCTIONS & COMPONENTS ---
 const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('vi-VN');
-const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + '₫';
+const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+};
 
 type FinancialTab = 'overview' | 'transactions' | 'debts' | 'payroll' | 'forecast' | 'approvals' | 'reports';
 
@@ -135,7 +137,7 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[], setActiveTab
                             <tr key={t.id}>
                                 <td>{new Date(t.date).toLocaleDateString('vi-VN')}</td>
                                 <td>{t.description}</td>
-                                <td className={`font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{t.amount.toLocaleString('vi-VN')}₫</td>
+                                <td className={`font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(t.amount)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -179,7 +181,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
                                 <td>{t.type === 'income' ? 'Thu' : 'Chi'}</td>
                                 <td>{t.category}</td>
                                 <td>{t.description}</td>
-                                <td className={`font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{t.amount.toLocaleString('vi-VN')}₫</td>
+                                <td className={`font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(t.amount)}</td>
                                 <td>
                                     <div className="flex gap-1">
                                         <Button onClick={() => handleEditTransaction(t.id)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
@@ -264,9 +266,9 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Card className="!p-4"><h5 className="text-sm">Tổng Thu</h5><p className="text-2xl font-bold text-green-600">{summary.income.toLocaleString('vi-VN')}₫</p></Card>
-                <Card className="!p-4"><h5 className="text-sm">Tổng Chi</h5><p className="text-2xl font-bold text-red-600">{summary.expense.toLocaleString('vi-VN')}₫</p></Card>
-                <Card className="!p-4"><h5 className="text-sm">Lợi Nhuận</h5><p className={`text-2xl font-bold ${summary.net >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>{summary.net.toLocaleString('vi-VN')}₫</p></Card>
+                <Card className="!p-4"><h5 className="text-sm">Tổng Thu</h5><p className="text-2xl font-bold text-green-600">{formatCurrency(summary.income)}</p></Card>
+                <Card className="!p-4"><h5 className="text-sm">Tổng Chi</h5><p className="text-2xl font-bold text-red-600">{formatCurrency(summary.expense)}</p></Card>
+                <Card className="!p-4"><h5 className="text-sm">Lợi Nhuận</h5><p className={`text-2xl font-bold ${summary.net >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>{formatCurrency(summary.net)}</p></Card>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -274,7 +276,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
                     <h5 className="admin-form-subsection-title">Chi tiết Khoản Thu</h5>
                     {Object.keys(summary.incomeByCategory).length > 0 ? (
                         <ul className="text-sm space-y-1">
-                            {Object.entries(summary.incomeByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-green-600">{amount.toLocaleString('vi-VN')}₫</strong></li>)}
+                            {Object.entries(summary.incomeByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-green-600">{formatCurrency(amount)}</strong></li>)}
                         </ul>
                     ) : <p className="text-sm text-gray-500">Không có khoản thu nào trong kỳ.</p>}
                 </div>
@@ -282,7 +284,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
                     <h5 className="admin-form-subsection-title">Chi tiết Khoản Chi</h5>
                     {Object.keys(summary.expenseByCategory).length > 0 ? (
                         <ul className="text-sm space-y-1">
-                            {Object.entries(summary.expenseByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-red-600">{amount.toLocaleString('vi-VN')}₫</strong></li>)}
+                            {Object.entries(summary.expenseByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-red-600">{formatCurrency(amount)}</strong></li>)}
                         </ul>
                     ) : <p className="text-sm text-gray-500">Không có khoản chi nào trong kỳ.</p>}
                 </div>
@@ -341,9 +343,10 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 const shouldSettle = recordsToSettle.some(s => s.id === r.id);
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
-            // Explicitly wait for records to save
+            
+            // Correctly pass the array of records to the service function
             await savePayrollRecords(recordsToSave);
-            // Explicitly wait for transaction to be added
+            
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -366,6 +369,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             return;
         }
         try {
+            // Correctly pass the array of records to the service function
             await savePayrollRecords(recordsToSave);
             alert('Đã lưu nháp lương thành công!');
             await onDataChange();
@@ -396,7 +400,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                                     <td><input type="number" value={record?.baseSalary || 0} onChange={e => handlePayrollChange(employee.id, 'baseSalary', Number(e.target.value))} className="admin-form-group !p-1 w-32" /></td>
                                     <td><input type="number" value={record?.bonus || 0} onChange={e => handlePayrollChange(employee.id, 'bonus', Number(e.target.value))} className="admin-form-group !p-1 w-28" /></td>
                                     <td><input type="number" value={record?.deduction || 0} onChange={e => handlePayrollChange(employee.id, 'deduction', Number(e.target.value))} className="admin-form-group !p-1 w-28" /></td>
-                                    <td className="font-bold">{record ? record.finalSalary.toLocaleString('vi-VN') : 0}₫</td>
+                                    <td className="font-bold">{formatCurrency(record ? record.finalSalary : 0)}</td>
                                     <td><input type="text" value={record?.notes || ''} onChange={e => handlePayrollChange(employee.id, 'notes', e.target.value)} className="admin-form-group !p-1 w-40" /></td>
                                     <td><span className={`status-badge ${record?.status === 'Đã thanh toán' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{record?.status || 'Chưa thanh toán'}</span></td>
                                 </tr>
