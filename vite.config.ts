@@ -44,10 +44,8 @@ export default defineConfig(({ mode }) => {
         },
         define: {
             'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
-            // Ensure this is always a string to prevent 'undefined' in client code
-            'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(
-                (mode === 'production' ? env.VITE_BACKEND_API_BASE_URL : '') || ''
-            )
+            // Ensure the variable is always stringified, even if it's undefined (becomes empty string)
+            'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(env.VITE_BACKEND_API_BASE_URL || '')
         }
     }
 });

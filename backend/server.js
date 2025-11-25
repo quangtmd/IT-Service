@@ -114,8 +114,8 @@ apiRouter.post('/users/login', async (req, res) => {
 
 // === PRODUCTS ===
 
-// 1. Featured Products (EXPLICIT ROUTE for /api/products/featured)
-// This handles the request that was 404ing on the client
+// 1. Featured Products (EXPLICIT ROUTE)
+// This route must be defined BEFORE /products/:id to avoid conflicts
 const getFeaturedHandler = async (req, res) => {
     try {
         // Prioritize products marked as featured, then expensive ones
@@ -128,9 +128,9 @@ const getFeaturedHandler = async (req, res) => {
     }
 };
 
-// Map multiple paths to the same handler to catch all variations
-apiRouter.get('/products/featured', getFeaturedHandler); 
+// Allow both alias and standard REST path
 apiRouter.get('/featured-products', getFeaturedHandler);
+apiRouter.get('/products/featured', getFeaturedHandler); 
 
 // 2. Product List & Filter
 apiRouter.get('/products', async (req, res) => {
@@ -161,7 +161,7 @@ apiRouter.get('/products', async (req, res) => {
     }
 });
 
-// 3. Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes
+// 3. Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes like /featured
 apiRouter.get('/products/:id', async (req, res) => {
     try {
         const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);
@@ -244,13 +244,17 @@ app.use('/api/*', (req, res) => {
     res.status(404).json({ message: `API endpoint not found: ${req.originalUrl}` });
 });
 
-// Serve Static Files
+// Root route for health check
+app.get('/', (req, res) => {
+    res.send("Backend is running!");
+});
+
+// Serve Static Files (only in production if needed, but Render usually separates them)
 if (process.env.NODE_ENV === 'production') {
     const projectRoot = path.resolve(__dirname, '..');
     app.use(express.static(path.join(projectRoot, 'dist')));
     app.get('*', (req, res) => {
         if (req.path.startsWith('/api/')) {
-             console.log(`404 Not Found (Production Fallback): ${req.path}`);
              return res.status(404).json({ message: `API not found: ${req.path}` });
         }
         res.sendFile(path.resolve(projectRoot, 'dist', 'index.html'));
