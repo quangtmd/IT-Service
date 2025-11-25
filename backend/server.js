@@ -108,7 +108,7 @@ apiRouter.post('/users/login', async (req, res) => {
 
 // === PRODUCTS ===
 
-// 1. Featured Products (EXPLICIT ROUTE - Keeping for backward compatibility, though frontend now uses query param)
+// 1. Featured Products (Legacy endpoint, but maintained for backward compat if specific frontend logic still uses it)
 const getFeaturedHandler = async (req, res) => {
     console.log("DEBUG: Hit featured products endpoint");
     try {

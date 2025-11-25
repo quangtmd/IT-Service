@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
             host: '0.0.0.0',
             proxy: {
                 '/api': {
-                    target: 'http://127.0.0.1:3001', // Changed from localhost to 127.0.0.1
+                    target: 'http://127.0.0.1:3001', // Use 127.0.0.1 to avoid localhost IPv6 issues
                     changeOrigin: true,
                     secure: false,
                 },
@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
             allowedHosts: ['.onrender.com'],
             proxy: {
                 '/api': {
-                    target: 'http://127.0.0.1:3001', // Changed from localhost to 127.0.0.1
+                    target: 'http://127.0.0.1:3001',
                     changeOrigin: true,
                     secure: false,
                 },
@@ -43,7 +43,7 @@ export default defineConfig(({ mode }) => {
         },
         define: {
             'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
-            // Ensure the variable is always stringified, even if it's undefined (becomes empty string)
+            // Allow VITE_BACKEND_API_BASE_URL to be used in all modes if set
             'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(env.VITE_BACKEND_API_BASE_URL || '')
         }
     }
