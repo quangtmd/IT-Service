@@ -1,5 +1,4 @@
 
-// Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
@@ -23,7 +22,6 @@ const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
 const setLocalStorageItem = <T,>(key: string, value: T): void => {
     try {
         localStorage.setItem(key, JSON.stringify(value));
-        // Optional: Dispatch a custom event to notify other components of the change
         window.dispatchEvent(new CustomEvent('localStorageChange', { detail: { key } }));
     } catch (error) {
         console.error(`Error setting localStorage key "${key}":`, error);
@@ -31,24 +29,18 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-// 1. Try to get from environment variable (Vite injects this via define)
-let API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
-
-// 2. If no env var is set, and we are on localhost, default to port 3001
-// This is a fallback for local development without a .env file
-if (!API_BASE_URL && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    console.log("Development mode detected: Defaulting API to http://localhost:3001");
-    API_BASE_URL = "http://localhost:3001";
-}
+// In development (empty env), this is empty string -> request goes to http://localhost:3000/api/... -> Proxy to 3001
+// In production, this is the full backend URL.
+const RAW_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
+// Remove trailing slash and trailing /api if present to avoid duplication (e.g. /api/api/...)
+const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Ensure API_BASE_URL doesn't have trailing slash
-    const baseUrl = API_BASE_URL.replace(/\/$/, '');
     // Ensure endpoint starts with /
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
-    // Construct full URL.
-    const url = `${baseUrl}/api${path}`;
+    // Final URL: BASE + /api + /endpoint
+    const url = `${API_BASE_URL}/api${path}`;
     
     try {
         const response = await fetch(url, {
@@ -60,21 +52,19 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         });
 
         if (!response.ok) {
-            // Try to parse error message from JSON, fallback to status text
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
-            
-            const errorMessage = `Lỗi API: ${response.status} ${errorMessageDetails}. Endpoint: ${url}`;
+            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}. Endpoint: ${url}`;
+            console.error(errorMessage);
             throw new Error(errorMessage);
         }
         
-        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
+        console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            console.error(`Connection failed to: ${url}`);
             throw new Error(`Lỗi mạng hoặc server không phản hồi. Không thể kết nối đến Backend tại ${url}`);
         }
         throw error;
@@ -95,9 +85,9 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
-// Fix: Use the specific alias endpoint to avoid 404s with dynamic routes
+// Use standard REST endpoint /products/featured
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    return fetchFromApi<Product[]>('/featured-products');
+    return fetchFromApi<Product[]>('/products/featured');
 }
 
 // --- Article Service ---

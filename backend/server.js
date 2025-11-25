@@ -76,12 +76,6 @@ checkDbConnection();
 // ==========================================================================
 const apiRouter = express.Router();
 
-// Debug middleware specifically for /api routes
-apiRouter.use((req, res, next) => {
-    console.log(`API Request received: ${req.method} ${req.url}`);
-    next();
-});
-
 apiRouter.get('/health', async (req, res) => {
     if (dbStatus.status !== 'connected') await checkDbConnection();
     res.json(dbStatus);
@@ -117,6 +111,7 @@ apiRouter.post('/users/login', async (req, res) => {
 // 1. Featured Products (EXPLICIT ROUTE)
 // This route must be defined BEFORE /products/:id to avoid conflicts
 const getFeaturedHandler = async (req, res) => {
+    console.log("DEBUG: Hit featured products endpoint");
     try {
         // Prioritize products marked as featured, then expensive ones
         const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
@@ -128,9 +123,9 @@ const getFeaturedHandler = async (req, res) => {
     }
 };
 
-// Allow both alias and standard REST path
-apiRouter.get('/featured-products', getFeaturedHandler);
+// Define both routes to ensure compatibility and prevent 404s
 apiRouter.get('/products/featured', getFeaturedHandler); 
+apiRouter.get('/featured-products', getFeaturedHandler); 
 
 // 2. Product List & Filter
 apiRouter.get('/products', async (req, res) => {
@@ -161,7 +156,7 @@ apiRouter.get('/products', async (req, res) => {
     }
 });
 
-// 3. Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes like /featured
+// 3. Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes
 apiRouter.get('/products/:id', async (req, res) => {
     try {
         const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);
@@ -240,7 +235,7 @@ app.use('/api', apiRouter);
 
 // 404 Handler for API requests
 app.use('/api/*', (req, res) => {
-    console.log(`404 Not Found (API catch-all): ${req.originalUrl}`);
+    console.log(`❌ 404 Not Found (API catch-all): ${req.originalUrl}`);
     res.status(404).json({ message: `API endpoint not found: ${req.originalUrl}` });
 });
 
@@ -249,7 +244,7 @@ app.get('/', (req, res) => {
     res.send("Backend is running!");
 });
 
-// Serve Static Files (only in production if needed, but Render usually separates them)
+// Serve Static Files (only in production)
 if (process.env.NODE_ENV === 'production') {
     const projectRoot = path.resolve(__dirname, '..');
     app.use(express.static(path.join(projectRoot, 'dist')));
