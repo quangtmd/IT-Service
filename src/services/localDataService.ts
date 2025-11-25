@@ -31,8 +31,9 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 
-// The base URL is an empty string for relative path usage in Monolith deployment
-const API_BASE_URL = "";
+// Use environment variable for API base URL if available (e.g. in production with separate backend)
+// Otherwise default to relative path (which uses proxy in dev or same-origin in prod monolith)
+const API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // All API endpoints are prefixed with /api on the server.
@@ -85,8 +86,8 @@ export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
-// Call the aliased endpoint to prevent routing conflicts
 export const getFeaturedProducts = async (): Promise<Product[]> => {
+    // Use the specific endpoint alias to avoid routing conflicts or filter issues
     return fetchFromApi<Product[]>('/featured-products');
 }
 
@@ -193,6 +194,7 @@ export const updateWarrantyTicket = async (id: string, updates: Partial<Warranty
 export const deleteWarrantyTicket = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/warranty-tickets/${id}`, { method: 'DELETE' });
 };
+
 
 // --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
 

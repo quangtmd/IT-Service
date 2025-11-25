@@ -127,7 +127,7 @@ apiRouter.get('/products/featured', getFeaturedHandler); // Handle legacy URL
 // 2. Product List & Filter
 apiRouter.get('/products', async (req, res) => {
     try {
-        const { mainCategory, subCategory, q, tags, limit = 1000, page = 1 } = req.query;
+        const { mainCategory, subCategory, q, tags, limit = 1000, page = 1, is_featured } = req.query;
         let baseQuery = `FROM Products p`;
         const whereClauses = ['1=1'];
         const params = [];
@@ -136,6 +136,7 @@ apiRouter.get('/products', async (req, res) => {
         if (subCategory) { whereClauses.push('p.subCategory = ?'); params.push(subCategory); }
         if (q) { whereClauses.push('(p.name LIKE ? OR p.brand LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
         if (tags) { whereClauses.push('p.tags LIKE ?'); params.push(`%${tags}%`); }
+        if (is_featured === 'true') { whereClauses.push('p.is_featured = 1'); }
         
         const whereString = ' WHERE ' + whereClauses.join(' AND ');
         const [countRows] = await pool.query(`SELECT COUNT(p.id) as total ${baseQuery} ${whereString}`, params);
