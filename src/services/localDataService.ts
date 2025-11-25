@@ -31,8 +31,10 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 
-// HARDCODED PRODUCTION URL TO FIX 404 ERRORS ON RENDER
-const API_BASE_URL = "https://it-service-app-n9as.onrender.com";
+// Set to empty string for Monolith deployment. 
+// Frontend and Backend are on the same origin, so relative paths (/api/...) work best.
+// In local development with Vite, the proxy in vite.config.js handles the forwarding to localhost:3001.
+const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // All API endpoints are prefixed with /api on the server.
