@@ -31,15 +31,10 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 
-// Set to empty string for Monolith deployment. 
-// Frontend and Backend are on the same origin, so relative paths (/api/...) work best.
-// In local development with Vite, the proxy in vite.config.js handles the forwarding to localhost:3001.
+// Use empty string for relative path in monolith deployment
 const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // All API endpoints are prefixed with /api on the server.
-    // This ensures the correct path is always used.
-    // Prevent double slash if endpoint starts with /
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const fullEndpoint = `/api${cleanEndpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
@@ -55,28 +50,22 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            // Simplified, more robust error message for a monolithic setup.
             const errorMessage = `Lỗi API (${response.status}): ${errorData.message || response.statusText || 'Lỗi không xác định'}. Endpoint: ${fullEndpoint}`;
             throw new Error(errorMessage);
         }
         
-        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            // This now more clearly indicates a server-down issue.
             throw new Error('Không thể kết nối đến máy chủ (Backend). Vui lòng kiểm tra log server.');
         }
-        // Re-throw other errors (like the custom one from response.ok check)
         throw error;
     }
 }
 
 // --- User Service ---
-// Note: The endpoint passed here is RELATIVE to /api.
-// e.g. '/users' becomes '/api/users'
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
 export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
@@ -89,9 +78,10 @@ export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
+
+// Updated to use the specific alias endpoint to completely avoid collision with /products/:id
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    // This will hit /api/products/featured
-    return fetchFromApi<Product[]>('/products/featured');
+    return fetchFromApi<Product[]>('/featured-products');
 }
 
 // --- Article Service ---
@@ -103,7 +93,7 @@ export const deleteArticle = (id: string): Promise<void> => fetchFromApi<void>(`
 
 // --- Order Service ---
 export const getOrders = (): Promise<Order[]> => fetchFromApi<Order[]>('/orders');
-export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/users/${customerId}/orders`);
+export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
 export const addOrder = (order: Order): Promise<Order> => fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
 export const updateOrder = (id: string, updates: Partial<Order>): Promise<Order> => fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const updateOrderStatus = (id: string, status: OrderStatus): Promise<Order> => fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
@@ -128,7 +118,6 @@ export const updateFinancialTransaction = (id: string, updates: Partial<Financia
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
 
-// Updated signature to accept arguments
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/financials/payroll', { 
         method: 'POST', 
@@ -198,7 +187,6 @@ export const updateWarrantyTicket = async (id: string, updates: Partial<Warranty
 export const deleteWarrantyTicket = async (id: string): Promise<void> => {
     return fetchFromApi<void>(`/warranty-tickets/${id}`, { method: 'DELETE' });
 };
-
 
 // --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
 
