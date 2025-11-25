@@ -44,9 +44,9 @@ export default defineConfig(({ mode }) => {
         },
         define: {
             'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
-            // Use an empty string for dev (relying on proxy) and the env var for prod
+            // Ensure this is always a string to prevent 'undefined' in client code
             'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(
-                mode === 'production' ? env.VITE_BACKEND_API_BASE_URL : ''
+                (mode === 'production' ? env.VITE_BACKEND_API_BASE_URL : '') || ''
             )
         }
     }

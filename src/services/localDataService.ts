@@ -36,8 +36,9 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 // 3. Otherwise default to empty string (relative path for production same-domain)
 let API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
 
-// Detect if we are running in a local development environment
-if (!API_BASE_URL && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+// Detect if we are running in a local development environment and no base URL is set
+// This helps when running frontend locally without docker/proxy setup
+if (!API_BASE_URL && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     console.log("Development mode detected: Defaulting API to http://localhost:3001");
     API_BASE_URL = "http://localhost:3001";
 }
@@ -49,6 +50,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
     // Construct full URL.
+    // If API_BASE_URL is set (e.g. https://backend.com), url becomes https://backend.com/api/users
+    // If API_BASE_URL is empty, url becomes /api/users (relative to current domain)
     const url = `${baseUrl}/api${path}`;
     
     try {
@@ -75,7 +78,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Không thể kết nối đến Server tại ${url}. Vui lòng đảm bảo Backend đang chạy (port 3001).`);
+            throw new Error(`Không thể kết nối đến Server tại ${url}. Vui lòng đảm bảo Backend đang chạy.`);
         }
         throw error;
     }
