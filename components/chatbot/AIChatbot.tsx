@@ -134,8 +134,8 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
       const newChatSession = geminiService.startChat(siteSettings, currentUser); 
       setChatSession(newChatSession);
       const initialBotGreeting = currentUser 
-        ? `Chào ${currentUser.username}! Tôi là trợ lý AI của ${siteSettings.companyName}. Tôi có thể hỗ trợ gì cho bạn hôm nay?`
-        : `Xin chào ${userName}! Tôi là trợ lý AI của ${siteSettings.companyName}. Tôi có thể giúp gì cho bạn?`;
+        ? `Chào ${currentUser.username}! Em là trợ lý AI của ${siteSettings.companyName}. Em có thể hỗ trợ gì cho anh/chị hôm nay ạ?`
+        : `Xin chào ${userName}! Em là trợ lý AI của ${siteSettings.companyName}. Em có thể giúp gì cho bạn ạ?`;
         
       const welcomeMessage = { 
         id: Date.now().toString(), 
