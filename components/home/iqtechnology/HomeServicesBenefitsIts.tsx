@@ -1,11 +1,13 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants';
 import { SiteSettings, HomepageServiceBenefit } from '../../../types';
 import NeonGradientCard from '../../ui/NeonGradientCard';
 import MovingBorderButton from '../../ui/MovingBorderButton';
+import { Canvas } from '@react-three/fiber';
+import CloudNetworkScene from '../three/CloudNetworkScene';
 
 const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number }> = ({ item, index }) => {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
@@ -16,7 +18,7 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
         className={`animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} h-full`}
         style={{ animationDelay: `${index * 100}ms` }}
     >
-        <NeonGradientCard className="h-full flex flex-col">
+        <NeonGradientCard className="h-full flex flex-col backdrop-blur-md bg-black/60">
              {/* Image Area */}
              <div className="relative h-48 mb-6 overflow-hidden rounded-lg flex-shrink-0 group">
                 <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent z-10"></div>
@@ -82,12 +84,18 @@ const HomeServicesBenefitsIts: React.FC = () => {
 
   return (
     <section className="py-24 bg-[#020617] text-white relative overflow-hidden">
-       {/* Background Pattern */}
-       <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
+       {/* 3D Background Scene */}
+       <div className="absolute inset-0 z-0 opacity-60 pointer-events-none">
+         <Canvas>
+            <Suspense fallback={null}>
+                <CloudNetworkScene />
+            </Suspense>
+         </Canvas>
+       </div>
 
       <div className="container mx-auto px-4 relative z-10">
         <div ref={titleRef} className={`text-center mb-16 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
-           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-bold tracking-widest uppercase mb-4">
+           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-bold tracking-widest uppercase mb-4 backdrop-blur-md">
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
               {servicesBenefitsConfig.preTitle || "DỊCH VỤ CỐT LÕI"}
            </div>

@@ -1,9 +1,11 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
 import { SiteSettings } from '../../../types';
 import SpotlightCard from '../../ui/SpotlightCard';
+import { Canvas } from '@react-three/fiber';
+import DigitalGridBackground from '../three/DigitalGridBackground';
 
 const ARSENAL_ICONS: Record<string, string> = {
     'React': 'fab fa-react',
@@ -68,12 +70,18 @@ const HomeBrandLogosIts: React.FC = () => {
 
   return (
     <section ref={ref} className={`py-24 bg-[#020617] text-white relative overflow-hidden animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
-       {/* Diagonal Grid Lines */}
-       <div className="absolute inset-0 bg-[linear-gradient(45deg,#1f2937_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 pointer-events-none"></div>
+       {/* 3D Background Scene */}
+       <div className="absolute inset-0 z-0 opacity-30 pointer-events-none">
+         <Canvas>
+            <Suspense fallback={null}>
+                <DigitalGridBackground />
+            </Suspense>
+         </Canvas>
+       </div>
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-bold tracking-widest uppercase mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-bold tracking-widest uppercase mb-4 backdrop-blur-md">
                 <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
                 {brandLogosConfig.preTitle || "NỀN TẢNG KỸ THUẬT"}
             </div>
@@ -89,7 +97,7 @@ const HomeBrandLogosIts: React.FC = () => {
           {arsenalItems.map((item, index) => (
             <SpotlightCard 
                 key={item.id || index} 
-                className="!p-6 flex flex-col items-center justify-center gap-4 group hover:bg-gray-800/80 transition-colors border border-white/5 bg-white/5"
+                className="!p-6 flex flex-col items-center justify-center gap-4 group hover:bg-gray-800/80 transition-colors border border-white/5 bg-white/5 backdrop-blur-md"
                 style={{ animationDelay: `${index * 50}ms` }} 
             >
                 {/* Icon or Image */}

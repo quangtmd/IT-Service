@@ -1,9 +1,11 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants';
 import { SiteSettings, HomepageStatItem } from '../../../types';
 import SpotlightCard from '../../ui/SpotlightCard';
+import { Canvas } from '@react-three/fiber';
+import PulsingCoreScene from '../three/PulsingCoreScene';
 
 const StatDisplayItem: React.FC<{ stat: HomepageStatItem; index: number }> = ({ stat, index }) => {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.2, triggerOnce: true });
@@ -14,7 +16,7 @@ const StatDisplayItem: React.FC<{ stat: HomepageStatItem; index: number }> = ({ 
       className={`animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}
       style={{ animationDelay: `${index * 100}ms` }}
     >
-        <SpotlightCard className="flex flex-col items-center justify-center text-center h-full !p-8 bg-white/5 border-white/10">
+        <SpotlightCard className="flex flex-col items-center justify-center text-center h-full !p-8 bg-white/5 border-white/10 backdrop-blur-md">
             <div className="mb-4 p-4 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]">
                <i className={`${stat.iconClass || 'fas fa-chart-line'} text-3xl text-transparent bg-clip-text bg-gradient-to-br from-purple-400 to-cyan-400`}></i>
             </div>
@@ -48,9 +50,15 @@ const HomeStatsCounterIts: React.FC = () => {
   const sortedStats = [...statsConfig.stats].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="py-20 bg-[#020617] text-white relative border-t border-white/5">
-         {/* Gradient Orb Background */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-purple-900/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <section className="py-20 bg-[#020617] text-white relative border-t border-white/5 overflow-hidden">
+         {/* 3D Background Scene */}
+        <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
+            <Canvas>
+                <Suspense fallback={null}>
+                    <PulsingCoreScene />
+                </Suspense>
+            </Canvas>
+        </div>
 
         <div className="container mx-auto px-4 relative z-10">
             <div ref={titleRef} className={`text-center mb-16 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>

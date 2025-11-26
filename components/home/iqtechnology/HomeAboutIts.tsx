@@ -1,10 +1,12 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants';
 import { SiteSettings } from '../../../types';
 import MovingBorderButton from '../../ui/MovingBorderButton';
+import { Canvas } from '@react-three/fiber';
+import FloatingElements from '../three/FloatingElements';
 
 const HomeAboutIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
@@ -29,9 +31,13 @@ const HomeAboutIts: React.FC = () => {
 
   return (
     <section ref={sectionRef} className={`py-28 bg-[#020617] text-white relative overflow-hidden animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
-      {/* Refracting Glass Background Effect */}
-      <div className="absolute inset-0 flex justify-center items-center pointer-events-none opacity-30">
-          <div className="w-[600px] h-[600px] bg-gradient-to-tr from-purple-500/30 via-blue-500/10 to-cyan-500/30 rounded-full blur-[100px] animate-pulse"></div>
+      {/* 3D Background Scene */}
+      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
+        <Canvas>
+            <Suspense fallback={null}>
+                <FloatingElements />
+            </Suspense>
+        </Canvas>
       </div>
 
       <div className="container mx-auto px-4 relative z-10 text-center">
@@ -49,8 +55,8 @@ const HomeAboutIts: React.FC = () => {
 
              <div className="flex flex-col sm:flex-row justify-center gap-6 items-center">
                 {aboutConfig.features.slice(0, 3).map((item, idx) => (
-                    <div key={idx} className="flex flex-col items-center p-4">
-                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 text-cyan-400 text-xl">
+                    <div key={idx} className="flex flex-col items-center p-4 backdrop-blur-sm bg-black/20 rounded-xl border border-white/5">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 text-cyan-400 text-xl shadow-[0_0_15px_rgba(34,211,238,0.2)]">
                             <i className={item.icon || 'fas fa-star'}></i>
                         </div>
                         <h4 className="font-bold text-white uppercase tracking-wide text-sm">{item.title}</h4>
