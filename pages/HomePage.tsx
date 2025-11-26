@@ -42,7 +42,7 @@ const HomePage: React.FC = () => {
       {/* 8. Pricing Plans */}
       <HomePricingPlansIts />
 
-      {/* 9. Hot Products (Updated with 3D background) */}
+      {/* 9. Hot Products (Updated with 3D background and CyberProductCard) */}
       <HomeHotProductsIts />
       
       {/* 10. Process */}
