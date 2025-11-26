@@ -29,17 +29,16 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
     }
 };
 
-// --- API BASE URL CONFIGURATION (HARDCODED FOR STABILITY) ---
-// Phương pháp "Hardcode" để đảm bảo 100% kết nối tới Backend trên Render
-// Bỏ qua mọi biến môi trường dễ gây lỗi.
+// --- API BASE URL CONFIGURATION ---
 const getApiBaseUrl = () => {
-    // 1. Localhost (Môi trường Dev)
+    // 1. Localhost (Development Environment)
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         console.log("[API Config] Running on Localhost. Using: http://127.0.0.1:3001");
         return "http://127.0.0.1:3001";
     }
 
-    // 2. PRODUCTION URL (GÁN CỨNG)
+    // 2. PRODUCTION URL (HARDCODED FOR STABILITY)
+    // This ensures the frontend ALWAYS knows where the backend is, bypassing environment variable issues on Static Sites.
     const PRODUCTION_URL = "https://it-service-app-n9as.onrender.com";
     console.log("[API Config] Running in Production. Forcing URL: " + PRODUCTION_URL);
     return PRODUCTION_URL;
@@ -48,10 +47,10 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Đảm bảo endpoint bắt đầu bằng /
+    // Ensure endpoint starts with /
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
-    // Luôn thêm /api vào đường dẫn
+    // Construct full URL. Always prepend /api.
     const fullEndpoint = `/api${path}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
@@ -68,10 +67,10 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
             
-            // Xử lý đặc biệt cho lỗi 404 HTML (thường do gọi sai vào Frontend Static server)
+            // Special handling for 404 HTML responses (often means hitting Frontend instead of Backend)
             const contentType = response.headers.get("content-type");
             if (response.status === 404 && (errorMessageDetails.includes('File not found') || (contentType && contentType.includes("text/html")))) {
-                 throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Có thể Backend chưa khởi động hoặc sai đường dẫn.`);
+                 throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Vui lòng kiểm tra Backend.`);
             }
 
             const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}`;
@@ -85,7 +84,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     } catch (error) {
         console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Không thể kết nối tới Server (${API_BASE_URL}). Vui lòng kiểm tra xem Backend trên Render có đang chạy không.`);
+            throw new Error(`Không thể kết nối tới Server (${API_BASE_URL}). Vui lòng kiểm tra đường truyền hoặc trạng thái Server.`);
         }
         throw error;
     }
