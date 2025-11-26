@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FinancialTransaction, TransactionCategory, TransactionType } from '../../types';
 import Button from '../../components/ui/Button';
 import { getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction } from '../../services/localDataService';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const TRANSACTION_CATEGORIES: Record<TransactionType, TransactionCategory[]> = {
     'income': ['Doanh thu Bán hàng', 'Thu nội bộ'],
@@ -10,8 +10,8 @@ const TRANSACTION_CATEGORIES: Record<TransactionType, TransactionCategory[]> = {
 };
 
 const TransactionFormPage: React.FC = () => {
-    const { transactionId } = ReactRouterDOM.useParams<{ transactionId: string }>();
-    const navigate = ReactRouterDOM.useNavigate();
+    const { transactionId } = useParams<{ transactionId: string }>();
+    const navigate = useNavigate();
     const isEditing = !!transactionId;
 
     const [formData, setFormData] = useState<Partial<FinancialTransaction> | null>(null);

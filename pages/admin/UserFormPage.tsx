@@ -3,11 +3,11 @@ import { User, StaffRole, USER_STATUS_OPTIONS, STAFF_ROLE_OPTIONS } from '../../
 import Button from '../../components/ui/Button';
 import ImageUploadInput from '../../components/ui/ImageUploadInput';
 import { useAuth } from '../../contexts/AuthContext';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const UserFormPage: React.FC = () => {
-    const { userId } = ReactRouterDOM.useParams<{ userId: string }>();
-    const navigate = ReactRouterDOM.useNavigate();
+    const { userId } = useParams<{ userId: string }>();
+    const navigate = useNavigate();
     const { users, addUser, updateUser, currentUser } = useAuth();
     const isEditing = !!userId;
 

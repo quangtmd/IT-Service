@@ -23,7 +23,7 @@ const CyberProductCard: React.FC<CyberProductCardProps> = ({ product }) => {
   };
 
   return (
-    <SpotlightCard className="!p-4 h-full flex flex-col group bg-slate-900/50 border-slate-800 hover:border-cyan-500/50 transition-colors duration-300">
+    <SpotlightCard className="!p-4 h-full flex flex-col group bg-slate-900/50 border-slate-800 hover:border-cyan-500/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(6,182,212,0.25)]">
       {/* Image Container */}
       <div className="relative aspect-[4/3] overflow-hidden rounded-lg mb-4 bg-black/50">
         <img
@@ -86,7 +86,7 @@ const CyberProductCard: React.FC<CyberProductCardProps> = ({ product }) => {
             onClick={handleAddToCart}
             disabled={product.stock <= 0}
             size="sm"
-            className={`!p-2 !w-10 !h-10 rounded-full flex items-center justify-center transition-all duration-300 ${product.stock > 0 ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500 hover:text-white border border-cyan-500/50' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+            className={`!p-2 !w-10 !h-10 rounded-full flex items-center justify-center transition-all duration-300 ${product.stock > 0 ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500 hover:text-white border border-cyan-500/50 hover:shadow-[0_0_15px_rgba(6,182,212,0.5)] hover:scale-110' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
           >
             <i className="fas fa-cart-plus"></i>
           </Button>

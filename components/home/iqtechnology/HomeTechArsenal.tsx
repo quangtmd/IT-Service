@@ -62,7 +62,10 @@ const HomeTechArsenal: React.FC = () => {
         {/* Tech Chips Grid (Arsenal) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-20">
             {ARSENAL_ITEMS.map((item, idx) => (
-                <SpotlightCard key={idx} className="!p-4 flex flex-col items-center justify-center gap-3 group hover:bg-gray-800/80 transition-colors">
+                <SpotlightCard 
+                    key={idx} 
+                    className="!p-4 flex flex-col items-center justify-center gap-3 group hover:bg-gray-800/80 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)] cursor-default"
+                >
                     <div className={`text-4xl ${item.color} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6`}>
                         <i className={item.icon}></i>
                     </div>
@@ -80,7 +83,7 @@ const HomeTechArsenal: React.FC = () => {
         {/* Feature Cards (Neon) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
             {TECH_CARDS.map((card, idx) => (
-                <NeonGradientCard key={idx} className="h-full">
+                <NeonGradientCard key={idx} className="h-full transition-transform duration-300 hover:-translate-y-2">
                     <div className="relative h-48 mb-6 overflow-hidden rounded-lg">
                         <img src={card.image} alt={card.title} className="w-full h-full object-cover transform transition-transform duration-700 hover:scale-110" />
                         <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent"></div>
@@ -104,24 +107,24 @@ const HomeTechArsenal: React.FC = () => {
         </div>
 
         {/* Metrics Section (Glassmorphism) */}
-        <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 md:p-12">
+        <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 md:p-12 transition-transform duration-300 hover:scale-[1.01]">
              <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[120px] pointer-events-none"></div>
              
              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
-                <div className="text-center">
-                    <div className="text-5xl font-bold text-white mb-2">150+</div>
+                <div className="text-center group">
+                    <div className="text-5xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-cyan-400 transition-colors">150+</div>
                     <div className="text-sm text-gray-400 uppercase tracking-wider">Projects Completed</div>
                 </div>
-                <div className="text-center">
-                    <div className="text-5xl font-bold text-white mb-2">99%</div>
+                <div className="text-center group">
+                    <div className="text-5xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-cyan-400 transition-colors">99%</div>
                     <div className="text-sm text-gray-400 uppercase tracking-wider">Client Satisfaction</div>
                 </div>
-                <div className="text-center">
-                    <div className="text-5xl font-bold text-white mb-2">25+</div>
+                <div className="text-center group">
+                    <div className="text-5xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-cyan-400 transition-colors">25+</div>
                     <div className="text-sm text-gray-400 uppercase tracking-wider">Industry Awards</div>
                 </div>
-                <div className="text-center">
-                    <div className="text-5xl font-bold text-white mb-2">500+</div>
+                <div className="text-center group">
+                    <div className="text-5xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-cyan-400 transition-colors">500+</div>
                     <div className="text-sm text-gray-400 uppercase tracking-wider">Code Commits Daily</div>
                 </div>
              </div>

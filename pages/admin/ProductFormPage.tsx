@@ -4,11 +4,11 @@ import * as Constants from '../../constants';
 import Button from '../../components/ui/Button';
 import ImageUploadInput from '../../components/ui/ImageUploadInput';
 import { getProduct, addProduct, updateProduct, getSuppliers } from '../../services/localDataService';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const ProductFormPage: React.FC = () => {
-    const { productId } = ReactRouterDOM.useParams<{ productId: string }>();
-    const navigate = ReactRouterDOM.useNavigate();
+    const { productId } = useParams<{ productId: string }>();
+    const navigate = useNavigate();
     const isEditing = !!productId;
 
     const [formData, setFormData] = useState<Partial<Product> | null>(null);

@@ -15,7 +15,7 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
   return (
     <div
         ref={ref}
-        className={`animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} h-full`}
+        className={`animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} h-full transition-transform duration-300 hover:scale-[1.02]`}
         style={{ animationDelay: `${index * 100}ms` }}
     >
         <NeonGradientCard className="h-full flex flex-col backdrop-blur-md bg-black/60">
@@ -28,8 +28,8 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
                     className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" 
                 />
                 {/* Tech Icon overlay */}
-                <div className="absolute top-3 right-3 z-20 bg-black/50 backdrop-blur-md p-2 rounded-md border border-white/10">
-                     <i className={`${item.iconClass || 'fas fa-microchip'} text-cyan-400 text-xl`}></i>
+                <div className="absolute top-3 right-3 z-20 bg-black/50 backdrop-blur-md p-2 rounded-md border border-white/10 group-hover:border-cyan-500/50 transition-colors">
+                     <i className={`${item.iconClass || 'fas fa-microchip'} text-cyan-400 text-xl group-hover:scale-110 transition-transform`}></i>
                 </div>
             </div>
 

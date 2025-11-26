@@ -16,8 +16,8 @@ const StatDisplayItem: React.FC<{ stat: HomepageStatItem; index: number }> = ({ 
       className={`animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}
       style={{ animationDelay: `${index * 100}ms` }}
     >
-        <SpotlightCard className="flex flex-col items-center justify-center text-center h-full !p-8 bg-white/5 border-white/10 backdrop-blur-md">
-            <div className="mb-4 p-4 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+        <SpotlightCard className="flex flex-col items-center justify-center text-center h-full !p-8 bg-white/5 border-white/10 backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+            <div className="mb-4 p-4 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] group-hover:scale-110 transition-transform duration-300">
                <i className={`${stat.iconClass || 'fas fa-chart-line'} text-3xl text-transparent bg-clip-text bg-gradient-to-br from-purple-400 to-cyan-400`}></i>
             </div>
             <h3 className="text-5xl font-bold text-white mb-2 tracking-tighter">{stat.count}</h3>

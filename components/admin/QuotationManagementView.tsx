@@ -4,7 +4,7 @@ import Button from '../ui/Button';
 import { getQuotations, deleteQuotation } from '../../services/localDataService';
 import { getUsers, getProducts } from '../../services/localDataService'; // Assuming these exist
 import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const getStatusColor = (status: Quotation['status']) => {
     switch (status) {
@@ -21,7 +21,7 @@ const QuotationManagementView: React.FC = () => {
     const [quotations, setQuotations] = useState<Quotation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const navigate = ReactRouterDOM.useNavigate();
+    const navigate = useNavigate();
 
     const loadData = useCallback(async () => {
         setIsLoading(true);

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// FIX: Use named imports from react-router-dom
 import { useLocation, useNavigate, Routes, Route, Link } from 'react-router-dom';
 import { User, AdminNotification, AdminView } from '../../types';
 import { useAuth, AdminPermission } from '../../contexts/AuthContext';

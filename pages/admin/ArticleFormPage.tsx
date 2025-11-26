@@ -4,11 +4,11 @@ import * as Constants from '../../constants';
 import Button from '../../components/ui/Button';
 import ImageUploadInput from '../../components/ui/ImageUploadInput';
 import { getArticle, addArticle, updateArticle } from '../../services/localDataService';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const ArticleFormPage: React.FC = () => {
-    const { articleId } = ReactRouterDOM.useParams<{ articleId: string }>();
-    const navigate = ReactRouterDOM.useNavigate();
+    const { articleId } = useParams<{ articleId: string }>();
+    const navigate = useNavigate();
     const isEditing = !!articleId;
 
     const [formData, setFormData] = useState<Article | null>(null);
