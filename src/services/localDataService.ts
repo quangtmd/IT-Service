@@ -31,39 +31,31 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 
 // --- API BASE URL CONFIGURATION ---
 const getApiBaseUrl = () => {
-    // 1. Fallback cho Localhost (Môi trường Dev)
-    // Nếu đang chạy trên localhost hoặc 127.0.0.1, trỏ về backend local
+    // 1. Environment Variable (Priority)
+    // Check both import.meta.env and process.env for compatibility
+    const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
+    
+    if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+        return envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl;
+    }
+
+    // 2. Fallback for Localhost (Development)
+    // Forces connection to local backend port 3001 when running on localhost
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         return "http://127.0.0.1:3001";
     }
 
-    // 2. Ưu tiên lấy từ biến môi trường chuẩn Vite (import.meta.env)
-    const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
-    if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
-        let url = envUrl.trim();
-        // Chuẩn hóa URL: bỏ dấu / cuối
-        if (url.endsWith('/')) url = url.slice(0, -1);
-        // Bỏ /api nếu có (vì hàm fetchFromApi sẽ tự thêm)
-        if (url.endsWith('/api')) url = url.slice(0, -4); 
-        return url;
-    }
-
-    // 3. HARDCODED FALLBACK (QUAN TRỌNG NHẤT CHO RENDER)
-    // Nếu không tìm thấy biến môi trường, sử dụng URL cứng của Backend đang chạy.
-    // Điều này sửa lỗi 404 khi Frontend gọi nhầm vào chính nó (do default relative path).
-    console.log("[API Config] Using Hardcoded Fallback URL for Production");
-    return "https://it-service-app-n9as.onrender.com"; 
+    // 3. Default to relative path
+    // This allows proxying in dev (if configured) or same-domain requests in production
+    return "";
 };
 
 const API_BASE_URL = getApiBaseUrl();
-console.log(`[API Config] Connected to Backend: ${API_BASE_URL}`);
+console.log(`[API Config] Connected to Backend: ${API_BASE_URL || '(Relative Path)'}`);
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Đảm bảo endpoint bắt đầu bằng /
-    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    
-    // Luôn thêm /api vào đường dẫn
-    const fullEndpoint = `/api${path}`;
+    // All API endpoints are prefixed with /api on the server.
+    const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
     try {
@@ -79,14 +71,16 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
             
-            // Xử lý đặc biệt cho lỗi 404 HTML (thường do gọi sai vào Frontend Static server)
+            // Check for 404 HTML response which usually means we hit the frontend static server instead of backend
             const contentType = response.headers.get("content-type");
             if (response.status === 404 && (errorMessageDetails.includes('File not found') || (contentType && contentType.includes("text/html")))) {
-                 throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Vui lòng kiểm tra cấu hình Backend.`);
+                 throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Vui lòng kiểm tra biến môi trường VITE_BACKEND_API_BASE_URL.`);
             }
 
             const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}`;
-            console.error(`API Request Failed: ${fullEndpoint}`, errorMessage);
+            if (response.status !== 404) {
+                console.error(`API Request Failed: ${fullEndpoint}`, errorMessage);
+            }
             throw new Error(errorMessage);
         }
         
@@ -94,9 +88,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
-        console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Không thể kết nối tới Server (${API_BASE_URL}). Vui lòng kiểm tra đường truyền hoặc trạng thái Server.`);
+            throw new Error(`Không thể kết nối tới Server (${API_BASE_URL || 'Local'}). Vui lòng kiểm tra đường truyền hoặc trạng thái Server.`);
         }
         throw error;
     }
@@ -115,7 +108,6 @@ export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
-
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
         return await fetchFromApi<Product[]>('/products/featured');
