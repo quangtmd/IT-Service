@@ -32,8 +32,7 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 // --- API BASE URL CONFIGURATION ---
 const getApiBaseUrl = () => {
     // 1. Check for explicit environment variable (Production/Docker/Render)
-    // @ts-ignore
-    const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
+    const envUrl = process.env.VITE_BACKEND_API_BASE_URL;
     if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
         // Remove trailing slash and optional /api suffix to ensure consistency
         let url = envUrl;
@@ -42,11 +41,10 @@ const getApiBaseUrl = () => {
         return url;
     }
 
-    // 2. Check if running on localhost (Dev or Preview) or in Dev Mode
+    // 2. Check if running on localhost (Dev or Preview)
     // This ensures we hit the backend directly on port 3001 if the proxy isn't working or needed.
-    // We check import.meta.env.DEV to catch `npm run dev`, and hostname for local `npm run preview`.
-    // @ts-ignore
-    if (import.meta.env.DEV || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))) {
+    // This fixes the "404 File Not Found" error when the frontend tries to find /api/xxx as a static file.
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         return "http://127.0.0.1:3001";
     }
 

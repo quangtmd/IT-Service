@@ -9,7 +9,7 @@ import HomeFeaturedProjectsIts from '../components/home/iqtechnology/HomeFeature
 import HomeTestimonialsIts from '../components/home/iqtechnology/HomeTestimonialsIts';
 import HomeBrandLogosIts from '../components/home/iqtechnology/HomeBrandLogosIts';
 import HomeProcessIts from '../components/home/iqtechnology/HomeProcessIts';
-import HotProducts from '../components/home/HotProducts';
+import HomeHotProductsIts from '../components/home/iqtechnology/HomeHotProductsIts';
 import HomeBlogPreviewIts from '../components/home/iqtechnology/HomeBlogPreviewIts';
 import HomeCallToActionIts from '../components/home/iqtechnology/HomeCallToActionIts';
 import HomeContactIts from '../components/home/iqtechnology/HomeContactIts';
@@ -42,8 +42,8 @@ const HomePage: React.FC = () => {
       {/* 8. Pricing Plans */}
       <HomePricingPlansIts />
 
-      {/* 9. Hot Products */}
-      <HotProducts />
+      {/* 9. Hot Products (Updated with 3D background) */}
+      <HomeHotProductsIts />
       
       {/* 10. Process */}
       <HomeProcessIts />
