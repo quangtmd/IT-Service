@@ -36,7 +36,7 @@ const getApiBaseUrl = () => {
         return "http://127.0.0.1:3001";
     }
 
-    // 2. Ưu tiên lấy từ import.meta.env
+    // 2. Ưu tiên lấy từ import.meta.env (Vite standard)
     const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
     if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
         let url = envUrl.trim();
@@ -56,6 +56,7 @@ const getApiBaseUrl = () => {
 
     // 4. PRODUCTION FALLBACK (QUAN TRỌNG NHẤT CHO RENDER)
     // Nếu không tìm thấy biến môi trường, sử dụng URL cứng của Backend đang chạy.
+    // Điều này sửa lỗi 404 khi Frontend gọi nhầm vào chính nó.
     console.log("[API Config] Using Hardcoded Fallback URL");
     return "https://it-service-app-n9as.onrender.com"; 
 };
