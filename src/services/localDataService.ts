@@ -47,9 +47,9 @@ const getApiBaseUrl = () => {
         return "http://127.0.0.1:3001";
     }
 
-    // 3. Fallback to relative path (Production same-domain)
-    // This works if the frontend is served BY the backend (monolithic)
-    return "";
+    // 3. Production Fallback (Render)
+    // Use the known live backend URL if no env var is set.
+    return "https://it-service-app-n9as.onrender.com";
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -59,8 +59,6 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
     // Construct full URL. Always prepend /api.
-    // If API_BASE_URL is "http://localhost:3001", result is "http://localhost:3001/api/users"
-    // If API_BASE_URL is "" (relative), result is "/api/users"
     const fullUrl = `${API_BASE_URL}/api${path}`;
     
     try {
