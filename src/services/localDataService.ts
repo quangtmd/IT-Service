@@ -30,31 +30,25 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 
 // --- API BASE URL CONFIGURATION ---
 const getApiBaseUrl = () => {
-    // 1. Priority: Check for explicit environment variable (Production/Docker/Render)
+    // 1. Check for explicit environment variable (Production/Docker/Render)
     // @ts-ignore
     const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
     if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+        // Remove trailing slash and optional /api suffix to ensure consistency
         let url = envUrl;
         if (url.endsWith('/')) url = url.slice(0, -1);
         if (url.endsWith('/api')) url = url.slice(0, -4); 
         return url;
     }
 
-    // 2. Priority: Development Mode Force Localhost
-    // @ts-ignore
-    if (import.meta.env.DEV) {
-        return "http://127.0.0.1:3001";
-    }
-
-    // 3. Priority: Localhost Fallback (Preview Mode)
-    // If running on localhost but not in DEV (e.g. 'npm run preview'), default to local backend port.
-    // This prevents 404s if the proxy isn't configured or working, as it hits the backend directly.
+    // 2. Check if running on localhost (Dev or Preview)
+    // This ensures we hit the backend directly on port 3001 if the proxy isn't working or needed
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         return "http://127.0.0.1:3001";
     }
 
-    // 4. Priority: Relative path (Production same-domain or handled by proxy)
-    // Returns empty string so requests are like "/api/users"
+    // 3. Fallback to relative path (Production same-domain)
+    // This works if the frontend is served BY the backend (monolithic)
     return "";
 };
 
@@ -64,7 +58,9 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     // Ensure endpoint starts with /
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
-    // Final URL: BASE + /api + /endpoint
+    // Construct full URL. Always prepend /api.
+    // If API_BASE_URL is "http://localhost:3001", result is "http://localhost:3001/api/users"
+    // If API_BASE_URL is "" (relative), result is "/api/users"
     const fullUrl = `${API_BASE_URL}/api${path}`;
     
     try {
@@ -80,10 +76,9 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
             
-            // Provide a clear error if request hit Vite's static 404 page (which usually returns HTML or text)
-            // This catches "File not found" errors when proxy fails
-            if (response.status === 404 && (response.statusText === 'Not Found' || errorMessageDetails.includes('File not found')) && !errorData) {
-                 throw new Error(`Lỗi 404: Không tìm thấy API (${fullUrl}). Kiểm tra backend có đang chạy ở cổng 3001 không?`);
+            // Special handling for "File not found" which indicates hitting the frontend static server instead of backend
+            if (response.status === 404 && (response.statusText === 'Not Found' || String(errorMessageDetails).includes('File not found')) && !errorData) {
+                 throw new Error(`Lỗi 404: Không tìm thấy API (${fullUrl}). Kiểm tra biến môi trường VITE_BACKEND_API_BASE_URL.`);
             }
 
             const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}`;
@@ -97,7 +92,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     } catch (error) {
         console.error(`Fetch error for ${fullUrl}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra backend (Port 3001).`);
+            throw new Error(`Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra backend tại ${API_BASE_URL || 'current domain'}.`);
         }
         throw error;
     }

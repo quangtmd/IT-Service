@@ -41,8 +41,8 @@ export default defineConfig(({ mode }) => {
             }
         },
         define: {
-            // Only defining API key here. Base URL is handled via import.meta.env or fallback in service
             'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+            'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(env.VITE_BACKEND_API_BASE_URL || '')
         }
     }
 });

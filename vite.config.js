@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
         preview: {
             port: 3000,
             host: true,
+            allowedHosts: ['.onrender.com'],
             proxy: {
                 '/api': {
                     target: 'http://127.0.0.1:3001',
