@@ -29,19 +29,19 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
     }
 };
 
-// --- API BASE URL CONFIGURATION ---
+// --- API BASE URL CONFIGURATION (HARDCODED FOR STABILITY) ---
+// Phương pháp "Hardcode" để đảm bảo 100% kết nối tới Backend trên Render
+// Bỏ qua mọi biến môi trường dễ gây lỗi.
 const getApiBaseUrl = () => {
-    // 1. Fallback cho Localhost (Môi trường Dev)
+    // 1. Localhost (Môi trường Dev)
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         console.log("[API Config] Running on Localhost. Using: http://127.0.0.1:3001");
         return "http://127.0.0.1:3001";
     }
 
-    // 2. PRODUCTION HARDCODED URL
-    // Đây là địa chỉ Backend chính thức của bạn. 
-    // Code sẽ LUÔN sử dụng địa chỉ này khi không chạy ở localhost.
+    // 2. PRODUCTION URL (GÁN CỨNG)
     const PRODUCTION_URL = "https://it-service-app-n9as.onrender.com";
-    console.log("[API Config] Running in Production. Using: " + PRODUCTION_URL);
+    console.log("[API Config] Running in Production. Forcing URL: " + PRODUCTION_URL);
     return PRODUCTION_URL;
 };
 
