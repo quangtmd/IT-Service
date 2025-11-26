@@ -31,27 +31,32 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 
 // --- API BASE URL CONFIGURATION ---
 const getApiBaseUrl = () => {
-    // 1. Ưu tiên lấy từ biến môi trường (VITE_BACKEND_API_BASE_URL)
-    // Biến này được thiết lập trong Render > Environment Variables của service Frontend
-    const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
-    
-    if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
-        let url = envUrl.trim();
-        // Chuẩn hóa URL: bỏ dấu / cuối
-        if (url.endsWith('/')) url = url.slice(0, -1);
-        // Bỏ /api nếu có (vì hàm fetchFromApi sẽ tự thêm)
-        if (url.endsWith('/api')) url = url.slice(0, -4); 
-        return url;
-    }
-
-    // 2. Fallback cho Localhost (Môi trường Dev)
+    // 1. Fallback cho Localhost (Môi trường Dev)
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         return "http://127.0.0.1:3001";
     }
 
-    // 3. PRODUCTION FALLBACK (QUAN TRỌNG NHẤT CHO RENDER)
+    // 2. Ưu tiên lấy từ import.meta.env
+    const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
+    if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+        let url = envUrl.trim();
+        if (url.endsWith('/')) url = url.slice(0, -1);
+        if (url.endsWith('/api')) url = url.slice(0, -4); 
+        return url;
+    }
+    
+    // 3. Fallback Process Env (Legacy)
+    const processUrl = process.env.VITE_BACKEND_API_BASE_URL;
+    if (processUrl && typeof processUrl === 'string' && processUrl.trim() !== '') {
+        let url = processUrl.trim();
+        if (url.endsWith('/')) url = url.slice(0, -1);
+        if (url.endsWith('/api')) url = url.slice(0, -4);
+        return url;
+    }
+
+    // 4. PRODUCTION FALLBACK (QUAN TRỌNG NHẤT CHO RENDER)
     // Nếu không tìm thấy biến môi trường, sử dụng URL cứng của Backend đang chạy.
-    // Điều này sửa lỗi 404 khi Frontend gọi nhầm vào chính nó.
+    console.log("[API Config] Using Hardcoded Fallback URL");
     return "https://it-service-app-n9as.onrender.com"; 
 };
 
