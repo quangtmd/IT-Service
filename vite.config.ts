@@ -42,6 +42,7 @@ export default defineConfig(({ mode }) => {
         },
         define: {
             'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY)
+            // Removed VITE_BACKEND_API_BASE_URL define to allow import.meta.env to work naturally
         }
     }
 });

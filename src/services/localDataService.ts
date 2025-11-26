@@ -32,32 +32,26 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 // --- API BASE URL CONFIGURATION ---
 const getApiBaseUrl = () => {
     // 1. Fallback cho Localhost (Môi trường Dev)
+    // Nếu đang chạy trên localhost hoặc 127.0.0.1, trỏ về backend local
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         return "http://127.0.0.1:3001";
     }
 
-    // 2. Ưu tiên lấy từ import.meta.env (Vite standard)
+    // 2. Ưu tiên lấy từ biến môi trường chuẩn Vite (import.meta.env)
     const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
     if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
         let url = envUrl.trim();
+        // Chuẩn hóa URL: bỏ dấu / cuối
         if (url.endsWith('/')) url = url.slice(0, -1);
+        // Bỏ /api nếu có (vì hàm fetchFromApi sẽ tự thêm)
         if (url.endsWith('/api')) url = url.slice(0, -4); 
         return url;
     }
-    
-    // 3. Fallback Process Env (Legacy)
-    const processUrl = process.env.VITE_BACKEND_API_BASE_URL;
-    if (processUrl && typeof processUrl === 'string' && processUrl.trim() !== '') {
-        let url = processUrl.trim();
-        if (url.endsWith('/')) url = url.slice(0, -1);
-        if (url.endsWith('/api')) url = url.slice(0, -4);
-        return url;
-    }
 
-    // 4. PRODUCTION FALLBACK (QUAN TRỌNG NHẤT CHO RENDER)
+    // 3. HARDCODED FALLBACK (QUAN TRỌNG NHẤT CHO RENDER)
     // Nếu không tìm thấy biến môi trường, sử dụng URL cứng của Backend đang chạy.
-    // Điều này sửa lỗi 404 khi Frontend gọi nhầm vào chính nó.
-    console.log("[API Config] Using Hardcoded Fallback URL");
+    // Điều này sửa lỗi 404 khi Frontend gọi nhầm vào chính nó (do default relative path).
+    console.log("[API Config] Using Hardcoded Fallback URL for Production");
     return "https://it-service-app-n9as.onrender.com"; 
 };
 
