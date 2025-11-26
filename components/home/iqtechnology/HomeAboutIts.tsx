@@ -39,32 +39,43 @@ const HomeAboutIts: React.FC = () => {
             </Suspense>
         </Canvas>
       </div>
+      
+      {/* Gradient Overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-transparent to-[#020617] z-0 pointer-events-none"></div>
 
       <div className="container mx-auto px-4 relative z-10 text-center">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
              {/* Decorative Line */}
              <div className="w-1 h-20 bg-gradient-to-b from-transparent via-cyan-500 to-transparent mx-auto mb-8 opacity-50"></div>
 
-             <h2 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-600 mb-8 leading-[1.1] uppercase tracking-tight">
-                BIẾN Ý TƯỞNG <br/> THÀNH <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">HIỆN THỰC</span>
+             {aboutConfig.preTitle && (
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-bold tracking-widest uppercase mb-6 backdrop-blur-md">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    {aboutConfig.preTitle}
+                </div>
+             )}
+
+             <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-8 leading-[1.1] tracking-tight drop-shadow-2xl">
+                {aboutConfig.title}
              </h2>
 
-             <p className="text-xl md:text-2xl text-gray-400 mb-12 leading-relaxed font-light">
-                {aboutConfig.description || "Tại IQ Technology, chúng tôi chuyển hóa những thách thức phức tạp thành các giải pháp tinh tế thông qua sự hội tụ của công nghệ tiên tiến và thiết kế tầm nhìn. Mọi dự án là một lăng kính của những khả năng đang chờ được khám phá."}
+             <p className="text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed font-light max-w-3xl mx-auto text-shadow-sm">
+                {aboutConfig.description}
              </p>
 
-             <div className="flex flex-col sm:flex-row justify-center gap-6 items-center">
+             <div className="flex flex-col sm:flex-row justify-center gap-6 items-center mb-12">
                 {aboutConfig.features.slice(0, 3).map((item, idx) => (
-                    <div key={idx} className="flex flex-col items-center p-4 backdrop-blur-sm bg-black/20 rounded-xl border border-white/5">
-                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 text-cyan-400 text-xl shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                    <div key={idx} className="flex flex-col items-center p-6 backdrop-blur-md bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors duration-300 w-full sm:w-64 group">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center mb-4 text-cyan-300 text-2xl shadow-[0_0_20px_rgba(34,211,238,0.2)] group-hover:scale-110 transition-transform">
                             <i className={item.icon || 'fas fa-star'}></i>
                         </div>
-                        <h4 className="font-bold text-white uppercase tracking-wide text-sm">{item.title}</h4>
+                        <h4 className="font-bold text-white uppercase tracking-wide text-sm mb-2">{item.title}</h4>
+                        <p className="text-xs text-gray-400 line-clamp-2">{item.description}</p>
                     </div>
                 ))}
              </div>
 
-             <div className="mt-12">
+             <div className="mt-4">
                 <Link to={aboutConfig.buttonLink || '/about'}>
                     <MovingBorderButton>
                         {aboutConfig.buttonText || "KHÁM PHÁ THÊM"}

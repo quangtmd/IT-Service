@@ -18,8 +18,6 @@ const HomeCallToActionIts: React.FC = () => {
     const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
     if (storedSettingsRaw) {
       setSettings(JSON.parse(storedSettingsRaw));
-    } else {
-      setSettings(Constants.INITIAL_SITE_SETTINGS);
     }
   }, []);
 
@@ -36,32 +34,36 @@ const HomeCallToActionIts: React.FC = () => {
   return (
     <section
         ref={ref}
-        className={`py-20 md:py-28 text-white animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} relative overflow-hidden bg-black`}
+        className={`py-28 md:py-36 text-white animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} relative overflow-hidden bg-black`}
     >
-      <div className="absolute inset-0 z-0 opacity-60">
+      {/* 3D Background */}
+      <div className="absolute inset-0 z-0 opacity-70 pointer-events-none">
         <Canvas>
             <Suspense fallback={null}>
                 <PulsingCoreScene />
             </Suspense>
         </Canvas>
       </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+      
+      {/* Gradient Overlays */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black pointer-events-none"></div>
 
       <div className="container mx-auto px-4 text-center relative z-10">
-        <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold mb-6 leading-tight drop-shadow-md">
-          {ctaConfig.title || "Default CTA Title"}
+        <h2 className="text-4xl md:text-6xl font-black mb-8 leading-tight drop-shadow-2xl tracking-tight">
+          {ctaConfig.title || "Sẵn Sàng Nâng Cấp?"}
         </h2>
-        <p className={`text-lg text-gray-200 mb-12 max-w-3xl mx-auto leading-relaxed drop-shadow-sm`}>
-          {ctaConfig.description || "Default CTA description."}
+        <p className={`text-lg md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed drop-shadow-sm font-light`}>
+          {ctaConfig.description || "Liên hệ ngay hôm nay để bắt đầu hành trình chuyển đổi số của bạn."}
         </p>
         {ctaConfig.buttonLink && ctaConfig.buttonText && (
           <Link to={ctaConfig.buttonLink}>
             <Button
               variant="primary"
               size="lg"
-              className="px-10 py-4 text-lg shadow-xl hover:shadow-primary/50 transform hover:scale-105 transition-all bg-white text-primary hover:bg-gray-50"
+              className="px-12 py-5 text-lg font-bold shadow-[0_0_30px_rgba(239,68,68,0.5)] hover:shadow-[0_0_50px_rgba(239,68,68,0.8)] transform hover:scale-105 transition-all bg-red-600 hover:bg-red-500 text-white rounded-full tracking-wider border-none"
             >
-              {ctaConfig.buttonText} <i className="fas fa-rocket ml-2"></i>
+              {ctaConfig.buttonText} <i className="fas fa-rocket ml-3 animate-bounce-horizontal"></i>
             </Button>
           </Link>
         )}
