@@ -23,35 +23,21 @@ const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
 const setLocalStorageItem = <T,>(key: string, value: T): void => {
     try {
         localStorage.setItem(key, JSON.stringify(value));
+        // Optional: Dispatch a custom event to notify other components of the change
         window.dispatchEvent(new CustomEvent('localStorageChange', { detail: { key } }));
     } catch (error) {
         console.error(`Error setting localStorage key "${key}":`, error);
     }
 };
 
-// --- API BASE URL CONFIGURATION ---
-const getApiBaseUrl = () => {
-    // 1. Localhost (Development Environment)
-    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-        console.log("[API Config] Running on Localhost. Using: http://127.0.0.1:3001");
-        return "http://127.0.0.1:3001";
-    }
 
-    // 2. PRODUCTION URL (HARDCODED FOR STABILITY)
-    // This ensures the frontend ALWAYS knows where the backend is, bypassing environment variable issues on Static Sites.
-    const PRODUCTION_URL = "https://it-service-app-n9as.onrender.com";
-    console.log("[API Config] Running in Production. Forcing URL: " + PRODUCTION_URL);
-    return PRODUCTION_URL;
-};
-
-const API_BASE_URL = getApiBaseUrl();
+// Use the robust BACKEND_API_BASE_URL from constants which handles localhost vs production correctly.
+const API_BASE_URL = Constants.BACKEND_API_BASE_URL;
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Ensure endpoint starts with /
-    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    
-    // Construct full URL. Always prepend /api.
-    const fullEndpoint = `/api${path}`;
+    // All API endpoints are prefixed with /api on the server.
+    // This ensures the correct path is always used.
+    const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
     try {
@@ -69,12 +55,15 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             
             // Special handling for 404 HTML responses (often means hitting Frontend instead of Backend)
             const contentType = response.headers.get("content-type");
-            if (response.status === 404 && (errorMessageDetails.includes('File not found') || (contentType && contentType.includes("text/html")))) {
-                 throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Vui lòng kiểm tra Backend.`);
+            if (response.status === 404) {
+                 if (contentType && contentType.includes("text/html")) {
+                     throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Có thể Frontend đang gọi nhầm vào chính nó thay vì Backend. Vui lòng kiểm tra URL.`);
+                 }
+                 throw new Error(`Lỗi 404: Không tìm thấy tài nguyên. Backend trả về: ${errorMessageDetails}`);
             }
 
             const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}`;
-            console.error(`API Request Failed: ${fullEndpoint}`, errorMessage);
+            console.error(`API Request Failed: ${url}`, errorMessage);
             throw new Error(errorMessage);
         }
         
@@ -91,6 +80,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 }
 
 // --- User Service ---
+// Note: The endpoint now starts with /users, and /api is prepended by fetchFromApi
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
 export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
@@ -103,14 +93,9 @@ export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
-
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    try {
-        return await fetchFromApi<Product[]>('/products/featured');
-    } catch (error) {
-        console.error("Failed to fetch featured products", error);
-        return [];
-    }
+    const products = await fetchFromApi<Product[]>('/products/featured');
+    return products;
 }
 
 // --- Article Service ---
