@@ -1,4 +1,3 @@
-
 // Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
@@ -31,29 +30,36 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 
 // --- API BASE URL CONFIGURATION ---
 const getApiBaseUrl = () => {
-    // 1. Check for explicit environment variable (Production/Docker/Render)
-    const envUrl = process.env.VITE_BACKEND_API_BASE_URL;
+    // 1. CHECK FOR EXPLICIT ENVIRONMENT VARIABLE (Vite Native)
+    // The VITE_ prefix is required for Vite to expose the variable to the client side.
+    const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
+    
     if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
-        let url = envUrl;
+        let url = envUrl.trim();
+        // Remove trailing slash if it exists
         if (url.endsWith('/')) url = url.slice(0, -1);
+        // Optionally remove /api if the variable includes it, 
+        // as we add it back later in fetchFromApi
         if (url.endsWith('/api')) url = url.slice(0, -4); 
         return url;
     }
 
     // 2. Check if running on localhost (Dev or Preview)
-    // This ensures we hit the backend directly on port 3001 if the proxy isn't working or needed.
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         return "http://127.0.0.1:3001";
     }
 
-    // 3. Production Fallback
-    // If no env var is set and not on localhost, we default to the known production backend.
-    // This prevents "404 File not found" errors when the app tries to fetch relative paths on a static host.
+    // 3. PRODUCTION FALLBACK (Dành cho trường hợp biến môi trường không được nhúng)
+    // Sửa lại URL Fallback. RẤT QUAN TRỌNG: Đây phải là URL của Backend!
     console.warn("⚠️ VITE_BACKEND_API_BASE_URL not set. Using default Render backend.");
-    return "https://it-service-app-n9as.onrender.com"; 
+    
+    // **SỬA LỖI QUAN TRỌNG:** // Nếu app Frontend của bạn là 'tqtechnology.onrender.com' và bạn muốn gọi đến Backend 
+    // 'it-service-app-n9as.onrender.com', thì URL Fallback ở đây phải là:
+    return "https://it-service-app-n9as.onrender.com"; // <-- Phải là Backend URL của bạn
 };
 
 const API_BASE_URL = getApiBaseUrl();
+console.log(`[API Config] Using Base URL: ${API_BASE_URL}`); // Thêm log để kiểm tra
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // Ensure endpoint starts with /
@@ -62,6 +68,9 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     // Construct full URL. Always prepend /api.
     const fullUrl = `${API_BASE_URL}/api${path}`;
     
+    // ... (Phần còn lại của hàm fetchFromApi không cần sửa)
+    // ...
+
     try {
         const response = await fetch(fullUrl, {
             headers: {
@@ -97,6 +106,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         throw error;
     }
 }
+
+// ... (Các hàm exports khác giữ nguyên)
 
 // --- User Service ---
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
