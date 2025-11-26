@@ -1,4 +1,5 @@
 
+// Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
@@ -41,15 +42,20 @@ const getApiBaseUrl = () => {
         return url;
     }
 
-    // 2. Check if running on localhost (Dev or Preview)
-    // This ensures we hit the backend directly on port 3001 if the proxy isn't working or needed
-    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    // 2. Check if running on localhost (Dev or Preview) or in Dev Mode
+    // This ensures we hit the backend directly on port 3001 if the proxy isn't working or needed.
+    // We check import.meta.env.DEV to catch `npm run dev`, and hostname for local `npm run preview`.
+    // @ts-ignore
+    if (import.meta.env.DEV || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))) {
         return "http://127.0.0.1:3001";
     }
 
-    // 3. Production Fallback (Render)
-    // Use the known live backend URL if no env var is set.
-    return "https://it-service-app-n9as.onrender.com";
+    // 3. Production Fallback
+    // If no env var is set and not on localhost, we return an empty string.
+    // This makes the fetch request relative (e.g. /api/users), which allows
+    // it to work if the frontend and backend are served from the same domain 
+    // (e.g. Nginx reverse proxy) or if the Vite preview proxy catches it.
+    return ""; 
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -74,9 +80,10 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
             
-            // Special handling for "File not found" which indicates hitting the frontend static server instead of backend
-            if (response.status === 404 && (response.statusText === 'Not Found' || String(errorMessageDetails).includes('File not found')) && !errorData) {
-                 throw new Error(`Lỗi 404: Không tìm thấy API (${fullUrl}). Kiểm tra biến môi trường VITE_BACKEND_API_BASE_URL.`);
+            // Special handling for "File not found" or HTML 404s which usually indicate hitting the frontend static server instead of backend
+            const contentType = response.headers.get("content-type");
+            if (response.status === 404 && (errorMessageDetails.includes('File not found') || (contentType && contentType.includes("text/html")))) {
+                 throw new Error(`Lỗi 404: Không tìm thấy API (${fullUrl}). Có thể ứng dụng đang kết nối vào Frontend thay vì Backend. Vui lòng kiểm tra VITE_BACKEND_API_BASE_URL.`);
             }
 
             const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}`;
@@ -90,7 +97,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     } catch (error) {
         console.error(`Fetch error for ${fullUrl}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra backend tại ${API_BASE_URL || 'current domain'}.`);
+            throw new Error(`Lỗi mạng hoặc server không phản hồi. Dịch vụ backend tại ${API_BASE_URL || 'URL hiện tại'} có thể đang không hoạt động.`);
         }
         throw error;
     }
