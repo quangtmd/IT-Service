@@ -41,14 +41,19 @@ const getApiBaseUrl = () => {
     }
 
     // 2. Priority: Development Mode Force Localhost
-    // If we are in dev mode (npm run dev), always try to hit the local backend port.
-    // This avoids issues where the proxy configuration might be bypassed or misconfigured relative paths.
     // @ts-ignore
     if (import.meta.env.DEV) {
         return "http://127.0.0.1:3001";
     }
 
-    // 3. Priority: Relative path (Production same-domain or handled by proxy)
+    // 3. Priority: Localhost Fallback (Preview Mode)
+    // If running on localhost but not in DEV (e.g. 'npm run preview'), default to local backend port.
+    // This prevents 404s if the proxy isn't configured or working, as it hits the backend directly.
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        return "http://127.0.0.1:3001";
+    }
+
+    // 4. Priority: Relative path (Production same-domain or handled by proxy)
     // Returns empty string so requests are like "/api/users"
     return "";
 };
@@ -225,7 +230,7 @@ export const deleteWarrantyTicket = async (id: string): Promise<void> => {
 };
 
 
-// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage for mock data mostly but keeping structure) ---
+// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
 
 // Warehouses
 export const getWarehouses = async (): Promise<Warehouse[]> => {
