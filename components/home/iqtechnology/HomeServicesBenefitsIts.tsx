@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants';
 import { SiteSettings, HomepageServiceBenefit } from '../../../types';
-import TiltCard from '../../ui/TiltCard';
-import { Canvas } from '@react-three/fiber';
-import CloudNetworkScene from '../three/CloudNetworkScene'; // Use the new modern tech scene
+import NeonGradientCard from '../../ui/NeonGradientCard';
+import MovingBorderButton from '../../ui/MovingBorderButton';
 
 const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number }> = ({ item, index }) => {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
@@ -14,37 +13,46 @@ const ServiceBenefitCard: React.FC<{ item: HomepageServiceBenefit; index: number
   return (
     <div
         ref={ref}
-        className={`animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} h-full relative z-10`}
+        className={`animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} h-full`}
         style={{ animationDelay: `${index * 100}ms` }}
     >
-        <TiltCard className="h-full">
-            {/* Modified Card Styling for Transparency/Glassmorphism */}
-            <div className="modern-card p-8 group flex flex-col text-center items-center relative h-full overflow-hidden bg-white/10 backdrop-blur-md border border-white/20 shadow-xl hover:shadow-cyan-500/20 transition-all duration-300">
-                {/* Subtle internal gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-50 pointer-events-none"></div>
-                
-                {/* Hover glow effect */}
-                <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/30 rounded-full blur-3xl group-hover:bg-primary/50 transition-all duration-500 group-hover:scale-150"></div>
-
-                <div className="modern-card-icon-wrapper relative z-10 bg-black/20 backdrop-blur-sm shadow-inner group-hover:scale-110 transition-transform duration-300 text-cyan-400 border border-white/10">
-                    <i className={`${item.iconClass || 'fas fa-check-circle'} text-3xl`}></i>
-                </div>
-                
-                <h3 className="text-xl font-bold mb-3 relative z-10 text-white group-hover:text-cyan-300 transition-colors drop-shadow-md">
-                    <Link to={item.link || '#'} className="line-clamp-2">{item.title}</Link>
-                </h3>
-                
-                <p className="text-gray-200 text-sm mb-6 line-clamp-3 flex-grow relative z-10 leading-relaxed drop-shadow-sm">
-                    {item.description}
-                </p>
-                
-                <div className="mt-auto relative z-10 w-full">
-                    <Link to={item.link || '#'} className="inline-flex items-center justify-center w-full py-2.5 rounded-lg border border-white/20 bg-white/5 text-white font-semibold hover:bg-cyan-500 hover:border-cyan-500 transition-all duration-300 shadow-lg backdrop-blur-sm">
-                        Tìm hiểu thêm <i className="fas fa-arrow-right text-xs ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-                    </Link>
+        <NeonGradientCard className="h-full flex flex-col">
+             {/* Image Area */}
+             <div className="relative h-48 mb-6 overflow-hidden rounded-lg flex-shrink-0 group">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent z-10"></div>
+                <img 
+                    src={item.bgImageUrlSeed ? `https://source.unsplash.com/seed/${item.bgImageUrlSeed}/500/300` : (item.link ? `https://source.unsplash.com/500x300/?tech,${index}` : `https://source.unsplash.com/500x300/?cyber,future,${index}`)} 
+                    alt={item.title} 
+                    className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" 
+                />
+                {/* Tech Icon overlay */}
+                <div className="absolute top-3 right-3 z-20 bg-black/50 backdrop-blur-md p-2 rounded-md border border-white/10">
+                     <i className={`${item.iconClass || 'fas fa-microchip'} text-cyan-400 text-xl`}></i>
                 </div>
             </div>
-        </TiltCard>
+
+            {/* Content Area */}
+            <div className="flex flex-col flex-grow">
+                <h3 className="text-2xl font-bold text-white mb-3 tracking-tight group-hover:text-cyan-300 transition-colors">
+                    {item.title}
+                </h3>
+                <p className="text-gray-400 text-sm mb-6 leading-relaxed flex-grow">
+                    {item.description}
+                </p>
+
+                {/* Tags (Mocked for style matching) */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                     <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] text-purple-300 font-mono uppercase tracking-wider">Lõi</span>
+                     <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] text-blue-300 font-mono uppercase tracking-wider">Hệ Thống</span>
+                </div>
+
+                <Link to={item.link || '/services'} className="mt-auto">
+                    <MovingBorderButton className="w-full group">
+                        KHÁM PHÁ <i className="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </MovingBorderButton>
+                </Link>
+            </div>
+        </NeonGradientCard>
     </div>
   );
 };
@@ -59,17 +67,13 @@ const HomeServicesBenefitsIts: React.FC = () => {
     const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
     if (storedSettingsRaw) {
       setSettings(JSON.parse(storedSettingsRaw));
-    } else {
-      setSettings(Constants.INITIAL_SITE_SETTINGS);
     }
   }, []);
 
   useEffect(() => {
     loadSettings();
     window.addEventListener('siteSettingsUpdated', loadSettings);
-    return () => {
-      window.removeEventListener('siteSettingsUpdated', loadSettings);
-    };
+    return () => window.removeEventListener('siteSettingsUpdated', loadSettings);
   }, [loadSettings]);
 
   if (!servicesBenefitsConfig.enabled) return null;
@@ -77,35 +81,19 @@ const HomeServicesBenefitsIts: React.FC = () => {
   const sortedBenefits = [...servicesBenefitsConfig.benefits].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="home-section relative overflow-hidden min-h-[800px]">
-      {/* 3D Background Layer */}
-      <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black via-[#050a14] to-[#0f172a] z-0">
-        <Canvas>
-            <Suspense fallback={null}>
-                <CloudNetworkScene />
-            </Suspense>
-        </Canvas>
-      </div>
+    <section className="py-24 bg-[#020617] text-white relative overflow-hidden">
+       {/* Background Pattern */}
+       <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
 
-      {/* Content Layer */}
-      <div className="container mx-auto px-4 relative z-10 pt-10">
-        <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
-          {servicesBenefitsConfig.preTitle && (
-            <span className="home-section-pretitle bg-black/40 backdrop-blur-md border border-cyan-500/30 text-cyan-400">
-              {servicesBenefitsConfig.sectionTitleIconUrl &&
-                <img
-                  src={servicesBenefitsConfig.sectionTitleIconUrl}
-                  alt=""
-                  className="h-6 w-6 mr-2 object-contain flex-shrink-0"
-                />
-              }
-              {servicesBenefitsConfig.preTitle}
-            </span>
-          )}
-          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold leading-tight text-white drop-shadow-lg">
-            {servicesBenefitsConfig.title || "Core Service Benefits"}
+      <div className="container mx-auto px-4 relative z-10">
+        <div ref={titleRef} className={`text-center mb-16 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
+           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-bold tracking-widest uppercase mb-4">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              {servicesBenefitsConfig.preTitle || "DỊCH VỤ CỐT LÕI"}
+           </div>
+          <h2 className="text-5xl md:text-6xl font-bold text-white tracking-tight font-sans">
+            {servicesBenefitsConfig.title || "Giải Pháp Dịch Vụ"}
           </h2>
-          <div className="w-24 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 mx-auto mt-4 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
         </div>
         
         {sortedBenefits.length > 0 ? (
@@ -115,7 +103,7 @@ const HomeServicesBenefitsIts: React.FC = () => {
             ))}
             </div>
         ) : (
-            <p className="text-center text-gray-400">Service benefits information is being updated.</p>
+            <p className="text-center text-gray-500">Đang cập nhật dịch vụ...</p>
         )}
       </div>
     </section>

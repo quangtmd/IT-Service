@@ -1,17 +1,20 @@
+
 import React from 'react';
 // Fix: Use named import for Link
 import { Link } from 'react-router-dom';
 import { Product } from '../../types';
 import Button from '../ui/Button';
 import { useCart } from '../../hooks/useCart';
+import { useToast } from '../../contexts/ToastContext';
 
 interface ProductCardProps {
   product: Product;
-  context?: 'preview' | 'detail-view'; // Keep context for potential future use, but styling is now unified.
+  context?: 'preview' | 'detail-view'; 
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToCart } = useCart();
+  const { success } = useToast();
 
   const discountPercentage = product.originalPrice && product.price < product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -24,6 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
     addToCart(product, 1);
+    success(`Đã thêm "${product.name}" vào giỏ hàng!`);
   };
 
 

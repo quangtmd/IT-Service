@@ -145,6 +145,17 @@ apiRouter.get('/products', async (req, res) => {
     }
 });
 
+// Featured Products - Alias Route (Must be before /products/:id)
+apiRouter.get('/products/featured', async (req, res) => {
+    try {
+        const [products] = await pool.query(`SELECT * FROM Products WHERE is_featured = 1 ORDER BY id DESC LIMIT 4`);
+        res.json(products.map(deserializeProduct));
+    } catch (error) {
+        console.error("Error fetching featured products:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes
 apiRouter.get('/products/:id', async (req, res) => {
     try {

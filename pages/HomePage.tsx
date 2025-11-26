@@ -17,47 +17,47 @@ import HomePricingPlansIts from '../components/home/iqtechnology/HomePricingPlan
 
 const HomePage: React.FC = () => {
   return (
-    <div>
-      {/* 1. 3D Hero Section (Thay thế Banner cũ) */}
+    <div className="bg-[#020617] min-h-screen"> {/* Ensure dark theme base */}
+      {/* 1. 3D Hero Section */}
       <HomeHero3D />
-
-      {/* 2. Giới thiệu nhanh: IQ Technology là ai, dịch vụ chính */}
+      
+      {/* 2. Intro Text (Refracting Ideas...) */}
       <HomeAboutIts />
 
-      {/* 4. Danh mục dịch vụ IT nổi bật */}
+      {/* 3. Feature Cards (Neural Network style) - Was Services */}
       <HomeServicesBenefitsIts />
       
-      {/* Additional: Why Choose Us - Logically follows services */}
-      <HomeWhyChooseUsIts />
-
-      {/* New: Pricing Plans Section */}
-      <HomePricingPlansIts />
-
-      {/* 3. Danh mục sản phẩm nổi bật */}
-      <HotProducts />
-
-      {/* 5. Dự án đã thực hiện (gắn link chi tiết) */}
-      <HomeFeaturedProjectsIts />
-      
-      {/* Additional: Process - How we work */}
-      <HomeProcessIts />
-      
-      {/* Additional: Stats Counter - Showcases scale/achievements */}
+      {/* 4. Performance Metrics (Glass stats) - Was Stats Counter */}
       <HomeStatsCounterIts />
-      
-      {/* 7. Đánh giá khách hàng */}
-      <HomeTestimonialsIts />
 
-      {/* 6. Tin tức & Blog */}
-      <HomeBlogPreviewIts />
-      
-      {/* Additional: Brand Logos - Social proof */}
+      {/* 5. Technical Arsenal (Tech Chips) - Was Brand Logos */}
       <HomeBrandLogosIts />
       
-      {/* Additional: Call To Action - Engage user before contact */}
+      {/* 6. Featured Projects */}
+      <HomeFeaturedProjectsIts />
+
+      {/* 7. Why Choose Us */}
+      <HomeWhyChooseUsIts />
+
+      {/* 8. Pricing Plans */}
+      <HomePricingPlansIts />
+
+      {/* 9. Hot Products */}
+      <HotProducts />
+      
+      {/* 10. Process */}
+      <HomeProcessIts />
+      
+      {/* 11. Testimonials */}
+      <HomeTestimonialsIts />
+
+      {/* 12. Blog Preview */}
+      <HomeBlogPreviewIts />
+      
+      {/* 13. Call To Action */}
       <HomeCallToActionIts />
       
-      {/* 8. Liên hệ nhanh + Chatbot AI hỗ trợ (Chatbot is in App.tsx) */}
+      {/* 14. Contact */}
       <HomeContactIts />
     </div>
   );

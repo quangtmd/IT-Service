@@ -19,6 +19,17 @@ export default defineConfig(({ mode }) => {
               },
             },
         },
+        preview: {
+            port: 3000,
+            host: true,
+            proxy: {
+                '/api': {
+                    target: 'http://127.0.0.1:3001',
+                    changeOrigin: true,
+                    secure: false,
+                },
+            },
+        },
         resolve: {
             alias: {
                 '@': path.resolve(__dirname, './src'),

@@ -40,16 +40,16 @@ const getApiBaseUrl = () => {
         return url;
     }
 
-    // 2. Priority: Localhost Fallback (Development)
-    // Forces connection to backend port 3001 to avoid 404s from Vite's static server
-    if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname;
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            return "http://127.0.0.1:3001";
-        }
+    // 2. Priority: Development Mode Force Localhost
+    // If we are in dev mode (npm run dev), always try to hit the local backend port.
+    // This avoids issues where the proxy configuration might be bypassed or misconfigured relative paths.
+    // @ts-ignore
+    if (import.meta.env.DEV) {
+        return "http://127.0.0.1:3001";
     }
 
-    // 3. Priority: Relative path (Production same-domain)
+    // 3. Priority: Relative path (Production same-domain or handled by proxy)
+    // Returns empty string so requests are like "/api/users"
     return "";
 };
 
@@ -75,7 +75,13 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
             
-            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}. Endpoint: ${path}`;
+            // Provide a clear error if request hit Vite's static 404 page (which usually returns HTML or text)
+            // This catches "File not found" errors when proxy fails
+            if (response.status === 404 && (response.statusText === 'Not Found' || errorMessageDetails.includes('File not found')) && !errorData) {
+                 throw new Error(`Lỗi 404: Không tìm thấy API (${fullUrl}). Kiểm tra backend có đang chạy ở cổng 3001 không?`);
+            }
+
+            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}`;
             console.error(`API Request Failed: ${fullUrl}`, errorMessage);
             throw new Error(errorMessage);
         }
@@ -86,7 +92,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     } catch (error) {
         console.error(`Fetch error for ${fullUrl}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra backend (Port 3001). Endpoint: ${path}`);
+            throw new Error(`Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra backend (Port 3001).`);
         }
         throw error;
     }
@@ -106,14 +112,11 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
-// Standardized to use query params to avoid routing issues
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
-        // Calls /api/products?is_featured=true&limit=4
-        const { products } = await getProducts('is_featured=true&limit=4');
-        return products;
+        return await fetchFromApi<Product[]>('/products/featured');
     } catch (error) {
-        console.error("Failed to fetch featured products, falling back to empty list", error);
+        console.error("Failed to fetch featured products", error);
         return [];
     }
 }
