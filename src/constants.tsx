@@ -19,12 +19,12 @@ export const ADMIN_EMAIL = "quangtmdit@gmail.com";
 
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
 
-// Robust configuration for Backend URL
-// 1. Development: Uses empty string (to use Vite proxy) or localhost
-// 2. Production: Tries VITE_BACKEND_API_BASE_URL
-// 3. Fallback: Hardcoded URL to ensure it works on Render even if env var fails
-export const BACKEND_API_BASE_URL = (import.meta.env.VITE_BACKEND_API_BASE_URL && import.meta.env.VITE_BACKEND_API_BASE_URL !== '') 
-    ? import.meta.env.VITE_BACKEND_API_BASE_URL 
+// --- BACKEND API CONFIGURATION ---
+// Use localhost if running locally, otherwise hardcode the production URL.
+const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+export const BACKEND_API_BASE_URL = isLocal 
+    ? "http://127.0.0.1:3001" 
     : "https://it-service-app-n9as.onrender.com";
 
 // --- STORAGE KEYS ---

@@ -31,31 +31,28 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 
 // --- API BASE URL CONFIGURATION ---
 const getApiBaseUrl = () => {
-    // 1. Environment Variable (Priority)
-    // Check both import.meta.env and process.env for compatibility
-    const envUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
-    
-    if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
-        return envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl;
-    }
-
-    // 2. Fallback for Localhost (Development)
-    // Forces connection to local backend port 3001 when running on localhost
+    // 1. Fallback cho Localhost (Môi trường Dev)
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        console.log("[API Config] Running on Localhost. Using: http://127.0.0.1:3001");
         return "http://127.0.0.1:3001";
     }
 
-    // 3. Default to relative path
-    // This allows proxying in dev (if configured) or same-domain requests in production
-    return "";
+    // 2. PRODUCTION HARDCODED URL
+    // Đây là địa chỉ Backend chính thức của bạn. 
+    // Code sẽ LUÔN sử dụng địa chỉ này khi không chạy ở localhost.
+    const PRODUCTION_URL = "https://it-service-app-n9as.onrender.com";
+    console.log("[API Config] Running in Production. Using: " + PRODUCTION_URL);
+    return PRODUCTION_URL;
 };
 
 const API_BASE_URL = getApiBaseUrl();
-console.log(`[API Config] Connected to Backend: ${API_BASE_URL || '(Relative Path)'}`);
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // All API endpoints are prefixed with /api on the server.
-    const fullEndpoint = `/api${endpoint}`;
+    // Đảm bảo endpoint bắt đầu bằng /
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    
+    // Luôn thêm /api vào đường dẫn
+    const fullEndpoint = `/api${path}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
     try {
@@ -71,16 +68,14 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
             
-            // Check for 404 HTML response which usually means we hit the frontend static server instead of backend
+            // Xử lý đặc biệt cho lỗi 404 HTML (thường do gọi sai vào Frontend Static server)
             const contentType = response.headers.get("content-type");
             if (response.status === 404 && (errorMessageDetails.includes('File not found') || (contentType && contentType.includes("text/html")))) {
-                 throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Vui lòng kiểm tra biến môi trường VITE_BACKEND_API_BASE_URL.`);
+                 throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Có thể Backend chưa khởi động hoặc sai đường dẫn.`);
             }
 
             const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}`;
-            if (response.status !== 404) {
-                console.error(`API Request Failed: ${fullEndpoint}`, errorMessage);
-            }
+            console.error(`API Request Failed: ${fullEndpoint}`, errorMessage);
             throw new Error(errorMessage);
         }
         
@@ -88,8 +83,9 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
+        console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Không thể kết nối tới Server (${API_BASE_URL || 'Local'}). Vui lòng kiểm tra đường truyền hoặc trạng thái Server.`);
+            throw new Error(`Không thể kết nối tới Server (${API_BASE_URL}). Vui lòng kiểm tra xem Backend trên Render có đang chạy không.`);
         }
         throw error;
     }
@@ -108,6 +104,7 @@ export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
+
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
         return await fetchFromApi<Product[]>('/products/featured');
