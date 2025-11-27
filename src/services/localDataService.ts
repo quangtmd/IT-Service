@@ -31,27 +31,15 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-const getApiBaseUrl = () => {
-    // 1. Fallback cho Localhost (Môi trường Dev)
-    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-        return "http://127.0.0.1:3001";
-    }
-
-    // 2. PRODUCTION FALLBACK (QUAN TRỌNG NHẤT CHO RENDER)
-    // Sử dụng URL cứng của Backend đang chạy.
-    // Điều này sửa lỗi 404 khi Frontend gọi nhầm vào chính nó (Static Site).
-    return "https://it-service-app-n9as.onrender.com"; 
-};
-
-const API_BASE_URL = getApiBaseUrl();
+// Use the centralized configuration from constants to ensure consistency.
+// In Dev: "" (Proxy). In Prod: "https://..."
+const API_BASE_URL = Constants.BACKEND_API_BASE_URL;
 console.log(`[API Config] Connected to Backend: ${API_BASE_URL}`);
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Đảm bảo endpoint bắt đầu bằng /
-    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    
-    // Luôn thêm /api vào đường dẫn
-    const fullEndpoint = `/api${path}`;
+    // All API endpoints are prefixed with /api on the server.
+    // This ensures the correct path is always used.
+    const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
     try {
@@ -67,7 +55,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
             
-            // Xử lý đặc biệt cho lỗi 404 HTML (thường do gọi sai vào Frontend Static server)
+            // Special handling for 404 HTML responses (often means hitting Frontend instead of Backend)
             const contentType = response.headers.get("content-type");
             if (response.status === 404 && (errorMessageDetails.includes('File not found') || (contentType && contentType.includes("text/html")))) {
                  throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Vui lòng kiểm tra cấu hình Backend.`);

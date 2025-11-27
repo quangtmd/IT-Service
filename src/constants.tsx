@@ -20,11 +20,13 @@ export const ADMIN_EMAIL = "quangtmdit@gmail.com";
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
 
 // --- BACKEND API CONFIGURATION ---
-// Robust configuration: Hardcode the production URL to avoid environment variable issues on static hosts.
-const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-export const BACKEND_API_BASE_URL = isLocal 
-    ? "http://127.0.0.1:3001" 
+// STRATEGY:
+// 1. In Development (npm run dev): Use "" (empty string). 
+//    This forces requests to go to "/api/...", which triggers the Vite Proxy defined in vite.config.ts.
+//    The Proxy then forwards to http://127.0.0.1:3001. This solves CORS issues locally.
+// 2. In Production: Use the full Render URL.
+export const BACKEND_API_BASE_URL = import.meta.env.DEV 
+    ? "" 
     : "https://it-service-app-n9as.onrender.com";
 
 // --- STORAGE KEYS ---
@@ -349,7 +351,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
     homepageWhyChooseUs: INITIAL_HOMEPAGE_WHY_CHOOSE_US,
     homepageStatsCounter: INITIAL_HOMEPAGE_STATS_COUNTER,
     homepageFeaturedProjects: INITIAL_HOMEPAGE_FEATURED_PROJECTS,
-    homepageTestimonials: INITIAL_HOMEPAGE_TESTIMIALS,
+    homepageTestimonials: INITIAL_HOMEPAGE_TESTIMONIALS,
     homepageBrandLogos: INITIAL_HOMEPAGE_BRAND_LOGOS,
     homepageProcess: INITIAL_HOMEPAGE_PROCESS,
     homepageCallToAction: INITIAL_HOMEPAGE_CALL_TO_ACTION,

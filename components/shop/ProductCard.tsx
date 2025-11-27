@@ -53,9 +53,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
         
         <div className="pt-3 px-1 flex flex-col flex-grow">
-          <h4 className="text-sm font-semibold text-textBase mb-2 flex-grow h-10 group-hover:text-primary transition-colors line-clamp-2" title={product.name}>
+          <h4 className="text-sm font-semibold text-textBase mb-1 flex-grow h-10 group-hover:text-primary transition-colors line-clamp-2" title={product.name}>
             {product.name}
           </h4>
+
+          {/* Rating Section */}
+          <div className="flex items-center mb-2">
+            <div className="flex text-yellow-400 gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <i 
+                  key={i} 
+                  className={`fas fa-star text-[10px] ${i < Math.round(product.rating || 0) ? '' : 'text-gray-300'}`}
+                ></i>
+              ))}
+            </div>
+            <span className="text-[10px] text-textMuted ml-1.5">
+              ({product.reviews || 0})
+            </span>
+          </div>
           
           <div className="mt-auto">
             <div className="flex flex-col items-start mb-2">
