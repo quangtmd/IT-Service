@@ -349,7 +349,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
     homepageWhyChooseUs: INITIAL_HOMEPAGE_WHY_CHOOSE_US,
     homepageStatsCounter: INITIAL_HOMEPAGE_STATS_COUNTER,
     homepageFeaturedProjects: INITIAL_HOMEPAGE_FEATURED_PROJECTS,
-    homepageTestimonials: INITIAL_HOMEPAGE_TESTIMONIALS,
+    homepageTestimonials: INITIAL_HOMEPAGE_TESTIMIALS,
     homepageBrandLogos: INITIAL_HOMEPAGE_BRAND_LOGOS,
     homepageProcess: INITIAL_HOMEPAGE_PROCESS,
     homepageCallToAction: INITIAL_HOMEPAGE_CALL_TO_ACTION,

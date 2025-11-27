@@ -41,6 +41,9 @@ export default defineConfig(({ mode }) => {
             }
         },
         define: {
+            // Ensure only specific variables are exposed if needed, 
+            // but generally Vite handles VITE_ prefixed ones automatically.
+            // We expose API_KEY manually because it might not be VITE_ prefixed in some environments or code usages.
             'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY)
         }
     }
