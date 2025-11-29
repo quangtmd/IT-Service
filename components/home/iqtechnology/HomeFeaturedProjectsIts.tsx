@@ -27,23 +27,26 @@ const ProjectCardIts: React.FC<ProjectItemProps> = ({ item, index }) => {
         >
             <TiltCard className="h-full">
                 <div className="group flex flex-col relative h-full overflow-hidden rounded-2xl border-2 transition-all duration-300
-                    bg-slate-800/40 backdrop-blur-lg shadow-2xl border-white/10 hover:border-primary hover:shadow-primary/20">
+                    bg-slate-900/60 backdrop-blur-lg shadow-2xl border-white/10 hover:border-cyan-500/70 hover:shadow-[0_0_30px_rgba(6,182,212,0.2)]">
                     
                     <Link to={`/service/${item.slug || item.id}`} className="block aspect-video overflow-hidden">
-                        <img src={placeholderImg} alt={item.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                        <img src={placeholderImg} alt={item.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80"></div>
                     </Link>
 
-                    <div className="p-6 flex flex-col flex-grow">
-                        <div className="flex items-center mb-3 text-primary">
-                            <i className={`${item.icon || 'fas fa-cogs'} text-xl mr-3 opacity-80`}></i>
+                    <div className="p-6 flex flex-col flex-grow relative z-10">
+                        <div className="flex items-center mb-4 text-cyan-400">
+                            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                                <i className={`${item.icon || 'fas fa-cogs'} text-xl opacity-90`}></i>
+                            </div>
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-3 group-hover:text-primary transition-colors">
+                        <h3 className="text-xl font-bold text-white mb-3 group-hover:text-cyan-300 transition-colors leading-tight">
                              <Link to={`/service/${item.slug || item.id}`} className="line-clamp-2">{item.name}</Link>
                         </h3>
-                        <p className="text-gray-300 text-sm mb-5 line-clamp-3 flex-grow">{item.description}</p>
+                        <p className="text-gray-400 text-sm mb-5 line-clamp-3 flex-grow leading-relaxed">{item.description}</p>
                         <div className="mt-auto">
-                            <Link to={`/service/${item.slug || item.id}`} className="font-semibold text-primary hover:text-primary-light transition-colors">
-                                Chi tiết dịch vụ <i className="fas fa-arrow-right text-xs ml-1 transition-transform group-hover:translate-x-1"></i>
+                            <Link to={`/service/${item.slug || item.id}`} className="text-sm font-bold text-cyan-400 hover:text-cyan-200 transition-colors uppercase tracking-wider flex items-center">
+                                Chi tiết dịch vụ <i className="fas fa-arrow-right text-xs ml-2 transition-transform group-hover:translate-x-1"></i>
                             </Link>
                         </div>
                     </div>
@@ -63,8 +66,6 @@ const HomeFeaturedProjectsIts: React.FC = () => {
     const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
     if (storedSettingsRaw) {
       setSettings(JSON.parse(storedSettingsRaw));
-    } else {
-      setSettings(Constants.INITIAL_SITE_SETTINGS);
     }
   }, []);
 
@@ -83,27 +84,29 @@ const HomeFeaturedProjectsIts: React.FC = () => {
     .filter(Boolean) as Service[];
 
   return (
-    <section className="home-section relative bg-[#0f172a] text-white overflow-hidden">
-      <div className="absolute inset-0 z-0">
+    <section className="home-section relative bg-[#0f172a] text-white overflow-hidden py-24">
+      <div className="absolute inset-0 z-0 opacity-50 pointer-events-none">
         <Canvas>
           <Suspense fallback={null}>
             <FeaturedServicesScene />
           </Suspense>
         </Canvas>
       </div>
+      
+      <div className="absolute inset-0 bg-[#0f172a]/70 z-0 pointer-events-none"></div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
+        <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''} text-center mb-16`}>
             {projectsConfig.preTitle && (
-              <span className="home-section-pretitle bg-black/40 backdrop-blur-md border border-primary/30 text-primary">
-                {projectsConfig.sectionTitleIconUrl && <img src={projectsConfig.sectionTitleIconUrl} alt="" className="w-7 h-7 mr-2 object-contain" />}
+              <span className="inline-flex items-center px-3 py-1 rounded-full border border-white/10 bg-white/5 text-gray-300 text-xs font-bold tracking-widest uppercase mb-4 backdrop-blur-md">
+                {projectsConfig.sectionTitleIconUrl && <img src={projectsConfig.sectionTitleIconUrl} alt="" className="w-4 h-4 mr-2 object-contain" />}
                 {projectsConfig.preTitle}
               </span>
             )}
-            <h2 className="home-section-title text-4xl md:text-5xl font-extrabold text-white">
+            <h2 className="home-section-title text-4xl md:text-6xl font-black text-white mb-4 tracking-tight">
               {projectsConfig.title || "Các Dịch Vụ Chính Của Chúng Tôi"}
             </h2>
-            <p className="home-section-subtitle text-gray-300">
+            <p className="home-section-subtitle text-gray-400 max-w-2xl mx-auto text-lg font-light">
               Khám phá loạt dịch vụ CNTT chuyên nghiệp của chúng tôi được thiết kế để nâng tầm doanh nghiệp của bạn.
             </p>
         </div>
@@ -119,9 +122,9 @@ const HomeFeaturedProjectsIts: React.FC = () => {
         )}
 
         {projectsConfig.buttonLink && projectsConfig.buttonText && featuredItems.length > 0 && (
-            <div className={`text-center mt-12 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`} style={{animationDelay: '0.3s'}}>
+            <div className={`text-center mt-16 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`} style={{animationDelay: '0.3s'}}>
                 <Link to={projectsConfig.buttonLink}>
-                <Button variant="primary" size="lg" className="px-10 py-3.5 text-base shadow-lg hover:shadow-primary/40">
+                <Button variant="primary" size="lg" className="px-10 py-3.5 text-base shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] bg-cyan-600 hover:bg-cyan-500 border-none">
                     {projectsConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                 </Button>
                 </Link>

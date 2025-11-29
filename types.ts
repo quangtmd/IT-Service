@@ -553,6 +553,8 @@ export interface HomepageBrandLogo {
 }
 export interface HomepageBrandLogosSettings {
   enabled: boolean;
+  preTitle?: string; // Added optional property
+  title?: string;    // Added optional property
   logos: HomepageBrandLogo[];
   sectionTitleIconUrl?: string; 
 }

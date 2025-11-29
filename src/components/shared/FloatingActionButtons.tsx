@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Constants from '../../constants';
 import { SiteSettings } from '../../types';
 import AIChatbot from '../chatbot/AIChatbot';
 import { useLocation } from 'react-router-dom';
 
-// 3D Robot Image for better visuals
-const ROBOT_3D_ICON = "https://cdn3d.iconscout.com/3d/premium/thumb/robot-assistant-5229582-4385800.png";
+// 3D Anime Cyberpunk Girl Icon (Updated as requested)
+const ROBOT_3D_ICON = "https://img.freepik.com/premium-photo/cute-futuristic-anime-girl-3d-render_950633-972.jpg";
 
 const WELCOME_MESSAGES = [
     "Xin chào! 👋",
@@ -95,18 +94,36 @@ const FloatingActionButtons: React.FC = () => {
                             </p>
                         </div>
 
-                        {/* 3D Robot Icon */}
-                        <div className="w-16 h-16 relative hover:scale-110 transition-transform duration-300">
-                            {/* Pulse effect behind robot */}
-                            <div className="absolute inset-0 bg-blue-500 rounded-full opacity-20 animate-ping"></div>
-                            <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full shadow-2xl border-2 border-white flex items-center justify-center overflow-hidden relative z-10">
-                                 <img src={ROBOT_3D_ICON} alt="AI Assistant" className="w-12 h-12 object-cover pt-1 drop-shadow-md" />
+                        {/* 3D Anime Girl Avatar Button */}
+                        <button 
+                            onClick={() => setIsChatOpen(true)} 
+                            className="w-16 h-16 relative hover:scale-110 transition-transform duration-300 focus:outline-none z-10"
+                            aria-label="Mở Chatbot AI" 
+                            title="Trợ lý AI"
+                        >
+                            {/* Define Wiggle Animation */}
+                            <style>{`
+                                @keyframes headWiggle {
+                                    0%, 100% { transform: rotate(-5deg); }
+                                    50% { transform: rotate(5deg); }
+                                }
+                            `}</style>
+
+                            {/* Pulse effect behind avatar */}
+                            <div className="absolute inset-0 bg-purple-500 rounded-full opacity-30 animate-ping"></div>
+                            
+                            {/* Avatar Container */}
+                            <div 
+                                className="w-full h-full rounded-full border-2 border-white/80 shadow-[0_0_15px_rgba(168,85,247,0.5)] overflow-hidden bg-gray-900 relative z-10" 
+                                style={{ animation: 'headWiggle 3s ease-in-out infinite' }}
+                            >
+                                 <img 
+                                    src={ROBOT_3D_ICON} 
+                                    alt="AI Assistant" 
+                                    className="w-full h-full object-cover" 
+                                 />
                             </div>
-                            {/* Notification Dot */}
-                            <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center z-20">
-                                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                            </span>
-                        </div>
+                        </button>
                     </div>
                 )}
             </div>

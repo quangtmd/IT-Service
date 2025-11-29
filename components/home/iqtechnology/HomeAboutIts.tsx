@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants';
-import { SiteSettings, HomepageAboutFeature } from '../../../types';
+import { SiteSettings } from '../../../types';
+import MovingBorderButton from '../../ui/MovingBorderButton';
 import { Canvas } from '@react-three/fiber';
-import TechShapes from '../three/TechShapes';
+import FloatingElements from '../three/FloatingElements';
 
 const HomeAboutIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
@@ -18,82 +18,70 @@ const HomeAboutIts: React.FC = () => {
     const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
     if (storedSettingsRaw) {
       setSettings(JSON.parse(storedSettingsRaw));
-    } else {
-      setSettings(Constants.INITIAL_SITE_SETTINGS);
     }
   }, []);
 
   useEffect(() => {
     loadSettings();
     window.addEventListener('siteSettingsUpdated', loadSettings);
-    return () => {
-      window.removeEventListener('siteSettingsUpdated', loadSettings);
-    };
+    return () => window.removeEventListener('siteSettingsUpdated', loadSettings);
   }, [loadSettings]);
 
   if (!aboutConfig.enabled) return null;
 
   return (
-    <section ref={sectionRef} className={`home-section bg-[#0B1120] text-white animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          
-          {/* 3D Scene Column (Replacing Image) */}
-          <div className="lg:w-1/2 h-[400px] lg:h-[500px] w-full relative rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black/40">
-            <div className={`absolute inset-0 animate-on-scroll ${isSectionVisible ? 'slide-in-left is-visible' : 'slide-in-left'}`} style={{animationDelay:'0.1s'}}>
-               <Canvas className="w-full h-full">
-                  <Suspense fallback={null}>
-                     <TechShapes />
-                  </Suspense>
-               </Canvas>
-               {/* Overlay for depth */}
-               <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#0B1120] to-transparent opacity-20"></div>
-            </div>
-          </div>
+    <section ref={sectionRef} className={`py-28 bg-[#020617] text-white relative overflow-hidden animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
+      {/* 3D Background Scene */}
+      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
+        <Canvas>
+            <Suspense fallback={null}>
+                <FloatingElements />
+            </Suspense>
+        </Canvas>
+      </div>
+      
+      {/* Gradient Overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-transparent to-[#020617] z-0 pointer-events-none"></div>
 
-          {/* Text Content Column */}
-          <div className="lg:w-1/2">
-            <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay:'0.2s'}}>
-                {aboutConfig.preTitle && (
-                  <span className="inline-flex items-center py-1 px-3 rounded-full bg-blue-900/50 text-blue-300 border border-blue-500/30 text-xs font-bold tracking-widest uppercase mb-4">
-                    <img src={settings.siteLogoUrl || ''} onError={(e) => (e.currentTarget.style.display = 'none')} alt={`${settings.companyName} logo`} className="inline h-4 mr-2 object-contain" />
+      <div className="container mx-auto px-4 relative z-10 text-center">
+        <div className="max-w-5xl mx-auto">
+             {/* Decorative Line */}
+             <div className="w-1 h-20 bg-gradient-to-b from-transparent via-cyan-500 to-transparent mx-auto mb-8 opacity-50"></div>
+
+             {aboutConfig.preTitle && (
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-bold tracking-widest uppercase mb-6 backdrop-blur-md">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
                     {aboutConfig.preTitle}
-                  </span>
-                )}
-                <h2 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
-                    {aboutConfig.title || "Default About Us Title"}
-                </h2>
-                <p className="text-gray-300 mt-4 mb-8 leading-relaxed text-lg">
-                    {aboutConfig.description || "Default about us description."}
-                </p>
+                </div>
+             )}
 
-                {aboutConfig.features && aboutConfig.features.length > 0 && (
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
-                        {aboutConfig.features.map((item: HomepageAboutFeature, index) => (
-                        <li key={item.id || index} className={`flex items-start p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay: `${0.3 + index * 0.1}s`}}>
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 mr-4">
-                                <i className={`${item.icon || 'fas fa-star'} text-lg`}></i>
-                            </div>
-                            <div>
-                                <h4 className="text-lg font-semibold text-white">{item.title}</h4>
-                                <p className="text-gray-400 text-sm mt-1 leading-relaxed">{item.description}</p>
-                            </div>
-                        </li>
-                        ))}
-                    </ul>
-                )}
-                
-                {aboutConfig.buttonLink && aboutConfig.buttonText && (
-                    <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{ animationDelay: '0.5s' }}>
-                        <Link to={aboutConfig.buttonLink}>
-                        <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.8)] transition-all border border-blue-500">
-                            {aboutConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
-                        </Button>
-                        </Link>
+             <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-8 leading-[1.1] tracking-tight drop-shadow-2xl">
+                {aboutConfig.title}
+             </h2>
+
+             <p className="text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed font-light max-w-3xl mx-auto text-shadow-sm">
+                {aboutConfig.description}
+             </p>
+
+             <div className="flex flex-col sm:flex-row justify-center gap-6 items-center mb-12">
+                {aboutConfig.features.slice(0, 3).map((item, idx) => (
+                    <div key={idx} className="flex flex-col items-center p-6 backdrop-blur-md bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors duration-300 w-full sm:w-64 group">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center mb-4 text-cyan-300 text-2xl shadow-[0_0_20px_rgba(34,211,238,0.2)] group-hover:scale-110 transition-transform">
+                            <i className={item.icon || 'fas fa-star'}></i>
+                        </div>
+                        <h4 className="font-bold text-white uppercase tracking-wide text-sm mb-2">{item.title}</h4>
+                        <p className="text-xs text-gray-400 line-clamp-2">{item.description}</p>
                     </div>
-                )}
-            </div>
-          </div>
+                ))}
+             </div>
+
+             <div className="mt-4">
+                <Link to={aboutConfig.buttonLink || '/about'}>
+                    <MovingBorderButton>
+                        {aboutConfig.buttonText || "KHÁM PHÁ THÊM"}
+                    </MovingBorderButton>
+                </Link>
+             </div>
         </div>
       </div>
     </section>

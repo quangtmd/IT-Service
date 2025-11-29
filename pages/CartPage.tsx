@@ -1,20 +1,31 @@
 
-
 import React from 'react';
 // Fix: Use named imports for react-router-dom components and hooks
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import Button from '../components/ui/Button';
 import { CartItem, CustomPCBuildCartItem } from '../types';
+import { useToast } from '../contexts/ToastContext';
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
   // Fix: Use useNavigate directly
   const navigate = useNavigate();
+  const { success, warning } = useToast();
 
   const handleCheckout = () => {
     navigate('/checkout'); // Changed from history.push
   };
+
+  const handleClearCart = () => {
+      clearCart();
+      warning('Đã xóa toàn bộ giỏ hàng.');
+  }
+
+  const handleRemoveItem = (id: string) => {
+      removeFromCart(id);
+      warning('Đã xóa sản phẩm khỏi giỏ hàng.');
+  }
 
   if (cart.length === 0) {
     return (
@@ -101,7 +112,7 @@ const CartPage: React.FC = () => {
                 <p className="font-semibold text-textBase w-28 text-right mb-2 sm:mb-0">
                   {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}
                 </p>
-                <button onClick={() => removeFromCart(item.id)} className="text-danger-text hover:text-red-700 text-lg sm:text-xl" aria-label="Xóa khỏi giỏ hàng">
+                <button onClick={() => handleRemoveItem(item.id)} className="text-danger-text hover:text-red-700 text-lg sm:text-xl" aria-label="Xóa khỏi giỏ hàng">
                   <i className="fas fa-trash-alt"></i>
                 </button>
               </div>
@@ -110,7 +121,7 @@ const CartPage: React.FC = () => {
         })}
 
         <div className="mt-8 flex flex-col sm:flex-row justify-between items-center">
-          <Button variant="outline" onClick={clearCart} className="mb-4 sm:mb-0 border-danger-border text-danger-text hover:bg-danger-bg">
+          <Button variant="outline" onClick={handleClearCart} className="mb-4 sm:mb-0 border-danger-border text-danger-text hover:bg-danger-bg">
             Xóa tất cả giỏ hàng
           </Button>
           <div className="text-right">

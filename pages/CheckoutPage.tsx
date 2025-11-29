@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 // Fix: Use named imports for react-router-dom components and hooks
 import { Link, useNavigate } from 'react-router-dom';
@@ -7,10 +8,12 @@ import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants.tsx';
 import { CheckoutFormData, Order, PaymentInfo } from '../types';
 import { addOrder } from '../services/localDataService';
+import { useToast } from '../contexts/ToastContext';
 
 const CheckoutPage: React.FC = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
   const { currentUser, isAuthenticated, addAdminNotification } = useAuth();
+  const { error: toastError, success } = useToast();
   // Fix: Use useNavigate directly
   const navigate = useNavigate();
 
@@ -86,6 +89,7 @@ const CheckoutPage: React.FC = () => {
         await addOrder(newOrder);
 
         addAdminNotification(`Đơn hàng mới #${newOrder.id.slice(-6)} từ ${formData.fullName} đã được tạo.`, 'success');
+        success("Đặt hàng thành công!");
         setSubmittedOrder(newOrder);
 
         if (paymentMethod === 'cod') {
@@ -96,7 +100,7 @@ const CheckoutPage: React.FC = () => {
         }
     } catch (error) {
         console.error("Lỗi khi tạo đơn hàng:", error);
-        alert('Đã xảy ra lỗi không mong muốn khi tạo đơn hàng. ' + (error instanceof Error ? error.message : ''));
+        toastError('Đã xảy ra lỗi không mong muốn khi tạo đơn hàng. ' + (error instanceof Error ? error.message : ''));
     } finally {
         setIsSubmitting(false);
     }

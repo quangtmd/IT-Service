@@ -19,10 +19,14 @@ export const ADMIN_EMAIL = "quangtmdit@gmail.com";
 
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
 
-// In development, this will be an empty string to use the Vite proxy. In production, it will be the deployed backend URL.
-// Robust fallback for production deployment on Render
-export const BACKEND_API_BASE_URL = (process.env.VITE_BACKEND_API_BASE_URL && process.env.VITE_BACKEND_API_BASE_URL !== '') 
-    ? process.env.VITE_BACKEND_API_BASE_URL 
+// --- BACKEND API CONFIGURATION ---
+// STRATEGY:
+// 1. In Development (npm run dev): Use "" (empty string). 
+//    This forces requests to go to "/api/...", which triggers the Vite Proxy defined in vite.config.ts.
+//    The Proxy then forwards to http://127.0.0.1:3001. This solves CORS issues locally.
+// 2. In Production: Use the full Render URL.
+export const BACKEND_API_BASE_URL = import.meta.env.DEV 
+    ? "" 
     : "https://it-service-app-n9as.onrender.com";
 
 // --- STORAGE KEYS ---

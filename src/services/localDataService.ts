@@ -30,16 +30,16 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
     }
 };
 
-
-// Use environment variable for API base URL if available (e.g. in production with separate backend)
-// Otherwise default to relative path (which uses proxy in dev or same-origin in prod monolith)
-const API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
+// --- API BASE URL CONFIGURATION ---
+// Use the centralized configuration from constants to ensure consistency.
+// In Dev: "" (Proxy). In Prod: "https://..."
+const API_BASE_URL = Constants.BACKEND_API_BASE_URL;
+console.log(`[API Config] Connected to Backend: ${API_BASE_URL}`);
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // All API endpoints are prefixed with /api on the server.
     // This ensures the correct path is always used.
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const fullEndpoint = `/api${cleanEndpoint}`;
+    const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
     try {
@@ -52,28 +52,33 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            // Simplified, more robust error message for a monolithic setup.
-            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
+            const errorData = await response.json().catch(() => null);
+            const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
+            
+            // Special handling for 404 HTML responses (often means hitting Frontend instead of Backend)
+            const contentType = response.headers.get("content-type");
+            if (response.status === 404 && (errorMessageDetails.includes('File not found') || (contentType && contentType.includes("text/html")))) {
+                 throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Vui lòng kiểm tra cấu hình Backend.`);
+            }
+
+            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}`;
+            console.error(`API Request Failed: ${fullEndpoint}`, errorMessage);
             throw new Error(errorMessage);
         }
         
-        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
+        console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            // This now more clearly indicates a server-down issue.
-            throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động.');
+            throw new Error(`Không thể kết nối tới Server (${API_BASE_URL}). Vui lòng kiểm tra đường truyền hoặc trạng thái Server.`);
         }
-        // Re-throw other errors (like the custom one from response.ok check)
         throw error;
     }
 }
 
 // --- User Service ---
-// Note: The endpoint now starts with /users, and /api is prepended by fetchFromApi
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
 export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
@@ -81,14 +86,24 @@ export const updateUser = (id: string, updates: Partial<User>): Promise<User> =>
 export const deleteUser = (id: string): Promise<void> => fetchFromApi<void>(`/users/${id}`, { method: 'DELETE' });
 
 // --- Product Service ---
-export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryParams}`);
+export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => {
+    // Remove leading '?' if present in queryParams to avoid double '??'
+    const queryString = queryParams.startsWith('?') ? queryParams.slice(1) : queryParams;
+    return fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryString}`);
+};
 export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product>(`/products/${id}`);
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
+
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    // Use the specific endpoint alias to avoid routing conflicts or filter issues
-    return fetchFromApi<Product[]>('/featured-products');
+    try {
+        // Call the specific endpoint for featured products which returns an array directly
+        return await fetchFromApi<Product[]>('/products/featured');
+    } catch (error) {
+        console.error("Failed to fetch featured products", error);
+        return [];
+    }
 }
 
 // --- Article Service ---
@@ -124,7 +139,6 @@ export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 
 export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
-// Updated to accept array of records
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/financials/payroll', { 
         method: 'POST', 

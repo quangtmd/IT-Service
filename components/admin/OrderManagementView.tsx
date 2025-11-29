@@ -3,7 +3,7 @@ import { Order, OrderStatus } from '../../types';
 import Button from '../ui/Button';
 import { getOrders, deleteOrder } from '../../services/localDataService';
 import BackendConnectionError from '../../components/shared/BackendConnectionError';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 type StatusFilter = 'all' | OrderStatus;
 
@@ -41,7 +41,7 @@ const OrderManagementView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
-    const navigate = ReactRouterDOM.useNavigate();
+    const navigate = useNavigate();
     const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
     const loadOrders = useCallback(async () => {

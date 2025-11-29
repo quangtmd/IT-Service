@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useLocation, useNavigate, Routes, Route, Link } from 'react-router-dom';
 import { User, AdminNotification, AdminView } from '../types';
 import { useAuth, AdminPermission } from '../contexts/AuthContext';
 
@@ -67,8 +67,8 @@ interface MenuItemConfig {
 
 const AdminPage: React.FC = () => {
     const { currentUser, adminNotifications, hasPermission } = useAuth();
-    const location = ReactRouterDOM.useLocation();
-    const navigate = ReactRouterDOM.useNavigate();
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const [activeView, setActiveView] = useState<AdminView>('dashboard');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
@@ -329,46 +329,46 @@ const AdminPage: React.FC = () => {
                     currentUser={currentUser}
                 />
                 <div className="admin-content-area">
-                    <ReactRouterDOM.Routes>
+                    <Routes>
                         {/* Define form pages first as they are more specific */}
-                        <ReactRouterDOM.Route path="/products/new" element={<ProductFormPage />} />
-                        <ReactRouterDOM.Route path="/products/edit/:productId" element={<ProductFormPage />} />
-                        <ReactRouterDOM.Route path="/hrm_dashboard/new" element={<UserFormPage />} />
-                        <ReactRouterDOM.Route path="/hrm_dashboard/edit/:userId" element={<UserFormPage />} />
-                        <ReactRouterDOM.Route path="/customers/new" element={<CustomerFormPage />} />
-                        <ReactRouterDOM.Route path="/customers/edit/:customerId" element={<CustomerFormPage />} />
-                        <ReactRouterDOM.Route path="/customers/view/:customerId" element={<CustomerProfilePage />} />
-                        <ReactRouterDOM.Route path="/articles/new" element={<ArticleFormPage />} />
-                        <ReactRouterDOM.Route path="/articles/edit/:articleId" element={<ArticleFormPage />} />
-                        <ReactRouterDOM.Route path="/discounts/new" element={<DiscountFormPage />} />
-                        <ReactRouterDOM.Route path="/discounts/edit/:discountId" element={<DiscountFormPage />} />
-                        <ReactRouterDOM.Route path="/faqs/new" element={<FaqFormPage />} />
-                        <ReactRouterDOM.Route path="/faqs/edit/:faqId" element={<FaqFormPage />} />
-                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/new" element={<TransactionFormPage />} />
-                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
-                        <ReactRouterDOM.Route path="/quotations/new" element={<QuotationFormPage />} />
-                        <ReactRouterDOM.Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
-                        <ReactRouterDOM.Route path="/orders/new" element={<OrderFormPage />} />
-                        <ReactRouterDOM.Route path="/orders/edit/:orderId" element={<OrderFormPage />} />
-                        <ReactRouterDOM.Route path="/returns/new" element={<ReturnFormPage />} />
-                        <ReactRouterDOM.Route path="/returns/edit/:returnId" element={<ReturnFormPage />} />
-                        <ReactRouterDOM.Route path="/suppliers/new" element={<SupplierFormPage />} />
-                        <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
-                        <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
-                        <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
-                        <ReactRouterDOM.Route path="/warranty_tickets/new" element={<WarrantyFormPage />} />
-                        <ReactRouterDOM.Route path="/warranty_tickets/edit/:ticketId" element={<WarrantyFormPage />} />
-                        <ReactRouterDOM.Route path="/stock_receipts/new" element={<StockReceiptFormPage />} />
-                        <ReactRouterDOM.Route path="/stock_receipts/edit/:id" element={<StockReceiptFormPage />} />
-                        <ReactRouterDOM.Route path="/stock_issues/new" element={<StockIssueFormPage />} />
-                        <ReactRouterDOM.Route path="/stock_issues/edit/:id" element={<StockIssueFormPage />} />
-                        <ReactRouterDOM.Route path="/stock_transfers/new" element={<StockTransferFormPage />} />
-                        <ReactRouterDOM.Route path="/stock_transfers/edit/:id" element={<StockTransferFormPage />} />
+                        <Route path="/products/new" element={<ProductFormPage />} />
+                        <Route path="/products/edit/:productId" element={<ProductFormPage />} />
+                        <Route path="/hrm_dashboard/new" element={<UserFormPage />} />
+                        <Route path="/hrm_dashboard/edit/:userId" element={<UserFormPage />} />
+                        <Route path="/customers/new" element={<CustomerFormPage />} />
+                        <Route path="/customers/edit/:customerId" element={<CustomerFormPage />} />
+                        <Route path="/customers/view/:customerId" element={<CustomerProfilePage />} />
+                        <Route path="/articles/new" element={<ArticleFormPage />} />
+                        <Route path="/articles/edit/:articleId" element={<ArticleFormPage />} />
+                        <Route path="/discounts/new" element={<DiscountFormPage />} />
+                        <Route path="/discounts/edit/:discountId" element={<DiscountFormPage />} />
+                        <Route path="/faqs/new" element={<FaqFormPage />} />
+                        <Route path="/faqs/edit/:faqId" element={<FaqFormPage />} />
+                        <Route path="/accounting_dashboard/transactions/new" element={<TransactionFormPage />} />
+                        <Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
+                        <Route path="/quotations/new" element={<QuotationFormPage />} />
+                        <Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
+                        <Route path="/orders/new" element={<OrderFormPage />} />
+                        <Route path="/orders/edit/:orderId" element={<OrderFormPage />} />
+                        <Route path="/returns/new" element={<ReturnFormPage />} />
+                        <Route path="/returns/edit/:returnId" element={<ReturnFormPage />} />
+                        <Route path="/suppliers/new" element={<SupplierFormPage />} />
+                        <Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
+                        <Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
+                        <Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
+                        <Route path="/warranty_tickets/new" element={<WarrantyFormPage />} />
+                        <Route path="/warranty_tickets/edit/:ticketId" element={<WarrantyFormPage />} />
+                        <Route path="/stock_receipts/new" element={<StockReceiptFormPage />} />
+                        <Route path="/stock_receipts/edit/:id" element={<StockReceiptFormPage />} />
+                        <Route path="/stock_issues/new" element={<StockIssueFormPage />} />
+                        <Route path="/stock_issues/edit/:id" element={<StockIssueFormPage />} />
+                        <Route path="/stock_transfers/new" element={<StockTransferFormPage />} />
+                        <Route path="/stock_transfers/edit/:id" element={<StockTransferFormPage />} />
                         
                         {/* Generic route for views */}
-                        <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />
-                        <ReactRouterDOM.Route path="/" element={renderContent('dashboard')} />
-                    </ReactRouterDOM.Routes>
+                        <Route path="/:viewId/*" element={renderContent(activeView)} />
+                        <Route path="/" element={renderContent('dashboard')} />
+                    </Routes>
                 </div>
             </main>
         </div>
@@ -437,7 +437,7 @@ const AdminSidebar: React.FC<{
             <div className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
             <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`}>
                 <div className="admin-sidebar-header justify-between">
-                    {!isCollapsed && <ReactRouterDOM.Link to="/"><span className="text-xl font-bold text-white">IQ Technology</span></ReactRouterDOM.Link>}
+                    {!isCollapsed && <Link to="/"><span className="text-xl font-bold text-white">IQ Technology</span></Link>}
                     <button onClick={onToggleCollapse} className="hidden lg:block text-slate-400 hover:text-white text-lg">
                         <i className={`fas ${isCollapsed ? 'fa-align-right' : 'fa-align-left'}`}></i>
                     </button>
@@ -449,10 +449,10 @@ const AdminSidebar: React.FC<{
                     {menuConfig.map(item => renderSidebarItem(item))}
                 </nav>
                 <div className="admin-sidebar-footer">
-                    <ReactRouterDOM.Link to="/" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
+                    <Link to="/" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
                         <i className="fas fa-globe w-6 text-center mr-3"></i>
                         {!isCollapsed && <span className="text-sm">Về trang chủ</span>}
-                    </ReactRouterDOM.Link>
+                    </Link>
                 </div>
             </aside>
         </>
@@ -471,9 +471,9 @@ const AdminHeader: React.FC<{
         </div>
          <div className="flex items-center gap-4">
             <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
-            <ReactRouterDOM.Link to="/">
+            <Link to="/">
                 <i className="fas fa-user-circle text-2xl text-admin-textSecondary hover:text-primary"></i>
-            </ReactRouterDOM.Link>
+            </Link>
         </div>
     </header>
 );

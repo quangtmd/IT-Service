@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 // Fix: Use named import for useNavigate
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -11,6 +12,7 @@ import Card from '../components/ui/Card';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../contexts/AuthContext';
 import { useChatbotContext } from '../contexts/ChatbotContext';
+import { useToast } from '../contexts/ToastContext';
 
 type BuilderSelectorKey = 'CPU' | 'Motherboard' | 'RAM' | 'GPU' | 'SSD' | 'PSU' | 'Case';
 type SelectedComponents = Partial<Record<BuilderSelectorKey, string>>;
@@ -51,6 +53,7 @@ export const PCBuilderPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setCurrentContext } = useChatbotContext();
+  const { success, error: toastError, warning } = useToast();
 
   useEffect(() => {
     setCurrentContext('Khách hàng đang ở trang Xây Dựng Cấu Hình PC.');
@@ -91,6 +94,9 @@ export const PCBuilderPage: React.FC = () => {
       setAiRecommendation(recommendation);
       if (recommendation.error) {
         setError(recommendation.error);
+        toastError(recommendation.error);
+      } else {
+        success('AI đã đề xuất cấu hình thành công!');
       }
     } catch (err) {
       console.error("Lỗi khi nhận đề xuất từ AI:", err);
@@ -100,11 +106,12 @@ export const PCBuilderPage: React.FC = () => {
           setError(Constants.API_KEY_ERROR_MESSAGE);
       } else {
           setError(errorMessage);
+          toastError('Đã xảy ra lỗi khi gọi AI.');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [useCase, budget, selectedComponents]); // Added dependencies
+  }, [useCase, budget, selectedComponents, success, toastError]); // Added dependencies
 
 
   // Handle loading a custom build from URL (e.g., from CartPage)
@@ -153,7 +160,7 @@ export const PCBuilderPage: React.FC = () => {
   const handleAddToCart = () => {
     if (!selectedComponents.CPU || !selectedComponents.Motherboard || !selectedComponents.RAM ||
         !selectedComponents.GPU || !selectedComponents.SSD || !selectedComponents.PSU || !selectedComponents.Case) {
-        alert('Vui lòng chọn đủ tất cả các linh kiện PC.');
+        warning('Vui lòng chọn đủ tất cả các linh kiện PC.');
         return;
     }
 
@@ -213,7 +220,7 @@ export const PCBuilderPage: React.FC = () => {
 
     addToCart(customBuildProduct, 1);
     addAdminNotification(`Đã thêm cấu hình PC tùy chỉnh vào giỏ hàng: ${buildName}`, 'success');
-    alert('Cấu hình PC đã được thêm vào giỏ hàng!');
+    success('Cấu hình PC đã được thêm vào giỏ hàng!');
   };
 
   return (

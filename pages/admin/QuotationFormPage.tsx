@@ -3,12 +3,12 @@ import { Quotation, QuotationItem, User, Product, SiteSettings } from '../../typ
 import Button from '../../components/ui/Button';
 import { getQuotations, addQuotation, updateQuotation } from '../../services/localDataService';
 import { getUsers, getProducts } from '../../services/localDataService';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import * as Constants from '../../constants';
 
 const QuotationFormPage: React.FC = () => {
-    const { quotationId } = ReactRouterDOM.useParams<{ quotationId: string }>();
-    const navigate = ReactRouterDOM.useNavigate();
+    const { quotationId } = useParams<{ quotationId: string }>();
+    const navigate = useNavigate();
     const isEditing = !!quotationId;
 
     const [formData, setFormData] = useState<Quotation | null>(null);

@@ -14,7 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.set('trust proxy', true);
-app.use(cors());
+app.use(cors()); // Allow all CORS requests for development
 app.use(express.json({ limit: '10mb' }));
 
 // --- LOGGING MIDDLEWARE ---
@@ -83,10 +83,12 @@ apiRouter.get('/health', async (req, res) => {
 
 // === USERS ===
 apiRouter.get('/users', async (req, res) => {
+    console.log("DEBUG: Fetching users...");
     try {
         const [rows] = await pool.query('SELECT * FROM Users');
         res.json(rows.map(deserializeUser));
     } catch (error) {
+        console.error('Error fetching users:', error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -106,25 +108,8 @@ apiRouter.post('/users/login', async (req, res) => {
 });
 
 // === PRODUCTS ===
-// QUAN TRỌNG: Định nghĩa các route cụ thể TRƯỚC route động /:id
 
-// 1. Featured Products (Alias để tránh xung đột và hỗ trợ legacy)
-const getFeaturedHandler = async (req, res) => {
-    try {
-        // Prioritize products marked as featured, then expensive ones
-        const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
-        const [rows] = await pool.query(query);
-        res.json(rows.map(deserializeProduct));
-    } catch (error) {
-        console.error("Lỗi lấy sản phẩm nổi bật:", error);
-        res.status(500).json({ message: "Lỗi server", error: error.message });
-    }
-};
-
-apiRouter.get('/featured-products', getFeaturedHandler);
-apiRouter.get('/products/featured', getFeaturedHandler); // Handle legacy URL
-
-// 2. Product List & Filter
+// Product List & Filter (Handles query params including is_featured)
 apiRouter.get('/products', async (req, res) => {
     try {
         const { mainCategory, subCategory, q, tags, limit = 1000, page = 1, is_featured } = req.query;
@@ -143,16 +128,35 @@ apiRouter.get('/products', async (req, res) => {
         const totalProducts = countRows[0].total;
 
         const offset = (Number(page) - 1) * Number(limit);
-        const productQuery = `SELECT p.* ${baseQuery} ${whereString} ORDER BY p.id DESC LIMIT ? OFFSET ?`;
+        
+        // Ordering logic
+        let orderBy = 'p.id DESC';
+        if (is_featured === 'true') {
+             orderBy = 'p.is_featured DESC, p.price DESC';
+        }
+
+        const productQuery = `SELECT p.* ${baseQuery} ${whereString} ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
         const [products] = await pool.query(productQuery, [...params, Number(limit), offset]);
         
         res.json({ products: products.map(deserializeProduct), totalProducts });
     } catch (error) {
+        console.error("Error fetching products:", error);
         res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 });
 
-// 3. Product Detail (Dynamic ID) - Đặt cuối cùng trong nhóm products
+// Featured Products - Alias Route (Must be before /products/:id)
+apiRouter.get('/products/featured', async (req, res) => {
+    try {
+        const [products] = await pool.query(`SELECT * FROM Products WHERE is_featured = 1 ORDER BY id DESC LIMIT 4`);
+        res.json(products.map(deserializeProduct));
+    } catch (error) {
+        console.error("Error fetching featured products:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes
 apiRouter.get('/products/:id', async (req, res) => {
     try {
         const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);
@@ -229,12 +233,25 @@ apiRouter.get('/users/:userId/orders', async (req, res) => {
 // Mount API Router
 app.use('/api', apiRouter);
 
-// Serve Static Files
+// 404 Handler for API requests
+app.use('/api/*', (req, res) => {
+    console.log(`❌ 404 Not Found (API catch-all): ${req.originalUrl}`);
+    res.status(404).json({ message: `API endpoint not found: ${req.originalUrl}` });
+});
+
+// Root route for health check
+app.get('/', (req, res) => {
+    res.send("Backend is running!");
+});
+
+// Serve Static Files (only in production)
 if (process.env.NODE_ENV === 'production') {
     const projectRoot = path.resolve(__dirname, '..');
     app.use(express.static(path.join(projectRoot, 'dist')));
     app.get('*', (req, res) => {
-        if (req.path.startsWith('/api/')) return res.status(404).json({ message: `API not found: ${req.path}` });
+        if (req.path.startsWith('/api/')) {
+             return res.status(404).json({ message: `API not found: ${req.path}` });
+        }
         res.sendFile(path.resolve(projectRoot, 'dist', 'index.html'));
     });
 }

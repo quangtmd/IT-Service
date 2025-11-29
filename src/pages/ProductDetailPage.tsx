@@ -1,14 +1,18 @@
 
+
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Product } from '../types';
 import Button from '../components/ui/Button';
+import CustomButton from '../components/ui/CustomButton';
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
 import { getProduct, getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError'; 
 import { useChatbotContext } from '../contexts/ChatbotContext'; 
+import ImageMagnifier from '../components/ui/ImageMagnifier'; // Import the new component
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -132,10 +136,15 @@ const ProductDetailPage: React.FC = () => {
             
             {/* Image Section */}
             <div className="lg:col-span-2 p-4 md:p-0">
-              <div className="mb-4 border border-borderDefault rounded-lg overflow-hidden bg-white relative group">
-                <img src={mainImage} alt={product.name} className="w-full h-auto object-contain max-h-[300px] md:max-h-[450px] mx-auto transition-transform duration-300 group-hover:scale-105" />
+              <div className="mb-4 border border-borderDefault rounded-lg bg-white relative group flex justify-center items-center p-2 min-h-[300px] md:min-h-[400px]">
+                <ImageMagnifier 
+                    src={mainImage} 
+                    alt={product.name} 
+                    className="h-auto max-h-[300px] md:max-h-[450px] w-auto max-w-full object-contain mx-auto cursor-crosshair"
+                    zoomLevel={2.5}
+                />
                 {savings > 0 && (
-                    <span className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow">-{Math.round((savings / (product.originalPrice || 1)) * 100)}%</span>
+                    <span className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow z-10">-{Math.round((savings / (product.originalPrice || 1)) * 100)}%</span>
                 )}
               </div>
               {product.imageUrls && product.imageUrls.length > 1 && (
@@ -251,7 +260,7 @@ const ProductDetailPage: React.FC = () => {
                             {Object.entries(product.specifications).map(([key, value], index) => (
                                 <tr key={key} className={`border-b border-borderDefault ${index % 2 === 0 ? 'bg-bgCanvas' : 'bg-bgBase'}`}>
                                     <td className="py-2 px-3 md:px-4 font-semibold text-textBase w-1/3 md:w-1/4">{key}</td>
-                                    <td className="py-2 px-3 md:px-4 text-textMuted">{value}</td>
+                                    <td className="py-2 px-3 md:px-4 text-textMuted">{String(value)}</td>
                                 </tr>
                             ))}
                             </tbody>
@@ -280,20 +289,20 @@ const ProductDetailPage: React.FC = () => {
               <span className="text-lg font-bold text-primary leading-none">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}</span>
           </div>
           <div className="flex-grow flex gap-2">
-             <button 
+             <CustomButton 
                 onClick={handleAddToCart} 
                 disabled={product.stock <= 0}
-                className="flex-1 bg-primary/10 text-primary border border-primary font-bold py-2.5 rounded-lg text-sm active:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-             >
-                <i className="fas fa-cart-plus"></i>
-             </button>
-             <button 
+                variant="outline"
+                className="flex-1"
+                icon="fas fa-cart-plus"
+             />
+             <CustomButton 
                 onClick={handleBuyNow} 
                 disabled={product.stock <= 0}
-                className="flex-[2] bg-primary text-white font-bold py-2.5 rounded-lg text-sm shadow-md active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-[2]"
              >
                 {product.stock > 0 ? 'Mua Ngay' : 'Hết Hàng'}
-             </button>
+             </CustomButton>
           </div>
       </div>
     </div>

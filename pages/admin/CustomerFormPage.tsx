@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
-// Fix: Import DebtStatus type to correctly type DEBT_STATUS_OPTIONS and resolve type errors.
 import { User, DebtStatus } from '../../types';
 import Button from '../../components/ui/Button';
 import ImageUploadInput from '../../components/ui/ImageUploadInput';
 import { useAuth } from '../../contexts/AuthContext';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const DEBT_STATUS_OPTIONS: Array<DebtStatus> = ['Không có', 'Có nợ', 'Quá hạn'];
 const CUSTOMER_ORIGIN_OPTIONS: string[] = ['Website', 'Facebook Ads', 'Giới thiệu', 'Khác'];
 
 const CustomerFormPage: React.FC = () => {
-    const { customerId } = ReactRouterDOM.useParams<{ customerId: string }>();
-    const navigate = ReactRouterDOM.useNavigate();
+    const { customerId } = useParams<{ customerId: string }>();
+    const navigate = useNavigate();
     const { users, addUser, updateUser, hasPermission } = useAuth();
     const isEditing = !!customerId;
 

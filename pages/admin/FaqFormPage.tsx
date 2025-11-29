@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaqItem } from '../../types';
 import Button from '../../components/ui/Button';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import * as Constants from '../../constants';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
@@ -16,8 +16,8 @@ const setLocalStorageItem = <T,>(key: string, value: T) => {
 };
 
 const FaqFormPage: React.FC = () => {
-    const { faqId } = ReactRouterDOM.useParams<{ faqId: string }>();
-    const navigate = ReactRouterDOM.useNavigate();
+    const { faqId } = useParams<{ faqId: string }>();
+    const navigate = useNavigate();
     const isEditing = !!faqId;
 
     const [formData, setFormData] = useState<FaqItem | null>(null);

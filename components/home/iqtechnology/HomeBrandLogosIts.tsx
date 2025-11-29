@@ -1,8 +1,30 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
-import { SiteSettings, HomepageBrandLogo } from '../../../types';
+import { SiteSettings } from '../../../types';
+import SpotlightCard from '../../ui/SpotlightCard';
+import { Canvas } from '@react-three/fiber';
+import DigitalGridBackground from '../three/DigitalGridBackground';
+
+const ARSENAL_ICONS: Record<string, string> = {
+    'React': 'fab fa-react',
+    'JS': 'fab fa-js', 'JavaScript': 'fab fa-js',
+    'Node': 'fab fa-node', 'Node.js': 'fab fa-node',
+    'AWS': 'fab fa-aws',
+    'Docker': 'fab fa-docker',
+    'Python': 'fab fa-python',
+    'Java': 'fab fa-java',
+    'HTML': 'fab fa-html5',
+    'CSS': 'fab fa-css3-alt',
+    'Linux': 'fab fa-linux',
+    'Database': 'fas fa-database',
+    'Security': 'fas fa-shield-alt',
+    'Cloud': 'fas fa-cloud',
+    'AI': 'fas fa-brain',
+};
+
+const COLORS = ['text-cyan-400', 'text-purple-400', 'text-blue-400', 'text-green-400', 'text-orange-400', 'text-yellow-400', 'text-pink-400', 'text-red-400'];
 
 const HomeBrandLogosIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
@@ -14,39 +36,102 @@ const HomeBrandLogosIts: React.FC = () => {
     const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
     if (storedSettingsRaw) {
       setSettings(JSON.parse(storedSettingsRaw));
-    } else {
-      setSettings(Constants.INITIAL_SITE_SETTINGS);
     }
   }, []);
 
   useEffect(() => {
     loadSettings();
     window.addEventListener('siteSettingsUpdated', loadSettings);
-    return () => {
-      window.removeEventListener('siteSettingsUpdated', loadSettings);
-    };
+    return () => window.removeEventListener('siteSettingsUpdated', loadSettings);
   }, [loadSettings]);
 
-  if (!brandLogosConfig.enabled || !brandLogosConfig.logos || brandLogosConfig.logos.length === 0) return null;
+  if (!brandLogosConfig.enabled) return null;
   
-  const sortedLogos = [...brandLogosConfig.logos].sort((a,b) => (a.order || 0) - (b.order || 0));
+  // Transform generic logos into "Tech Arsenal" items for the visual style
+  const arsenalItems = (brandLogosConfig.logos || []).map((logo, index) => {
+      // Heuristic to find an icon based on name
+      let icon = 'fas fa-microchip'; // Default
+      const nameLower = logo.name.toLowerCase();
+      for (const key in ARSENAL_ICONS) {
+          if (nameLower.includes(key.toLowerCase())) {
+              icon = ARSENAL_ICONS[key];
+              break;
+          }
+      }
+      
+      // Mock percentage for visual effect if not present
+      const percentage = 70 + (index * 11 % 30); 
+      const color = COLORS[index % COLORS.length];
+
+      return { ...logo, icon, percentage, color };
+  }).sort((a,b) => (a.order || 0) - (b.order || 0));
+
+  if (arsenalItems.length === 0) return null;
 
   return (
-    <div ref={ref} className={`py-12 md:py-20 bg-bgMuted animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
-      <div className="container mx-auto px-4">
-        <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-10 md:gap-x-20 lg:gap-x-24">
-          {sortedLogos.map((brand: HomepageBrandLogo, index) => (
-            <div 
-              key={brand.id || index} 
-              className="opacity-60 hover:opacity-100 transition-all duration-300 filter grayscale hover:grayscale-0 transform hover:scale-105"
-              style={{ animationDelay: `${index * 100}ms` }} 
-            >
-              <img src={brand.logoUrl || `https://picsum.photos/seed/defaultBrand${index}/180/80?grayscale&text=${brand.name || 'Brand'}`} alt={brand.name} className="h-10 md:h-12 object-contain" />
+    <section ref={ref} className={`py-28 bg-[#020617] text-white relative overflow-hidden animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''}`}>
+       {/* 3D Background Scene */}
+       <div className="absolute inset-0 z-0 opacity-30 pointer-events-none">
+         <Canvas>
+            <Suspense fallback={null}>
+                <DigitalGridBackground />
+            </Suspense>
+         </Canvas>
+       </div>
+       
+       {/* Overlay */}
+       <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-transparent to-[#020617] z-0 pointer-events-none"></div>
+
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-bold tracking-widest uppercase mb-4 backdrop-blur-md">
+                <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+                {brandLogosConfig.preTitle || "NỀN TẢNG KỸ THUẬT"}
             </div>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white to-white/40 font-sans">
+                {brandLogosConfig.title || "KHO VŨ KHÍ CÔNG NGHỆ"}
+            </h2>
+             <p className="text-gray-400 text-lg max-w-2xl mx-auto font-light">
+                Làm chủ các công nghệ tiên tiến nhất.
+            </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+          {arsenalItems.map((item, index) => (
+            <SpotlightCard 
+                key={item.id || index} 
+                className="!p-6 flex flex-col items-center justify-center gap-4 group bg-white/5 backdrop-blur-md border border-white/5 transition-all duration-300 
+                           hover:bg-white/10 hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] hover:-translate-y-2 hover:scale-105 cursor-pointer"
+                style={{ animationDelay: `${index * 50}ms` }} 
+                spotlightColor="rgba(168, 85, 247, 0.2)"
+            >
+                {/* Icon or Image */}
+                <div className={`text-4xl ${item.color} transition-transform duration-300 group-hover:scale-125 group-hover:rotate-12 filter drop-shadow-lg h-12 flex items-center justify-center`}>
+                    {item.logoUrl ? (
+                        <img src={item.logoUrl} alt={item.name} className="h-full w-auto object-contain filter grayscale group-hover:grayscale-0 transition-all brightness-150" />
+                    ) : (
+                        <i className={item.icon}></i>
+                    )}
+                </div>
+                
+                <div className="text-center w-full">
+                    <h4 className="font-bold text-gray-200 text-lg tracking-wide mb-3 group-hover:text-white transition-colors">{item.name}</h4>
+                    
+                    {/* Progress Bar Effect */}
+                    <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gray-800"></div>
+                        <div 
+                            className={`h-full rounded-full bg-gradient-to-r from-transparent to-current ${item.color.replace('text-', 'bg-')} transition-all duration-1000 ease-out`} 
+                            style={{ width: `${item.percentage}%` }}
+                        ></div>
+                    </div>
+                    <span className="text-[10px] text-gray-500 mt-2 block font-mono uppercase tracking-widest group-hover:text-gray-300">{item.percentage}% THÀNH THẠO</span>
+                </div>
+            </SpotlightCard>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

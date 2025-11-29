@@ -1,15 +1,14 @@
+
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'url';
-// FIX: Import 'process' to resolve TypeScript error 'Property 'cwd' does not exist on type 'Process''.
-import process from 'process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, process.cwd(), '');
+    const env = loadEnv(mode, (process as any).cwd(), '');
 
     return {
         server: {
@@ -17,28 +16,35 @@ export default defineConfig(({ mode }) => {
             host: '0.0.0.0',
             proxy: {
                 '/api': {
-                    target: 'http://localhost:3001',
+                    target: 'http://127.0.0.1:3001', // Use 127.0.0.1 to avoid localhost IPv6 issues
                     changeOrigin: true,
+                    secure: false,
                 },
             },
         },
         preview: {
-            host: true, // This is equivalent to --host, allows network access
-            // Allow requests from Render's preview domains to prevent host header errors.
+            port: 3000,
+            host: true, 
             allowedHosts: ['.onrender.com'],
+            proxy: {
+                '/api': {
+                    target: 'http://127.0.0.1:3001',
+                    changeOrigin: true,
+                    secure: false,
+                },
+            },
         },
         plugins: [react()],
         resolve: {
             alias: {
-                '@': path.resolve(__dirname, './'),
+                '@': path.resolve(__dirname, './src'),
             }
         },
         define: {
-            'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
-            // Use an empty string for dev (relying on proxy) and the env var for prod
-            'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(
-                mode === 'production' ? env.VITE_BACKEND_API_BASE_URL : ''
-            )
+            // Ensure only specific variables are exposed if needed, 
+            // but generally Vite handles VITE_ prefixed ones automatically.
+            // We expose API_KEY manually because it might not be VITE_ prefixed in some environments or code usages.
+            'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY)
         }
     }
 });

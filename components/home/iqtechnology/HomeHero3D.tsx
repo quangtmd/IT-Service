@@ -4,12 +4,9 @@ import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 import { Canvas } from '@react-three/fiber';
 import ServerTechScene from '../three/ServerTechScene'; 
-import { useTheme } from '../../../contexts/ThemeContext';
 import HeroLEDBoard from './HeroLEDBoard';
 
 const HomeHero3D: React.FC = () => {
-  const { theme } = useTheme();
-
   return (
     <section className="relative w-full h-[85vh] min-h-[600px] overflow-hidden bg-bgCanvas">
       {/* 3D Background Layer - Server Room Simulation */}
@@ -73,7 +70,7 @@ const HomeHero3D: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Column: LED Board (Hidden on mobile/tablet, shown on desktop) */}
+            {/* Right Column: LED Board */}
             <div className="lg:col-span-5 hidden lg:flex justify-center lg:justify-end items-center animate-on-scroll slide-in-right is-visible" style={{animationDelay: '0.5s'}}>
                <HeroLEDBoard />
             </div>
