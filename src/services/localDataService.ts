@@ -86,7 +86,11 @@ export const updateUser = (id: string, updates: Partial<User>): Promise<User> =>
 export const deleteUser = (id: string): Promise<void> => fetchFromApi<void>(`/users/${id}`, { method: 'DELETE' });
 
 // --- Product Service ---
-export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryParams}`);
+export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => {
+    // Remove leading '?' if present in queryParams to avoid double '??'
+    const queryString = queryParams.startsWith('?') ? queryParams.slice(1) : queryParams;
+    return fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryString}`);
+};
 export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product>(`/products/${id}`);
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
@@ -94,6 +98,7 @@ export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`
 
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
+        // Call the specific endpoint for featured products which returns an array directly
         return await fetchFromApi<Product[]>('/products/featured');
     } catch (error) {
         console.error("Failed to fetch featured products", error);

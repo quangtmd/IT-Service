@@ -5,23 +5,23 @@ import { SiteSettings } from '../../types';
 import AIChatbot from '../chatbot/AIChatbot';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-// Sử dụng ảnh Robot 3D đẹp mắt thay vì SVG đơn điệu
-const ROBOT_AVATAR_URL = "https://cdn-icons-png.flaticon.com/512/4712/4712109.png"; 
+// Updated to a cute 3D Robot image
+const ROBOT_3D_ICON = "https://cdn3d.iconscout.com/3d/free/thumb/free-robot-9058234-7455494.png";
 
 const WELCOME_MESSAGES = [
     "Xin chào! 👋",
     "Cần tư vấn PC? 🖥️",
     "Săn sale sốc? 🎁",
-    "Hỏi tôi ngay! 🤖"
+    "Hỏi tôi ngay! 🤖",
+    "Tra cứu đơn hàng? 📦"
 ];
 
 const FloatingActionButtons: React.FC = () => {
     const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-    const [fadeClass, setFadeClass] = useState('opacity-100'); // State để điều khiển hiệu ứng mờ/rõ
+    const [fadeClass, setFadeClass] = useState('opacity-100'); // Controls opacity for smooth text transitions
     const location = useLocation();
-    const navigate = useNavigate();
     
     const isAiEnabled = process.env.API_KEY && process.env.API_KEY !== 'undefined';
 
@@ -29,118 +29,94 @@ const FloatingActionButtons: React.FC = () => {
         const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
         if (storedSettingsRaw) {
             setSiteSettings(JSON.parse(storedSettingsRaw));
-        } else {
-            setSiteSettings(Constants.INITIAL_SITE_SETTINGS);
         }
     }, []);
 
     useEffect(() => {
         loadSiteSettings();
         window.addEventListener('siteSettingsUpdated', loadSiteSettings);
-        return () => {
-            window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
-        };
+        return () => window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
     }, [loadSiteSettings]);
     
-    // Hiệu ứng chuyển đổi tin nhắn mượt mà (không dùng transform để tránh chữ mờ)
+    // Carousel Text Effect - Changing text every few seconds with fade animation
     useEffect(() => {
         if (!isAiEnabled || isChatOpen) return;
-
         const intervalId = setInterval(() => {
-            // 1. Làm mờ chữ hiện tại
-            setFadeClass('opacity-0');
-            
+            setFadeClass('opacity-0 translate-y-1'); // Fade out & slight move down
             setTimeout(() => {
-                // 2. Đổi nội dung tin nhắn
                 setCurrentMessageIndex((prev) => (prev + 1) % WELCOME_MESSAGES.length);
-                // 3. Hiện chữ mới lên
-                setFadeClass('opacity-100');
-            }, 300); // Thời gian chờ khớp với transition duration
-
-        }, 4000); // Đổi tin nhắn mỗi 4 giây
-
+                setFadeClass('opacity-100 translate-y-0'); // Fade in & move up
+            }, 300); // Wait for fade out to complete
+        }, 4000);
         return () => clearInterval(intervalId);
     }, [isAiEnabled, isChatOpen]);
 
-    // Tự động mở chat lần đầu (nếu cần)
+    // Auto open chat once per session on homepage
     useEffect(() => {
         if (isAiEnabled && location.pathname === '/') { 
             const alreadyOpened = sessionStorage.getItem(Constants.CHATBOT_AUTO_OPENED_KEY);
             if (!alreadyOpened) {
               const timer = setTimeout(() => {
-                // Logic tự mở chat có thể thêm ở đây nếu muốn
-                // setIsChatOpen(true); 
+                setIsChatOpen(true); 
                 sessionStorage.setItem(Constants.CHATBOT_AUTO_OPENED_KEY, 'true');
-              }, 3000);
+              }, 5000);
               return () => clearTimeout(timer);
             }
         }
     }, [isAiEnabled, location.pathname]);
 
-    const quickContactCommonClasses = "w-12 h-12 text-white rounded-full p-3 shadow-lg transition-transform duration-300 flex items-center justify-center text-lg transform hover:scale-110 hover:-translate-y-1";
-    const fabVisibilityClass = isChatOpen ? 'opacity-0 translate-y-10 pointer-events-none' : 'opacity-100 translate-y-0';
+    const quickContactClasses = "w-11 h-11 text-white rounded-full p-2.5 shadow-lg transition-all duration-300 flex items-center justify-center text-lg hover:scale-110";
 
     return (
         <>
-            <div className={`fixed bottom-6 right-6 z-[60] flex flex-col items-end space-y-4 transition-all duration-500 ease-in-out ${fabVisibilityClass} no-print`}>
-                {/* Các nút liên hệ phụ (Zalo, Phone...) */}
-                <div className="flex flex-col space-y-3 items-end">
+            <div className={`fixed bottom-6 right-4 z-[60] flex flex-col items-end space-y-3 transition-all duration-500 ${isChatOpen ? 'translate-y-20 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
+                {/* Secondary Contact Buttons */}
+                <div className="flex flex-col space-y-2 items-end">
                     {siteSettings.companyPhone && (
-                        <a href={`tel:${siteSettings.companyPhone.replace(/\./g, '')}`} className={`${quickContactCommonClasses} bg-green-500 hover:bg-green-600`} aria-label="Gọi ngay" title={`Gọi ngay: ${siteSettings.companyPhone}`}>
+                        <a href={`tel:${siteSettings.companyPhone.replace(/\./g, '')}`} className={`${quickContactClasses} bg-green-500 hover:bg-green-600`} title="Gọi ngay">
                             <i className="fas fa-phone-alt"></i>
                         </a>
                     )}
                     {siteSettings.socialZaloUrl && (
-                        <a href={siteSettings.socialZaloUrl} target="_blank" rel="noopener noreferrer" className={`${quickContactCommonClasses} bg-blue-500 hover:bg-blue-600`} aria-label="Chat Zalo" title="Chat Zalo">
+                        <a href={siteSettings.socialZaloUrl} target="_blank" rel="noopener noreferrer" className={`${quickContactClasses} bg-blue-500 hover:bg-blue-600`} title="Chat Zalo">
                             <i className="fas fa-comment-dots"></i>
-                        </a>
-                    )}
-                    {siteSettings.socialFacebookUrl && (
-                        <a href={siteSettings.socialFacebookUrl.includes('m.me') || siteSettings.socialFacebookUrl.includes('messenger.com') ? siteSettings.socialFacebookUrl : `https://m.me/${siteSettings.socialFacebookUrl.split('/').pop()}`} target="_blank" rel="noopener noreferrer" className={`${quickContactCommonClasses} bg-blue-600 hover:bg-blue-700`} aria-label="Chat Messenger" title="Chat Messenger">
-                            <i className="fab fa-facebook-messenger"></i>
                         </a>
                     )}
                 </div>
                 
-                {/* Nút Chatbot AI Chính */}
+                {/* AI Chatbot Button */}
                 {isAiEnabled && (
-                    <div className="relative flex items-center">
-                        {/* Bong bóng tin nhắn (Speech Bubble) */}
-                        <div 
-                            className="mr-4 bg-white text-gray-800 px-4 py-2.5 rounded-2xl rounded-br-none shadow-xl border border-gray-100 flex items-center max-w-[200px] cursor-pointer transform transition-all hover:scale-105 origin-bottom-right"
-                            onClick={() => setIsChatOpen(true)}
-                        >
-                            {/* Dấu chấm xanh trạng thái */}
-                            <span className="w-2.5 h-2.5 bg-green-500 rounded-full mr-2.5 animate-pulse shrink-0"></span>
-                            
-                            {/* Nội dung tin nhắn thay đổi */}
-                            <p className={`text-sm font-bold whitespace-nowrap transition-opacity duration-300 ${fadeClass}`} style={{fontFamily: 'Inter, sans-serif'}}>
+                    <div className="relative flex items-center cursor-pointer group" onClick={() => setIsChatOpen(true)}>
+                        {/* Animated Bubble with Carousel Text */}
+                        <div className="mr-3 bg-white text-gray-800 px-4 py-2 rounded-2xl rounded-br-none shadow-xl border border-gray-100 flex items-center max-w-[200px] transform transition-transform group-hover:scale-105 origin-bottom-right">
+                            <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse shrink-0"></span>
+                            <p className={`text-sm font-bold whitespace-nowrap transition-all duration-300 ease-in-out ${fadeClass}`} style={{fontFamily: 'Inter, sans-serif'}}>
                                 {WELCOME_MESSAGES[currentMessageIndex]}
                             </p>
                         </div>
 
-                        {/* Nút Robot */}
+                        {/* 3D Robot Icon Only - No Red Ring */}
                         <button 
                             onClick={() => setIsChatOpen(true)} 
-                            className="w-16 h-16 bg-gradient-to-br from-primary to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-full shadow-2xl flex items-center justify-center transform hover:scale-110 transition-all duration-300 relative group"
+                            className="w-24 h-24 flex items-center justify-center focus:outline-none transform hover:scale-110 transition-transform duration-300 relative z-10"
                             aria-label="Mở Chatbot AI" 
                             title="Trợ lý AI"
                         >
-                            {/* Hiệu ứng Ping (sóng lan tỏa) */}
-                            <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-20 animate-ping"></span>
+                            {/* Define Wiggle Animation */}
+                            <style>{`
+                                @keyframes robotWiggle {
+                                    0%, 100% { transform: rotate(-8deg); }
+                                    50% { transform: rotate(8deg); }
+                                }
+                            `}</style>
                             
-                            {/* Ảnh Robot */}
+                            {/* Robot Image with Wiggle Animation */}
                             <img 
-                                src={ROBOT_AVATAR_URL} 
-                                alt="AI Chatbot" 
-                                className="w-10 h-10 object-contain filter drop-shadow-md group-hover:rotate-12 transition-transform duration-300" 
+                                src={ROBOT_3D_ICON} 
+                                alt="AI Assistant" 
+                                className="w-full h-full object-contain filter drop-shadow-2xl"
+                                style={{ animation: 'robotWiggle 3s ease-in-out infinite' }}
                             />
-                            
-                            {/* Badge thông báo (nếu cần) */}
-                            <span className="absolute top-0 right-0 flex h-4 w-4">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-4 w-4 bg-yellow-500 border-2 border-white"></span>
-                            </span>
                         </button>
                     </div>
                 )}
