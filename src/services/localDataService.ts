@@ -32,7 +32,7 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 
 // --- API BASE URL CONFIGURATION ---
 // Use the centralized configuration from constants to ensure consistency.
-// In Dev: "" (Proxy). In Prod: "https://..."
+// In Dev: "" (Proxy). In Prod: "https://it-service-app-n9as.onrender.com"
 const API_BASE_URL = Constants.BACKEND_API_BASE_URL;
 console.log(`[API Config] Connected to Backend: ${API_BASE_URL}`);
 

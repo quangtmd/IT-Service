@@ -21,13 +21,13 @@ export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui l�
 
 // --- BACKEND API CONFIGURATION ---
 // STRATEGY:
-// 1. In Development (npm run dev): Use "" (empty string). 
+// 1. In Development (import.meta.env.DEV is true): Use "" (empty string). 
 //    This forces requests to go to "/api/...", which triggers the Vite Proxy defined in vite.config.ts.
 //    The Proxy then forwards to http://127.0.0.1:3001. This solves CORS issues locally.
 // 2. In Production: Use the full Render URL.
-export const BACKEND_API_BASE_URL = import.meta.env.DEV 
+export const BACKEND_API_BASE_URL = import.meta.env.DEV
     ? "" 
-    : "https://it-service-app-n9as.onrender.com";
+    : (import.meta.env.VITE_BACKEND_API_BASE_URL || "https://it-service-app-n9as.onrender.com");
 
 // --- STORAGE KEYS ---
 export const SITE_LOGO_STORAGE_KEY = "siteLogoUrl_v1";

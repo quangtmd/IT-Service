@@ -1,3 +1,4 @@
+
 // Manually define Vite types to resolve missing vite/client type definition
 // /// <reference types="vite/client" />
 
