@@ -1,6 +1,5 @@
 import React from 'react';
-// Fix: Use named import for Link
-import { Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { Product } from '../../types';
 import Button from '../ui/Button';
 import { useCart } from '../../hooks/useCart';
@@ -28,8 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
 
   return (
-    // Fix: Use Link directly
-    <Link to={`/product/${product.id}`} className="block h-full">
+    <ReactRouterDOM.Link to={`/product/${product.id}`} className="block h-full">
       <div className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col group border border-gray-200 hover:border-primary/50 hover:shadow-xl transition-all duration-300 p-2.5">
         <div className="relative overflow-hidden rounded-md">
           <img
@@ -57,11 +55,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <div className="flex flex-col items-start mb-2">
               {product.originalPrice && product.price < product.originalPrice && (
                 <span className="text-xs text-textSubtle line-through">
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice)}
+                  {product.originalPrice.toLocaleString('vi-VN')}₫
                 </span>
               )}
               <span className="text-lg font-bold text-red-600">
-                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                {product.price.toLocaleString('vi-VN')}₫
               </span>
             </div>
             
@@ -83,7 +81,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         </div>
       </div>
-    </Link>
+    </ReactRouterDOM.Link>
   );
 };
 

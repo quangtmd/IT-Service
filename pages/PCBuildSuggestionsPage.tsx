@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-// FIX: The PCBuildSuggestion interface is now defined in types.ts.
 import { PCBuildSuggestion } from '../types';
 import geminiService from '../services/geminiService';
 import * as Constants from '../constants';
 import { Link } from 'react-router-dom';
-import { useChatbotContext } from '../contexts/ChatbotContext';
 
 const PCBuildSuggestionsPage: React.FC = () => {
     const [useCase, setUseCase] = useState<'PC Gaming' | 'PC Văn phòng'>('PC Gaming');
@@ -15,12 +13,6 @@ const PCBuildSuggestionsPage: React.FC = () => {
     const [suggestions, setSuggestions] = useState<PCBuildSuggestion[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { setCurrentContext } = useChatbotContext();
-
-    useEffect(() => {
-        setCurrentContext('Khách hàng đang ở trang Gợi ý Cấu hình PC từ AI.');
-        return () => setCurrentContext(null); // Clear context on unmount
-    }, [setCurrentContext]);
 
     const isApiKeyConfigured = process.env.API_KEY && process.env.API_KEY !== 'undefined';
 
@@ -130,7 +122,7 @@ const PCBuildSuggestionsPage: React.FC = () => {
                     {suggestions.map((suggestion, index) => (
                         <Card key={index} className="p-6 border border-borderDefault shadow-lg">
                             <h3 className="text-xl font-bold text-primary mb-2">{suggestion.name}</h3>
-                            <p className="text-lg font-semibold text-textBase mb-3">Tổng chi phí dự kiến: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(suggestion.total_price)}</p>
+                            <p className="text-lg font-semibold text-textBase mb-3">Tổng chi phí dự kiến: {suggestion.total_price.toLocaleString('vi-VN')}₫</p>
                             <p className="text-sm text-textMuted italic mb-4 p-3 bg-bgCanvas rounded-md border border-borderDefault">"{suggestion.reasoning}"</p>
                             
                             <h4 className="font-semibold text-textBase mb-2">Chi tiết linh kiện:</h4>

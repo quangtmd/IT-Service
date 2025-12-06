@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// Fix: Use named import for Link
-import { Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
@@ -22,27 +21,24 @@ const ProjectCardIts: React.FC<ProjectItemProps> = ({ item, index }) => {
             className={`modern-card group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col relative`}
             style={{ animationDelay: `${index * 100}ms` }}
         >
-            {/* Fix: Use Link directly */}
-            <Link to={`/service/${item.slug || item.id}`} className="block aspect-video overflow-hidden rounded-t-lg">
+            <ReactRouterDOM.Link to={`/service/${item.slug || item.id}`} className="block aspect-video overflow-hidden rounded-t-lg">
                 <img src={placeholderImg} alt={item.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-            </Link>
+            </ReactRouterDOM.Link>
             <div className="p-6 flex flex-col flex-grow relative z-10"> {/* Ensure content is above pseudo-element */}
                 <div className="flex items-center mb-3 text-primary">
                     <i className={`${item.icon || 'fas fa-cogs'} text-xl mr-3 opacity-80`}></i>
                 </div>
                 <h3 className="modern-card-title mb-3">
-                     {/* Fix: Use Link directly */}
-                     <Link to={`/service/${item.slug || item.id}`} className="line-clamp-2">{item.name}</Link>
+                     <ReactRouterDOM.Link to={`/service/${item.slug || item.id}`} className="line-clamp-2">{item.name}</ReactRouterDOM.Link>
                 </h3>
                 <p className="modern-card-description mb-5 line-clamp-3 flex-grow">{item.description}</p>
                 <div className="mt-auto">
-                    {/* Fix: Use Link directly */}
-                    <Link
+                    <ReactRouterDOM.Link
                         to={`/service/${item.slug || item.id}`}
                         className="modern-card-link self-start"
                     >
                         Chi tiết dịch vụ <i className="fas fa-arrow-right text-xs ml-1"></i>
-                    </Link>
+                    </ReactRouterDOM.Link>
                 </div>
             </div>
         </div>
@@ -109,12 +105,11 @@ const HomeFeaturedProjectsIts: React.FC = () => {
 
         {projectsConfig.buttonLink && projectsConfig.buttonText && featuredItems.length > 0 && (
             <div className={`text-center mt-12 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`} style={{animationDelay: '0.3s'}}>
-                {/* Fix: Use Link directly */}
-                <Link to={projectsConfig.buttonLink}>
+                <ReactRouterDOM.Link to={projectsConfig.buttonLink}>
                 <Button variant="primary" size="lg" className="px-10 py-3.5 text-base shadow-lg hover:shadow-primary/40">
                     {projectsConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                 </Button>
-                </Link>
+                </ReactRouterDOM.Link>
             </div>
         )}
       </div>

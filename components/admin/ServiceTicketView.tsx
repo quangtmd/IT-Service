@@ -1,39 +1,18 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ServiceTicket } from '../../types';
 import { getServiceTickets, deleteServiceTicket } from '../../services/localDataService';
 import Button from '../ui/Button';
 import BackendConnectionError from '../shared/BackendConnectionError';
 
-const STATUS_FILTERS: Array<{ label: string, value: ServiceTicket['status'] | 'Tất cả' }> = [
-    { label: 'Tất cả', value: 'Tất cả' },
-    { label: 'Mới tiếp nhận', value: 'Mới tiếp nhận' },
-    { label: 'Đang xử lý', value: 'Đang xử lý' },
-    { label: 'Hoàn thành', value: 'Hoàn thành' },
-    { label: 'Đã đóng', value: 'Đã đóng' },
-    { label: 'Hủy bỏ', value: 'Hủy bỏ' },
-];
-
-
-const getStatusColorClass = (status: ServiceTicket['status']) => {
+const getStatusColor = (status: ServiceTicket['status']) => {
     switch (status) {
-        case 'Mới':
-        case 'Mới tiếp nhận':
-            return 'bg-blue-100 text-blue-800';
-        case 'Đang xử lý':
-        case 'Chờ linh kiện':
-        case 'Đợi KH đồng ý giá':
-        case 'Đợi KH nhận lại':
-            return 'bg-yellow-100 text-yellow-800';
-        case 'Hoàn thành':
-            return 'bg-green-100 text-green-800';
-        case 'Đã đóng':
-            return 'bg-gray-100 text-gray-800';
-        case 'Không đồng ý sửa máy':
-        case 'Hủy bỏ':
-            return 'bg-red-100 text-red-800';
-        default:
-            return 'bg-gray-100 text-gray-800';
+        case 'Mới': return 'bg-blue-100 text-blue-800';
+        case 'Đang xử lý': return 'bg-yellow-100 text-yellow-800';
+        case 'Chờ linh kiện': return 'bg-purple-100 text-purple-800';
+        case 'Hoàn thành': return 'bg-green-100 text-green-800';
+        case 'Đã đóng': return 'bg-gray-100 text-gray-800';
+        default: return 'bg-gray-100 text-gray-800';
     }
 };
 
@@ -42,7 +21,6 @@ const ServiceTicketView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
-    const [activeFilter, setActiveFilter] = useState<ServiceTicket['status'] | 'Tất cả'>('Tất cả');
 
     const loadTickets = useCallback(async () => {
         setIsLoading(true);
@@ -61,13 +39,19 @@ const ServiceTicketView: React.FC = () => {
         loadTickets();
     }, [loadTickets]);
 
-    const filteredTickets = useMemo(() => {
-        if (activeFilter === 'Tất cả') return tickets;
-        return tickets.filter(t => t.status === activeFilter);
-    }, [tickets, activeFilter]);
+    const handleAddNew = () => {
+        navigate('/admin/service_tickets/new');
+    };
 
-    const handleDelete = async (e: React.MouseEvent, id: string) => {
-        e.stopPropagation(); // Prevent row click
+    const handleEdit = (id: string) => {
+        navigate(`/admin/service_tickets/edit/${id}`);
+    };
+    
+    const handleView = (id: string) => {
+        navigate(`/admin/service_tickets/edit/${id}`);
+    };
+
+    const handleDelete = async (id: string) => {
         if (window.confirm('Bạn có chắc muốn xóa phiếu dịch vụ này?')) {
             try {
                 await deleteServiceTicket(id);
@@ -80,25 +64,17 @@ const ServiceTicketView: React.FC = () => {
 
     return (
         <div className="admin-card">
-            <div className="admin-card-header">
-                <h3 className="admin-card-title">Quản lý Phiếu Sửa Chữa ({filteredTickets.length})</h3>
-                 <div className="admin-actions-bar">
-                    <Button size="sm" onClick={() => navigate('/admin/service_tickets/new')} leftIcon={<i className="fas fa-plus"></i>}>Thêm Phiếu</Button>
-                </div>
+            <div className="admin-card-header flex justify-between items-center">
+                <h3 className="admin-card-title">Quản lý Dịch vụ Sửa chữa ({tickets.length})</h3>
+                 <Button onClick={handleAddNew} size="sm" leftIcon={<i className="fas fa-plus"></i>}>
+                    Tạo Phiếu DV
+                </Button>
             </div>
             <div className="admin-card-body">
-                 <div className="filter-tabs">
-                    {STATUS_FILTERS.map(filter => (
-                         <Button key={filter.value} onClick={() => setActiveFilter(filter.value)} size="sm" variant={activeFilter === filter.value ? 'primary' : 'outline'} className="!font-normal">
-                             {filter.label}
-                         </Button>
-                    ))}
-                </div>
-
                 {error && <BackendConnectionError error={error} />}
                 <div className="overflow-x-auto">
-                    <table className="admin-table text-sm">
-                        <thead className="thead-brand">
+                    <table className="admin-table">
+                        <thead>
                             <tr>
                                 <th>Mã Phiếu</th>
                                 <th>Khách hàng</th>
@@ -111,17 +87,18 @@ const ServiceTicketView: React.FC = () => {
                         <tbody>
                             {isLoading ? (
                                 <tr><td colSpan={6} className="text-center py-4">Đang tải...</td></tr>
-                            ) : !error && filteredTickets.length > 0 ? ( filteredTickets.map((ticket) => (
-                                <tr key={ticket.id} className="hover:bg-blue-50 cursor-pointer" onClick={() => navigate(`/admin/service_tickets/edit/${ticket.id}`)}>
-                                    <td><span className="font-semibold text-blue-700">{ticket.ticket_code || ticket.id}</span></td>
+                            ) : !error && tickets.length > 0 ? ( tickets.map(ticket => (
+                                <tr key={ticket.id}>
+                                    <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">{ticket.ticket_code || ticket.id}</span></td>
                                     <td>{ticket.customer_info?.fullName || 'Khách lẻ'}</td>
                                     <td>{ticket.deviceName}</td>
                                     <td>{new Date(ticket.createdAt).toLocaleDateString('vi-VN')}</td>
-                                    <td><span className={`status-badge ${getStatusColorClass(ticket.status)}`}>{ticket.status}</span></td>
+                                    <td><span className={`status-badge ${getStatusColor(ticket.status)}`}>{ticket.status}</span></td>
                                     <td>
-                                        <div className="flex gap-2 justify-center">
-                                            <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/service_tickets/edit/${ticket.id}`) }} className="text-blue-600" title="Sửa"><i className="fas fa-edit"></i></button>
-                                            <button onClick={(e) => handleDelete(e, ticket.id)} className="text-red-600" title="Xóa"><i className="fas fa-times"></i></button>
+                                        <div className="flex gap-2">
+                                            <Button onClick={() => handleView(ticket.id)} size="sm" variant="outline" title="Xem/In"><i className="fas fa-eye"></i></Button>
+                                            <Button onClick={() => handleEdit(ticket.id)} size="sm" variant="outline" title="Sửa"><i className="fas fa-edit"></i></Button>
+                                            <Button onClick={() => handleDelete(ticket.id)} size="sm" variant="ghost" className="text-red-500" title="Xóa"><i className="fas fa-trash"></i></Button>
                                         </div>
                                     </td>
                                 </tr>

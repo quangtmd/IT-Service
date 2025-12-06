@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from 'react';
-// Fix: Use named imports for react-router-dom components and hooks
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
+import * as Constants from '../constants';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(Constants.ADMIN_EMAIL);
+  const [password, setPassword] = useState('password123');
   const [error, setError] = useState<string | null>(null);
   const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
-  // Fix: Use hooks directly
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate = ReactRouterDOM.useNavigate();
+  const location = ReactRouterDOM.useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+
+  // New, more vibrant technology background image
+  const backgroundImage = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+
+  // Debugging logs - REMOVE AFTER FIX
+  useEffect(() => {
+    console.log("LoginPage: location.state", location.state);
+    console.log("LoginPage: 'from' variable resolved to", from);
+  }, [location.state, from]);
+
 
   useEffect(() => {
     // This effect is the single source of truth for navigation after authentication.
@@ -47,78 +56,92 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-cover bg-center"
-      style={{ backgroundImage: "url('https://images.unsplash.com/photo-1531297484001-80022131c5a1?q=80&w=2020&auto=format&fit=crop')" }}
+    <div 
+      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative bg-cover bg-center"
+      style={{ backgroundImage: `url('${backgroundImage}')` }}
     >
-      <div className="max-w-md w-full space-y-8 bg-black/40 backdrop-blur-xl p-10 rounded-2xl shadow-2xl border border-white/20">
+      <div className="absolute inset-0 bg-black opacity-60"></div> {/* Dark overlay */}
+      <div className="max-w-md w-full space-y-6 bg-white/80 backdrop-blur-md p-8 rounded-lg shadow-lg border border-gray-200 relative z-10">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-white">
-            Login
+          <h1 className="text-2xl font-bold text-primary">IQ Technology</h1>
+          <h2 className="mt-4 text-center text-3xl font-bold text-textBase">
+            Đăng nhập tài khoản
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-300">
-            Chào mừng trở lại!
+          <p className="mt-2 text-center text-sm text-primary">
+            Hoặc{' '}
+            <ReactRouterDOM.Link to="/register" className="font-medium hover:text-primary-dark">
+              đăng ký nếu bạn chưa có tài khoản
+            </ReactRouterDOM.Link>
           </p>
         </div>
         
         {error && (
-          <div className="p-4 bg-danger-bg/80 border border-danger-border text-danger-text rounded-md text-sm">
-            {error}
-          </div>
+            <div className="p-4 bg-danger-bg border border-danger-border text-danger-text rounded-md text-sm">
+              {error}
+            </div>
         )}
         
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="email-address" className="sr-only">Email</label>
-            <input
-              id="email-address"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="sr-only">Mật khẩu</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
-              placeholder="Mật khẩu"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center">
-              <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 bg-gray-600 border-gray-500 text-primary focus:ring-primary rounded" />
-              <label htmlFor="remember-me" className="ml-2 block text-gray-300">Ghi nhớ tôi</label>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+            <div>
+              <label htmlFor="email-address" className="sr-only">
+                Địa chỉ email
+              </label>
+              <input
+                id="email-address"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="appearance-none relative block w-full px-4 py-3 bg-white border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+                placeholder="Địa chỉ email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
-            <div className="text-sm">
-              <a href="#" className="font-medium text-primary hover:text-primary-light">Quên mật khẩu?</a>
+            <div>
+              <label htmlFor="password" className="sr-only">
+                Mật khẩu
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+                placeholder="Mật khẩu"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-          </div>
           
-          <div>
-            <Button type="submit" className="w-full !py-3 !text-base rounded-lg" size="lg" isLoading={authLoading}>
+          <div className="pt-2">
+            <Button type="submit" className="w-full !py-3 !text-base" size="lg" isLoading={authLoading}>
               Đăng nhập
             </Button>
           </div>
         </form>
         
-        <p className="text-center text-sm text-gray-300">
-          Chưa có tài khoản?{' '}
-          <Link to="/register" className="font-medium text-primary hover:text-primary-light">
-            Đăng ký ngay
-          </Link>
+        <div className="relative flex justify-center text-xs uppercase my-6">
+            <span className="bg-white/80 backdrop-blur-md px-2 text-gray-500">Hoặc</span>
+        </div>
+
+        <div className="space-y-3">
+            <Button variant="outline" className="w-full flex items-center justify-center gap-3 !py-3 !text-base border-blue-500 text-blue-700 hover:bg-blue-50">
+                <i className="fab fa-google text-lg"></i>
+                <span>Đăng nhập bằng Google</span>
+            </Button>
+            <Button variant="outline" className="w-full flex items-center justify-center gap-3 !py-3 !text-base border-blue-800 text-blue-800 hover:bg-blue-50">
+                <i className="fab fa-facebook-f text-lg"></i>
+                <span>Đăng nhập bằng Facebook</span>
+            </Button>
+        </div>
+
+        <p className="text-center text-sm text-gray-500 mt-6">
+            Quên mật khẩu?{' '}
+            <a href="#" className="font-medium text-primary hover:text-primary-dark">
+                Đặt lại mật khẩu
+            </a>
         </p>
       </div>
     </div>

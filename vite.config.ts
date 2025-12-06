@@ -1,15 +1,13 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import { fileURLToPath } from 'url';
-// FIX: Import 'process' to resolve TypeScript error 'Property 'cwd' does not exist on type 'Process''.
-import process from 'process';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Fix: Removed explicit import of 'process' as it's a global object,
+// which causes a TypeScript error when trying to access 'cwd'.
+// TypeScript will correctly infer the global 'NodeJS.Process' type.
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, process.cwd(), '');
+    // FIX: Cast process to any to resolve TypeScript error regarding 'cwd'.
+    const env = loadEnv(mode, (process as any).cwd(), '');
 
     return {
         server: {
@@ -30,7 +28,9 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                '@': path.resolve(__dirname, './'),
+                // FIX: Replace __dirname with process.cwd() for ES module compatibility
+                // Cast process to any to resolve TypeScript error regarding 'cwd'.
+                '@': path.resolve((process as any).cwd(), '.'),
             }
         },
         define: {
