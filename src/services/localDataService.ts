@@ -155,7 +155,7 @@ export const getCashflowForecast = async (): Promise<CashflowForecastData> => fe
 
 // --- Service Tickets ---
 export const getServiceTickets = (): Promise<ServiceTicket[]> => fetchFromApi<ServiceTicket[]>('/service-tickets');
-export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
+export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id' | 'ticket_code' | 'createdAt'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
 export const updateServiceTicket = (id: string, updates: Partial<ServiceTicket>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>(`/service-tickets/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteServiceTicket = (id: string): Promise<void> => fetchFromApi<void>(`/service-tickets/${id}`, { method: 'DELETE' });
 
@@ -184,6 +184,23 @@ export const deleteSupplier = (id: string): Promise<void> => fetchFromApi<void>(
 // --- Warranty Claim Service ---
 export const getWarrantyClaims = async (): Promise<WarrantyClaim[]> => {
     return fetchFromApi<WarrantyClaim[]>('/warranty-claims');
+};
+export const addWarrantyClaim = async (claim: Omit<WarrantyClaim, 'id' | 'claim_code' | 'created_at'>): Promise<WarrantyClaim> => {
+    return fetchFromApi<WarrantyClaim>('/warranty-claims', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(claim),
+    });
+};
+export const updateWarrantyClaim = async (id: string, updates: Partial<WarrantyClaim>): Promise<WarrantyClaim> => {
+    return fetchFromApi<WarrantyClaim>(`/warranty-claims/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+    });
+};
+export const deleteWarrantyClaim = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/warranty-claims/${id}`, { method: 'DELETE' });
 };
 
 // --- Warranty Ticket Service (if separate) ---

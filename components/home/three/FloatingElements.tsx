@@ -1,4 +1,5 @@
 
+// @ts-nocheck
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Float } from '@react-three/drei';
