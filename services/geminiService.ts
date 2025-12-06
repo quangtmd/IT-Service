@@ -1,7 +1,6 @@
 
-
 // Fix: Import correct types from @google/genai
-import { GoogleGenAI, Chat, GenerateContentResponse, Part, Content, Type } from "@google/genai"; // Added Part, Content, Type
+import { GoogleGenAI, Type } from "@google/genai"; // Added Part, Content, Type
 import * as Constants from '../constants.tsx';
 // Fix: Added SiteSettings, Article, Product
 import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; 
@@ -13,8 +12,8 @@ const CHAT_MODEL_NAME = 'gemini-2.5-flash';
 const BUILDER_MODEL_NAME = 'gemini-2.5-flash';
 const IMAGE_MODEL_NAME = 'imagen-4.0-generate-001';
 
-let aiInstance: GoogleGenAI | null = null;
-let chatSessionInstance: Chat | null = null; // Renamed to avoid conflict with 'Chat' type
+let aiInstance: any | null = null;
+let chatSessionInstance: any | null = null; // Renamed to avoid conflict with 'Chat' type
 
 const getAiClient = (): GoogleGenAI | null => {
   // Fix: Use process.env.API_KEY as per guidelines to resolve TypeScript error.
@@ -37,9 +36,9 @@ const getAiClient = (): GoogleGenAI | null => {
 // Fix: Change history type from GenerateContentParameters[] to Content[]
 export const startChat = (
   siteSettings: SiteSettings, // Added siteSettings
-  history?: Content[], 
+  history?: any[], 
   systemInstructionOverride?: string
-): Chat => {
+): any => {
   const client = getAiClient();
   if (!client) {
       throw new Error(Constants.API_KEY_ERROR_MESSAGE);
@@ -96,9 +95,9 @@ Khi cung cấp link, hãy đảm bảo link đó đầy đủ và có thể nh�
 
 export const sendMessageToChatStream = async (
   message: string,
-  currentChatInstance?: Chat
+  currentChatInstance?: any
 // Fix: Change GenerateContentStreamResult to AsyncIterable<GenerateContentResponse>
-): Promise<AsyncIterable<GenerateContentResponse>> => {
+): Promise<AsyncIterable<any>> => {
   const chatToUse = currentChatInstance || chatSessionInstance;
   if (!chatToUse) {
     throw new Error("Chat not initialized. Call startChat first.");
@@ -144,7 +143,7 @@ Ví dụ: { "cpu": { "name": "AMD Ryzen 5 5600X", "reasoning": "Hiệu năng t�
 Nếu ngân sách quá thấp cho nhu cầu sử dụng, hãy trả về JSON có dạng { "error": "Ngân sách quá thấp cho nhu cầu này." }.`;
   
   try {
-    const response: GenerateContentResponse = await client.models.generateContent({
+    const response: any = await client.models.generateContent({
       model: BUILDER_MODEL_NAME,
       contents: prompt,
       config: {
@@ -224,7 +223,7 @@ Phản hồi của bạn PHẢI tuân thủ nghiêm ngặt theo JSON schema đã
   };
 
   try {
-    const response: GenerateContentResponse = await client.models.generateContent({
+    const response: any = await client.models.generateContent({
       model: BUILDER_MODEL_NAME,
       contents: prompt,
       config: {
@@ -251,7 +250,7 @@ export const generateTextWithGoogleSearch = async (
       throw new Error(Constants.API_KEY_ERROR_MESSAGE);
   }
   try {
-    const response: GenerateContentResponse = await client.models.generateContent({
+    const response: any = await client.models.generateContent({
       model: CHAT_MODEL_NAME, 
       contents: prompt,
       config: {
@@ -332,8 +331,8 @@ export const sendMessageWithImage = async (
   textPrompt: string,
   base64ImageData: string,
   mimeType: string,
-  currentChatInstance?: Chat
-): Promise<AsyncIterable<GenerateContentResponse>> => {
+  currentChatInstance?: any
+): Promise<AsyncIterable<any>> => {
   const chatToUse = currentChatInstance || chatSessionInstance;
   if (!chatToUse) {
      throw new Error("Chat not initialized for image message. Call startChat first.");
@@ -344,13 +343,13 @@ export const sendMessageWithImage = async (
     throw new Error(Constants.API_KEY_ERROR_MESSAGE);
   }
 
-  const imagePart: Part = {
+  const imagePart: any = {
     inlineData: {
       mimeType: mimeType,
       data: base64ImageData,
     },
   };
-  const textPart: Part = { text: textPrompt };
+  const textPart: any = { text: textPrompt };
 
   try {
     // Fix: Changed 'parts' to 'message' to match the SendMessageParameters type for chat sessions.

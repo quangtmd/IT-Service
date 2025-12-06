@@ -1,9 +1,9 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product } from '../../types';
 import ChatMessage from './ChatMessage';
 import Button from '../ui/Button';
 import geminiService from '../../services/geminiService';
-import { Chat, GenerateContentResponse } from '@google/genai';
 import * as Constants from '../../constants.tsx'; 
 import { useChatbotContext } from '../../contexts/ChatbotContext'; // Import the context hook
 import { saveChatLogSession } from '../../services/localDataService';
@@ -27,7 +27,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [chatSession, setChatSession] = useState<Chat | null>(null);
+  const [chatSession, setChatSession] = useState<any | null>(null);
   const [currentBotMessageId, setCurrentBotMessageId] = useState<string | null>(null);
   const [currentGroundingChunks, setCurrentGroundingChunks] = useState<GroundingChunk[] | undefined>(undefined);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
@@ -258,7 +258,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     setCurrentChatLogSession(prevLog => prevLog ? {...prevLog, messages: [...prevLog.messages, initialBotMessage]} : null);
     
     try {
-        let stream: AsyncIterable<GenerateContentResponse>;
+        let stream: AsyncIterable<any>;
 
         if (currentImageFile) {
             const base64Data = await new Promise<string>((resolve, reject) => {

@@ -1,9 +1,6 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-// Fix: Removed explicit import of 'process' as it's a global object,
-// which causes a TypeScript error when trying to access 'cwd'.
-// TypeScript will correctly infer the global 'NodeJS.Process' type.
 
 export default defineConfig(({ mode }) => {
     // FIX: Cast process to any to resolve TypeScript error regarding 'cwd'.
@@ -24,6 +21,11 @@ export default defineConfig(({ mode }) => {
             host: true, // This is equivalent to --host, allows network access
             // Allow requests from Render's preview domains to prevent host header errors.
             allowedHosts: ['.onrender.com'],
+        },
+        build: {
+            rollupOptions: {
+                external: ['@google/genai'],
+            }
         },
         plugins: [react()],
         resolve: {
