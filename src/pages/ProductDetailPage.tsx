@@ -1,18 +1,16 @@
 
-
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Product } from '../types';
-import Button from '../components/ui/Button';
-import CustomButton from '../components/ui/CustomButton';
-import { useCart } from '../hooks/useCart';
-import ProductCard from '../components/shop/ProductCard';
-import * as Constants from '../constants';
-import { getProduct, getProducts } from '../services/localDataService';
-import BackendConnectionError from '../components/shared/BackendConnectionError'; 
-import { useChatbotContext } from '../contexts/ChatbotContext'; 
-import ImageMagnifier from '../components/ui/ImageMagnifier'; // Import the new component
+import { Product } from '@/types';
+import Button from '@/components/ui/Button';
+import CustomButton from '@/components/ui/CustomButton';
+import { useCart } from '@/hooks/useCart';
+import ProductCard from '@/components/shop/ProductCard';
+import * as Constants from '@/constants';
+import { getProduct, getProducts } from '@/services/localDataService';
+import BackendConnectionError from '@/components/shared/BackendConnectionError'; 
+import { useChatbotContext } from '@/contexts/ChatbotContext'; 
+import ImageMagnifier from '@/components/ui/ImageMagnifier'; 
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -134,7 +132,6 @@ const ProductDetailPage: React.FC = () => {
         <div className="bg-bgBase p-0 md:p-6 rounded-lg shadow-sm md:shadow-lg border border-borderDefault overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 lg:gap-8">
             
-            {/* Image Section */}
             <div className="lg:col-span-2 p-4 md:p-0">
               <div className="mb-4 border border-borderDefault rounded-lg bg-white relative group flex justify-center items-center p-2 min-h-[300px] md:min-h-[400px]">
                 <ImageMagnifier 
@@ -168,7 +165,6 @@ const ProductDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Info Section */}
             <div className="lg:col-span-3 p-4 md:p-0 border-t lg:border-t-0 border-borderDefault lg:border-l lg:pl-8">
               <h1 className="text-xl md:text-3xl font-bold text-textBase mb-2 md:mb-3 leading-tight">{product.name}</h1>
               <div className="flex flex-wrap items-center text-xs md:text-sm text-textMuted mb-4 space-x-3 md:space-x-4">
@@ -211,7 +207,6 @@ const ProductDetailPage: React.FC = () => {
                       )}
                   </div>
                   
-                  {/* Quantity Selector - Desktop */}
                   <div className="flex items-center space-x-2">
                     <label htmlFor="quantity" className="font-semibold text-textBase text-sm">Số lượng:</label>
                     <div className="flex items-center border border-borderStrong rounded-md">
@@ -222,7 +217,6 @@ const ProductDetailPage: React.FC = () => {
                   </div>
               </div>
 
-              {/* Desktop Action Buttons */}
               <div className="hidden md:flex space-x-3 mb-6">
                 <Button onClick={handleBuyNow} size="lg" className="flex-1 py-3" variant="primary" disabled={product.stock <=0}><i className="fas fa-bolt mr-2"></i> Mua ngay</Button>
                 <Button onClick={handleAddToCart} size="lg" className="flex-1 py-3" variant="outline" disabled={product.stock <=0}><i className="fas fa-cart-plus mr-2"></i> Thêm vào giỏ</Button>
@@ -240,7 +234,6 @@ const ProductDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Info Tabs */}
         <div className="mt-6 md:mt-10 bg-bgBase p-4 md:p-6 rounded-lg shadow-sm border border-borderDefault">
             <div className="flex border-b border-borderDefault mb-4 overflow-x-auto">
                 <button onClick={() => setActiveTab('description')} className={`py-2 md:py-3 px-4 md:px-5 font-semibold text-sm md:text-base whitespace-nowrap transition-colors border-b-2 ${activeTab === 'description' ? 'border-primary text-primary' : 'border-transparent text-textMuted hover:text-textBase'}`}>Mô tả chi tiết</button>
@@ -282,7 +275,6 @@ const ProductDetailPage: React.FC = () => {
         )}
       </div>
 
-      {/* Mobile Sticky Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-borderDefault p-3 z-40 md:hidden pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.1)] flex gap-3 items-center safe-area-pb">
           <div className="flex flex-col min-w-[80px]">
               <span className="text-xs text-textMuted line-through">{product.originalPrice ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice) : ''}</span>

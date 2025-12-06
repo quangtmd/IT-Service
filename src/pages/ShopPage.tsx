@@ -1,17 +1,17 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import ProductCard from '../components/shop/ProductCard';
-import { Product } from '../types';
-import SearchBar from '../components/shared/SearchBar';
-import Pagination from '../components/shared/Pagination';
-import * as Constants from '../constants.tsx';
-import CategorySidebar from '../components/shop/CategorySidebar';
-import { getProducts } from '../services/localDataService';
-import BackendConnectionError from '../components/shared/BackendConnectionError'; 
-import SkeletonProductCard from '../components/shop/SkeletonProductCard';
-import ShopBanner from '../components/shop/ShopBanner'; 
-import ShopProductSection from '../components/shop/ShopProductSection';
+import ProductCard from '@/components/shop/ProductCard';
+import { Product } from '@/types';
+import SearchBar from '@/components/shared/SearchBar';
+import Pagination from '@/components/shared/Pagination';
+import * as Constants from '@/constants';
+import CategorySidebar from '@/components/shop/CategorySidebar';
+import { getProducts } from '@/services/localDataService';
+import BackendConnectionError from '@/components/shared/BackendConnectionError'; 
+import SkeletonProductCard from '@/components/shop/SkeletonProductCard';
+import ShopBanner from '@/components/shop/ShopBanner'; 
+import ShopProductSection from '@/components/shop/ShopProductSection';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -24,10 +24,7 @@ const ShopPage: React.FC = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // State to control sidebar collapse based on scroll
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  
   const [currentFilters, setCurrentFilters] = useState({
     mainCategory: null as string | null,
     subCategory: null as string | null,
@@ -36,13 +33,10 @@ const ShopPage: React.FC = () => {
     q: '',
     tags: null as string | null,
   });
-
   const currentPage = parseInt(queryParams.get('page') || '1', 10);
 
-  // --- Scroll Handler for Sidebar ---
   const handleScroll = useCallback(() => {
     if (window.innerWidth >= 1024) {
-      // Collapse sidebar when scrolled down past header (approx 160px)
       const shouldCollapse = window.scrollY > 160;
       setIsSidebarCollapsed(shouldCollapse);
     } else {
@@ -52,7 +46,7 @@ const ShopPage: React.FC = () => {
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial check
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
@@ -65,14 +59,11 @@ const ShopPage: React.FC = () => {
         if (!searchParams.has('limit')) {
             searchParams.set('limit', String(PRODUCTS_PER_PAGE));
         }
-        
         const { products, totalProducts } = await getProducts(searchParams.toString());
         setDisplayedProducts(products);
         setTotalProducts(totalProducts);
-        
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
-        console.error("Lỗi khi tải sản phẩm từ API:", err);
         setDisplayedProducts([]);
         setTotalProducts(0);
       } finally {
@@ -84,9 +75,8 @@ const ShopPage: React.FC = () => {
       key !== 'page' && key !== 'limit' && queryParams.get(key)
     );
     
-    if (hasActiveFilters) {
-        loadProducts();
-    } else {
+    if (hasActiveFilters) loadProducts();
+    else {
         setIsLoading(false);
         setDisplayedProducts([]);
         setTotalProducts(0);
@@ -106,14 +96,9 @@ const ShopPage: React.FC = () => {
 
   const handleFilterChange = (filterType: string, value: string | null) => {
     const newParams = new URLSearchParams(location.search);
-    if (value) {
-        newParams.set(filterType, value);
-    } else {
-        newParams.delete(filterType);
-    }
-    if (filterType === 'mainCategory') {
-        newParams.delete('subCategory');
-    }
+    if (value) newParams.set(filterType, value);
+    else newParams.delete(filterType);
+    if (filterType === 'mainCategory') newParams.delete('subCategory');
     newParams.set('page', '1');
     navigate(`/shop?${newParams.toString()}`);
   };
@@ -161,7 +146,6 @@ const ShopPage: React.FC = () => {
     return false;
   }, [location.search]);
 
-
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -189,11 +173,7 @@ const ShopPage: React.FC = () => {
                     ))}
                     </div>
                     {totalPages > 1 && (
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                    />
+                    <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
                     )}
                 </>
                 ) : (
@@ -223,8 +203,6 @@ const ShopPage: React.FC = () => {
         <div className="mb-6">
             <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto shadow-sm" />
         </div>
-
-        {/* Mobile Category Scroll */}
         <div className="lg:hidden mb-6 overflow-x-auto scrollbar-hide -mx-4 px-4 flex gap-2">
             <button 
                 onClick={() => handleFilterChange('mainCategory', null)} 
@@ -244,15 +222,13 @@ const ShopPage: React.FC = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 relative">
-          {/* Desktop Sticky Sidebar */}
           <aside className={`hidden lg:block flex-shrink-0 sticky top-[100px] h-[calc(100vh-120px)] transition-all duration-300 z-10 ${isSidebarCollapsed ? 'w-16' : 'w-64'}`}>
             <CategorySidebar 
               currentMainCategorySlug={currentFilters.mainCategory}
               currentSubCategorySlug={currentFilters.subCategory}
-              isCollapsed={isSidebarCollapsed} // Pass collapsed state
+              isCollapsed={isSidebarCollapsed} 
             />
           </aside>
-          
           <div className="flex-grow min-w-0">
             {renderContent()}
           </div>

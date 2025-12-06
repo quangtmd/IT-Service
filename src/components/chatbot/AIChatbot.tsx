@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChatMessage as ChatMessageType, GroundingChunk, ChatLogSession } from '../../types';
+import { ChatMessage as ChatMessageType, GroundingChunk, ChatLogSession } from '@/types';
 import ChatMessage from './ChatMessage';
-import geminiService from '../../services/geminiService';
-import * as Constants from '../../constants.tsx'; 
-import { useChatbotContext } from '../../contexts/ChatbotContext'; 
-import { saveChatLogSession, getOrders } from '../../services/localDataService';
-import { useAuth } from '../../contexts/AuthContext';
+import geminiService from '@/services/geminiService';
+import * as Constants from '@/constants'; 
+import { useChatbotContext } from '@/contexts/ChatbotContext'; 
+import { saveChatLogSession, getOrders } from '@/services/localDataService';
+import { useAuth } from '@/contexts/AuthContext';
+import Button from '@/components/ui/Button';
 
 declare global {
   interface Window {

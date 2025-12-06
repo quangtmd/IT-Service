@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Product } from '../../types';
-import Button from '../ui/Button';
-import { useCart } from '../../hooks/useCart';
-import { useToast } from '../../contexts/ToastContext';
+import { Product } from '@/types';
+import Button from '@/components/ui/Button';
+import { useCart } from '@/hooks/useCart';
+import { useToast } from '@/contexts/ToastContext';
 
 interface ProductCardProps {
   product: Product;
@@ -29,7 +29,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     success(`Đã thêm "${product.name}" vào giỏ hàng!`);
   };
 
-  // Helper to render stars
   const renderStars = (rating: number = 0) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
@@ -50,8 +49,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
     <Link to={`/product/${product.id}`} className="block h-full group">
       <div className="bg-white rounded-xl shadow-sm hover:shadow-2xl border border-gray-200 hover:border-primary/40 transition-all duration-300 h-full flex flex-col overflow-hidden relative transform hover:-translate-y-1">
-        
-        {/* Image Section with Enhanced Zoom Effect */}
         <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
           <img
             src={(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : `https://source.unsplash.com/300x225/?${encodeURIComponent(product.name)}`)}
@@ -60,7 +57,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             loading="lazy"
           />
           
-          {/* Badges */}
           <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
             {isBestSeller && (
               <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-black px-2 py-1 rounded shadow-sm">
@@ -75,19 +71,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         </div>
 
-        {/* Content Section */}
         <div className="p-4 flex flex-col flex-grow">
-          {/* Brand */}
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide truncate mb-1">
              {product.brand || 'IQ TECH'}
           </div>
 
-          {/* Title */}
           <h3 className="text-sm md:text-base font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]" title={product.name}>
             {product.name}
           </h3>
 
-          {/* Rating */}
           <div className="flex items-center gap-1 mb-3">
             <div className="flex gap-0.5">
                 {renderStars(ratingValue)}
@@ -95,7 +87,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <span className="text-xs text-gray-400 ml-1">({reviewCount})</span>
           </div>
 
-          {/* Bottom: Price & Action */}
           <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
             <div className="flex flex-col">
                 {product.originalPrice && product.price < product.originalPrice && (
