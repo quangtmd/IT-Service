@@ -14,7 +14,7 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.0",
     "react-markdown": "^9.0.1",
-    "@google/genai": "^0.1.1",
+    "@google/genai": "^0.0.1",
     "firebase": "^10.12.0",
     "three": "^0.164.0",
     "@react-three/fiber": "^8.16.6",
