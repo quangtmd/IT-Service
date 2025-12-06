@@ -1,3 +1,4 @@
+
 import { 
     NavLinkItem, ProductCategoryHierarchy, StaffRole, SiteSettings, FaqItem, DiscountCode, 
     SiteThemeSettings, CustomMenuLink, PricingPlan, UserRole,
@@ -9,7 +10,8 @@ import {
     HomepageBrandLogo, HomepageBrandLogosSettings,
     HomepageProcessStep, HomepageProcessSettings,
     HomepageCallToActionSettings, HomepageBlogPreviewSettings, HomepageContactSectionSettings,
-    SMTPSettings, PaymentGatewaySettings, MediaItem
+    SMTPSettings, PaymentGatewaySettings, MediaItem,
+    Warehouse, StockReceipt // Added new types
 } from './types';
 
 export const ADMIN_EMAIL = "quangtmdit@gmail.com"; 
@@ -32,6 +34,11 @@ export const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1'; // Uses sessionSt
 export const FINANCIAL_TRANSACTIONS_STORAGE_KEY = 'siteFinancialTransactions_v1';
 export const PAYROLL_RECORDS_STORAGE_KEY = 'sitePayrollRecords_v1';
 export const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
+// Added missing storage keys
+export const WAREHOUSES_STORAGE_KEY = 'siteWarehouses_v1';
+export const STOCK_RECEIPTS_STORAGE_KEY = 'siteStockReceipts_v1';
+export const STOCK_ISSUES_STORAGE_KEY = 'siteStockIssues_v1';
+export const STOCK_TRANSFERS_STORAGE_KEY = 'siteStockTransfers_v1';
 
 
 // --- BANKING INFO ---
@@ -42,6 +49,25 @@ export const VIETCOMBANK_ID = "970436";
 export const DEPOSIT_PERCENTAGE = 0.3; // 30% deposit
 
 // --- INITIAL DYNAMIC DATA (Managed by Admin, stored in localStorage) ---
+
+export const INITIAL_WAREHOUSES: Warehouse[] = [
+    { id: 'wh001', name: 'Kho Chính', location: '10 Huỳnh Thúc Kháng, Đà Nẵng' },
+    { id: 'wh002', name: 'Kho Dịch vụ', location: '10 Huỳnh Thúc Kháng, Đà Nẵng' },
+];
+
+export const INITIAL_STOCK_RECEIPTS: StockReceipt[] = [
+    {
+        id: 'sr001', receiptNumber: 'PN000001', supplierId: 'SUP001', supplierName: 'Nhà phân phối Tin học Mai Hoàng',
+        date: new Date().toISOString(),
+        items: [
+            { productId: 'CPU001', productName: 'CPU Intel Core i5-14600K', quantity: 10, purchasePrice: 8000000 },
+            { productId: 'VGA001', productName: 'VGA GIGABYTE GeForce RTX 4060', quantity: 5, purchasePrice: 8200000 },
+        ],
+        totalAmount: 121000000,
+        amountPaid: 121000000,
+        status: 'Hoàn thành'
+    }
+];
 
 const INITIAL_HOMEPAGE_BANNERS: HomepageBannerSettings[] = [
     {
@@ -145,7 +171,7 @@ const INITIAL_HOMEPAGE_WHYCHOOSEUS: HomepageWhyChooseUsSettings = {
 
 const INITIAL_HOMEPAGE_STATS: HomepageStatItem[] = [
   { id: 'stat1', iconClass: 'fas fa-handshake', count: '20+', label: 'Khách Hàng Doanh Nghiệp', order: 1 },
-  { id: 'stat2', iconClass: 'fas fa-tasks', count: '100+', label: 'Dự Án Đã Triển Khai', order: 2 },
+  { id: 'stat2', iconClass: 'fas fa-tasks', count: '100+', label: 'Dự án Đã Triển Khai', order: 2 },
   { id: 'stat3', iconClass: 'fas fa-smile-beam', count: '98%+', label: 'Khách Hàng Hài Lòng', order: 3 },
   { id: 'stat4', iconClass: 'fas fa-lightbulb', count: '50+', label: 'Giải Pháp Công Nghệ', order: 4 },
 ];
