@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
+// Fix: Use named import for Link
+import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
@@ -67,11 +68,12 @@ const HomeWhyChooseUsIts: React.FC = () => {
 
               {whyChooseUsConfig.contactButtonLink && whyChooseUsConfig.contactButtonText && (
                  <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : ''}`} style={{animationDelay:'0.5s'}}>
-                  <ReactRouterDOM.Link to={whyChooseUsConfig.contactButtonLink}>
+                  {/* Fix: Use Link directly */}
+                  <Link to={whyChooseUsConfig.contactButtonLink}>
                     <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-md hover:shadow-primary/30">
                         {whyChooseUsConfig.contactButtonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                     </Button>
-                  </ReactRouterDOM.Link>
+                  </Link>
                 </div>
               )}
             </div>

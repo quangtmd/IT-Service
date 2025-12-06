@@ -8,7 +8,7 @@ import { useToast } from '../../contexts/ToastContext';
 
 interface ProductCardProps {
   product: Product;
-  context?: 'preview' | 'detail-view'; 
+  context?: 'preview' | 'detail-view';
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
@@ -21,7 +21,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const hasDiscount = discountPercentage > 0;
   const isBestSeller = product.tags && product.tags.includes('Bán chạy');
-  
+
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -29,11 +29,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     success(`Đã thêm "${product.name}" vào giỏ hàng!`);
   };
 
+  // Helper to render stars
+  const renderStars = (rating: number = 0) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      if (i <= rating) {
+        stars.push(<i key={i} className="fas fa-star text-yellow-400 text-[10px]"></i>);
+      } else if (i - 0.5 === rating) {
+        stars.push(<i key={i} className="fas fa-star-half-alt text-yellow-400 text-[10px]"></i>);
+      } else {
+        stars.push(<i key={i} className="far fa-star text-gray-300 text-[10px]"></i>);
+      }
+    }
+    return stars;
+  };
+
+  const ratingValue = product.rating || 5; 
+  const reviewCount = product.reviews || 0;
+
   return (
     <Link to={`/product/${product.id}`} className="block h-full group">
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-200 hover:border-primary/50 transition-all duration-300 h-full flex flex-col overflow-hidden relative">
+      <div className="bg-white rounded-xl shadow-sm hover:shadow-2xl border border-gray-200 hover:border-primary/40 transition-all duration-300 h-full flex flex-col overflow-hidden relative transform hover:-translate-y-1">
         
-        {/* Image Section */}
+        {/* Image Section with Enhanced Zoom Effect */}
         <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
           <img
             src={(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : `https://source.unsplash.com/300x225/?${encodeURIComponent(product.name)}`)}
@@ -51,28 +69,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             )}
             {hasDiscount && !isBestSeller && (
               <span className="text-[10px] font-bold uppercase tracking-wider bg-primary text-white px-2 py-1 rounded shadow-sm">
-                Sale
+                Giảm {discountPercentage}%
               </span>
             )}
           </div>
-
-          {/* Discount Bubble */}
-          {discountPercentage > 0 && (
-            <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm">
-              -{discountPercentage}%
-            </div>
-          )}
         </div>
 
         {/* Content Section */}
         <div className="p-4 flex flex-col flex-grow">
-          {/* Brand & Rating */}
-          <div className="flex justify-between items-center mb-2">
-             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide truncate max-w-[60%]">{product.brand || 'No Brand'}</span>
-             <div className="flex items-center gap-1">
-                <i className="fas fa-star text-yellow-400 text-[10px]"></i>
-                <span className="text-xs text-gray-500 font-medium">{product.rating || 5} ({product.reviews || 0})</span>
-             </div>
+          {/* Brand */}
+          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide truncate mb-1">
+             {product.brand || 'IQ TECH'}
           </div>
 
           {/* Title */}
@@ -80,39 +87,36 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             {product.name}
           </h3>
 
+          {/* Rating */}
+          <div className="flex items-center gap-1 mb-3">
+            <div className="flex gap-0.5">
+                {renderStars(ratingValue)}
+            </div>
+            <span className="text-xs text-gray-400 ml-1">({reviewCount})</span>
+          </div>
+
           {/* Bottom: Price & Action */}
-          <div className="mt-auto pt-3 border-t border-gray-100">
-            <div className="flex items-end justify-between mb-3">
-                <div className="flex flex-col">
-                    {product.originalPrice && product.price < product.originalPrice && (
-                        <span className="text-xs text-gray-400 line-through mb-0.5">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice)}
-                        </span>
-                    )}
-                    <span className="text-lg font-bold text-red-600 leading-none">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+          <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+            <div className="flex flex-col">
+                {product.originalPrice && product.price < product.originalPrice && (
+                    <span className="text-xs text-gray-400 line-through font-mono">
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice)}
                     </span>
-                </div>
+                )}
+                <span className="text-lg font-bold text-red-600 leading-none">
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                </span>
             </div>
 
             <Button 
                 variant="outline" 
                 size="sm" 
-                className={`w-full py-2 text-xs font-bold uppercase tracking-wide transition-all duration-300
-                    ${product.stock > 0 
-                        ? 'group-hover:bg-primary group-hover:text-white group-hover:border-primary' 
-                        : 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200'}
-                `}
+                className={`!p-0 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 group/btn border-primary text-primary hover:bg-primary hover:text-white ${product.stock <= 0 ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300 text-gray-400' : ''}`}
                 onClick={handleAddToCart}
                 disabled={product.stock <= 0}
+                title={product.stock > 0 ? "Thêm vào giỏ" : "Hết hàng"}
             >
-                {product.stock > 0 ? (
-                    <>
-                        <i className="fas fa-cart-plus mr-2"></i> Thêm vào giỏ
-                    </>
-                ) : (
-                    'Hết hàng'
-                )}
+                <i className="fas fa-cart-plus"></i>
             </Button>
           </div>
         </div>

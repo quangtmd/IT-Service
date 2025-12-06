@@ -1,7 +1,8 @@
 import React from 'react';
 import { PricingPlan } from '../../types';
 import Button from '../ui/Button';
-import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Use named import for Link
+import { Link } from 'react-router-dom';
 
 interface PricingPlanCardItsProps {
   plan: PricingPlan;
@@ -56,7 +57,8 @@ const PricingPlanCardIts: React.FC<PricingPlanCardItsProps> = ({ plan }) => {
       </ul>
 
       <div className="mt-auto">
-        <ReactRouterDOM.Link to={plan.buttonLink || '/contact'} className="block">
+        {/* Fix: Use Link directly */}
+        <Link to={plan.buttonLink || '/contact'} className="block">
           <Button
             size="lg"
             className={`w-full py-3 font-bold group rounded-lg transition-all duration-300 ${buttonColorClass}`}
@@ -64,7 +66,7 @@ const PricingPlanCardIts: React.FC<PricingPlanCardItsProps> = ({ plan }) => {
             {plan.buttonText || 'Đăng Ký'}
             <i className="fas fa-arrow-right text-xs ml-2 transition-transform group-hover:translate-x-1"></i>
           </Button>
-        </ReactRouterDOM.Link>
+        </Link>
       </div>
     </div>
   );

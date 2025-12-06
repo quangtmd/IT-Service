@@ -5,11 +5,11 @@ import {
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
     WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer,
     Debt, PaymentApproval, CashflowForecastData,
-    AdCampaign, EmailCampaign, EmailSubscriber
+    AdCampaign, EmailCampaign, EmailSubscriber, WarrantyClaim, AuditLog
 } from '../types';
 import * as Constants from '../constants';
 
-// --- Helper Functions for localStorage ---
+// --- Helper Functions for localStorage (kept for some client-side persistence if needed, but primarily moving to API) ---
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try {
         const item = localStorage.getItem(key);
@@ -31,14 +31,10 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-// Use the centralized configuration from constants to ensure consistency.
-// In Dev: "" (Proxy). In Prod: "https://it-service-app-n9as.onrender.com"
 const API_BASE_URL = Constants.BACKEND_API_BASE_URL;
 console.log(`[API Config] Connected to Backend: ${API_BASE_URL}`);
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // All API endpoints are prefixed with /api on the server.
-    // This ensures the correct path is always used.
     const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
@@ -55,7 +51,6 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
             
-            // Special handling for 404 HTML responses (often means hitting Frontend instead of Backend)
             const contentType = response.headers.get("content-type");
             if (response.status === 404 && (errorMessageDetails.includes('File not found') || (contentType && contentType.includes("text/html")))) {
                  throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Vui lòng kiểm tra cấu hình Backend.`);
@@ -66,6 +61,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             throw new Error(errorMessage);
         }
         
+        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
@@ -87,7 +83,6 @@ export const deleteUser = (id: string): Promise<void> => fetchFromApi<void>(`/us
 
 // --- Product Service ---
 export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => {
-    // Remove leading '?' if present in queryParams to avoid double '??'
     const queryString = queryParams.startsWith('?') ? queryParams.slice(1) : queryParams;
     return fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryString}`);
 };
@@ -98,7 +93,6 @@ export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`
 
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
-        // Call the specific endpoint for featured products which returns an array directly
         return await fetchFromApi<Product[]>('/products/featured');
     } catch (error) {
         console.error("Failed to fetch featured products", error);
@@ -147,13 +141,16 @@ export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void
     });
 };
 
-export const getDebts = (): Promise<Debt[]> => fetchFromApi<Debt[]>('/debts');
-export const updateDebt = (id: string, updates: Partial<Debt>): Promise<Debt> => fetchFromApi<Debt>(`/debts/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+// Debts
+export const getDebts = async (): Promise<Debt[]> => fetchFromApi<Debt[]>('/debts');
+export const updateDebt = async (id: string, updates: Partial<Debt>): Promise<Debt> => fetchFromApi<Debt>(`/debts/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 
-export const getPaymentApprovals = (): Promise<PaymentApproval[]> => fetchFromApi<PaymentApproval[]>('/payment-approvals');
-export const updatePaymentApproval = (id: string, updates: Partial<PaymentApproval>): Promise<PaymentApproval> => fetchFromApi<PaymentApproval>(`/payment-approvals/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+// Payment Approvals
+export const getPaymentApprovals = async (): Promise<PaymentApproval[]> => fetchFromApi<PaymentApproval[]>('/payment-approvals');
+export const updatePaymentApproval = async (id: string, updates: Partial<PaymentApproval>): Promise<PaymentApproval> => fetchFromApi<PaymentApproval>(`/payment-approvals/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 
-export const getCashflowForecast = (): Promise<CashflowForecastData> => fetchFromApi<CashflowForecastData>('/financials/forecast');
+// Cashflow Forecast
+export const getCashflowForecast = async (): Promise<CashflowForecastData> => fetchFromApi<CashflowForecastData>('/financials/forecast');
 
 
 // --- Service Tickets ---
@@ -184,7 +181,12 @@ export const addSupplier = (supplier: Omit<Supplier, 'id'>): Promise<Supplier> =
 export const updateSupplier = (id: string, updates: Partial<Supplier>): Promise<Supplier> => fetchFromApi<Supplier>(`/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteSupplier = (id: string): Promise<void> => fetchFromApi<void>(`/suppliers/${id}`, { method: 'DELETE' });
 
-// --- Warranty Ticket Service ---
+// --- Warranty Claim Service ---
+export const getWarrantyClaims = async (): Promise<WarrantyClaim[]> => {
+    return fetchFromApi<WarrantyClaim[]>('/warranty-claims');
+};
+
+// --- Warranty Ticket Service (if separate) ---
 export const getWarrantyTickets = async (): Promise<WarrantyTicket[]> => {
     return fetchFromApi<WarrantyTicket[]>('/warranty-tickets');
 };
@@ -210,7 +212,7 @@ export const deleteWarrantyTicket = async (id: string): Promise<void> => {
 };
 
 
-// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
+// --- INVENTORY & LOGISTICS SERVICES (Currently using localStorage for persistence until backend endpoints are ready) ---
 
 // Warehouses
 export const getWarehouses = async (): Promise<Warehouse[]> => {
@@ -308,7 +310,7 @@ export const deleteStockTransfer = async (id: string): Promise<void> => {
     setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, transfers.filter(t => t.id !== id));
 };
 
-// Placeholder for other missing functions
+// --- Marketing & Audit Placeholders ---
 export const getAdCampaigns = async (): Promise<AdCampaign[]> => { return []; };
 export const addAdCampaign = async (campaign: Omit<AdCampaign, 'id'>): Promise<void> => { };
 export const updateAdCampaign = async (id: string, updates: Partial<AdCampaign>): Promise<void> => { };
@@ -322,6 +324,6 @@ export const deleteEmailCampaign = async (id: string): Promise<void> => { };
 export const getEmailSubscribers = async (): Promise<EmailSubscriber[]> => { return []; };
 export const deleteEmailSubscriber = async (id: number): Promise<void> => { };
 
-export const getAuditLogs = async (): Promise<any[]> => fetchFromApi<any[]>('/audit-logs');
+export const getAuditLogs = async (): Promise<AuditLog[]> => fetchFromApi<AuditLog[]>('/audit-logs');
 
 export const checkBackendHealth = (): Promise<any> => fetchFromApi('/health');

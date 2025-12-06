@@ -1,42 +1,59 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, AdminNotification, AdminView } from '../types';
-import { useAuth, AdminPermission } from '../contexts/AuthContext';
+import { User, AdminNotification, AdminView } from '../../types';
+import { useAuth, AdminPermission } from '../../contexts/AuthContext';
 
 // Import existing views
-import HRMProfileView from '../components/admin/HRMProfileView';
-import ProductManagementView from '../components/admin/ProductManagementView';
-import ArticleManagementView from '../components/admin/ArticleManagementView';
-import OrderManagementView from '../components/admin/OrderManagementView';
-import CustomerManagementView from '../components/admin/CustomerManagementView';
-import DiscountManagementView from '../components/admin/DiscountManagementView';
-import FaqManagementView from '../components/admin/FaqManagementView';
-import ChatLogView from '../components/admin/ChatLogView';
-import SiteSettingsView from '../components/admin/SiteSettingsView';
-import MediaLibraryView from '../components/admin/MediaLibraryView';
-import NotificationsView from '../components/admin/NotificationsView';
-import HomepageManagementView from '../components/admin/HomepageManagementView';
-import FinancialManagementView from '../components/admin/FinancialManagementView';
-import DashboardView from '../components/admin/DashboardView';
-import InventoryView from '../components/admin/InventoryView';
-import ServiceTicketView from '../components/admin/ServiceTicketView';
+import HRMProfileView from '../../components/admin/HRMProfileView';
+import ProductManagementView from '../../components/admin/ProductManagementView';
+import ArticleManagementView from '../../components/admin/ArticleManagementView';
+import OrderManagementView from '../../components/admin/OrderManagementView';
+import CustomerManagementView from '../../components/admin/CustomerManagementView';
+import DiscountManagementView from '../../components/admin/DiscountManagementView';
+import FaqManagementView from '../../components/admin/FaqManagementView';
+import ChatLogView from '../../components/admin/ChatLogView';
+import SiteSettingsView from '../../components/admin/SiteSettingsView';
+import MediaLibraryView from '../../components/admin/MediaLibraryView';
+import NotificationsView from '../../components/admin/NotificationsView';
+import HomepageManagementView from '../../components/admin/HomepageManagementView';
+import FinancialManagementView from '../../components/admin/FinancialManagementView';
+import DashboardView from '../../components/admin/DashboardView';
+import ServiceTicketView from '../../components/admin/ServiceTicketView';
+
+// Import new Inventory & Logistics views
+import InventoryView from '../../components/admin/InventoryView';
+// FIX: Add missing imports for Inventory & Logistics views.
+import StockReceiptsView from '../../components/admin/StockReceiptsView';
+import StockIssuesView from '../../components/admin/StockIssuesView';
+import StockTransfersView from '../../components/admin/StockTransfersView';
+import ShippingManagementView from '../../components/admin/ShippingManagementView';
+
 
 // Import new form pages
-import ProductFormPage from './admin/ProductFormPage';
-import UserFormPage from './admin/UserFormPage';
-import ArticleFormPage from './admin/ArticleFormPage';
-import DiscountFormPage from './admin/DiscountFormPage';
-import FaqFormPage from './admin/FaqFormPage';
-import TransactionFormPage from './admin/TransactionFormPage';
-import QuotationFormPage from './admin/QuotationFormPage';
-import CustomerFormPage from './admin/CustomerFormPage';
+import ProductFormPage from './ProductFormPage';
+import UserFormPage from './UserFormPage';
+import ArticleFormPage from './ArticleFormPage';
+import DiscountFormPage from './DiscountFormPage';
+import FaqFormPage from './FaqFormPage';
+import TransactionFormPage from './TransactionFormPage';
+import QuotationFormPage from './QuotationFormPage';
+import CustomerFormPage from './CustomerFormPage';
+import CustomerProfilePage from './CustomerProfilePage';
+import OrderFormPage from './OrderFormPage';
+import ReturnFormPage from './ReturnFormPage';
+import SupplierFormPage from './SupplierFormPage';
+import ServiceTicketFormPage from './ServiceTicketFormPage';
+import WarrantyFormPage from './WarrantyFormPage';
+import StockReceiptFormPage from './StockReceiptFormPage';
+import StockIssueFormPage from './StockIssueFormPage';
+import StockTransferFormPage from './StockTransferFormPage';
 
 
 // Import new placeholder/skeleton views
-import QuotationManagementView from '../components/admin/QuotationManagementView';
-import WarrantyManagementView from '../components/admin/WarrantyManagementView';
-import ReturnManagementView from '../components/admin/ReturnManagementView';
-import SupplierManagementView from '../components/admin/SupplierManagementView';
+import QuotationManagementView from '../../components/admin/QuotationManagementView';
+import WarrantyManagementView from '../../components/admin/WarrantyManagementView';
+import ReturnManagementView from '../../components/admin/ReturnManagementView';
+import SupplierManagementView from '../../components/admin/SupplierManagementView';
 
 
 interface MenuItemConfig {
@@ -58,7 +75,7 @@ const AdminPage: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-        'sales_crm': true, 'service_warranty': true, 'cms_marketing': true, 'inventory_logistics': false,
+        'sales_crm': true, 'service_warranty': true, 'cms_marketing': true, 'inventory_logistics': true,
         'finance_accounting': false, 'procurement': false, 'system_hr': false,
     });
 
@@ -83,7 +100,6 @@ const AdminPage: React.FC = () => {
                 { id: 'discounts', label: 'Mã Giảm Giá', icon: 'fas fa-tags', permission: ['manageDiscounts'] },
                 { id: 'returns', label: 'Hoàn Trả', icon: 'fas fa-undo-alt', permission: ['manageOrders'] },
                 { id: 'suppliers', label: 'Nhà Cung Cấp', icon: 'fas fa-truck-loading', permission: ['viewSuppliers'] },
-                { id: 'service_tickets', label: 'Ticket Hỗ Trợ (Helpdesk)', icon: 'fas fa-headset', permission: ['manageServiceTickets'] },
             ]
         },
         // II. Service & Warranty
@@ -91,7 +107,8 @@ const AdminPage: React.FC = () => {
             id: 'service_warranty', label: 'Dịch Vụ & Bảo Hành', icon: 'fas fa-tools', permission: ['viewService'],
             children: [
                 { id: 'service_tickets', label: 'Phiếu Sửa Chữa', icon: 'fas fa-ticket-alt', permission: ['manageServiceTickets'] },
-                { id: 'warranty_claims', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
+                // FIX: Changed 'warranty_claims' to 'warranty_tickets' to match the AdminView type.
+                { id: 'warranty_tickets', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
             ]
         },
@@ -167,20 +184,16 @@ const AdminPage: React.FC = () => {
         }
 
         const viewCandidates = [
-            'products/new', 'products/edit',
-            'hrm_dashboard/new', 'hrm_dashboard/edit',
-            'articles/new', 'articles/edit',
-            'discounts/new', 'discounts/edit',
-            'faqs/new', 'faqs/edit',
-            'accounting_dashboard/transactions/new', 'accounting_dashboard/transactions/edit',
-            'quotations/new', 'quotations/edit',
-            'customers/new', 'customers/edit',
+            'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
+            'accounting_dashboard', 'quotations', 'customers', 'orders', 
+            'returns', 'suppliers', 'service_tickets', 'warranty_tickets',
+            'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers'
         ];
 
         let foundView = null;
         for (const candidate of viewCandidates) {
-            if(path.includes(`/admin/${candidate}`)) {
-                foundView = candidate.split('/')[0];
+            if(path.startsWith(`/admin/${candidate}`)) {
+                foundView = candidate;
                 break;
             }
         }
@@ -236,9 +249,13 @@ const AdminPage: React.FC = () => {
             case 'inventory': return <InventoryView />;
             case 'service_tickets': return <ServiceTicketView />;
             case 'quotations': return <QuotationManagementView />;
-            case 'warranty_claims': return <WarrantyManagementView />;
+            case 'warranty_tickets': return <WarrantyManagementView />;
             case 'returns': return <ReturnManagementView />;
             case 'suppliers': return <SupplierManagementView />;
+            case 'stock_receipts': return <StockReceiptsView />;
+            case 'stock_issues': return <StockIssuesView />;
+            case 'stock_transfers': return <StockTransfersView />;
+            case 'shipping': return <ShippingManagementView />;
             default: return (
                 <div className="admin-card">
                     <div className="admin-card-body text-center py-12">
@@ -257,6 +274,9 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/products/edit/')) return 'Chỉnh sửa Sản phẩm';
         if (path.startsWith('/admin/hrm_dashboard/new')) return 'Thêm Nhân viên Mới';
         if (path.startsWith('/admin/hrm_dashboard/edit/')) return 'Chỉnh sửa Hồ sơ Nhân sự';
+        if (path.startsWith('/admin/customers/new')) return 'Thêm Khách hàng Mới';
+        if (path.startsWith('/admin/customers/edit/')) return 'Chỉnh sửa Khách hàng';
+        if (path.startsWith('/admin/customers/view/')) return 'Hồ sơ Khách hàng';
         if (path.startsWith('/admin/articles/new')) return 'Thêm Bài viết Mới';
         if (path.startsWith('/admin/articles/edit/')) return 'Chỉnh sửa Bài viết';
         if (path.startsWith('/admin/discounts/new')) return 'Thêm Mã giảm giá Mới';
@@ -267,8 +287,22 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/accounting_dashboard/transactions/edit/')) return 'Chỉnh sửa Giao dịch';
         if (path.startsWith('/admin/quotations/new')) return 'Tạo Báo giá Mới';
         if (path.startsWith('/admin/quotations/edit/')) return 'Chỉnh sửa Báo giá';
-        if (path.startsWith('/admin/customers/new')) return 'Thêm Khách hàng Mới';
-        if (path.startsWith('/admin/customers/edit/')) return 'Chỉnh sửa Khách hàng';
+        if (path.startsWith('/admin/orders/new')) return 'Tạo Đơn hàng Mới';
+        if (path.startsWith('/admin/orders/edit/')) return 'Chỉnh sửa Đơn hàng';
+        if (path.startsWith('/admin/returns/new')) return 'Tạo Phiếu Hoàn Trả';
+        if (path.startsWith('/admin/returns/edit/')) return 'Chỉnh sửa Phiếu Hoàn Trả';
+        if (path.startsWith('/admin/suppliers/new')) return 'Thêm Nhà Cung Cấp';
+        if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
+        if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
+        if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
+        if (path.startsWith('/admin/warranty_tickets/new')) return 'Tạo Phiếu Bảo hành';
+        if (path.startsWith('/admin/warranty_tickets/edit/')) return 'Chỉnh sửa Phiếu Bảo hành';
+        if (path.startsWith('/admin/stock_receipts/new')) return 'Tạo Phiếu Nhập Kho';
+        if (path.startsWith('/admin/stock_receipts/edit/')) return 'Sửa Phiếu Nhập Kho';
+        if (path.startsWith('/admin/stock_issues/new')) return 'Tạo Phiếu Xuất Kho';
+        if (path.startsWith('/admin/stock_issues/edit/')) return 'Sửa Phiếu Xuất Kho';
+        if (path.startsWith('/admin/stock_transfers/new')) return 'Tạo Phiếu Điều Chuyển';
+        if (path.startsWith('/admin/stock_transfers/edit/')) return 'Sửa Phiếu Điều Chuyển';
 
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
@@ -304,6 +338,7 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/hrm_dashboard/edit/:userId" element={<UserFormPage />} />
                         <ReactRouterDOM.Route path="/customers/new" element={<CustomerFormPage />} />
                         <ReactRouterDOM.Route path="/customers/edit/:customerId" element={<CustomerFormPage />} />
+                        <ReactRouterDOM.Route path="/customers/view/:customerId" element={<CustomerProfilePage />} />
                         <ReactRouterDOM.Route path="/articles/new" element={<ArticleFormPage />} />
                         <ReactRouterDOM.Route path="/articles/edit/:articleId" element={<ArticleFormPage />} />
                         <ReactRouterDOM.Route path="/discounts/new" element={<DiscountFormPage />} />
@@ -314,6 +349,22 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
                         <ReactRouterDOM.Route path="/quotations/new" element={<QuotationFormPage />} />
                         <ReactRouterDOM.Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
+                        <ReactRouterDOM.Route path="/orders/new" element={<OrderFormPage />} />
+                        <ReactRouterDOM.Route path="/orders/edit/:orderId" element={<OrderFormPage />} />
+                        <ReactRouterDOM.Route path="/returns/new" element={<ReturnFormPage />} />
+                        <ReactRouterDOM.Route path="/returns/edit/:returnId" element={<ReturnFormPage />} />
+                        <ReactRouterDOM.Route path="/suppliers/new" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
+                        <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_tickets/new" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_tickets/edit/:ticketId" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_receipts/new" element={<StockReceiptFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_receipts/edit/:id" element={<StockReceiptFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_issues/new" element={<StockIssueFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_issues/edit/:id" element={<StockIssueFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_transfers/new" element={<StockTransferFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_transfers/edit/:id" element={<StockTransferFormPage />} />
                         
                         {/* Generic route for views */}
                         <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />
@@ -387,7 +438,7 @@ const AdminSidebar: React.FC<{
             <div className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
             <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`}>
                 <div className="admin-sidebar-header justify-between">
-                    {!isCollapsed && <ReactRouterDOM.Link to="/home"><span className="text-xl font-bold text-white">IQ Technology</span></ReactRouterDOM.Link>}
+                    {!isCollapsed && <ReactRouterDOM.Link to="/"><span className="text-xl font-bold text-white">IQ Technology</span></ReactRouterDOM.Link>}
                     <button onClick={onToggleCollapse} className="hidden lg:block text-slate-400 hover:text-white text-lg">
                         <i className={`fas ${isCollapsed ? 'fa-align-right' : 'fa-align-left'}`}></i>
                     </button>
@@ -399,7 +450,7 @@ const AdminSidebar: React.FC<{
                     {menuConfig.map(item => renderSidebarItem(item))}
                 </nav>
                 <div className="admin-sidebar-footer">
-                    <ReactRouterDOM.Link to="/home" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
+                    <ReactRouterDOM.Link to="/" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
                         <i className="fas fa-globe w-6 text-center mr-3"></i>
                         {!isCollapsed && <span className="text-sm">Về trang chủ</span>}
                     </ReactRouterDOM.Link>
@@ -421,7 +472,7 @@ const AdminHeader: React.FC<{
         </div>
          <div className="flex items-center gap-4">
             <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
-            <ReactRouterDOM.Link to="/home">
+            <ReactRouterDOM.Link to="/">
                 <i className="fas fa-user-circle text-2xl text-admin-textSecondary hover:text-primary"></i>
             </ReactRouterDOM.Link>
         </div>
