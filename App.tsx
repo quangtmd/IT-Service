@@ -1,7 +1,5 @@
-
 import React, { useEffect } from 'react';
-// Fix: Use named imports from react-router-dom instead of namespace import
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
@@ -20,8 +18,6 @@ import NotFoundPage from './pages/NotFoundPage';
 import ScrollToTop from './components/shared/ScrollToTop';
 import FloatingActionButtons from './components/shared/FloatingActionButtons';
 import PCBuildSuggestionsPage from './pages/PCBuildSuggestionsPage'; // Import the new page
-import CustomerOrdersPage from './pages/CustomerOrdersPage'; // New import for customer orders page
-import CustomerOrderDetailPage from './pages/CustomerOrderDetailPage'; // Import the new detail page
 
 // Auth and Admin
 import AdminPage from './pages/admin/AdminPage';
@@ -29,77 +25,52 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CheckoutPage from './pages/CheckoutPage';
-import { ThemeProvider } from './contexts/ThemeContext'; // Import ThemeProvider
-import { ToastProvider } from './contexts/ToastContext'; // Import ToastProvider
 
 const App: React.FC = () => {
 
   return (
-    // Fix: Use HashRouter directly
-    <ThemeProvider>
-      <ToastProvider>
-        <HashRouter>
-          <ScrollToTop />
-          <div className="flex flex-col min-h-screen bg-bgCanvas text-textBase transition-colors duration-300">
-            <Header />
-            <main className="flex-grow pt-[168px] print:pt-0">
-              {/* Fix: Use Routes directly */}
-              <Routes> {/* Replaced Switch with Routes */}
-                {/* Fix: Use Route directly */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/shop" element={<ShopPage />} />
-                <Route path="/product/:productId" element={<ProductDetailPage />} />
-                <Route path="/services" element={<ServicesPage />} />
-                <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
-                <Route path="/projects" element={<ProjectsPage />} />
-                <Route path="/blog" element={<BlogPage />} />
-                <Route path="/article/:articleId" element={<ArticleDetailPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/pc-builder" element={<PCBuilderPage />} />
-                <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} /> {/* Add new route */}
+    <ReactRouterDOM.HashRouter>
+      <ScrollToTop />
+      <div className="flex flex-col min-h-screen bg-bgCanvas">
+        <Header />
+        <main className="flex-grow pt-[168px] print:pt-0">
+          <ReactRouterDOM.Routes> {/* Replaced Switch with Routes */}
+            <ReactRouterDOM.Route path="/" element={<HomePage />} />
+            <ReactRouterDOM.Route path="/shop" element={<ShopPage />} />
+            <ReactRouterDOM.Route path="/product/:productId" element={<ProductDetailPage />} />
+            <ReactRouterDOM.Route path="/services" element={<ServicesPage />} />
+            <ReactRouterDOM.Route path="/service/:serviceId" element={<ServiceDetailPage />} />
+            <ReactRouterDOM.Route path="/projects" element={<ProjectsPage />} />
+            <ReactRouterDOM.Route path="/blog" element={<BlogPage />} />
+            <ReactRouterDOM.Route path="/article/:articleId" element={<ArticleDetailPage />} />
+            <ReactRouterDOM.Route path="/about" element={<AboutPage />} />
+            <ReactRouterDOM.Route path="/contact" element={<ContactPage />} />
+            <ReactRouterDOM.Route path="/cart" element={<CartPage />} />
+            <ReactRouterDOM.Route path="/pc-builder" element={<PCBuilderPage />} />
+            <ReactRouterDOM.Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} /> {/* Add new route */}
 
-                {/* Auth Routes */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                 <Route
-                  path="/account/orders"
-                  element={
-                    <ProtectedRoute>
-                      <CustomerOrdersPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/account/orders/:orderId"
-                  element={
-                    <ProtectedRoute>
-                      <CustomerOrderDetailPage />
-                    </ProtectedRoute>
-                  }
-                />
+            {/* Auth Routes */}
+            <ReactRouterDOM.Route path="/login" element={<LoginPage />} />
+            <ReactRouterDOM.Route path="/register" element={<RegisterPage />} />
+            <ReactRouterDOM.Route path="/checkout" element={<CheckoutPage />} />
 
-                {/* Protected Admin Route - Updated for v6/v7 */}
-                <Route
-                  path="/admin/*" // Add /* to allow nested routes within AdminPage if any
-                  element={
-                    <ProtectedRoute roles={['admin', 'staff']}>
-                      <AdminPage />
-                    </ProtectedRoute>
-                  }
-                />
+            {/* Protected Admin Route - Updated for v6/v7 */}
+            <ReactRouterDOM.Route
+              path="/admin/*" // Add /* to allow nested routes within AdminPage if any
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
 
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </main>
-            <Footer />
-            <FloatingActionButtons />
-          </div>
-        </HashRouter>
-      </ToastProvider>
-    </ThemeProvider>
+            <ReactRouterDOM.Route path="*" element={<NotFoundPage />} />
+          </ReactRouterDOM.Routes>
+        </main>
+        <Footer />
+        <FloatingActionButtons />
+      </div>
+    </ReactRouterDOM.HashRouter>
   );
 };
 

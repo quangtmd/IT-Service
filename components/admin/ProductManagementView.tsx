@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Product, MainCategoryInfo, SubCategoryInfo } from '../../types';
 import * as Constants from '../../constants';
@@ -5,7 +6,7 @@ import Button from '../ui/Button';
 import ImageUploadPreview from '../ui/ImageUploadPreview';
 import { getProducts, addProduct, updateProduct, deleteProduct } from '../../services/localDataService';
 import BackendConnectionError from '../../components/shared/BackendConnectionError';
-import { useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 
 const PRODUCTS_PER_PAGE = 10;
 
@@ -15,7 +16,7 @@ const ProductManagementView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const navigate = useNavigate();
+    const navigate = ReactRouterDOM.useNavigate();
 
     const loadProducts = useCallback(async () => {
         setIsLoading(true);

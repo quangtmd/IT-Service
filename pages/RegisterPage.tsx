@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
-import Auth3DBackground from '../components/auth/Auth3DBackground';
+import * as Constants from '../constants.tsx';
 
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -12,11 +11,15 @@ const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate(); // Changed from useHistory
+
+  // New, more vibrant technology background image (same as login page for consistency)
+  const backgroundImage = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/'); // Changed from history.push
     }
   }, [isAuthenticated, navigate]);
 
@@ -55,108 +58,120 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  // Glassmorphism input style
-  const inputStyles = "w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent focus:bg-white/10 transition-all duration-300 backdrop-blur-sm";
-
   return (
-    <div className="min-h-screen relative flex items-center justify-center overflow-hidden">
-      {/* 3D Background */}
-      <Auth3DBackground />
+    <div 
+      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative bg-cover bg-center"
+      style={{ backgroundImage: `url('${backgroundImage}')` }}
+    >
+      <div className="absolute inset-0 bg-black opacity-60"></div> {/* Dark overlay */}
+      <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-md p-10 rounded-xl shadow-xl border border-borderDefault relative z-10">
+        <div>
+          <ReactRouterDOM.Link to="/" className="flex justify-center">
+             <span className="text-3xl font-bold text-primary">{Constants.COMPANY_NAME}</span>
+          </ReactRouterDOM.Link>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-textBase">
+            Tạo tài khoản mới
+          </h2>
+          <p className="mt-2 text-center text-sm text-textMuted">
+            Hoặc{' '}
+            <ReactRouterDOM.Link to="/login" className="font-medium text-primary hover:text-primary-dark">
+              đăng nhập nếu bạn đã có tài khoản
+            </ReactRouterDOM.Link>
+          </p>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="p-3 bg-danger-bg border border-danger-border text-danger-text rounded-md text-sm">
+              {error}
+            </div>
+          )}
+          <div className="rounded-md shadow-sm">
+            <div>
+              <label htmlFor="username" className="sr-only">
+                Tên người dùng
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                placeholder="Tên người dùng *"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div className="-mt-px">
+              <label htmlFor="email-address" className="sr-only">
+                Địa chỉ email
+              </label>
+              <input
+                id="email-address"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                placeholder="Địa chỉ email *"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="-mt-px">
+              <label htmlFor="password" className="sr-only">
+                Mật khẩu
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                placeholder="Mật khẩu *"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div className="-mt-px">
+              <label htmlFor="confirm-password" className="sr-only">
+                Xác nhận mật khẩu
+              </label>
+              <input
+                id="confirm-password"
+                name="confirm-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-3 bg-white border border-borderStrong placeholder-textSubtle text-textBase rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm shadow-sm"
+                placeholder="Xác nhận mật khẩu *"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
 
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-md px-4 sm:px-6 lg:px-8 animate-fade-in-up">
-        <div className="bg-black/20 backdrop-blur-xl p-8 sm:p-10 rounded-2xl shadow-[0_0_40px_rgba(236,72,153,0.1)] border border-white/20">
-            <div className="text-center mb-8">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-tr from-pink-500 to-rose-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-pink-500/30">
-                    <i className="fas fa-user-plus text-2xl text-white"></i>
-                </div>
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">
-                    Tạo Tài Khoản Mới
-                </h2>
-                <p className="mt-2 text-sm text-pink-200/70">
-                    Tham gia cộng đồng công nghệ cùng IQ Tech
-                </p>
-            </div>
-        
-            {error && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-200 rounded-lg text-sm flex items-center animate-shake">
-                <i className="fas fa-exclamation-circle mr-2 text-red-400"></i> {error}
-                </div>
-            )}
-            
-            <form className="space-y-5" onSubmit={handleSubmit}>
-            <div>
-                <label htmlFor="username" className="block text-xs font-medium text-gray-300 uppercase tracking-wider mb-1">Tên người dùng</label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i className="fas fa-user text-gray-500"></i>
-                    </div>
-                    <input
-                        id="username" name="username" type="text" autoComplete="username" required
-                        className={`${inputStyles} pl-10`} placeholder="VD: nguyenvan_a"
-                        value={username} onChange={(e) => setUsername(e.target.value)}
-                    />
-                </div>
-            </div>
-            <div>
-                <label htmlFor="email-address" className="block text-xs font-medium text-gray-300 uppercase tracking-wider mb-1">Email</label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i className="fas fa-envelope text-gray-500"></i>
-                    </div>
-                    <input
-                        id="email-address" name="email" type="email" autoComplete="email" required
-                        className={`${inputStyles} pl-10`} placeholder="name@example.com"
-                        value={email} onChange={(e) => setEmail(e.target.value)}
-                    />
-                </div>
-            </div>
-            <div>
-                <label htmlFor="password" className="block text-xs font-medium text-gray-300 uppercase tracking-wider mb-1">Mật khẩu</label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i className="fas fa-lock text-gray-500"></i>
-                    </div>
-                    <input
-                        id="password" name="password" type="password" autoComplete="new-password" required
-                        className={`${inputStyles} pl-10`} placeholder="Ít nhất 6 ký tự"
-                        value={password} onChange={(e) => setPassword(e.target.value)}
-                    />
-                </div>
-            </div>
-            <div>
-                <label htmlFor="confirm-password" className="block text-xs font-medium text-gray-300 uppercase tracking-wider mb-1">Xác nhận mật khẩu</label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i className="fas fa-check-circle text-gray-500"></i>
-                    </div>
-                    <input
-                        id="confirm-password" name="confirm-password" type="password" autoComplete="new-password" required
-                        className={`${inputStyles} pl-10`} placeholder="Nhập lại mật khẩu"
-                        value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
-                </div>
-            </div>
+          <div>
+            <Button type="submit" className="w-full" size="lg" isLoading={authLoading}>
+              Đăng ký
+            </Button>
+          </div>
+        </form>
 
-            <div className="pt-2">
-                <Button 
-                    type="submit" 
-                    className="w-full !py-3.5 !text-base rounded-lg shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 border-none transition-all duration-300 transform hover:-translate-y-0.5" 
-                    size="lg" 
-                    isLoading={authLoading}
-                >
-                ĐĂNG KÝ TÀI KHOẢN
-                </Button>
-            </div>
-            </form>
-            <div className="mt-8 text-center">
-            <p className="text-sm text-gray-400">
-            Đã có tài khoản?{' '}
-            <Link to="/login" className="font-bold text-pink-400 hover:text-pink-300 transition-colors hover:underline">
-                Đăng nhập ngay
-            </Link>
-            </p>
-            </div>
+        <div className="relative flex justify-center text-xs uppercase my-6">
+            <span className="bg-white/80 backdrop-blur-md px-2 text-gray-500">Hoặc</span>
+        </div>
+
+        <div className="space-y-3">
+            <Button variant="outline" className="w-full flex items-center justify-center gap-3 !py-3 !text-base border-blue-500 text-blue-700 hover:bg-blue-50">
+                <i className="fab fa-google text-lg"></i>
+                <span>Đăng ký bằng Google</span>
+            </Button>
+            <Button variant="outline" className="w-full flex items-center justify-center gap-3 !py-3 !text-base border-blue-800 text-blue-800 hover:bg-blue-50">
+                <i className="fab fa-facebook-f text-lg"></i>
+                <span>Đăng ký bằng Facebook</span>
+            </Button>
         </div>
       </div>
     </div>

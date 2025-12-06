@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaqItem } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
-import { useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultValue; }
@@ -17,7 +17,7 @@ const setLocalStorageItem = <T,>(key: string, value: T) => {
 
 const FaqManagementView: React.FC = () => {
     const [faqs, setFaqs] = useState<FaqItem[]>(() => getLocalStorageItem(Constants.FAQ_STORAGE_KEY, Constants.INITIAL_FAQS));
-    const navigate = useNavigate();
+    const navigate = ReactRouterDOM.useNavigate();
 
     useEffect(() => {
         const loadFaqs = () => {

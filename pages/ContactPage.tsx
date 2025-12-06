@@ -4,13 +4,13 @@ import Button from '../components/ui/Button';
 import * as Constants from '../constants.tsx';
 import { SiteSettings } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../contexts/ToastContext';
 
 const ContactPage: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null); 
   const { addAdminNotification } = useAuth();
-  const { success, error: toastError, warning } = useToast();
 
   const loadSettings = useCallback(() => {
     const storedSettings = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
@@ -31,27 +31,28 @@ const ContactPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (formError) setFormError(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setFormError(null);
     if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.subject.trim() || !formData.message.trim()) {
-        warning("Vui lòng điền đầy đủ các trường bắt buộc.");
+        setFormError("Vui lòng điền đầy đủ các trường bắt buộc.");
         return;
     }
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        toastError("Địa chỉ email không hợp lệ.");
+        setFormError("Địa chỉ email không hợp lệ.");
         return;
     }
     if (!/^\d{10,11}$/.test(formData.phone)) {
-        toastError("Số điện thoại không hợp lệ (phải có 10-11 chữ số).");
+        setFormError("Số điện thoại không hợp lệ (phải có 10-11 chữ số).");
         return;
     }
 
     console.log('Dữ liệu form liên hệ:', formData);
+    setIsSubmitted(true);
     addAdminNotification(`Tin nhắn liên hệ mới từ: ${formData.name} (Email: ${formData.email}, SĐT: ${formData.phone}). Chủ đề: ${formData.subject.substring(0,30)}${formData.subject.length > 30 ? "..." : ""}`, 'info');
-    success("Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.");
     setFormData({ name: '', email: '', phone: '', subject: '', message: '' }); 
   };
   
@@ -116,7 +117,16 @@ const ContactPage: React.FC = () => {
 
         <div className="bg-bgBase p-6 md:p-8 rounded-lg shadow-xl border border-borderDefault">
           <h2 className="text-2xl font-semibold text-textBase mb-6">Gửi tin nhắn cho chúng tôi</h2>
+          {isSubmitted ? (
+            <div className="text-center p-6 bg-success-bg border border-success-border rounded-lg">
+              <i className="fas fa-check-circle text-4xl text-success-text mb-3"></i>
+              <h3 className="text-xl font-semibold text-success-text">Cảm ơn bạn đã liên hệ!</h3>
+              <p className="text-green-700">Chúng tôi sẽ phản hồi sớm nhất có thể.</p>
+              <Button onClick={() => setIsSubmitted(false)} className="mt-4" variant="outline">Gửi tin nhắn khác</Button>
+            </div>
+          ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
+              {formError && <p className="text-sm text-danger-text bg-danger-bg p-3 rounded-md border border-danger-border">{formError}</p>}
               <div><label htmlFor="name" className="block text-sm font-medium text-textMuted mb-1">Họ và tên *</label><input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required className="input-style bg-white text-textBase" /></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div><label htmlFor="email" className="block text-sm font-medium text-textMuted mb-1">Email *</label><input type="email" name="email" id="email" value={formData.email} onChange={handleChange} required className="input-style bg-white text-textBase" /></div>
@@ -126,6 +136,7 @@ const ContactPage: React.FC = () => {
               <div><label htmlFor="message" className="block text-sm font-medium text-textMuted mb-1">Nội dung tin nhắn *</label><textarea name="message" id="message" rows={6} value={formData.message} onChange={handleChange} required className="input-style bg-white text-textBase"></textarea></div>
               <div><Button type="submit" className="w-full" size="lg">Gửi Tin Nhắn</Button></div>
             </form>
+          )}
         </div>
       </div>
     </div>

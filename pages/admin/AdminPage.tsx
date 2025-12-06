@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation, useNavigate, Routes, Route, Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { User, AdminNotification, AdminView } from '../../types';
 import { useAuth, AdminPermission } from '../../contexts/AuthContext';
 
@@ -18,15 +18,8 @@ import NotificationsView from '../../components/admin/NotificationsView';
 import HomepageManagementView from '../../components/admin/HomepageManagementView';
 import FinancialManagementView from '../../components/admin/FinancialManagementView';
 import DashboardView from '../../components/admin/DashboardView';
-import ServiceTicketView from '../../components/admin/ServiceTicketView';
-
-// Import new Inventory & Logistics views
 import InventoryView from '../../components/admin/InventoryView';
-import StockReceiptsView from '../../components/admin/StockReceiptsView';
-import StockIssuesView from '../../components/admin/StockIssuesView';
-import StockTransfersView from '../../components/admin/StockTransfersView';
-import ShippingManagementView from '../../components/admin/ShippingManagementView';
-
+import ServiceTicketView from '../../components/admin/ServiceTicketView';
 
 // Import new form pages
 import ProductFormPage from './ProductFormPage';
@@ -42,10 +35,6 @@ import OrderFormPage from './OrderFormPage';
 import ReturnFormPage from './ReturnFormPage';
 import SupplierFormPage from './SupplierFormPage';
 import ServiceTicketFormPage from './ServiceTicketFormPage';
-import WarrantyFormPage from './WarrantyFormPage';
-import StockReceiptFormPage from './StockReceiptFormPage';
-import StockIssueFormPage from './StockIssueFormPage';
-import StockTransferFormPage from './StockTransferFormPage';
 
 
 // Import new placeholder/skeleton views
@@ -67,14 +56,14 @@ interface MenuItemConfig {
 
 const AdminPage: React.FC = () => {
     const { currentUser, adminNotifications, hasPermission } = useAuth();
-    const location = useLocation();
-    const navigate = useNavigate();
+    const location = ReactRouterDOM.useLocation();
+    const navigate = ReactRouterDOM.useNavigate();
 
     const [activeView, setActiveView] = useState<AdminView>('dashboard');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-        'sales_crm': true, 'service_warranty': true, 'cms_marketing': true, 'inventory_logistics': true,
+        'sales_crm': true, 'service_warranty': true, 'cms_marketing': true, 'inventory_logistics': false,
         'finance_accounting': false, 'procurement': false, 'system_hr': false,
     });
 
@@ -106,8 +95,7 @@ const AdminPage: React.FC = () => {
             id: 'service_warranty', label: 'Dịch Vụ & Bảo Hành', icon: 'fas fa-tools', permission: ['viewService'],
             children: [
                 { id: 'service_tickets', label: 'Phiếu Sửa Chữa', icon: 'fas fa-ticket-alt', permission: ['manageServiceTickets'] },
-                // FIX: Changed 'warranty_claims' to 'warranty_tickets' to match the AdminView type.
-                { id: 'warranty_tickets', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
+                { id: 'warranty_claims', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
             ]
         },
@@ -185,8 +173,7 @@ const AdminPage: React.FC = () => {
         const viewCandidates = [
             'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
             'accounting_dashboard', 'quotations', 'customers', 'orders', 
-            'returns', 'suppliers', 'service_tickets', 'warranty_tickets',
-            'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers'
+            'returns', 'suppliers', 'service_tickets'
         ];
 
         let foundView = null;
@@ -248,13 +235,9 @@ const AdminPage: React.FC = () => {
             case 'inventory': return <InventoryView />;
             case 'service_tickets': return <ServiceTicketView />;
             case 'quotations': return <QuotationManagementView />;
-            case 'warranty_tickets': return <WarrantyManagementView />;
+            case 'warranty_claims': return <WarrantyManagementView />;
             case 'returns': return <ReturnManagementView />;
             case 'suppliers': return <SupplierManagementView />;
-            case 'stock_receipts': return <StockReceiptsView />;
-            case 'stock_issues': return <StockIssuesView />;
-            case 'stock_transfers': return <StockTransfersView />;
-            case 'shipping': return <ShippingManagementView />;
             default: return (
                 <div className="admin-card">
                     <div className="admin-card-body text-center py-12">
@@ -294,14 +277,6 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
         if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
         if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
-        if (path.startsWith('/admin/warranty_tickets/new')) return 'Tạo Phiếu Bảo hành';
-        if (path.startsWith('/admin/warranty_tickets/edit/')) return 'Chỉnh sửa Phiếu Bảo hành';
-        if (path.startsWith('/admin/stock_receipts/new')) return 'Tạo Phiếu Nhập Kho';
-        if (path.startsWith('/admin/stock_receipts/edit/')) return 'Sửa Phiếu Nhập Kho';
-        if (path.startsWith('/admin/stock_issues/new')) return 'Tạo Phiếu Xuất Kho';
-        if (path.startsWith('/admin/stock_issues/edit/')) return 'Sửa Phiếu Xuất Kho';
-        if (path.startsWith('/admin/stock_transfers/new')) return 'Tạo Phiếu Điều Chuyển';
-        if (path.startsWith('/admin/stock_transfers/edit/')) return 'Sửa Phiếu Điều Chuyển';
 
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
@@ -329,46 +304,38 @@ const AdminPage: React.FC = () => {
                     currentUser={currentUser}
                 />
                 <div className="admin-content-area">
-                    <Routes>
+                    <ReactRouterDOM.Routes>
                         {/* Define form pages first as they are more specific */}
-                        <Route path="/products/new" element={<ProductFormPage />} />
-                        <Route path="/products/edit/:productId" element={<ProductFormPage />} />
-                        <Route path="/hrm_dashboard/new" element={<UserFormPage />} />
-                        <Route path="/hrm_dashboard/edit/:userId" element={<UserFormPage />} />
-                        <Route path="/customers/new" element={<CustomerFormPage />} />
-                        <Route path="/customers/edit/:customerId" element={<CustomerFormPage />} />
-                        <Route path="/customers/view/:customerId" element={<CustomerProfilePage />} />
-                        <Route path="/articles/new" element={<ArticleFormPage />} />
-                        <Route path="/articles/edit/:articleId" element={<ArticleFormPage />} />
-                        <Route path="/discounts/new" element={<DiscountFormPage />} />
-                        <Route path="/discounts/edit/:discountId" element={<DiscountFormPage />} />
-                        <Route path="/faqs/new" element={<FaqFormPage />} />
-                        <Route path="/faqs/edit/:faqId" element={<FaqFormPage />} />
-                        <Route path="/accounting_dashboard/transactions/new" element={<TransactionFormPage />} />
-                        <Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
-                        <Route path="/quotations/new" element={<QuotationFormPage />} />
-                        <Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
-                        <Route path="/orders/new" element={<OrderFormPage />} />
-                        <Route path="/orders/edit/:orderId" element={<OrderFormPage />} />
-                        <Route path="/returns/new" element={<ReturnFormPage />} />
-                        <Route path="/returns/edit/:returnId" element={<ReturnFormPage />} />
-                        <Route path="/suppliers/new" element={<SupplierFormPage />} />
-                        <Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
-                        <Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
-                        <Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
-                        <Route path="/warranty_tickets/new" element={<WarrantyFormPage />} />
-                        <Route path="/warranty_tickets/edit/:ticketId" element={<WarrantyFormPage />} />
-                        <Route path="/stock_receipts/new" element={<StockReceiptFormPage />} />
-                        <Route path="/stock_receipts/edit/:id" element={<StockReceiptFormPage />} />
-                        <Route path="/stock_issues/new" element={<StockIssueFormPage />} />
-                        <Route path="/stock_issues/edit/:id" element={<StockIssueFormPage />} />
-                        <Route path="/stock_transfers/new" element={<StockTransferFormPage />} />
-                        <Route path="/stock_transfers/edit/:id" element={<StockTransferFormPage />} />
+                        <ReactRouterDOM.Route path="/products/new" element={<ProductFormPage />} />
+                        <ReactRouterDOM.Route path="/products/edit/:productId" element={<ProductFormPage />} />
+                        <ReactRouterDOM.Route path="/hrm_dashboard/new" element={<UserFormPage />} />
+                        <ReactRouterDOM.Route path="/hrm_dashboard/edit/:userId" element={<UserFormPage />} />
+                        <ReactRouterDOM.Route path="/customers/new" element={<CustomerFormPage />} />
+                        <ReactRouterDOM.Route path="/customers/edit/:customerId" element={<CustomerFormPage />} />
+                        <ReactRouterDOM.Route path="/customers/view/:customerId" element={<CustomerProfilePage />} />
+                        <ReactRouterDOM.Route path="/articles/new" element={<ArticleFormPage />} />
+                        <ReactRouterDOM.Route path="/articles/edit/:articleId" element={<ArticleFormPage />} />
+                        <ReactRouterDOM.Route path="/discounts/new" element={<DiscountFormPage />} />
+                        <ReactRouterDOM.Route path="/discounts/edit/:discountId" element={<DiscountFormPage />} />
+                        <ReactRouterDOM.Route path="/faqs/new" element={<FaqFormPage />} />
+                        <ReactRouterDOM.Route path="/faqs/edit/:faqId" element={<FaqFormPage />} />
+                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/new" element={<TransactionFormPage />} />
+                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
+                        <ReactRouterDOM.Route path="/quotations/new" element={<QuotationFormPage />} />
+                        <ReactRouterDOM.Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
+                        <ReactRouterDOM.Route path="/orders/new" element={<OrderFormPage />} />
+                        <ReactRouterDOM.Route path="/orders/edit/:orderId" element={<OrderFormPage />} />
+                        <ReactRouterDOM.Route path="/returns/new" element={<ReturnFormPage />} />
+                        <ReactRouterDOM.Route path="/returns/edit/:returnId" element={<ReturnFormPage />} />
+                        <ReactRouterDOM.Route path="/suppliers/new" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
+                        <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
                         
                         {/* Generic route for views */}
-                        <Route path="/:viewId/*" element={renderContent(activeView)} />
-                        <Route path="/" element={renderContent('dashboard')} />
-                    </Routes>
+                        <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />
+                        <ReactRouterDOM.Route path="/" element={renderContent('dashboard')} />
+                    </ReactRouterDOM.Routes>
                 </div>
             </main>
         </div>
@@ -437,7 +404,7 @@ const AdminSidebar: React.FC<{
             <div className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
             <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`}>
                 <div className="admin-sidebar-header justify-between">
-                    {!isCollapsed && <Link to="/"><span className="text-xl font-bold text-white">IQ Technology</span></Link>}
+                    {!isCollapsed && <ReactRouterDOM.Link to="/"><span className="text-xl font-bold text-white">IQ Technology</span></ReactRouterDOM.Link>}
                     <button onClick={onToggleCollapse} className="hidden lg:block text-slate-400 hover:text-white text-lg">
                         <i className={`fas ${isCollapsed ? 'fa-align-right' : 'fa-align-left'}`}></i>
                     </button>
@@ -449,10 +416,10 @@ const AdminSidebar: React.FC<{
                     {menuConfig.map(item => renderSidebarItem(item))}
                 </nav>
                 <div className="admin-sidebar-footer">
-                    <Link to="/" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
+                    <ReactRouterDOM.Link to="/" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
                         <i className="fas fa-globe w-6 text-center mr-3"></i>
                         {!isCollapsed && <span className="text-sm">Về trang chủ</span>}
-                    </Link>
+                    </ReactRouterDOM.Link>
                 </div>
             </aside>
         </>
@@ -471,9 +438,9 @@ const AdminHeader: React.FC<{
         </div>
          <div className="flex items-center gap-4">
             <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
-            <Link to="/">
+            <ReactRouterDOM.Link to="/">
                 <i className="fas fa-user-circle text-2xl text-admin-textSecondary hover:text-primary"></i>
-            </Link>
+            </ReactRouterDOM.Link>
         </div>
     </header>
 );

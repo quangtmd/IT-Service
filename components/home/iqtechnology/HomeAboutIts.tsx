@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
-import { Link } from 'react-router-dom';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
+import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants';
-import { SiteSettings } from '../../../types';
-import MovingBorderButton from '../../ui/MovingBorderButton';
-import { Canvas } from '@react-three/fiber';
-import FloatingElements from '../three/FloatingElements';
+import * as Constants from '../../../constants.tsx';
+import { SiteSettings, HomepageAboutFeature } from '../../../types';
 
 const HomeAboutIts: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
@@ -18,70 +17,85 @@ const HomeAboutIts: React.FC = () => {
     const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
     if (storedSettingsRaw) {
       setSettings(JSON.parse(storedSettingsRaw));
+    } else {
+      setSettings(Constants.INITIAL_SITE_SETTINGS);
     }
   }, []);
 
   useEffect(() => {
     loadSettings();
     window.addEventListener('siteSettingsUpdated', loadSettings);
-    return () => window.removeEventListener('siteSettingsUpdated', loadSettings);
+    return () => {
+      window.removeEventListener('siteSettingsUpdated', loadSettings);
+    };
   }, [loadSettings]);
 
   if (!aboutConfig.enabled) return null;
 
   return (
-    <section ref={sectionRef} className={`py-28 bg-[#020617] text-white relative overflow-hidden animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
-      {/* 3D Background Scene */}
-      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
-        <Canvas>
-            <Suspense fallback={null}>
-                <FloatingElements />
-            </Suspense>
-        </Canvas>
-      </div>
-      
-      {/* Gradient Overlay for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-transparent to-[#020617] z-0 pointer-events-none"></div>
-
-      <div className="container mx-auto px-4 relative z-10 text-center">
-        <div className="max-w-5xl mx-auto">
-             {/* Decorative Line */}
-             <div className="w-1 h-20 bg-gradient-to-b from-transparent via-cyan-500 to-transparent mx-auto mb-8 opacity-50"></div>
-
-             {aboutConfig.preTitle && (
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-bold tracking-widest uppercase mb-6 backdrop-blur-md">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+    <section ref={sectionRef} className={`home-section bg-bgBase animate-on-scroll fade-in-up ${isSectionVisible ? 'is-visible' : ''}`}>
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+          {/* Image Column */}
+          <div className="lg:w-1/2">
+            <div className={`relative animate-on-scroll ${isSectionVisible ? 'slide-in-left is-visible' : 'slide-in-left'}`} style={{animationDelay:'0.1s'}}>
+              <img
+                src={aboutConfig.imageUrl || "https://picsum.photos/seed/professionalOfficeV2/600/520"}
+                alt={aboutConfig.imageAltText || "Our Professional Team"}
+                className="rounded-xl shadow-2xl w-full object-cover border-4 border-white"
+              />
+              {aboutConfig.imageDetailUrl && (
+                <img
+                  src={aboutConfig.imageDetailUrl}
+                  alt={aboutConfig.imageDetailAltText || "Detail Image"}
+                  className="absolute -bottom-8 -right-8 w-40 h-40 rounded-lg shadow-xl border-4 border-white object-cover hidden md:block transform transition-all duration-300 hover:scale-105"
+                />
+              )}
+            </div>
+          </div>
+          {/* Text Content Column */}
+          <div className="lg:w-1/2">
+            <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay:'0.2s'}}>
+                {aboutConfig.preTitle && (
+                  <span className="home-section-pretitle">
+                    <img src={settings.siteLogoUrl || ''} onError={(e) => (e.currentTarget.style.display = 'none')} alt={`${settings.companyName} logo`} className="inline h-6 mr-2 object-contain" />
                     {aboutConfig.preTitle}
-                </div>
-             )}
+                  </span>
+                )}
+                <h2 className="home-section-title text-left text-4xl md:text-5xl font-extrabold">
+                    {aboutConfig.title || "Default About Us Title"}
+                </h2>
+                <p className="text-textMuted mt-4 mb-8 leading-relaxed">
+                    {aboutConfig.description || "Default about us description."}
+                </p>
 
-             <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-8 leading-[1.1] tracking-tight drop-shadow-2xl">
-                {aboutConfig.title}
-             </h2>
-
-             <p className="text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed font-light max-w-3xl mx-auto text-shadow-sm">
-                {aboutConfig.description}
-             </p>
-
-             <div className="flex flex-col sm:flex-row justify-center gap-6 items-center mb-12">
-                {aboutConfig.features.slice(0, 3).map((item, idx) => (
-                    <div key={idx} className="flex flex-col items-center p-6 backdrop-blur-md bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors duration-300 w-full sm:w-64 group">
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center mb-4 text-cyan-300 text-2xl shadow-[0_0_20px_rgba(34,211,238,0.2)] group-hover:scale-110 transition-transform">
-                            <i className={item.icon || 'fas fa-star'}></i>
-                        </div>
-                        <h4 className="font-bold text-white uppercase tracking-wide text-sm mb-2">{item.title}</h4>
-                        <p className="text-xs text-gray-400 line-clamp-2">{item.description}</p>
+                {aboutConfig.features && aboutConfig.features.length > 0 && (
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+                        {aboutConfig.features.map((item: HomepageAboutFeature, index) => (
+                        <li key={item.id || index} className={`flex items-start animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay: `${0.3 + index * 0.1}s`}}>
+                            <div className="flex-shrink-0 modern-card-icon-wrapper !w-12 !h-12 !p-3 !mr-4 bg-primary/10">
+                                <i className={`${item.icon || 'fas fa-star'} text-primary !text-xl`}></i>
+                            </div>
+                            <div>
+                                <h4 className="text-lg font-semibold text-textBase">{item.title}</h4>
+                                <p className="text-textMuted text-sm mt-1 leading-relaxed">{item.description}</p>
+                            </div>
+                        </li>
+                        ))}
+                    </ul>
+                )}
+                
+                {aboutConfig.buttonLink && aboutConfig.buttonText && (
+                    <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{ animationDelay: '0.5s' }}>
+                        <ReactRouterDOM.Link to={aboutConfig.buttonLink}>
+                        <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-md hover:shadow-primary/30">
+                            {aboutConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
+                        </Button>
+                        </ReactRouterDOM.Link>
                     </div>
-                ))}
-             </div>
-
-             <div className="mt-4">
-                <Link to={aboutConfig.buttonLink || '/about'}>
-                    <MovingBorderButton>
-                        {aboutConfig.buttonText || "KHÁM PHÁ THÊM"}
-                    </MovingBorderButton>
-                </Link>
-             </div>
+                )}
+            </div>
+          </div>
         </div>
       </div>
     </section>

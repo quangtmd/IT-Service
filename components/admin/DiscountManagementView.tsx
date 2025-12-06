@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { DiscountCode } from '../../types';
 import * as Constants from '../../constants';
 import Button from '../ui/Button';
-import { useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultValue; }
@@ -11,7 +11,7 @@ const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
 
 const DiscountManagementView: React.FC = () => {
     const [discounts, setDiscounts] = useState<DiscountCode[]>(() => getLocalStorageItem(Constants.DISCOUNTS_STORAGE_KEY, Constants.INITIAL_DISCOUNT_CODES));
-    const navigate = useNavigate();
+    const navigate = ReactRouterDOM.useNavigate();
 
     useEffect(() => {
         // This effect reloads discounts if the storage changes externally, or on initial load

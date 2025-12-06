@@ -1,11 +1,9 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants';
 import { PricingPlan } from '../../../types';
 import HomePricingPlanCard from './HomePricingPlanCard';
 import ConsultationRequestModal from '../../shared/ConsultationRequestModal';
-import { Canvas } from '@react-three/fiber';
-import DigitalGridBackground from '../three/DigitalGridBackground';
 
 const HomePricingPlansIts: React.FC = () => {
   const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
@@ -27,22 +25,14 @@ const HomePricingPlansIts: React.FC = () => {
 
   return (
     <>
-      <section className="home-section relative overflow-hidden bg-[#0B1120] text-white">
-        <div className="absolute inset-0 z-0">
-            <Canvas>
-                <Suspense fallback={null}>
-                    <DigitalGridBackground />
-                </Suspense>
-            </Canvas>
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10">
+      <section className="home-section bg-bgBase">
+        <div className="container mx-auto px-4">
           <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
-            <span className="home-section-pretitle bg-white/10 text-primary border border-primary/20">BẢNG GIÁ DỊCH VỤ</span>
-            <h2 className="home-section-title text-4xl md:text-5xl font-extrabold text-white">
+            <span className="home-section-pretitle">BẢNG GIÁ DỊCH VỤ</span>
+            <h2 className="home-section-title text-4xl md:text-5xl font-extrabold">
               Các Gói Dịch Vụ IT Của Chúng Tôi
             </h2>
-            <p className="home-section-subtitle text-gray-300">
+            <p className="home-section-subtitle">
               Chọn gói dịch vụ phù hợp nhất với nhu cầu và quy mô của doanh nghiệp bạn. Linh hoạt, hiệu quả và minh bạch.
             </p>
           </div>

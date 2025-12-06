@@ -4,11 +4,11 @@ import * as Constants from '../../constants';
 import Button from '../../components/ui/Button';
 import ImageUploadInput from '../../components/ui/ImageUploadInput';
 import { getArticle, addArticle, updateArticle } from '../../services/localDataService';
-import { useNavigate, useParams } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 
 const ArticleFormPage: React.FC = () => {
-    const { articleId } = useParams<{ articleId: string }>();
-    const navigate = useNavigate();
+    const { articleId } = ReactRouterDOM.useParams<{ articleId: string }>();
+    const navigate = ReactRouterDOM.useNavigate();
     const isEditing = !!articleId;
 
     const [formData, setFormData] = useState<Article | null>(null);
@@ -41,9 +41,7 @@ const ArticleFormPage: React.FC = () => {
                     author: 'Admin',
                     date: new Date().toISOString(),
                     category: Constants.ARTICLE_CATEGORIES[0],
-                    content: '',
-                    tags: [],
-                    slug: '',
+                    content: ''
                 });
                 setIsLoading(false);
             }
@@ -53,12 +51,7 @@ const ArticleFormPage: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         if (!formData) return;
-        const { name, value } = e.target;
-        if (name === 'tags') {
-            setFormData(prev => prev ? ({ ...prev, tags: value.split(',').map(tag => tag.trim()) }) : null);
-        } else {
-            setFormData(prev => prev ? ({ ...prev, [name]: value }) : null);
-        }
+        setFormData(prev => prev ? ({ ...prev, [e.target.name]: e.target.value }) : null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -141,18 +134,6 @@ const ArticleFormPage: React.FC = () => {
                     <div className="admin-form-group">
                         <label htmlFor="content">Nội dung (hỗ trợ Markdown)</label>
                         <textarea name="content" id="content" rows={10} value={formData.content || ''} onChange={handleChange}></textarea>
-                    </div>
-                     <div className="admin-form-subsection-title mt-4">Tối ưu hóa SEO</div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="admin-form-group">
-                            <label htmlFor="tags">Tags (phân cách bằng dấu phẩy)</label>
-                            <input type="text" name="tags" id="tags" value={formData.tags?.join(', ') || ''} onChange={handleChange} />
-                        </div>
-                        <div className="admin-form-group">
-                            <label htmlFor="slug">Đường dẫn (URL Slug)</label>
-                            <input type="text" name="slug" id="slug" value={formData.slug || ''} onChange={handleChange} />
-                             <p className="form-input-description">Ví dụ: huong-dan-build-pc-gaming-20-trieu</p>
-                        </div>
                     </div>
                 </div>
                 <div className="admin-modal-footer">

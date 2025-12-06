@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DiscountCode } from '../../types';
 import Button from '../../components/ui/Button';
-import { useNavigate, useParams } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import * as Constants from '../../constants';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
@@ -14,8 +14,8 @@ const setLocalStorageItem = <T,>(key: string, value: T) => {
 };
 
 const DiscountFormPage: React.FC = () => {
-    const { discountId } = useParams<{ discountId: string }>();
-    const navigate = useNavigate();
+    const { discountId } = ReactRouterDOM.useParams<{ discountId: string }>();
+    const navigate = ReactRouterDOM.useNavigate();
     const isEditing = !!discountId;
 
     const [formData, setFormData] = useState<DiscountCode | null>(null);

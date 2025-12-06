@@ -2,12 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { User } from '../../types';
 import Button from '../ui/Button';
-import { useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 
 const CustomerManagementView: React.FC = () => {
     const { users, updateUser, isLoading: isAuthLoading } = useAuth(); // Use isLoading from useAuth
     const [searchTerm, setSearchTerm] = useState('');
-    const navigate = useNavigate();
+    const navigate = ReactRouterDOM.useNavigate();
 
     const customerUsers = useMemo(() =>
         users.filter(u => u.role === 'customer')

@@ -63,7 +63,7 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({ current
                                 {product.name}
                             </p>
                             <p className="text-sm font-bold text-primary mt-1">
-                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                                {product.price.toLocaleString('vi-VN')}₫
                             </p>
                         </div>
                     </Link>

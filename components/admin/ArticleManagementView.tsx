@@ -3,14 +3,14 @@ import { Article } from '../../types';
 import Button from '../ui/Button';
 import { getArticles, deleteArticle } from '../../services/localDataService';
 import BackendConnectionError from '../../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
-import { useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 
 const ArticleManagementView: React.FC = () => {
     const [articles, setArticles] = useState<Article[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const navigate = useNavigate();
+    const navigate = ReactRouterDOM.useNavigate();
 
     const loadArticles = useCallback(async () => {
         setIsLoading(true);

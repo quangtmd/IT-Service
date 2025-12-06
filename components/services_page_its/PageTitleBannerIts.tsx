@@ -1,8 +1,6 @@
 
-
 import React from 'react';
-// Fix: Use named import for Link
-import { Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 
 interface BreadcrumbItem {
@@ -32,10 +30,9 @@ const PageTitleBannerIts: React.FC<PageTitleBannerItsProps> = ({ title, breadcru
             {breadcrumbs.map((crumb, index) => (
               <li key={index} className="flex items-center">
                 {crumb.path ? (
-                  // Fix: Use Link directly
-                  <Link to={crumb.path} className="hover:text-primary transition-colors">
+                  <ReactRouterDOM.Link to={crumb.path} className="hover:text-primary transition-colors">
                     {crumb.label}
-                  </Link>
+                  </ReactRouterDOM.Link>
                 ) : (
                   <span className="text-neutral-400">{crumb.label}</span>
                 )}
