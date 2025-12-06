@@ -2,13 +2,11 @@
 // @ts-nocheck
 import React, { useRef, useState, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, PerspectiveCamera, Stars, Sparkles, Instances, Instance, useGLTF } from '@react-three/drei';
+import { Float, PerspectiveCamera, Stars, Sparkles, Text, Ring, Circle, Plane } from '@react-three/drei';
 import * as THREE from 'three';
 
 // --- 1. SERVER RACK COMPONENT ---
 const ServerRack = ({ position, rotation }: { position: [number, number, number], rotation?: [number, number, number] }) => {
-  // Procedural generation of a server rack
-  // Frame
   const frameColor = "#1e293b";
   const lightColor = "#00f3ff";
   const activeLightColor = "#ff0055";
@@ -61,12 +59,10 @@ const BlinkingLight = ({ position, color, speed }: { position: [number, number, 
     const ref = useRef<THREE.Mesh>(null!);
     useFrame(({ clock }) => {
         if (ref.current) {
-            // Simple blinking effect
             const t = clock.getElapsedTime();
-            const intensity = (Math.sin(t * speed * 5) + 1) / 2; // 0 to 1
-            // Random glitch
+            const intensity = (Math.sin(t * speed * 5) + 1) / 2;
             const glitch = Math.random() > 0.95 ? 0 : 1;
-            (ref.current.material as THREE.MeshStandardMaterial).emissiveIntensity = (intensity * glitch * 2) + 0.5; // Ensure minimum brightness
+            (ref.current.material as THREE.MeshStandardMaterial).emissiveIntensity = (intensity * glitch * 2) + 0.5;
         }
     });
 
@@ -79,13 +75,11 @@ const BlinkingLight = ({ position, color, speed }: { position: [number, number, 
 }
 
 // --- 2. ELECTRIC CURRENT EFFECT ---
-// Moves a glowing pulse along a path
 const DataStream = ({ start, end, speed = 1, delay = 0 }: { start: THREE.Vector3, end: THREE.Vector3, speed?: number, delay?: number }) => {
     const ref = useRef<THREE.Mesh>(null!);
     const curve = useMemo(() => {
-        // Create a curved path with a random control point for organic look
         const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-        mid.y += 1 + Math.random() * 2; // Arch upwards
+        mid.y += 1 + Math.random() * 2;
         return new THREE.CatmullRomCurve3([start, mid, end]);
     }, [start, end]);
 
@@ -94,19 +88,15 @@ const DataStream = ({ start, end, speed = 1, delay = 0 }: { start: THREE.Vector3
             const t = (clock.getElapsedTime() * speed + delay) % 1;
             const pos = curve.getPoint(t);
             ref.current.position.copy(pos);
-            
-            // Scale creates a trail effect stretch
             const tangent = curve.getTangent(t).normalize();
             ref.current.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
         }
     });
 
-    // Draw the path faintly
     const points = useMemo(() => curve.getPoints(50), [curve]);
 
     return (
         <group>
-            {/* The Path Wire */}
             <line>
                 <bufferGeometry>
                     <bufferAttribute
@@ -116,10 +106,8 @@ const DataStream = ({ start, end, speed = 1, delay = 0 }: { start: THREE.Vector3
                         itemSize={3}
                     />
                 </bufferGeometry>
-                <lineBasicMaterial color="#0044aa" opacity={0.5} transparent />
+                <lineBasicMaterial color="#0044aa" opacity={0.3} transparent />
             </line>
-
-            {/* The Electric Pulse */}
             <mesh ref={ref}>
                 <capsuleGeometry args={[0.05, 0.3, 4, 8]} />
                 <meshBasicMaterial color="#00ffff" />
@@ -134,7 +122,6 @@ const DigitalFloor = () => {
     const gridRef = useRef<THREE.Group>(null!);
     useFrame((state, delta) => {
         if(gridRef.current) {
-            // Move grid slowly to simulate moving forward
             gridRef.current.position.z = (gridRef.current.position.z + delta * 0.5) % 2;
         }
     });
@@ -150,9 +137,116 @@ const DigitalFloor = () => {
     )
 }
 
+// --- 4. NEW HOLOGRAPHIC CONTROL PANEL (Replaces Sphere) ---
+const HoloConsole = ({ position }: { position: THREE.Vector3 }) => {
+    const groupRef = useRef<THREE.Group>(null!);
+    const ring1Ref = useRef<THREE.Mesh>(null!);
+    const ring2Ref = useRef<THREE.Mesh>(null!);
+    const ring3Ref = useRef<THREE.Mesh>(null!);
+
+    useFrame((state, delta) => {
+        if (ring1Ref.current) ring1Ref.current.rotation.z += delta * 0.2;
+        if (ring2Ref.current) ring2Ref.current.rotation.z -= delta * 0.1;
+        if (ring3Ref.current) ring3Ref.current.rotation.x += delta * 0.3;
+        
+        // Gentle hovering
+        if(groupRef.current) {
+             groupRef.current.position.y = position.y + Math.sin(state.clock.elapsedTime) * 0.1;
+        }
+    });
+
+    return (
+        <group ref={groupRef} position={position}>
+            {/* Main Screen - Hexagon-ish Plane */}
+            <mesh rotation={[0, 0, 0]}>
+                <circleGeometry args={[1.5, 6]} />
+                <meshBasicMaterial color="#000000" opacity={0.4} transparent side={THREE.DoubleSide} />
+            </mesh>
+            {/* Tech Grid Texture Simulation on Screen */}
+            <mesh position={[0, 0, 0.01]} rotation={[0, 0, 0]}>
+                 <planeGeometry args={[2, 2]} />
+                 <meshBasicMaterial color="#00f3ff" wireframe opacity={0.1} transparent />
+            </mesh>
+            
+            {/* Rotating Rings (HUD Elements) */}
+            <group rotation={[0, 0, 0]}>
+                {/* Outer Ring */}
+                <Ring ref={ring1Ref} args={[1.6, 1.65, 64]} >
+                    <meshBasicMaterial color="#00f3ff" side={THREE.DoubleSide} transparent opacity={0.8} />
+                </Ring>
+                
+                {/* Middle Segmented Ring */}
+                <Ring ref={ring2Ref} args={[1.3, 1.4, 32]} rotation={[0,0,1]}>
+                     <meshBasicMaterial color="#ff0055" side={THREE.DoubleSide} transparent opacity={0.6} wireframe />
+                </Ring>
+
+                {/* Vertical Orbit Ring */}
+                <Ring ref={ring3Ref} args={[1.8, 1.82, 64]} rotation={[1.57, 0, 0]}>
+                     <meshBasicMaterial color="#00f3ff" side={THREE.DoubleSide} transparent opacity={0.4} />
+                </Ring>
+            </group>
+
+            {/* Holographic Text/Data - Removed Font Prop to prevent crash */}
+            <Text 
+                position={[0, 0.5, 0.1]} 
+                fontSize={0.2} 
+                color="#00f3ff" 
+                anchorX="center" 
+                anchorY="middle"
+            >
+                SYSTEM ONLINE
+            </Text>
+             <Text 
+                position={[0, 0, 0.1]} 
+                fontSize={0.1} 
+                color="white" 
+                anchorX="center" 
+                anchorY="middle"
+            >
+                IQ TECHNOLOGY CORE
+            </Text>
+             <Text 
+                position={[0, -0.5, 0.1]} 
+                fontSize={0.15} 
+                color="#ff0055" 
+                anchorX="center" 
+                anchorY="middle"
+            >
+                DATA: SECURE
+            </Text>
+
+            {/* Connecting Beam downward */}
+            <mesh position={[0, -5, 0]}>
+                <cylinderGeometry args={[0.1, 0.5, 10, 16]} />
+                <meshBasicMaterial color="#00f3ff" transparent opacity={0.1} />
+            </mesh>
+            
+            {/* Glow Light */}
+            <pointLight distance={5} intensity={5} color="#00f3ff" />
+        </group>
+    );
+};
+
+// --- 5. MOVING STARS ---
+const MovingStars = () => {
+    const starsRef = useRef<THREE.Group>(null!);
+    useFrame((state, delta) => {
+        if(starsRef.current) {
+            starsRef.current.rotation.y += delta * 0.05; // Rotate stars slowly
+            starsRef.current.rotation.x += delta * 0.01;
+        }
+    });
+
+    return (
+        <group ref={starsRef}>
+             <Stars radius={120} depth={50} count={8000} factor={4} saturation={0} fade speed={2} />
+        </group>
+    )
+}
+
+
 // --- MAIN SCENE ---
 const ServerTechScene: React.FC = () => {
-  // Define positions for racks
   const rackPositions = [
       { pos: [-4, 0, -2], rot: 0.2 },
       { pos: [-3, 0, -5], rot: 0.1 },
@@ -162,43 +256,38 @@ const ServerTechScene: React.FC = () => {
       { pos: [5, 0, 1], rot: -0.3 },
   ];
 
-  const hubPosition = new THREE.Vector3(0, 1, -8); // Central Hub far back
+  const hubPosition = new THREE.Vector3(0, 2.5, -6); 
 
   return (
     <>
       <PerspectiveCamera makeDefault position={[0, 3, 6]} fov={60} />
       
-      {/* Environment & Lighting (Brightened) */}
-      <fog attach="fog" args={['#050505', 10, 40]} /> {/* Pushed fog back to reveal racks */}
-      <ambientLight intensity={1.2} /> {/* Increased general brightness */}
+      <fog attach="fog" args={['#050505', 10, 45]} />
+      <ambientLight intensity={1.2} />
       
-      {/* Key Lights */}
       <pointLight position={[0, 10, 0]} intensity={3} color="#00aaff" distance={50} />
       <pointLight position={[10, 5, 5]} intensity={2} color="#ffffff" distance={30} />
       <pointLight position={[-10, 5, 5]} intensity={2} color="#ffffff" distance={30} />
       
-      {/* Fill Light from front to illuminate racks */}
       <directionalLight position={[0, 2, 10]} intensity={2} color="#ffffff" />
       
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-      <Sparkles count={200} scale={20} size={4} speed={0.2} opacity={0.5} color="#00f3ff" position={[0, 2, 0]}/>
+      {/* Animated Stars */}
+      <MovingStars />
+      
+      <Sparkles count={300} scale={25} size={4} speed={0.4} opacity={0.5} color="#00f3ff" position={[0, 2, 0]}/>
 
-      {/* Floor */}
       <DigitalFloor />
 
-      {/* Server Racks */}
       <group>
           {rackPositions.map((rack, i) => (
               <group key={i}>
                   <ServerRack position={[rack.pos[0], rack.pos[1], rack.pos[2]]} rotation={[0, rack.rot, 0]} />
-                  {/* Connections to Hub */}
                   <DataStream 
                     start={new THREE.Vector3(rack.pos[0], 3.5, rack.pos[2])} 
                     end={hubPosition} 
                     speed={0.5 + Math.random() * 0.5}
                     delay={Math.random()}
                   />
-                  {/* Connections between racks (Mesh network look) */}
                   {i > 0 && i % 2 !== 0 && (
                       <DataStream 
                         start={new THREE.Vector3(rack.pos[0], 2, rack.pos[2])} 
@@ -211,18 +300,8 @@ const ServerTechScene: React.FC = () => {
           ))}
       </group>
 
-      {/* Central Core/Hub (The "Brain") */}
-      <group position={[0, 2, -8]}>
-          <mesh>
-              <sphereGeometry args={[1.5, 32, 32]} />
-              <meshStandardMaterial color="#000" emissive="#00f3ff" emissiveIntensity={0.8} wireframe />
-          </mesh>
-          <mesh>
-              <sphereGeometry args={[1, 32, 32]} />
-              <meshStandardMaterial color="#00f3ff" emissive="#00f3ff" emissiveIntensity={3} />
-          </mesh>
-          <pointLight distance={15} intensity={5} color="#00f3ff" />
-      </group>
+      {/* Replaced Sphere with Holographic Control Panel */}
+      <HoloConsole position={hubPosition} />
 
     </>
   );

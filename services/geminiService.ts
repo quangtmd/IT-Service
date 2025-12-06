@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai"; 
-import * as Constants from '../constants.tsx';
-import { AIBuildResponse, SiteSettings, Article, AIBuildSuggestionsResponse, User } from "../types"; 
-import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
+import * as Constants from '@/constants';
+import { AIBuildResponse, SiteSettings, Article, AIBuildSuggestionsResponse, User, GroundingChunk } from "@/types"; 
+import { PRODUCT_CATEGORIES_HIERARCHY } from '@/constants';
 
 const CHAT_MODEL_NAME = 'gemini-2.5-flash';
 const BUILDER_MODEL_NAME = 'gemini-2.5-flash';
@@ -126,7 +126,7 @@ export const sendMessageWithImage = async (
 };
 
 export const generatePCBuildRecommendation = async (useCase: string, budget: string, currentComponents?: Record<string, string>): Promise<AIBuildResponse> => {
-  const client = getAiClient(); 
+   const client = getAiClient(); 
   if (!client) {
       throw new Error(Constants.API_KEY_ERROR_MESSAGE);
   }
