@@ -1,17 +1,17 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import ProductCard from '@/components/shop/ProductCard';
-import { Product } from '@/types';
-import SearchBar from '@/components/shared/SearchBar';
-import Pagination from '@/components/shared/Pagination';
-import * as Constants from '@/constants';
-import CategorySidebar from '@/components/shop/CategorySidebar';
-import { getProducts } from '@/services/localDataService';
-import BackendConnectionError from '@/components/shared/BackendConnectionError'; 
-import SkeletonProductCard from '@/components/shop/SkeletonProductCard';
-import ShopBanner from '@/components/shop/ShopBanner'; 
-import ShopProductSection from '@/components/shop/ShopProductSection';
+import ProductCard from '../components/shop/ProductCard';
+import { Product } from '../types';
+import SearchBar from '../components/shared/SearchBar';
+import Pagination from '../components/shared/Pagination';
+import * as Constants from '../constants';
+import CategorySidebar from '../components/shop/CategorySidebar';
+import { getProducts } from '../services/localDataService';
+import BackendConnectionError from '../components/shared/BackendConnectionError'; 
+import SkeletonProductCard from '../components/shop/SkeletonProductCard';
+import ShopBanner from '../components/shop/ShopBanner'; 
+import ShopProductSection from '../components/shop/ShopProductSection';
 
 const PRODUCTS_PER_PAGE = 12;
 

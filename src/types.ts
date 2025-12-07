@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-// AdminPermission definition moved here to prevent circular dependency with AuthContext
+// Moved from AuthContext to prevent circular dependency
 export type AdminPermission = 
   // General
   | 'viewDashboard' | 'viewNotifications'

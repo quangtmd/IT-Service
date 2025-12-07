@@ -1,8 +1,8 @@
 
 import { GoogleGenAI, Type } from "@google/genai"; 
-import * as Constants from '@/constants';
-import { AIBuildResponse, SiteSettings, Article, AIBuildSuggestionsResponse, User, GroundingChunk } from "@/types"; 
-import { PRODUCT_CATEGORIES_HIERARCHY } from '@/constants';
+import * as Constants from '../constants';
+import { AIBuildResponse, SiteSettings, Article, AIBuildSuggestionsResponse, User, GroundingChunk } from "../types"; 
+import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants';
 
 const CHAT_MODEL_NAME = 'gemini-2.5-flash';
 const BUILDER_MODEL_NAME = 'gemini-2.5-flash';
