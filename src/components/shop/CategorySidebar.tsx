@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import * as Constants from '@/constants';
-import Button from '@/components/ui/Button';
+import * as Constants from '../../constants';
+import Button from '../ui/Button';
 
 interface CategorySidebarProps {
   currentMainCategorySlug: string | null;

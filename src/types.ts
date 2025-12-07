@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 // Moved from AuthContext to prevent circular dependency

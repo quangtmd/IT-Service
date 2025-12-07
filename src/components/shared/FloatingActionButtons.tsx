@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import * as Constants from '@/constants';
-import { SiteSettings } from '@/types';
-import AIChatbot from '@/components/chatbot/AIChatbot';
+import * as Constants from '../../constants';
+import { SiteSettings } from '../../types';
+import AIChatbot from '../chatbot/AIChatbot';
 import { useLocation } from 'react-router-dom';
 
 const ROBOT_3D_ICON = "https://img.freepik.com/premium-photo/cute-futuristic-anime-girl-3d-render_950633-972.jpg";
@@ -22,7 +21,6 @@ const FloatingActionButtons: React.FC = () => {
     const [fadeClass, setFadeClass] = useState('opacity-100'); 
     const location = useLocation();
     
-    // This check determines if the AI feature is available.
     const isAiEnabled = process.env.API_KEY && process.env.API_KEY !== 'undefined';
 
     const loadSiteSettings = useCallback(() => {

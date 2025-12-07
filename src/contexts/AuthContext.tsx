@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User, UserRole, AdminNotification, StaffRole, AdminPermission } from '../types'; 
 import * as Constants from '../constants';
@@ -99,8 +98,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const register = async (details: { username: string; email: string; password?: string, role?: UserRole }): Promise<User | null> => {
-      // For now, this still uses the local addUser function to simulate registration
-      // which now calls the backend.
       const newUser = await addUser({
           ...details,
           role: details.role || 'customer',
