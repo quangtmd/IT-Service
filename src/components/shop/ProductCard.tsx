@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Product } from '@/types';
-import Button from '@/components/ui/Button';
-import { useCart } from '@/hooks/useCart';
-import { useToast } from '@/contexts/ToastContext';
+import { Product } from '../../types';
+import Button from '../ui/Button';
+import { useCart } from '../../hooks/useCart';
+import { useToast } from '../../contexts/ToastContext';
 
 interface ProductCardProps {
   product: Product;

@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai"; 
 import * as Constants from '../constants.tsx';
 import { AIBuildResponse, SiteSettings, Article, Product, AIBuildSuggestionsResponse, User, GroundingChunk } from "../types"; 
@@ -128,11 +127,6 @@ export const sendMessageWithImage = async (
     
     return await chatToUse.sendMessageStream({ message: { parts: [textPart, imagePart] } });
 };
-
-// ... (Keep generatePCBuildRecommendation, generatePCBuildSuggestions, generateTextWithGoogleSearch, fetchLatestTechNews as is)
-// Re-exporting unmodified functions for brevity, assuming they exist in the file. 
-// If full file content is needed, I would include them. 
-// For this specific update, I am focusing on the chat initialization and tool definitions.
 
 export const generatePCBuildRecommendation = async (useCase: string, budget: string, currentComponents?: Record<string, string>): Promise<AIBuildResponse> => {
    const client = getAiClient(); 
