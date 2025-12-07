@@ -7,7 +7,7 @@ export type AdminPermission =
   | 'viewDashboard' | 'viewNotifications'
   // Sales & CRM
   | 'viewSales' | 'viewCustomers' | 'manageCustomers' | 'viewQuotations' | 'viewOrders' | 'manageOrders' | 'manageDiscounts' | 'viewSuppliers' | 'viewHelpdesk'
-  // Service
+  // Service & Warranty
   | 'viewService' | 'manageServiceTickets' | 'manageWarranty' | 'viewChatLogs'
   // Content
   | 'viewContent' | 'viewProducts' | 'manageProducts' | 'viewArticles' | 'manageArticles' | 'manageMedia' | 'manageFaqs'
