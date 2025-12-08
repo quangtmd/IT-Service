@@ -125,8 +125,7 @@ export const INITIAL_STOCK_RECEIPTS: StockReceipt[] = [
             { productId: 'CPU001', productName: 'CPU Intel Core i5-14600K', quantity: 10, purchasePrice: 8000000 },
             { productId: 'VGA001', productName: 'VGA GIGABYTE GeForce RTX 4060', quantity: 5, purchasePrice: 8200000 },
         ],
-        subTotal: 121000000,
-        discount: 0,
+        // FIX: Removed `subTotal` property as it does not exist on the StockReceipt type.
         totalAmount: 121000000,
         amountPaid: 121000000,
         paymentMethod: 'Tiền mặt',
