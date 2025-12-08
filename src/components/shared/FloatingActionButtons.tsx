@@ -33,7 +33,9 @@ const FloatingActionButtons: React.FC = () => {
     useEffect(() => {
         loadSiteSettings();
         window.addEventListener('siteSettingsUpdated', loadSiteSettings);
-        return () => window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
+        return () => {
+            window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
+        };
     }, [loadSiteSettings]);
     
     useEffect(() => {

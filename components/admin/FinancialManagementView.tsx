@@ -305,8 +305,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
-    // FIX: Removed explicit `: Promise<void>` return type from async function inside useCallback to fix TypeScript inference issue.
-    const handleSettlePayroll = useCallback(async () => {
+    // FIX: Added explicit `: Promise<void>` return type to async function inside useCallback to fix TypeScript inference issue.
+    const handleSettlePayroll = useCallback(async (): Promise<void> => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -333,8 +333,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         }
     }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
 
-    // FIX: Removed explicit `: Promise<void>` return type from async function inside useCallback to fix TypeScript inference issue.
-    const handleSaveDraft = useCallback(async () => {
+    // FIX: Added explicit `: Promise<void>` return type to async function inside useCallback to fix TypeScript inference issue.
+    const handleSaveDraft = useCallback(async (): Promise<void> => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
