@@ -209,7 +209,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return false; // Customers have no admin permissions
   };
 
-
   return (
     <AuthContext.Provider value={{ 
       isAuthenticated, currentUser, login, logout, register, isLoading, users, addUser, updateUser, deleteUser,

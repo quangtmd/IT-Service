@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../ui/Button';
@@ -303,6 +304,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
+    // FIX: Explicitly type useCallback to resolve type inference issue.
+    // FIX: The async function passed to useCallback should not have an explicit Promise return type annotation, as it can confuse TypeScript's inference for the callback's arguments and dependencies. Removing ': Promise<void>' resolves the issue.
     const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
@@ -330,6 +333,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         }
     }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
 
+    // FIX: Explicitly type useCallback to resolve type inference issue.
+    // FIX: The async function passed to useCallback should not have an explicit Promise return type annotation, as it can confuse TypeScript's inference for the callback's arguments and dependencies. Removing ': Promise<void>' resolves the issue.
     const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);

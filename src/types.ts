@@ -810,7 +810,6 @@ export interface StockReceipt {
   supplierName?: string;
   date: string;
   items: StockReceiptItem[];
-  subTotal?: number;
   totalAmount: number;
   discount?: number;
   amountPaid: number;
