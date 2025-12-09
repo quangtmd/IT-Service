@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { DiscountCode } from '../../types';
-import * as Constants from '../../constants';
-import Button from '../ui/Button';
+import { DiscountCode } from '@/types';
+import * as Constants from '@/constants';
+import Button from '@/components/ui/Button';
 import * as ReactRouterDOM from 'react-router-dom';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
