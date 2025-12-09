@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { DiscountCode } from '../../types';
-import Button from '../../components/ui/Button';
+import { DiscountCode } from '@/types';
+import Button from '@/components/ui/Button';
 import * as ReactRouterDOM from 'react-router-dom';
-import * as Constants from '../../constants';
+import * as Constants from '@/constants';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultValue; }

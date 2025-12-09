@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DiscountCode } from '@/types';
 import * as Constants from '@/constants';
 import Button from '@/components/ui/Button';
