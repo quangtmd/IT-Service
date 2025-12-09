@@ -1,7 +1,10 @@
+
 import { GoogleGenAI, Type } from "@google/genai"; 
-import * as Constants from '../constants';
-import { AIBuildResponse, SiteSettings, Article, AIBuildSuggestionsResponse, User, GroundingChunk } from "../types"; 
-import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants';
+import * as Constants from '../constants.tsx';
+import { AIBuildResponse, SiteSettings, Article, Product, AIBuildSuggestionsResponse, User, GroundingChunk } from "../types"; 
+import { MOCK_SERVICES } from '../data/mockData';
+import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
+
 
 const CHAT_MODEL_NAME = 'gemini-2.5-flash';
 const BUILDER_MODEL_NAME = 'gemini-2.5-flash';
@@ -9,7 +12,7 @@ const BUILDER_MODEL_NAME = 'gemini-2.5-flash';
 let aiInstance: any | null = null;
 let chatSessionInstance: any | null = null; 
 
-const getAiClient = (): any | null => {
+const getAiClient = (): GoogleGenAI | null => {
   const apiKey = process.env.API_KEY;
   if (!apiKey || apiKey === 'undefined') {
     return null;
@@ -43,6 +46,7 @@ const lookupCustomerOrdersFunctionDeclaration: any = {
     required: ['identifier'],
   },
 };
+
 
 export const startChat = (
   siteSettings: SiteSettings, 
@@ -125,6 +129,11 @@ export const sendMessageWithImage = async (
     return await chatToUse.sendMessageStream({ message: { parts: [textPart, imagePart] } });
 };
 
+// ... (Keep generatePCBuildRecommendation, generatePCBuildSuggestions, generateTextWithGoogleSearch, fetchLatestTechNews as is)
+// Re-exporting unmodified functions for brevity, assuming they exist in the file. 
+// If full file content is needed, I would include them. 
+// For this specific update, I am focusing on the chat initialization and tool definitions.
+
 export const generatePCBuildRecommendation = async (useCase: string, budget: string, currentComponents?: Record<string, string>): Promise<AIBuildResponse> => {
    const client = getAiClient(); 
   if (!client) {
@@ -175,7 +184,7 @@ Nếu ngân sách quá thấp cho nhu cầu sử dụng, hãy trả về JSON c�
 };
 
 export const generatePCBuildSuggestions = async (useCase: 'PC Gaming' | 'PC Văn phòng', budget: string, additionalRequirements: string): Promise<AIBuildSuggestionsResponse> => {
-  const client = getAiClient();
+      const client = getAiClient();
   if (!client) {
       throw new Error(Constants.API_KEY_ERROR_MESSAGE);
   }
@@ -243,7 +252,7 @@ Phản hồi của bạn PHẢI tuân thủ nghiêm ngặt theo JSON schema đã
 };
 
 export const generateTextWithGoogleSearch = async (prompt: string): Promise<{ text: string; groundingChunks?: any[] }> => {
-  const client = getAiClient(); 
+      const client = getAiClient(); 
   if (!client) {
       throw new Error(Constants.API_KEY_ERROR_MESSAGE);
   }
@@ -267,7 +276,7 @@ export const generateTextWithGoogleSearch = async (prompt: string): Promise<{ te
 };
 
 export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
-    const client = getAiClient();
+        const client = getAiClient();
     if (!client) {
         throw new Error(Constants.API_KEY_ERROR_MESSAGE);
     }

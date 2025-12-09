@@ -1,12 +1,13 @@
+
 import React from 'react';
 
-// Moved from AuthContext to prevent circular dependency
+// Moved AdminPermission from AuthContext to break circular dependency
 export type AdminPermission = 
   // General
   | 'viewDashboard' | 'viewNotifications'
   // Sales & CRM
   | 'viewSales' | 'viewCustomers' | 'manageCustomers' | 'viewQuotations' | 'viewOrders' | 'manageOrders' | 'manageDiscounts' | 'viewSuppliers' | 'viewHelpdesk'
-  // Service & Warranty
+  // Service
   | 'viewService' | 'manageServiceTickets' | 'manageWarranty' | 'viewChatLogs'
   // Content
   | 'viewContent' | 'viewProducts' | 'manageProducts' | 'viewArticles' | 'manageArticles' | 'manageMedia' | 'manageFaqs'
@@ -810,6 +811,7 @@ export interface StockReceipt {
   supplierName?: string;
   date: string;
   items: StockReceiptItem[];
+  subTotal?: number;
   totalAmount: number;
   discount?: number;
   amountPaid: number;

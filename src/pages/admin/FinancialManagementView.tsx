@@ -1,16 +1,17 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/ui/Card';
 import {
-    getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
+    getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction as apiDeleteFinancialTransaction,
     getPayrollRecords, savePayrollRecords
 } from '../../services/localDataService';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate, NavigateFunction } from 'react-router-dom';
 
-// --- HELPER FUNCTIONS ---
-const formatDate = (date: Date) => date.toISOString().split('T')[0];
+// --- HELPER FUNCTIONS & COMPONENTS ---
+const formatDate = (d: Date) => d.toISOString().split('T')[0];
 const getStartOfWeek = (d: Date) => {
     const date = new Date(d);
     const day = date.getDay();
@@ -27,7 +28,7 @@ const FinancialManagementView: React.FC = () => {
     const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const navigate = ReactRouterDOM.useNavigate();
+    const navigate = useNavigate();
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
@@ -50,7 +51,7 @@ const FinancialManagementView: React.FC = () => {
         loadData();
     }, [loadData]);
 
-    const addTransaction = async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
+    const addTransaction = useCallback(async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
         try {
             await addFinancialTransaction(newTransaction);
             loadData(); // Re-fetch all data to ensure consistency
@@ -58,7 +59,7 @@ const FinancialManagementView: React.FC = () => {
             console.error(error);
             alert("Lỗi khi thêm giao dịch.");
         }
-    };
+    }, [loadData]);
 
     const renderTabContent = () => {
         if (isLoading) return <div className="text-center p-8">Đang tải dữ liệu tài chính...</div>;
@@ -134,23 +135,21 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
     );
 };
 
-const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: ReactRouterDOM.NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
-
-    const handleAddNewTransaction = () => {
-        navigate('/admin/accounting_dashboard/transactions/new');
-    };
+const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
 
     const handleEditTransaction = (transactionId: string) => {
         navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
     };
 
     const handleDelete = async (id: string) => {
-        if(window.confirm('Bạn có chắc muốn xóa giao dịch này?')) {
+        const isConfirmed = window.confirm('Bạn có chắc muốn xóa giao dịch này?');
+        if(isConfirmed) {
             try {
-                await deleteFinancialTransaction(id);
+                await apiDeleteFinancialTransaction(id);
                 onDataChange();
             } catch (error) {
-                alert("Lỗi khi xóa giao dịch.");
+                console.error("Delete transaction error:", error);
+                window.alert("Lỗi khi xóa giao dịch.");
             }
         }
     };
@@ -158,7 +157,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
     return (
         <div>
             <div className="flex justify-end mb-4">
-                <Button onClick={handleAddNewTransaction} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
+                <Button onClick={() => navigate('/admin/accounting_dashboard/transactions/new')} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
             </div>
              <div className="overflow-x-auto">
                 <table className="admin-table">
@@ -275,7 +274,13 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => void, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => void }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
+interface PayrollTabProps {
+    payrollRecords: PayrollRecord[],
+    onDataChange: () => Promise<void>,
+    onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void>
+}
+
+const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
     const { users } = useAuth();
     const staff = users.filter(u => u.role === 'admin' || u.role === 'staff');
     const [payPeriod, setPayPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
@@ -303,8 +308,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         });
     };
 
-    // FIX: Added explicit `: Promise<void>` return type to async function inside useCallback to fix TypeScript inference issue.
-    const handleSettlePayroll = useCallback(async (): Promise<void> => {
+    const handleSettlePayroll = useCallback(async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -331,8 +335,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
         }
     }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
 
-    // FIX: Added explicit `: Promise<void>` return type to async function inside useCallback to fix TypeScript inference issue.
-    const handleSaveDraft = useCallback(async (): Promise<void> => {
+    const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
         await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
@@ -345,8 +348,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                <Button onClick={handleSaveDraft} size="sm" variant="outline">Lưu Nháp</Button>
-                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

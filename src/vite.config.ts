@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                '@': path.resolve('.'),
+                '@': path.resolve('src'),
             }
         },
         define: {

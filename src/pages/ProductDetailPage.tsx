@@ -1,15 +1,16 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Product } from '../types';
-import Button from '../components/ui/Button';
-import CustomButton from '../components/ui/CustomButton';
-import { useCart } from '../hooks/useCart';
-import ProductCard from '../components/shop/ProductCard';
-import * as Constants from '../constants';
-import { getProduct, getProducts } from '../services/localDataService';
-import BackendConnectionError from '../components/shared/BackendConnectionError'; 
-import { useChatbotContext } from '../contexts/ChatbotContext'; 
-import ImageMagnifier from '../components/ui/ImageMagnifier'; 
+import { Product } from '@/types';
+import Button from '@/components/ui/Button';
+import CustomButton from '@/components/ui/CustomButton';
+import { useCart } from '@/hooks/useCart';
+import ProductCard from '@/components/shop/ProductCard';
+import * as Constants from '@/constants';
+import { getProduct, getProducts } from '@/services/localDataService';
+import BackendConnectionError from '@/components/shared/BackendConnectionError'; 
+import { useChatbotContext } from '@/contexts/ChatbotContext'; 
+import ImageMagnifier from '@/components/ui/ImageMagnifier'; 
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
