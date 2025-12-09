@@ -1,4 +1,3 @@
-
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { defineConfig, loadEnv } from 'vite';
@@ -8,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
+    // Use path.resolve('.') to avoid 'cwd' does not exist on type 'Process' error if types are missing
     const env = loadEnv(mode, path.resolve('.'), '');
 
     return {
