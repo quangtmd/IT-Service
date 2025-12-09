@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-// Fix: Import AdminPermission from types instead of AuthContext
 import { User, AdminNotification, AdminView, AdminPermission } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
