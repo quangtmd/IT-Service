@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, path.resolve('.'), ''); // Load env from project root if config is in src, or just path.resolve('.')
+    // Use path.resolve('.') instead of process.cwd() to avoid type errors with Process
+    const env = loadEnv(mode, path.resolve('.'), ''); 
 
     return {
         server: {
@@ -38,13 +39,8 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                // Ensure @ maps to the src directory relative to this config file
-                // If vite.config.ts is in src/, then it's just __dirname
-                // If vite.config.ts is in root, it's path.resolve(__dirname, './src')
-                // Based on previous file listing, vite.config.ts seemed to be in root, 
-                // but one listing showed src/vite.config.ts. 
-                // Assuming standard Vite structure where config is at root:
-                '@': path.resolve(__dirname, './src'),
+                // Ensure @ maps to the project root directory
+                '@': path.resolve(__dirname, './'),
             }
         },
         define: {

@@ -21,12 +21,17 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
 
-    /* Alias */
+    /* Alias - Map @ to root */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/vite-env.d.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "vite-env.d.ts",
+    "src/vite-env.d.ts"
+  ],
   "exclude": ["node_modules", "dist", "backend"]
 }
