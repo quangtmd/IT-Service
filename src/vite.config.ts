@@ -39,8 +39,8 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                // Ensure @ maps to the project root directory
-                '@': path.resolve(__dirname, './'),
+                // Ensure @ maps to the src directory relative to this config file
+                '@': path.resolve(__dirname, 'src'),
             }
         },
         define: {

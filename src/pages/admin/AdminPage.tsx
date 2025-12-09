@@ -29,24 +29,24 @@ import StockTransfersView from '@/components/admin/StockTransfersView';
 import ShippingManagementView from '@/components/admin/ShippingManagementView';
 
 
-// Import new form pages using absolute paths
-import ProductFormPage from '@/pages/admin/ProductFormPage';
-import UserFormPage from '@/pages/admin/UserFormPage';
-import ArticleFormPage from '@/pages/admin/ArticleFormPage';
-import DiscountFormPage from '@/pages/admin/DiscountFormPage';
-import FaqFormPage from '@/pages/admin/FaqFormPage';
-import TransactionFormPage from '@/pages/admin/TransactionFormPage';
-import QuotationFormPage from '@/pages/admin/QuotationFormPage';
-import CustomerFormPage from '@/pages/admin/CustomerFormPage';
-import CustomerProfilePage from '@/pages/admin/CustomerProfilePage';
-import OrderFormPage from '@/pages/admin/OrderFormPage';
-import ReturnFormPage from '@/pages/admin/ReturnFormPage';
-import SupplierFormPage from '@/pages/admin/SupplierFormPage';
-import ServiceTicketFormPage from '@/pages/admin/ServiceTicketFormPage';
-import WarrantyFormPage from '@/pages/admin/WarrantyFormPage';
-import StockReceiptFormPage from '@/pages/admin/StockReceiptFormPage';
-import StockIssueFormPage from '@/pages/admin/StockIssueFormPage';
-import StockTransferFormPage from '@/pages/admin/StockTransferFormPage';
+// Import new form pages using sibling relative paths
+import ProductFormPage from './ProductFormPage';
+import UserFormPage from './UserFormPage';
+import ArticleFormPage from './ArticleFormPage';
+import DiscountFormPage from './DiscountFormPage';
+import FaqFormPage from './FaqFormPage';
+import TransactionFormPage from './TransactionFormPage';
+import QuotationFormPage from './QuotationFormPage';
+import CustomerFormPage from './CustomerFormPage';
+import CustomerProfilePage from './CustomerProfilePage';
+import OrderFormPage from './OrderFormPage';
+import ReturnFormPage from './ReturnFormPage';
+import SupplierFormPage from './SupplierFormPage';
+import ServiceTicketFormPage from './ServiceTicketFormPage';
+import WarrantyFormPage from './WarrantyFormPage';
+import StockReceiptFormPage from './StockReceiptFormPage';
+import StockIssueFormPage from './StockIssueFormPage';
+import StockTransferFormPage from './StockTransferFormPage';
 
 
 // Import new placeholder/skeleton views
