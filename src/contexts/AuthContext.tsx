@@ -4,7 +4,8 @@ import { User, UserRole, AdminNotification, StaffRole, AdminPermission } from '.
 import * as Constants from '../constants';
 import { getUsers, addUser as apiAddUser, updateUser as apiUpdateUser, deleteUser as apiDeleteUser, loginUser } from '../services/localDataService';
 
-export type { AdminPermission }; // Re-export AdminPermission to fix TS2459
+// QUAN TRỌNG: Re-export AdminPermission để các file khác (như AdminPage) có thể import từ đây nếu cần
+export type { AdminPermission };
 
 export interface AuthContextType {
   isAuthenticated: boolean;
