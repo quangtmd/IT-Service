@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Import AdminPermission from types instead of AuthContext
 import { User, AdminNotification, AdminView, AdminPermission } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -106,7 +107,7 @@ const AdminPage: React.FC = () => {
             id: 'service_warranty', label: 'Dịch Vụ & Bảo Hành', icon: 'fas fa-tools', permission: ['viewService'],
             children: [
                 { id: 'service_tickets', label: 'Phiếu Sửa Chữa', icon: 'fas fa-ticket-alt', permission: ['manageServiceTickets'] },
-                { id: 'warranty_tickets', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
+                { id: 'warranty_claims', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
             ]
         },
@@ -247,7 +248,7 @@ const AdminPage: React.FC = () => {
             case 'inventory': return <InventoryView />;
             case 'service_tickets': return <ServiceTicketView />;
             case 'quotations': return <QuotationManagementView />;
-            case 'warranty_tickets': return <WarrantyManagementView />;
+            case 'warranty_claims': return <WarrantyManagementView />;
             case 'returns': return <ReturnManagementView />;
             case 'suppliers': return <SupplierManagementView />;
             case 'stock_receipts': return <StockReceiptsView />;
@@ -355,8 +356,8 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
-                        <ReactRouterDOM.Route path="/warranty_tickets/new" element={<WarrantyFormPage />} />
-                        <ReactRouterDOM.Route path="/warranty_tickets/edit/:ticketId" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_claims/new" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_claims/edit/:claimId" element={<WarrantyFormPage />} />
                         <ReactRouterDOM.Route path="/stock_receipts/new" element={<StockReceiptFormPage />} />
                         <ReactRouterDOM.Route path="/stock_receipts/edit/:id" element={<StockReceiptFormPage />} />
                         <ReactRouterDOM.Route path="/stock_issues/new" element={<StockIssueFormPage />} />
