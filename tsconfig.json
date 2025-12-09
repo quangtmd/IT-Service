@@ -25,7 +25,7 @@
     /* Alias */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*", "src/*"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/vite-env.d.ts", "**/*.ts", "**/*.tsx"],
