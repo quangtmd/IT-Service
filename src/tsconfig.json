@@ -1,3 +1,4 @@
+
 {
   "compilerOptions": {
     "target": "ES2020",
@@ -21,25 +22,16 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
 
-    /* Alias */
+    /* Alias - Matching Vite config */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["src/*"]
     }
   },
   "include": [
-    "App.tsx",
-    "index.tsx",
-    "types.ts",
-    "vite-env.d.ts",
-    "ErrorBoundary.tsx",
-    "MainLayout.tsx",
-    "components",
-    "contexts",
-    "data",
-    "hooks",
-    "pages",
-    "services"
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/vite-env.d.ts"
   ],
-  "exclude": ["vite.config.ts", "node_modules", "dist"]
+  "exclude": ["node_modules", "dist"]
 }
