@@ -3,13 +3,11 @@ import { fileURLToPath } from 'url';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Define __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
-    // Use path.resolve('.') instead of process.cwd() to avoid TS issues with Process type
-    const env = loadEnv(mode, path.resolve('.'), '');
+    const env = loadEnv(mode, process.cwd(), '');
 
     return {
         server: {
@@ -39,7 +37,7 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                '@': path.resolve(__dirname, './src'),
+                '@': path.resolve(__dirname, 'src'),
             }
         },
         define: {

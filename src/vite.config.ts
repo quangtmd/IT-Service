@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, path.resolve(__dirname, '..'), ''); // Load env from project root if config is in src, or just path.resolve('.')
+    const env = loadEnv(mode, path.resolve('.'), ''); // Load env from project root if config is in src, or just path.resolve('.')
 
     return {
         server: {
