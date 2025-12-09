@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Constants from '@/constants';
 import { SiteSettings } from '@/types';
@@ -37,7 +38,7 @@ const FloatingActionButtons: React.FC = () => {
     
     useEffect(() => {
         // Only auto-open and show bubble on the homepage and if AI is enabled
-        if (isAiEnabled && location.pathname === '/') { 
+        if (isAiEnabled && location.pathname === '/home') { 
             const alreadyOpened = sessionStorage.getItem(Constants.CHATBOT_AUTO_OPENED_KEY); // Using sessionStorage to reset on tab close
             if (!alreadyOpened) {
               // Delay slightly before opening chat and showing bubble

@@ -8,7 +8,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
-    // Use path.resolve('.') instead of process.cwd() to avoid type errors with Process
     const env = loadEnv(mode, path.resolve('.'), ''); 
 
     return {
@@ -39,7 +38,6 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                // Ensure @ maps to the src directory relative to this config file
                 '@': path.resolve(__dirname, 'src'),
             }
         },

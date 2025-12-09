@@ -29,7 +29,7 @@ import StockTransfersView from '@/components/admin/StockTransfersView';
 import ShippingManagementView from '@/components/admin/ShippingManagementView';
 
 
-// Import new form pages using sibling relative paths
+// Import new form pages using sibling relative paths (files are in the same directory)
 import ProductFormPage from './ProductFormPage';
 import UserFormPage from './UserFormPage';
 import ArticleFormPage from './ArticleFormPage';
