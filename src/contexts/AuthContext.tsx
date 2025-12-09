@@ -4,6 +4,8 @@ import { User, UserRole, AdminNotification, StaffRole, AdminPermission } from '.
 import * as Constants from '../constants';
 import { getUsers, addUser as apiAddUser, updateUser as apiUpdateUser, deleteUser as apiDeleteUser, loginUser } from '../services/localDataService';
 
+export type { AdminPermission }; // Re-export AdminPermission to fix TS2459
+
 export interface AuthContextType {
   isAuthenticated: boolean;
   currentUser: User | null;
