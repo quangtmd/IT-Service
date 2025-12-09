@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, AdminNotification, AdminView, AdminPermission } from '@/types';
@@ -185,7 +184,7 @@ const AdminPage: React.FC = () => {
         const viewCandidates = [
             'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
             'accounting_dashboard', 'quotations', 'customers', 'orders', 
-            'returns', 'suppliers', 'service_tickets', 'warranty_tickets',
+            'returns', 'suppliers', 'service_tickets', 'warranty_claims',
             'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers'
         ];
 
@@ -294,8 +293,8 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
         if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
         if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
-        if (path.startsWith('/admin/warranty_tickets/new')) return 'Tạo Phiếu Bảo hành';
-        if (path.startsWith('/admin/warranty_tickets/edit/')) return 'Chỉnh sửa Phiếu Bảo hành';
+        if (path.startsWith('/admin/warranty_claims/new')) return 'Tạo Phiếu Bảo hành';
+        if (path.startsWith('/admin/warranty_claims/edit/')) return 'Chỉnh sửa Phiếu Bảo hành';
         if (path.startsWith('/admin/stock_receipts/new')) return 'Tạo Phiếu Nhập Kho';
         if (path.startsWith('/admin/stock_receipts/edit/')) return 'Sửa Phiếu Nhập Kho';
         if (path.startsWith('/admin/stock_issues/new')) return 'Tạo Phiếu Xuất Kho';
