@@ -5,6 +5,7 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -26,6 +27,19 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["vite.config.ts", "node_modules"]
+  "include": [
+    "App.tsx",
+    "index.tsx",
+    "types.ts",
+    "vite-env.d.ts",
+    "ErrorBoundary.tsx",
+    "MainLayout.tsx",
+    "components",
+    "contexts",
+    "data",
+    "hooks",
+    "pages",
+    "services"
+  ],
+  "exclude": ["vite.config.ts", "node_modules", "dist"]
 }
