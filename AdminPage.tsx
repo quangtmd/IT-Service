@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, AdminNotification, AdminView } from '../types';
-import { useAuth, AdminPermission } from '../contexts/AuthContext';
+import { User, AdminNotification, AdminView, AdminPermission } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 // Import existing views
 import HRMProfileView from '../components/admin/HRMProfileView';

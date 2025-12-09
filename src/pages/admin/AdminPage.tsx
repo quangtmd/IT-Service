@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, AdminNotification, AdminView, AdminPermission } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Import existing views using absolute aliases to avoid relative path hell
+// Import existing views using absolute aliases
 import HRMProfileView from '@/components/admin/HRMProfileView';
 import ProductManagementView from '@/components/admin/ProductManagementView';
 import ArticleManagementView from '@/components/admin/ArticleManagementView';
@@ -29,25 +28,24 @@ import StockTransfersView from '@/components/admin/StockTransfersView';
 import ShippingManagementView from '@/components/admin/ShippingManagementView';
 
 
-// Import new form pages - these are in the same directory (src/pages/admin/)
-// Use explicit ./ prefix
-import ProductFormPage from './ProductFormPage';
-import UserFormPage from './UserFormPage';
-import ArticleFormPage from './ArticleFormPage';
-import DiscountFormPage from './DiscountFormPage';
-import FaqFormPage from './FaqFormPage';
-import TransactionFormPage from './TransactionFormPage';
-import QuotationFormPage from './QuotationFormPage';
-import CustomerFormPage from './CustomerFormPage';
-import CustomerProfilePage from './CustomerProfilePage';
-import OrderFormPage from './OrderFormPage';
-import ReturnFormPage from './ReturnFormPage';
-import SupplierFormPage from './SupplierFormPage';
-import ServiceTicketFormPage from './ServiceTicketFormPage';
-import WarrantyFormPage from './WarrantyFormPage';
-import StockReceiptFormPage from './StockReceiptFormPage';
-import StockIssueFormPage from './StockIssueFormPage';
-import StockTransferFormPage from './StockTransferFormPage';
+// Import new form pages - Using absolute paths to avoid relative path errors
+import ProductFormPage from '@/pages/admin/ProductFormPage';
+import UserFormPage from '@/pages/admin/UserFormPage';
+import ArticleFormPage from '@/pages/admin/ArticleFormPage';
+import DiscountFormPage from '@/pages/admin/DiscountFormPage';
+import FaqFormPage from '@/pages/admin/FaqFormPage';
+import TransactionFormPage from '@/pages/admin/TransactionFormPage';
+import QuotationFormPage from '@/pages/admin/QuotationFormPage';
+import CustomerFormPage from '@/pages/admin/CustomerFormPage';
+import CustomerProfilePage from '@/pages/admin/CustomerProfilePage';
+import OrderFormPage from '@/pages/admin/OrderFormPage';
+import ReturnFormPage from '@/pages/admin/ReturnFormPage';
+import SupplierFormPage from '@/pages/admin/SupplierFormPage';
+import ServiceTicketFormPage from '@/pages/admin/ServiceTicketFormPage';
+import WarrantyFormPage from '@/pages/admin/WarrantyFormPage';
+import StockReceiptFormPage from '@/pages/admin/StockReceiptFormPage';
+import StockIssueFormPage from '@/pages/admin/StockIssueFormPage';
+import StockTransferFormPage from '@/pages/admin/StockTransferFormPage';
 
 
 // Import new placeholder/skeleton views
@@ -108,7 +106,6 @@ const AdminPage: React.FC = () => {
             id: 'service_warranty', label: 'Dịch Vụ & Bảo Hành', icon: 'fas fa-tools', permission: ['viewService'],
             children: [
                 { id: 'service_tickets', label: 'Phiếu Sửa Chữa', icon: 'fas fa-ticket-alt', permission: ['manageServiceTickets'] },
-                // Corrected ID to match AdminView type definition
                 { id: 'warranty_tickets', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
             ]
