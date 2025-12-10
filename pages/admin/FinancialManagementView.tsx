@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../../components/ui/Button';
@@ -53,7 +54,7 @@ const FinancialManagementView: React.FC = () => {
     const addTransaction = async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
         try {
             await addFinancialTransaction(newTransaction);
-            loadData(); // Re-fetch all data to ensure consistency
+            loadData(); 
         } catch (error) {
             console.error(error);
             alert("Lỗi khi thêm giao dịch.");

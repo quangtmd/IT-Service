@@ -9,27 +9,35 @@ const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-    // Load env file based on `mode` in the current working directory.
-    // Cast process to any to avoid TypeScript errors if types are missing
-    const cwd = (process as any).cwd ? (process as any).cwd() : path.resolve('.');
-    const env = loadEnv(mode, cwd, '');
+    const env = loadEnv(mode, path.resolve('.'), '');
 
     return {
         plugins: [react()],
         resolve: {
             alias: {
-                // Map @ to the project root
-                '@': path.resolve(__dirname, './'),
+                // Map @ to the src directory relative to project root
+                '@': path.resolve(__dirname, './src'),
             },
         },
         server: {
-            host: '0.0.0.0', 
+            host: true,
             port: 3000,
             proxy: {
               '/api': {
                 target: 'http://localhost:3001',
                 changeOrigin: true,
               },
+            },
+        },
+        preview: {
+            port: 3000,
+            host: true,
+            allowedHosts: true, // Allow render domains
+            proxy: {
+                '/api': {
+                    target: 'http://localhost:3001',
+                    changeOrigin: true,
+                },
             },
         },
         build: {
