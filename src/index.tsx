@@ -13,7 +13,8 @@ import '@/index.css';
 function renderApp() {
   const rootElement = document.getElementById('root');
   if (!rootElement) {
-    console.error("Fatal Error: Could not find root element to mount to.");
+    console.error("Fatal Error: Could not find root element to mount to. Ensure a div with id='root' exists in your HTML.");
+    document.body.innerHTML = '<div style="padding: 20px; text-align: center; font-family: sans-serif; color: red;"><h1>Application Error</h1><p>Could not find the main application container. Please check the console for more details.</p></div>';
     return;
   }
 
