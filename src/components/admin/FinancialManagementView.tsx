@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '@/types';
-import Button from '@/components/ui/Button';
-import { useAuth } from '@/contexts/AuthContext';
-import Card from '@/components/ui/Card';
+import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
+import Button from '../ui/Button';
+import { useAuth } from '../../contexts/AuthContext';
+import Card from '../ui/Card';
 import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
     getPayrollRecords, savePayrollRecords
-} from '@/services/localDataService';
+} from '../../services/localDataService';
 import * as ReactRouterDOM from 'react-router-dom';
 
 // --- HELPER FUNCTIONS ---
@@ -317,8 +317,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
         try {
             const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-            await savePayrollRecords(recordsToSave);
-            await onAddTransaction({
+            await (savePayrollRecords as any)(recordsToSave);
+            await (onAddTransaction as any)({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
                 type: 'expense',
@@ -333,7 +333,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
     const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-        await savePayrollRecords(recordsToSave);
+        await (savePayrollRecords as any)(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
         onDataChange();
     }, [localPayroll, payPeriod, onDataChange]);
