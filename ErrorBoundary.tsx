@@ -11,7 +11,6 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Explicitly declare state property to satisfy TypeScript
   public state: ErrorBoundaryState = {
     hasError: false,
     errorMessage: '',
@@ -19,7 +18,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    // State initialization is handled by property declaration
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {

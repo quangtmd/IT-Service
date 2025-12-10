@@ -1,59 +1,57 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { User, AdminNotification, AdminView, AdminPermission } from '../../types';
-import { useAuth } from '../../contexts/AuthContext';
+import { User, AdminNotification, AdminView, AdminPermission } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Import existing views using relative paths
-import HRMProfileView from '../../components/admin/HRMProfileView';
-import ProductManagementView from '../../components/admin/ProductManagementView';
-import ArticleManagementView from '../../components/admin/ArticleManagementView';
-import OrderManagementView from '../../components/admin/OrderManagementView';
-import CustomerManagementView from '../../components/admin/CustomerManagementView';
-import DiscountManagementView from '../../components/admin/DiscountManagementView';
-import FaqManagementView from '../../components/admin/FaqManagementView';
-import ChatLogView from '../../components/admin/ChatLogView';
-import SiteSettingsView from '../../components/admin/SiteSettingsView';
-import MediaLibraryView from '../../components/admin/MediaLibraryView';
-import NotificationsView from '../../components/admin/NotificationsView';
-import HomepageManagementView from '../../components/admin/HomepageManagementView';
-import FinancialManagementView from '../../components/admin/FinancialManagementView';
-import DashboardView from '../../components/admin/DashboardView';
-import ServiceTicketView from '../../components/admin/ServiceTicketView';
-import InventoryView from '../../components/admin/InventoryView';
+// Import existing views using absolute aliases
+import HRMProfileView from '@/components/admin/HRMProfileView';
+import ProductManagementView from '@/components/admin/ProductManagementView';
+import ArticleManagementView from '@/components/admin/ArticleManagementView';
+import OrderManagementView from '@/components/admin/OrderManagementView';
+import CustomerManagementView from '@/components/admin/CustomerManagementView';
+import DiscountManagementView from '@/components/admin/DiscountManagementView';
+import FaqManagementView from '@/components/admin/FaqManagementView';
+import ChatLogView from '@/components/admin/ChatLogView';
+import SiteSettingsView from '@/components/admin/SiteSettingsView';
+import MediaLibraryView from '@/components/admin/MediaLibraryView';
+import NotificationsView from '@/components/admin/NotificationsView';
+import HomepageManagementView from '@/components/admin/HomepageManagementView';
+import FinancialManagementView from '@/components/admin/FinancialManagementView';
+import DashboardView from '@/components/admin/DashboardView';
+import ServiceTicketView from '@/components/admin/ServiceTicketView';
+import InventoryView from '@/components/admin/InventoryView';
 
 // Import new Inventory & Logistics views
-import StockReceiptsView from '../../components/admin/StockReceiptsView';
-import StockIssuesView from '../../components/admin/StockIssuesView';
-import StockTransfersView from '../../components/admin/StockTransfersView';
-import ShippingManagementView from '../../components/admin/ShippingManagementView';
+import StockReceiptsView from '@/components/admin/StockReceiptsView';
+import StockIssuesView from '@/components/admin/StockIssuesView';
+import StockTransfersView from '@/components/admin/StockTransfersView';
+import ShippingManagementView from '@/components/admin/ShippingManagementView';
 
-
-// Import new form pages using sibling relative paths (./)
-import ProductFormPage from './ProductFormPage';
-import UserFormPage from './UserFormPage';
-import ArticleFormPage from './ArticleFormPage';
-import DiscountFormPage from './DiscountFormPage';
-import FaqFormPage from './FaqFormPage';
-import TransactionFormPage from './TransactionFormPage';
-import QuotationFormPage from './QuotationFormPage';
-import CustomerFormPage from './CustomerFormPage';
-import CustomerProfilePage from './CustomerProfilePage';
-import OrderFormPage from './OrderFormPage';
-import ReturnFormPage from './ReturnFormPage';
-import SupplierFormPage from './SupplierFormPage';
-import ServiceTicketFormPage from './ServiceTicketFormPage';
-import WarrantyFormPage from './WarrantyFormPage';
-import StockReceiptFormPage from './StockReceiptFormPage';
-import StockIssueFormPage from './StockIssueFormPage';
-import StockTransferFormPage from './StockTransferFormPage';
-
+// Import new form pages using absolute paths to avoid relative path confusion
+import ProductFormPage from '@/pages/admin/ProductFormPage';
+import UserFormPage from '@/pages/admin/UserFormPage';
+import ArticleFormPage from '@/pages/admin/ArticleFormPage';
+import DiscountFormPage from '@/pages/admin/DiscountFormPage';
+import FaqFormPage from '@/pages/admin/FaqFormPage';
+import TransactionFormPage from '@/pages/admin/TransactionFormPage';
+import QuotationFormPage from '@/pages/admin/QuotationFormPage';
+import CustomerFormPage from '@/pages/admin/CustomerFormPage';
+import CustomerProfilePage from '@/pages/admin/CustomerProfilePage';
+import OrderFormPage from '@/pages/admin/OrderFormPage';
+import ReturnFormPage from '@/pages/admin/ReturnFormPage';
+import SupplierFormPage from '@/pages/admin/SupplierFormPage';
+import ServiceTicketFormPage from '@/pages/admin/ServiceTicketFormPage';
+import WarrantyFormPage from '@/pages/admin/WarrantyFormPage';
+import StockReceiptFormPage from '@/pages/admin/StockReceiptFormPage';
+import StockIssueFormPage from '@/pages/admin/StockIssueFormPage';
+import StockTransferFormPage from '@/pages/admin/StockTransferFormPage';
 
 // Import new placeholder/skeleton views
-import QuotationManagementView from '../../components/admin/QuotationManagementView';
-import WarrantyManagementView from '../../components/admin/WarrantyManagementView';
-import ReturnManagementView from '../../components/admin/ReturnManagementView';
-import SupplierManagementView from '../../components/admin/SupplierManagementView';
+import QuotationManagementView from '@/components/admin/QuotationManagementView';
+import WarrantyManagementView from '@/components/admin/WarrantyManagementView';
+import ReturnManagementView from '@/components/admin/ReturnManagementView';
+import SupplierManagementView from '@/components/admin/SupplierManagementView';
 
 
 interface MenuItemConfig {

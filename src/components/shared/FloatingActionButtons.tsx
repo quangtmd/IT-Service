@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import * as Constants from '../../constants';
-import { SiteSettings } from '../../types';
-import AIChatbot from '../chatbot/AIChatbot';
+import * as Constants from '@/constants';
+import { SiteSettings } from '@/types';
+import AIChatbot from '@/components/chatbot/AIChatbot';
 import * as ReactRouterDOM from 'react-router-dom';
 
 // Base64 encoded SVG for a simple robot icon
