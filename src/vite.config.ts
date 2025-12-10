@@ -16,7 +16,9 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                '@': path.resolve(__dirname, 'src'),
+                // If this file is in 'src/', then __dirname is '.../project/src'.
+                // We want '@' to point to '.../project/src'.
+                '@': path.resolve(__dirname, '.'),
             },
         },
         server: {
