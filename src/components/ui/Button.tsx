@@ -27,13 +27,12 @@ const Button: React.FC<ButtonProps> = ({
     lg: 'px-6 py-3 text-lg',
   };
 
-  // Adjusted for light theme
   const variantStyles = {
     primary: 'bg-primary hover:bg-primary-dark focus:ring-primary text-white',
-    secondary: 'bg-secondary hover:bg-secondary-dark focus:ring-secondary text-white', 
-    outline: 'border border-primary text-primary hover:bg-primary/10 focus:ring-primary', 
-    ghost: 'text-primary hover:bg-primary/10 focus:ring-primary', 
-    danger: 'bg-danger-bg text-danger-text border border-danger-border hover:bg-red-100 focus:ring-danger-text', 
+    secondary: 'bg-secondary hover:bg-secondary-dark focus:ring-secondary text-white',
+    outline: 'border border-primary text-primary hover:bg-primary/10 focus:ring-primary',
+    ghost: 'text-primary hover:bg-primary/10 focus:ring-primary',
+    danger: 'bg-danger-bg text-danger-text border border-danger-border hover:bg-red-100 focus:ring-danger-text',
   };
   
   if (variant === 'outline' && !className.includes('border-primary')) { 
