@@ -1,9 +1,9 @@
 import React, { ErrorInfo, ReactNode } from 'react';
 
-// Fix: Updated Props interface to correctly use React.PropsWithChildren type.
-type ErrorBoundaryProps = React.PropsWithChildren<{ 
+interface ErrorBoundaryProps {
   fallbackMessage?: string;
-}>;
+  children?: ReactNode;
+}
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -15,10 +15,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     hasError: false,
     errorMessage: '',
   };
-
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-  }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     // Update state so the next render will show the fallback UI.

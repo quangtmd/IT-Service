@@ -28,7 +28,7 @@ import StockIssuesView from '@/components/admin/StockIssuesView';
 import StockTransfersView from '@/components/admin/StockTransfersView';
 import ShippingManagementView from '@/components/admin/ShippingManagementView';
 
-// Import new form pages using absolute paths to avoid relative path confusion
+// Import new form pages using absolute paths
 import ProductFormPage from '@/pages/admin/ProductFormPage';
 import UserFormPage from '@/pages/admin/UserFormPage';
 import ArticleFormPage from '@/pages/admin/ArticleFormPage';
