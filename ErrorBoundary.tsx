@@ -1,5 +1,5 @@
 
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   fallbackMessage?: string;
@@ -11,18 +11,14 @@ interface ErrorBoundaryState {
   errorMessage: string;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public override state: ErrorBoundaryState = {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = {
     hasError: false,
     errorMessage: '',
   };
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = {
-      hasError: false,
-      errorMessage: '',
-    };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {

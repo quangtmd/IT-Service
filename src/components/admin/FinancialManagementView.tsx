@@ -16,8 +16,7 @@ const getStartOfWeek = (d: Date) => {
     const date = new Date(d);
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    date.setDate(diff);
-    return date;
+    return new Date(date.setDate(diff));
 };
 
 type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll';
@@ -222,16 +221,14 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
         const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
         const net = income - expense;
 
-        // Correctly typed using forEach to avoid TS inference issues
-        const incomeByCategory: Record<string, number> = {};
-        filteredTransactions.filter(t => t.type === 'income').forEach(t => {
-            incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
-        });
-
-        const expenseByCategory: Record<string, number> = {};
-        filteredTransactions.filter(t => t.type === 'expense').forEach(t => {
-            expenseByCategory[t.category] = (expenseByCategory[t.category] || 0) + t.amount;
-        });
+        const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+        }, {} as Record<string, number>);
+        const expenseByCategory = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+        }, {} as Record<string, number>);
 
         return { income, expense, net, incomeByCategory, expenseByCategory };
     }, [filteredTransactions]);

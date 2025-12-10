@@ -222,16 +222,14 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
         const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
         const net = income - expense;
 
-        // Correctly typed using forEach to avoid TS inference issues
-        const incomeByCategory: Record<string, number> = {};
-        filteredTransactions.filter(t => t.type === 'income').forEach(t => {
-            incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
-        });
-
-        const expenseByCategory: Record<string, number> = {};
-        filteredTransactions.filter(t => t.type === 'expense').forEach(t => {
-            expenseByCategory[t.category] = (expenseByCategory[t.category] || 0) + t.amount;
-        });
+        const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce<Record<string, number>>((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+        }, {});
+        const expenseByCategory = filteredTransactions.filter(t => t.type === 'expense').reduce<Record<string, number>>((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+        }, {});
 
         return { income, expense, net, incomeByCategory, expenseByCategory };
     }, [filteredTransactions]);
