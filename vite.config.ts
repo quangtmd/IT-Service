@@ -9,13 +9,12 @@ const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, path.resolve('.'), '');
+    const env = loadEnv(mode, process.cwd(), '');
 
     return {
         plugins: [react()],
         resolve: {
             alias: {
-                // Map @ to the src directory relative to project root
                 '@': path.resolve(__dirname, './src'),
             },
         },
@@ -32,7 +31,7 @@ export default defineConfig(({ mode }) => {
         preview: {
             port: 3000,
             host: true,
-            allowedHosts: true, // Allow render domains
+            allowedHosts: true,
             proxy: {
                 '/api': {
                     target: 'http://localhost:3001',
