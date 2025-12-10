@@ -103,4 +103,31 @@ const ServiceFaqIts: React.FC = () => {
             <span className="text-sm font-semibold text-primary uppercase tracking-wider">
               Câu Hỏi Liên Quan Đến Dịch Vụ
             </span>
-            
+            <img src="https://picsum.photos/seed/faqIconOrange2/40/40" alt="icon" className="ml-2 opacity-70 rounded-full" />
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-textBase leading-tight">
+            Giải Đáp Thắc Mắc Cùng {siteSettings.companyName.split(' ')[0] || 'Chúng Tôi'}
+          </h2>
+        </div>
+        
+        {faqs.length > 0 ? (
+            <div className="max-w-3xl mx-auto">
+            {faqs.map((item, index) => (
+              <FaqDisplayItemWrapper
+                key={item.id}
+                item={item}
+                index={index}
+                openAccordionId={openAccordionId}
+                toggleAccordion={toggleAccordion}
+              />
+            ))}
+            </div>
+        ) : (
+            <p className="text-center text-textMuted">Chưa có câu hỏi thường gặp nào được cập nhật.</p>
+        )}
+      </div>
+    </section>
+  );
+};
+
+export default ServiceFaqIts;

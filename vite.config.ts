@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-    // Use path.resolve('.') instead of process.cwd() to avoid TypeScript errors regarding 'Process' type
+    // Use path.resolve('.') instead of process.cwd() to avoid potential type issues
     const env = loadEnv(mode, path.resolve('.'), '');
 
     return {

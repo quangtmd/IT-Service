@@ -54,12 +54,23 @@ const App: React.FC = () => {
             <ReactRouterDOM.Route path="/login" element={<LoginPage />} />
             <ReactRouterDOM.Route path="/register" element={<RegisterPage />} />
             <ReactRouterDOM.Route path="/checkout" element={<CheckoutPage />} />
+            
+            {/* Protected Account Route */}
+            <ReactRouterDOM.Route
+                path="/account/orders"
+                element={
+                  <ProtectedRoute>
+                    {/* Lazy load or direct import CustomerOrdersPage here if needed, keeping it simple for now */}
+                     <div className="p-10 text-center">Trang đơn hàng (Đang cập nhật)</div>
+                  </ProtectedRoute>
+                }
+            />
 
             {/* Protected Admin Route */}
             <ReactRouterDOM.Route
               path="/admin/*"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={['admin', 'staff']}>
                   <AdminPage />
                 </ProtectedRoute>
               }
