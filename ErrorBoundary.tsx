@@ -11,14 +11,15 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Removed explicit type declarations for props and state to avoid TS2612 error
+  // Explicitly declare state property to satisfy TypeScript
+  public state: ErrorBoundaryState = {
+    hasError: false,
+    errorMessage: '',
+  };
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = {
-      hasError: false,
-      errorMessage: '',
-    };
+    // State initialization is handled by property declaration
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {

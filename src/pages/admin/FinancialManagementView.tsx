@@ -187,8 +187,8 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
 };
 
 const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
-    const [startDate, setStartDate] = useState<string>(formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
-    const [endDate, setEndDate] = useState<string>(formatDate(new Date()));
+    const [startDate, setStartDate] = useState<string>(() => formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+    const [endDate, setEndDate] = useState<string>(() => formatDate(new Date()));
 
     const setDateRange = (period: 'week' | 'month' | 'year') => {
         const today = new Date();

@@ -22,8 +22,15 @@ export default defineConfig(({ mode }) => {
             },
         },
         preview: {
+            port: 3000,
             host: true,
             allowedHosts: ['.onrender.com'],
+            proxy: {
+                '/api': {
+                    target: 'http://localhost:3001',
+                    changeOrigin: true,
+                },
+            },
         },
         build: {
             rollupOptions: {

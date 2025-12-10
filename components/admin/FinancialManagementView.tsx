@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '@/types';
-import Button from '@/components/ui/Button';
-import { useAuth } from '@/contexts/AuthContext';
-import Card from '@/components/ui/Card';
+import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
+import Button from '../ui/Button';
+import { useAuth } from '../../contexts/AuthContext';
+import Card from '../ui/Card';
 import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
     getPayrollRecords, savePayrollRecords
-} from '@/services/localDataService';
+} from '../../services/localDataService';
 import * as ReactRouterDOM from 'react-router-dom';
 
 // --- HELPER FUNCTIONS ---
@@ -187,8 +187,8 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
 };
 
 const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
-    const [startDate, setStartDate] = useState<string>(formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
-    const [endDate, setEndDate] = useState<string>(formatDate(new Date()));
+    const [startDate, setStartDate] = useState<string>(() => formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+    const [endDate, setEndDate] = useState<string>(() => formatDate(new Date()));
 
     const setDateRange = (period: 'week' | 'month' | 'year') => {
         const today = new Date();

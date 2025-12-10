@@ -10,19 +10,20 @@ const __dirname = path.dirname(__filename);
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
     // Load env file based on `mode` in the current working directory.
-    // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
-    const env = loadEnv(mode, path.resolve('.'), '');
+    // Cast process to any to avoid TypeScript errors if types are missing
+    const cwd = (process as any).cwd ? (process as any).cwd() : path.resolve('.');
+    const env = loadEnv(mode, cwd, '');
 
     return {
         plugins: [react()],
         resolve: {
             alias: {
-                // Quan trọng: Định nghĩa alias @ trỏ về thư mục src
-                '@': path.resolve(__dirname, './src'),
+                // Map @ to the project root
+                '@': path.resolve(__dirname, './'),
             },
         },
         server: {
-            host: '0.0.0.0', // Mở host để có thể truy cập từ bên ngoài container (nếu cần)
+            host: '0.0.0.0', 
             port: 3000,
             proxy: {
               '/api': {
