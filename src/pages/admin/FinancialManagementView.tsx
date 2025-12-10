@@ -317,8 +317,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
         try {
             const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-            await (savePayrollRecords as any)(recordsToSave);
-            await (onAddTransaction as any)({
+            await savePayrollRecords(recordsToSave);
+            await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
                 type: 'expense',
@@ -333,7 +333,7 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
 
     const handleSaveDraft = useCallback(async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-        await (savePayrollRecords as any)(recordsToSave);
+        await savePayrollRecords(recordsToSave);
         alert('Đã lưu nháp lương thành công!');
         onDataChange();
     }, [localPayroll, payPeriod, onDataChange]);

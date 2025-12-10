@@ -22,10 +22,10 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
 
-    /* Alias */
+    /* Alias Configuration */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src"],
