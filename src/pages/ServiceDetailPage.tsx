@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MOCK_SERVICES } from '@/data/mockData';
-import { Service } from '@/types';
-import Button from '@/components/ui/Button';
-import PageTitleBannerIts from '@/components/services_page_its/PageTitleBannerIts';
-import { useChatbotContext } from '@/contexts/ChatbotContext'; // Use alias import
+import { MOCK_SERVICES } from '../data/mockData';
+import { Service } from '../types';
+import Button from '../components/ui/Button';
+import PageTitleBannerIts from '../components/services_page_its/PageTitleBannerIts';
+import { useChatbotContext } from '../contexts/ChatbotContext'; 
 
 const ServiceDetailPage: React.FC = () => {
   const { serviceId } = useParams<{ serviceId: string }>();
