@@ -3,23 +3,23 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
+// Define __dirname for ESM context
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-    // Replace process.cwd() with path.resolve('.') to avoid TypeScript type issues with global process
+    // Use path.resolve('.') instead of process.cwd() to avoid TypeScript errors if Node types aren't loaded
     const env = loadEnv(mode, path.resolve('.'), '');
 
     return {
         plugins: [react()],
         resolve: {
             alias: {
-                // If this file is in 'src/', then __dirname is '.../project/src'.
-                // We want '@' to point to '.../project/src'.
-                '@': path.resolve(__dirname, '.'),
+                // Since this file is in src/, __dirname points to src/.
+                // Map '@' to the current directory (src).
+                '@': __dirname,
             },
         },
         server: {
