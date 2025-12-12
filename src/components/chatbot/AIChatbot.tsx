@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage as ChatMessageType, GroundingChunk, ChatLogSession } from '@/types';
 import ChatMessage from './ChatMessage';
 import geminiService from '@/services/geminiService';
 import * as Constants from '@/constants'; 
 import { useChatbotContext } from '@/contexts/ChatbotContext'; 
+import { saveChatLogSession, getOrders } from '@/services/localDataService';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
-import { getOrders } from '@/services/localDataService';
 
 declare global {
   interface Window {
@@ -28,19 +27,25 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatSession, setChatSession] = useState<any | null>(null);
-  
-  // Use the context via alias import
-  const { currentContext } = useChatbotContext();
-  
+  const [currentBotMessageId, setCurrentBotMessageId] = useState<string | null>(null);
+  const [currentGroundingChunks, setCurrentGroundingChunks] = useState<GroundingChunk[] | undefined>(undefined);
   const [siteSettings, setSiteSettings] = useState(Constants.INITIAL_SITE_SETTINGS);
+
   const [userName, setUserName] = useState('');
   const [userPhone, setUserPhone] = useState('');
+  const [userInfoError, setUserInfoError] = useState<string | null>(null);
+  const [currentChatLogSession, setCurrentChatLogSession] = useState<ChatLogSession | null>(null);
+
+  const { currentContext } = useChatbotContext();
   const { currentUser } = useAuth();
   const [isUserInfoSubmitted, setIsUserInfoSubmitted] = useState(!!currentUser);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Load Settings
   useEffect(() => {
@@ -83,6 +88,14 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
         timestamp: new Date() 
       };
       setMessages([welcomeMessage]);
+      
+      setCurrentChatLogSession({
+        id: `chat-${Date.now()}`,
+        userName: currentUser ? currentUser.username : userName,
+        userPhone: currentUser ? (currentUser.phone || '') : userPhone,
+        startTime: new Date().toISOString(),
+        messages: [welcomeMessage]
+      });
 
     } catch (err) {
       setError(Constants.API_KEY_ERROR_MESSAGE);
@@ -212,6 +225,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     <div
       className={`fixed z-50 bg-bgBase shadow-2xl flex flex-col transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'}
+        /* Mobile: Full Screen */
         inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-96 sm:h-[600px] sm:rounded-xl sm:border sm:border-borderDefault
       `}
     >
