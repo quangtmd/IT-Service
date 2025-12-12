@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { DiscountCode } from '@/types';
-import Button from '@/components/ui/Button';
+import { DiscountCode } from '../../types';
+import Button from '../../components/ui/Button';
 import * as ReactRouterDOM from 'react-router-dom';
-import * as Constants from '@/constants';
+import * as Constants from '../../constants';
 
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultValue; }
@@ -37,7 +37,7 @@ const DiscountFormPage: React.FC = () => {
             } else {
                 setFormData({
                     id: '', code: '', type: 'percentage', value: 10, isActive: true,
-                    minSpend: 0, usageLimit: undefined, timesUsed: 0,
+                    minSpend: 0, usageLimit: 1, timesUsed: 0,
                 });
             }
             setIsLoading(false);
@@ -49,15 +49,7 @@ const DiscountFormPage: React.FC = () => {
         if (!formData) return;
         const { name, value, type } = e.target;
         const checked = (e.target as HTMLInputElement).checked;
-
-        let finalValue: any = value;
-        if (type === 'checkbox') {
-            finalValue = checked;
-        } else if (type === 'number') {
-            finalValue = value === '' ? undefined : Number(value);
-        }
-
-        setFormData(p => p ? ({ ...p, [name]: finalValue }) : null);
+        setFormData(p => p ? ({ ...p, [name]: type === 'checkbox' ? checked : value }) : null);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -128,11 +120,7 @@ const DiscountFormPage: React.FC = () => {
                         </div>
                         <div className="admin-form-group">
                             <label>Chi tiêu tối thiểu</label>
-                            <input type="number" name="minSpend" value={formData.minSpend === undefined ? '' : formData.minSpend} onChange={handleChange} />
-                        </div>
-                        <div className="admin-form-group">
-                            <label>Giới hạn số lần dùng (để trống nếu không giới hạn)</label>
-                            <input type="number" name="usageLimit" value={formData.usageLimit === undefined ? '' : formData.usageLimit} onChange={handleChange} placeholder="Vô hạn" />
+                            <input type="number" name="minSpend" value={formData.minSpend || ''} onChange={handleChange} />
                         </div>
                         <div className="admin-form-group md:col-span-2">
                             <label>Mô tả</label>

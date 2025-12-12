@@ -1,8 +1,31 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { User, UserRole, AdminNotification, StaffRole, AdminPermission } from '../types'; 
+import { User, UserRole, AdminNotification, StaffRole } from '../types'; 
 import * as Constants from '../constants';
 import { getUsers, addUser as apiAddUser, updateUser as apiUpdateUser, deleteUser as apiDeleteUser, loginUser } from '../services/localDataService';
+
+export type AdminPermission = 
+  // General
+  | 'viewDashboard' | 'viewNotifications'
+  // Sales & CRM
+  | 'viewSales' | 'viewCustomers' | 'manageCustomers' | 'viewQuotations' | 'viewOrders' | 'manageOrders' | 'manageDiscounts' | 'viewSuppliers' | 'viewHelpdesk'
+  // Service
+  | 'viewService' | 'manageServiceTickets' | 'manageWarranty' | 'viewChatLogs'
+  // Content
+  | 'viewContent' | 'viewProducts' | 'manageProducts' | 'viewArticles' | 'manageArticles' | 'manageMedia' | 'manageFaqs'
+  // Inventory
+  | 'viewInventory' | 'manageInventory'
+  // Finance
+  | 'viewAccounting' | 'manageTransactions' | 'managePayroll'
+  // Procurement
+  | 'viewProcurement'
+  // HR & System
+  | 'viewSystem' | 'viewHrm' | 'manageEmployees' | 'manageSiteSettings' | 'manageTheme' | 'manageMenu'
+  // Analytics
+  | 'viewAnalytics'
+  // Multi-branch
+  | 'viewBranches'
+  ;
+
 
 export interface AuthContextType {
   isAuthenticated: boolean;

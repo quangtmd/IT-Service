@@ -1,6 +1,8 @@
 import React, { ErrorInfo, ReactNode } from 'react';
 
 // Fix: Updated Props interface to correctly use React.PropsWithChildren type.
+// This ensures the `children` prop is correctly recognized and allows TypeScript
+// to properly infer the component's state and props properties.
 type ErrorBoundaryProps = React.PropsWithChildren<{ 
   fallbackMessage?: string;
 }>;
@@ -11,7 +13,11 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Removed explicit type declarations for props and state to avoid TS2612 error
+  // Fix: Explicitly declare props and state with their types to resolve potential TypeScript inference issues.
+  // Although inherited from React.Component, some environments might require this explicit declaration
+  // if the compiler is struggling to infer them from React.Component itself.
+  public readonly props: ErrorBoundaryProps;
+  public state: ErrorBoundaryState;
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
@@ -23,6 +29,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     // Update state so the next render will show the fallback UI.
+    // We only store the safe, serializable message string.
     const safeErrorMessage = `${error.name}: ${error.message}`;
     return { hasError: true, errorMessage: safeErrorMessage };
   }
@@ -68,6 +75,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       );
     }
 
+    // Fix: `this.props` is now correctly inferred.
     return this.props.children;
   }
 }
