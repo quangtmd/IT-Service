@@ -5,7 +5,7 @@ import { MOCK_SERVICES } from '@/data/mockData';
 import { Service } from '@/types';
 import Button from '@/components/ui/Button';
 import PageTitleBannerIts from '@/components/services_page_its/PageTitleBannerIts';
-import { useChatbotContext } from '@/contexts/ChatbotContext'; 
+import { useChatbotContext } from '@/contexts/ChatbotContext'; // Use alias import
 
 const ServiceDetailPage: React.FC = () => {
   const { serviceId } = useParams<{ serviceId: string }>();

@@ -20,17 +20,13 @@ export const ADMIN_EMAIL = "quangtmdit@gmail.com";
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
 
 // --- BACKEND API CONFIGURATION ---
-// Robust handling to prevent "Cannot read properties of undefined" runtime errors
-let backendUrl = "https://it-service-app-n9as.onrender.com";
-let isDev = false;
+// Default to empty string to use relative paths (handled by Proxy in Dev/Preview or Nginx/Express in Prod)
+// This avoids issues where a hardcoded production URL is hit during local development.
+let backendUrl = "";
 
 try {
     // @ts-ignore
     if (typeof import.meta !== 'undefined' && import.meta.env) {
-        // @ts-ignore
-        if (import.meta.env.DEV) {
-            isDev = true;
-        }
         // @ts-ignore
         if (import.meta.env.VITE_BACKEND_API_BASE_URL) {
             // @ts-ignore
@@ -41,7 +37,7 @@ try {
     console.warn("Environment variable access fallback triggered.");
 }
 
-export const BACKEND_API_BASE_URL = isDev ? "" : backendUrl;
+export const BACKEND_API_BASE_URL = backendUrl;
 
 // --- STORAGE KEYS ---
 export const SITE_LOGO_STORAGE_KEY = "siteLogoUrl_v1";

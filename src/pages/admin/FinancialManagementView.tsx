@@ -5,18 +5,19 @@ import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/ui/Card';
 import {
-    getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction as apiDeleteFinancialTransaction,
+    getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
     getPayrollRecords, savePayrollRecords
 } from '../../services/localDataService';
-import { useNavigate, NavigateFunction } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 
-// --- HELPER FUNCTIONS & COMPONENTS ---
-const formatDate = (d: Date) => d.toISOString().split('T')[0];
+// --- HELPER FUNCTIONS ---
+const formatDate = (date: Date) => date.toISOString().split('T')[0];
 const getStartOfWeek = (d: Date) => {
     const date = new Date(d);
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    return new Date(date.setDate(diff));
+    date.setDate(diff);
+    return date;
 };
 
 type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll';
@@ -28,7 +29,7 @@ const FinancialManagementView: React.FC = () => {
     const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const navigate = useNavigate();
+    const navigate = ReactRouterDOM.useNavigate();
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
@@ -51,15 +52,15 @@ const FinancialManagementView: React.FC = () => {
         loadData();
     }, [loadData]);
 
-    const addTransaction = useCallback(async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
+    const addTransaction = async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
         try {
             await addFinancialTransaction(newTransaction);
-            loadData(); // Re-fetch all data to ensure consistency
+            loadData(); 
         } catch (error) {
             console.error(error);
             alert("Lỗi khi thêm giao dịch.");
         }
-    }, [loadData]);
+    };
 
     const renderTabContent = () => {
         if (isLoading) return <div className="text-center p-8">Đang tải dữ liệu tài chính...</div>;
@@ -135,21 +136,23 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
     );
 };
 
-const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
+const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: ReactRouterDOM.NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
+
+    const handleAddNewTransaction = () => {
+        navigate('/admin/accounting_dashboard/transactions/new');
+    };
 
     const handleEditTransaction = (transactionId: string) => {
         navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
     };
 
     const handleDelete = async (id: string) => {
-        const isConfirmed = window.confirm('Bạn có chắc muốn xóa giao dịch này?');
-        if(isConfirmed) {
+        if(window.confirm('Bạn có chắc muốn xóa giao dịch này?')) {
             try {
-                await apiDeleteFinancialTransaction(id);
+                await deleteFinancialTransaction(id);
                 onDataChange();
             } catch (error) {
-                console.error("Delete transaction error:", error);
-                window.alert("Lỗi khi xóa giao dịch.");
+                alert("Lỗi khi xóa giao dịch.");
             }
         }
     };
@@ -157,7 +160,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
     return (
         <div>
             <div className="flex justify-end mb-4">
-                <Button onClick={() => navigate('/admin/accounting_dashboard/transactions/new')} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
+                <Button onClick={handleAddNewTransaction} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
             </div>
              <div className="overflow-x-auto">
                 <table className="admin-table">
@@ -186,8 +189,8 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
 };
 
 const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
-    const [startDate, setStartDate] = useState<string>(formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
-    const [endDate, setEndDate] = useState<string>(formatDate(new Date()));
+    const [startDate, setStartDate] = useState<string>(() => formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+    const [endDate, setEndDate] = useState<string>(() => formatDate(new Date()));
 
     const setDateRange = (period: 'week' | 'month' | 'year') => {
         const today = new Date();
@@ -219,14 +222,14 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
         const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
         const net = income - expense;
 
-        const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce((acc, t) => {
+        const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce<Record<string, number>>((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount;
             return acc;
-        }, {} as Record<string, number>);
-        const expenseByCategory = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => {
+        }, {});
+        const expenseByCategory = filteredTransactions.filter(t => t.type === 'expense').reduce<Record<string, number>>((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount;
             return acc;
-        }, {} as Record<string, number>);
+        }, {});
 
         return { income, expense, net, incomeByCategory, expenseByCategory };
     }, [filteredTransactions]);
@@ -274,13 +277,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-interface PayrollTabProps {
-    payrollRecords: PayrollRecord[],
-    onDataChange: () => Promise<void>,
-    onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void>
-}
-
-const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
+const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => void, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => void }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
     const { users } = useAuth();
     const staff = users.filter(u => u.role === 'admin' || u.role === 'staff');
     const [payPeriod, setPayPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
@@ -348,8 +345,8 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
-                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={(e) => { e.preventDefault(); handleSaveDraft(); }} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={(e) => { e.preventDefault(); handleSettlePayroll(); }} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

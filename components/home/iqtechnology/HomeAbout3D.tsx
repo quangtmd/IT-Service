@@ -69,7 +69,7 @@ const HomeAbout3D: React.FC = () => {
                         </div>
                     </div>
                     ))}
-                </ul>
+                </div>
             )}
             
             {aboutConfig.buttonLink && aboutConfig.buttonText && (
