@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
-import Button from '../../components/ui/Button';
-import { useAuth } from '../../contexts/AuthContext';
-import Card from '../../components/ui/Card';
+import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '@/types';
+import Button from '@/components/ui/Button';
+import { useAuth } from '@/contexts/AuthContext';
+import Card from '@/components/ui/Card';
 import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
     getPayrollRecords, savePayrollRecords
-} from '../../services/localDataService';
+} from '@/services/localDataService';
 import * as ReactRouterDOM from 'react-router-dom';
 
 // --- HELPER FUNCTIONS ---
@@ -16,8 +15,7 @@ const getStartOfWeek = (d: Date) => {
     const date = new Date(d);
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    date.setDate(diff);
-    return date;
+    return new Date(date.setDate(diff));
 };
 
 type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll';
@@ -55,7 +53,7 @@ const FinancialManagementView: React.FC = () => {
     const addTransaction = async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
         try {
             await addFinancialTransaction(newTransaction);
-            loadData(); 
+            loadData(); // Re-fetch all data to ensure consistency
         } catch (error) {
             console.error(error);
             alert("Lỗi khi thêm giao dịch.");
@@ -189,8 +187,8 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
 };
 
 const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
-    const [startDate, setStartDate] = useState<string>(() => formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
-    const [endDate, setEndDate] = useState<string>(() => formatDate(new Date()));
+    const [startDate, setStartDate] = useState<string>(formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+    const [endDate, setEndDate] = useState<string>(formatDate(new Date()));
 
     const setDateRange = (period: 'week' | 'month' | 'year') => {
         const today = new Date();
@@ -222,14 +220,14 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
         const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
         const net = income - expense;
 
-        const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce<Record<string, number>>((acc, t) => {
+        const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount;
             return acc;
-        }, {});
-        const expenseByCategory = filteredTransactions.filter(t => t.type === 'expense').reduce<Record<string, number>>((acc, t) => {
+        }, {} as Record<string, number>);
+        const expenseByCategory = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount;
             return acc;
-        }, {});
+        }, {} as Record<string, number>);
 
         return { income, expense, net, incomeByCategory, expenseByCategory };
     }, [filteredTransactions]);
@@ -345,8 +343,8 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () =
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                 <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                <Button onClick={(e) => { e.preventDefault(); handleSaveDraft(); }} size="sm" variant="outline">Lưu Nháp</Button>
-                <Button onClick={(e) => { e.preventDefault(); handleSettlePayroll(); }} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
+                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">

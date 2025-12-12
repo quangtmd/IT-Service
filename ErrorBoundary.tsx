@@ -1,24 +1,24 @@
+import React, { ErrorInfo, ReactNode } from 'react';
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-
-interface ErrorBoundaryProps {
+// Fix: Updated Props interface to correctly use React.PropsWithChildren type.
+type ErrorBoundaryProps = React.PropsWithChildren<{ 
   fallbackMessage?: string;
-  children?: ReactNode;
-}
+}>;
 
 interface ErrorBoundaryState {
   hasError: boolean;
   errorMessage: string;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState = {
-    hasError: false,
-    errorMessage: '',
-  };
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // Removed explicit type declarations for props and state to avoid TS2612 error
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
+    this.state = {
+      hasError: false,
+      errorMessage: '',
+    };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {

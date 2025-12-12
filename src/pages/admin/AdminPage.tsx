@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { User, AdminNotification, AdminView, AdminPermission } from '@/types';
@@ -28,6 +27,7 @@ import StockIssuesView from '@/components/admin/StockIssuesView';
 import StockTransfersView from '@/components/admin/StockTransfersView';
 import ShippingManagementView from '@/components/admin/ShippingManagementView';
 
+
 // Import new form pages using absolute paths
 import ProductFormPage from '@/pages/admin/ProductFormPage';
 import UserFormPage from '@/pages/admin/UserFormPage';
@@ -46,6 +46,7 @@ import WarrantyFormPage from '@/pages/admin/WarrantyFormPage';
 import StockReceiptFormPage from '@/pages/admin/StockReceiptFormPage';
 import StockIssueFormPage from '@/pages/admin/StockIssueFormPage';
 import StockTransferFormPage from '@/pages/admin/StockTransferFormPage';
+
 
 // Import new placeholder/skeleton views
 import QuotationManagementView from '@/components/admin/QuotationManagementView';
@@ -401,79 +402,4 @@ const AdminSidebar: React.FC<{
                             <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
                             <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
                         </div>
-                        <i className={`fas fa-chevron-right text-xs transition-transform duration-200 ${isParentOpen ? 'rotate-90' : ''} ${isCollapsed ? 'hidden' : ''}`}></i>
-                    </button>
-                    <div className={`pl-6 mt-1 border-l-2 border-slate-700 ml-5 transition-all duration-300 ease-in-out overflow-hidden ${isParentOpen ? 'max-h-[500px]' : 'max-h-0'} ${isCollapsed ? 'hidden' : ''}`}>
-                        {item.children.map(child => renderChildItem(child))}
-                    </div>
-                </div>
-            );
-        }
-
-        return renderChildItem(item); // Render as a child item if it has no children
-    };
-
-    const renderChildItem = (item: MenuItemConfig) => {
-        if (!authContext.hasPermission(item.permission)) return null;
-        const isActive = activeView === item.id;
-        return (
-             <button key={item.id}
-                className={`w-full flex items-center p-2.5 my-0.5 rounded-md transition-colors text-sm ${isActive ? 'bg-primary/90 text-white font-semibold shadow-inner' : 'text-gray-300 hover:bg-slate-700 hover:text-white'}`}
-                onClick={() => onMenuClick(item.id, false)}
-            >
-                <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
-                <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
-                {!isCollapsed && item.count !== undefined && item.count > 0 &&
-                    <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{item.count > 9 ? '9+' : item.count}</span>
-                }
-            </button>
-        );
-    };
-
-    return (
-        <>
-            <div className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
-            <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`}>
-                <div className="admin-sidebar-header justify-between">
-                    {!isCollapsed && <ReactRouterDOM.Link to="/"><span className="text-xl font-bold text-white">IQ Technology</span></ReactRouterDOM.Link>}
-                    <button onClick={onToggleCollapse} className="hidden lg:block text-slate-400 hover:text-white text-lg">
-                        <i className={`fas ${isCollapsed ? 'fa-align-right' : 'fa-align-left'}`}></i>
-                    </button>
-                     <button onClick={onClose} className="lg:hidden text-2xl text-slate-400 hover:text-white">
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <nav className="flex-grow p-2">
-                    {menuConfig.map(item => renderSidebarItem(item))}
-                </nav>
-                <div className="admin-sidebar-footer">
-                    <ReactRouterDOM.Link to="/" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
-                        <i className="fas fa-globe w-6 text-center mr-3"></i>
-                        {!isCollapsed && <span className="text-sm">Về trang chủ</span>}
-                    </ReactRouterDOM.Link>
-                </div>
-            </aside>
-        </>
-    );
-};
-
-const AdminHeader: React.FC<{
-    onMobileMenuOpen: () => void;
-    pageTitle: string;
-    currentUser: User | null;
-}> = ({ onMobileMenuOpen, pageTitle, currentUser }) => (
-    <header className="admin-page-header flex justify-between items-center">
-        <div className="flex items-center">
-            <button onClick={onMobileMenuOpen} className="lg:hidden text-2xl text-slate-600 mr-4"><i className="fas fa-bars"></i></button>
-            <h1 className="admin-page-title">{pageTitle}</h1>
-        </div>
-         <div className="flex items-center gap-4">
-            <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
-            <ReactRouterDOM.Link to="/">
-                <i className="fas fa-user-circle text-2xl text-admin-textSecondary hover:text-primary"></i>
-            </ReactRouterDOM.Link>
-        </div>
-    </header>
-);
-
-export default AdminPage;
+                        <
