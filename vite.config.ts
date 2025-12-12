@@ -3,7 +3,7 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, process.cwd(), '');
+    const env = loadEnv(mode, path.resolve('.'), '');
 
     return {
         server: {
@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
         plugins: [react()],
         resolve: {
             alias: {
-                '@': path.resolve(__dirname, './src'),
+                '@': path.resolve('.'),
             }
         },
         define: {
@@ -42,5 +42,5 @@ export default defineConfig(({ mode }) => {
                 mode === 'production' ? env.VITE_BACKEND_API_BASE_URL : ''
             )
         }
-    };
+    }
 });
