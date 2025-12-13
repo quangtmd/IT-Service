@@ -11,16 +11,16 @@ import MegaMenu from './MegaMenu';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badgeCount?: number }> = ({ to, icon, label, badgeCount }) => (
-    <Link to={to} className="hidden lg:flex flex-col items-center text-gray-200 hover:text-cyan-400 transition-all duration-300 text-xs font-medium space-y-1 w-[70px] text-center group">
-        <div className="relative transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1 drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
-            <i className={`fas ${icon} text-2xl group-hover:text-shadow-cyan transition-colors`}></i>
+    <Link to={to} className="hidden lg:flex flex-col items-center text-gray-300 hover:text-cyan-400 transition-all duration-300 text-xs font-medium space-y-1 w-[70px] text-center group perspective-500">
+        <div className="relative transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-hover:rotate-x-10 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
+            <i className={`fas ${icon} text-2xl group-hover:text-shadow-cyan transition-colors duration-300`}></i>
             {badgeCount && badgeCount > 0 ? (
-                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full h-5 min-w-[1.25rem] px-1.5 flex items-center justify-center animate-bounce shadow-md border-2 border-slate-900 z-10">
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full h-5 min-w-[1.25rem] px-1.5 flex items-center justify-center animate-bounce shadow-md border border-red-400 z-10">
                     {badgeCount > 9 ? '9+' : badgeCount}
                 </span>
             ) : null}
         </div>
-        <span className="group-hover:text-cyan-300 text-shadow-sm">{label}</span>
+        <span className="group-hover:text-cyan-300 text-shadow-sm transition-colors">{label}</span>
     </Link>
 );
 
@@ -92,7 +92,7 @@ const Header: React.FC = () => {
     if (isAuthenticated && currentUser) {
       return (
         <div className="relative group">
-          <button className={`flex items-center gap-3 ${isMobile ? 'text-gray-200' : 'text-white'} hover:text-cyan-400 transition-colors p-1 rounded-full hover:bg-white/5`}>
+          <button className={`flex items-center gap-3 ${isMobile ? 'text-gray-200' : 'text-gray-300'} hover:text-cyan-400 transition-colors p-1 pr-3 rounded-full hover:bg-white/5 border border-transparent hover:border-white/10`}>
             <div className="p-0.5 bg-gradient-to-tr from-cyan-400 to-blue-600 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.4)]">
                 <img src={currentUser.imageUrl || `https://ui-avatars.com/api/?name=${currentUser.username.charAt(0)}&background=random`} alt="avatar" className="w-8 h-8 rounded-full border border-black/50" />
             </div>
@@ -101,9 +101,9 @@ const Header: React.FC = () => {
           </button>
           
           {/* Dropdown 3D */}
-          <div className={`absolute top-full ${isMobile ? 'bottom-full top-auto' : 'right-0 mt-4'} w-64 bg-slate-900/95 backdrop-blur-xl rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] py-2 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto border border-white/10 transform origin-top-right scale-95 group-hover:scale-100 ring-1 ring-white/5`}>
+          <div className={`absolute top-full ${isMobile ? 'bottom-full top-auto' : 'right-0 mt-4'} w-64 bg-[#0f172a]/95 backdrop-blur-xl rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] py-2 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto border border-white/10 transform origin-top-right scale-95 group-hover:scale-100 ring-1 ring-white/5`}>
             {/* Arrow */}
-            <div className="absolute -top-1.5 right-6 w-3 h-3 bg-slate-900 border-l border-t border-white/10 transform rotate-45"></div>
+            <div className="absolute -top-1.5 right-6 w-3 h-3 bg-[#0f172a] border-l border-t border-white/10 transform rotate-45"></div>
             
             <div className="px-5 py-4 border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent">
                 <p className="text-base font-bold text-white truncate">{currentUser.username}</p>
@@ -155,37 +155,45 @@ const Header: React.FC = () => {
   return (
     <>
       <header 
-        className={`fixed top-0 w-full z-50 transition-all duration-500 border-b backdrop-blur-md ${
+        className={`fixed top-0 w-full z-50 transition-all duration-500 border-b backdrop-blur-xl ${
             scrolled 
-            ? 'bg-[#020617]/90 border-white/5 py-1 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.8)]' 
-            : 'bg-[#0B1120]/80 border-white/5 py-2'
+            ? 'bg-[#020617]/95 border-cyan-500/20 py-2 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.8)]' 
+            : 'bg-[#0B1120]/80 border-white/5 py-3'
         }`}
       >
         {/* Glowing Top Line */}
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
+        <div className={`absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent transition-opacity duration-500 ${scrolled ? 'opacity-100' : 'opacity-0'}`}></div>
 
-        {/* TOP BAR */}
-        <div className={`bg-gradient-to-r from-slate-950/50 via-slate-900/50 to-slate-950/50 text-gray-400 text-xs transition-all duration-500 overflow-hidden border-b border-white/5 ${scrolled ? 'h-0 opacity-0' : 'h-10 opacity-100'}`}>
-          <div className="container mx-auto px-4 h-full flex justify-between items-center">
-            <div className="flex items-center gap-6">
-              {siteSettings.companyPhone && <span className="hover:text-cyan-400 cursor-pointer transition-colors flex items-center gap-2 group"><i className="fas fa-phone-alt text-cyan-600 group-hover:text-cyan-400"></i> {siteSettings.companyPhone}</span>}
-              {siteSettings.companyEmail && <span className="hidden sm:flex hover:text-cyan-400 cursor-pointer transition-colors items-center gap-2 group"><i className="fas fa-envelope text-cyan-600 group-hover:text-cyan-400"></i> {siteSettings.companyEmail}</span>}
+        {/* TOP BAR - INFO */}
+        <div className={`container mx-auto px-4 flex justify-between items-center transition-all duration-500 overflow-hidden ${scrolled ? 'h-0 opacity-0 mb-0' : 'h-8 opacity-100 mb-1'} border-b border-white/5`}>
+            <div className="flex items-center gap-6 text-xs text-gray-400">
+              {siteSettings.companyPhone && (
+                <span className="hover:text-cyan-400 cursor-pointer transition-colors flex items-center gap-2 group">
+                    <i className="fas fa-phone-alt text-cyan-600 group-hover:text-cyan-400 animate-pulse"></i> 
+                    {siteSettings.companyPhone}
+                </span>
+              )}
+              {siteSettings.companyEmail && (
+                <span className="hidden sm:flex hover:text-cyan-400 cursor-pointer transition-colors items-center gap-2 group">
+                    <i className="fas fa-envelope text-cyan-600 group-hover:text-cyan-400"></i> 
+                    {siteSettings.companyEmail}
+                </span>
+              )}
             </div>
-            <div className="hidden lg:flex items-center gap-6">
-              {renderUserAuth()}
+            <div className="hidden lg:flex items-center gap-6 text-xs">
+                {renderUserAuth()}
             </div>
-          </div>
         </div>
 
         {/* MAIN HEADER CONTENT */}
         <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between gap-6 h-20">
+            <div className="flex items-center justify-between gap-6 h-16">
                 
                 {/* 3D LOGO */}
                 <Link to="/" className="flex-shrink-0 group relative perspective-500 z-50">
                     <div className="transform transition-transform duration-500 group-hover:rotate-x-12 group-hover:scale-105 group-hover:translate-z-10">
                         <div className="absolute -inset-4 bg-cyan-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <svg width="150" height="52" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl filter relative z-10">
+                        <svg width="160" height="50" viewBox="0 0 130 45" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl filter relative z-10">
                             <defs>
                                 <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                                     <stop offset="0%" style={{stopColor:'#22d3ee', stopOpacity:1}} />
@@ -199,20 +207,19 @@ const Header: React.FC = () => {
                                     </feMerge>
                                 </filter>
                             </defs>
-                            <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: url(#logoGradient); font-style: italic; filter: url(#glow); } .logo-main-white { font-family: Impact, sans-serif; font-size: 36px; fill: #ffffff; font-style: italic; text-shadow: 0 0 10px rgba(255,255,255,0.5); } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #94a3b8; letter-spacing: 3px; font-weight: bold; }`}</style>
-                            <text x="0" y="30" className="logo-main-red">IQ</text>
-                            <text x="38" y="30" className="logo-main-white">TECH</text>
-                            <text x="38" y="42" className="logo-sub">TECHNOLOGY</text>
+                            <text x="0" y="32" className="font-black text-4xl italic fill-[url(#logoGradient)] filter-[url(#glow)]" style={{fontFamily: 'Impact, sans-serif'}}>IQ</text>
+                            <text x="38" y="32" className="font-black text-4xl italic fill-white" style={{fontFamily: 'Impact, sans-serif', textShadow: '0 0 10px rgba(255,255,255,0.5)'}}>TECH</text>
+                            <text x="38" y="44" className="font-bold text-[10px] fill-slate-400 tracking-[0.3em]" style={{fontFamily: 'Arial, sans-serif'}}>TECHNOLOGY</text>
                         </svg>
                     </div>
                 </Link>
                 
-                {/* SEARCH BAR */}
-                <div className="flex-grow max-w-2xl hidden lg:block transform transition-all duration-300 hover:-translate-y-0.5 z-40">
+                {/* SEARCH BAR - Floating */}
+                <div className="flex-grow max-w-xl hidden lg:block transform transition-all duration-300 hover:-translate-y-0.5 z-40">
                     <div className="relative group">
                          {/* Search Glow */}
-                         <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg blur opacity-20 group-hover:opacity-60 transition duration-500"></div>
-                         <div className="relative bg-[#0F172A] rounded-lg">
+                         <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg blur opacity-10 group-hover:opacity-50 transition duration-500"></div>
+                         <div className="relative bg-[#0F172A] rounded-lg border border-white/10 shadow-inner">
                              <HeaderSearchBar />
                          </div>
                     </div>
@@ -232,38 +239,37 @@ const Header: React.FC = () => {
             </div>
         </div>
         
-        {/* DESKTOP NAVIGATION - Floating Glass Bar */}
-        <div className="hidden lg:block relative z-30">
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 to-slate-950/80 pointer-events-none"></div>
-            <div className="border-t border-white/5 backdrop-blur-md relative">
-                <div className="container mx-auto px-4">
-                     <nav className="flex items-center justify-center gap-1 h-12">
-                        {desktopNavLinks.map((link) => {
-                        if (link.path === '/shop') {
-                            return <MegaMenu key={link.path} />;
-                        }
-                        return (
-                            <NavLink
-                            key={link.path}
-                            to={link.path}
-                            className={({ isActive }) => `
-                                relative px-5 py-2 text-sm font-bold uppercase tracking-wider transition-all duration-300 rounded-full
-                                ${isActive ? 'text-cyan-300 bg-white/5 shadow-[0_0_15px_rgba(34,211,238,0.2)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}
-                                group overflow-hidden
-                            `}
-                            end={link.path === "/"}
-                            >
-                                <span className="relative z-10 flex items-center gap-2">
-                                    {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} opacity-70 group-hover:opacity-100 transition-opacity`}></i>}
-                                    {link.label}
-                                </span>
-                                {/* Hover Glow */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
-                            </NavLink>
-                        );
-                        })}
-                    </nav>
-                </div>
+        {/* DESKTOP NAVIGATION - 3D Floating Bar */}
+        <div className="hidden lg:block relative z-30 mt-2">
+            <div className="container mx-auto px-4">
+                 <nav className="flex items-center justify-center gap-2 h-10">
+                    {desktopNavLinks.map((link) => {
+                    if (link.path === '/shop') {
+                        return <MegaMenu key={link.path} />;
+                    }
+                    return (
+                        <NavLink
+                        key={link.path}
+                        to={link.path}
+                        className={({ isActive }) => `
+                            relative px-5 py-1.5 text-sm font-bold uppercase tracking-wider transition-all duration-300 rounded-full
+                            ${isActive 
+                                ? 'text-cyan-300 bg-white/5 shadow-[0_0_15px_rgba(34,211,238,0.2)] border border-cyan-500/30' 
+                                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10'}
+                            group overflow-hidden
+                        `}
+                        end={link.path === "/"}
+                        >
+                            <span className="relative z-10 flex items-center gap-2">
+                                {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} opacity-70 group-hover:opacity-100 transition-opacity text-xs`}></i>}
+                                {link.label}
+                            </span>
+                            {/* Hover Sweep Effect */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-700 ease-in-out"></div>
+                        </NavLink>
+                    );
+                    })}
+                </nav>
             </div>
         </div>
 

@@ -1,6 +1,6 @@
 
 // @ts-nocheck
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Stars, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
@@ -10,73 +10,69 @@ const MovingGrid = () => {
 
   useFrame((state) => {
     if (gridRef.current) {
-      // Move grid towards camera to simulate flying
-      // Loop the position to create infinite effect
-      gridRef.current.position.z = (state.clock.elapsedTime * 8) % 20;
+      // Loop the position to create infinite effect with smoother speed
+      // Directly modifying position.z is valid for a Group in Three.js
+      gridRef.current.position.z = (state.clock.elapsedTime * 4) % 20;
     }
   });
 
   return (
-    <group ref={gridRef} position={[0, -2, -20]}>
-       {/* Bottom Grid - Cyan */}
-      <gridHelper args={[80, 40, 0x00f3ff, 0x1e3a8a]} position={[0, -2, 0]} />
-       {/* Top Grid - Fainter */}
-      <gridHelper args={[80, 40, 0x1e3a8a, 0x020617]} position={[0, 10, 0]} rotation={[Math.PI, 0, 0]} />
-      
-      {/* Second layer for density */}
-      <gridHelper args={[80, 40, 0x00f3ff, 0x1e3a8a]} position={[0, -2, -80]} />
+    <group ref={gridRef} position={[0, -5, -10]}>
+      <gridHelper args={[100, 50, '#00f3ff', '#1e3a8a']} position={[0, 0, 0]} />
+      <gridHelper args={[100, 50, '#00f3ff', '#1e3a8a']} position={[0, 0, -100]} />
     </group>
   );
 };
 
 const WarpStars = () => {
-    const mesh = useRef<THREE.Points>(null!);
+    const meshRef = useRef<THREE.Points>(null!);
     const count = 1000;
 
-    const particles = useMemo(() => {
-        const positions = new Float32Array(count * 3);
-        const speeds = new Float32Array(count);
-        
+    // Use a Float32Array directly for positions and store speeds in a separate ref
+    // to avoid re-creating them on every render or having closure issues
+    const [positions, speeds] = useMemo(() => {
+        const pos = new Float32Array(count * 3);
+        const spd = new Float32Array(count);
         for (let i = 0; i < count; i++) {
-            // Random positions in a tunnel-like distribution
-            const x = (Math.random() - 0.5) * 100;
-            const y = (Math.random() - 0.5) * 60;
-            const z = (Math.random() - 0.5) * 100;
-            
-            positions[i * 3] = x;
-            positions[i * 3 + 1] = y;
-            positions[i * 3 + 2] = z;
-            
-            speeds[i] = Math.random() * 0.5 + 0.1;
+            pos[i * 3] = (Math.random() - 0.5) * 100; // x
+            pos[i * 3 + 1] = (Math.random() - 0.5) * 60; // y
+            pos[i * 3 + 2] = (Math.random() - 0.5) * 100; // z
+            spd[i] = Math.random() * 0.5 + 0.1;
         }
-        return { positions, speeds };
+        return [pos, spd];
     }, [count]);
-    
+
     useFrame((state) => {
-        if (mesh.current) {
-            const positions = mesh.current.geometry.attributes.position.array;
+        if (meshRef.current && meshRef.current.geometry && meshRef.current.geometry.attributes.position) {
+            const geom = meshRef.current.geometry;
+            const currentPositions = geom.attributes.position.array as Float32Array;
             
             for (let i = 0; i < count; i++) {
                 // Move stars towards camera
-                positions[i * 3 + 2] += particles.speeds[i] * 5; // Speed multiplier
+                let z = currentPositions[i * 3 + 2];
+                z += speeds[i] * 5; 
                 
-                // Reset if they pass the camera
-                if (positions[i * 3 + 2] > 20) {
-                     positions[i * 3 + 2] = -80;
+                if (z > 20) {
+                    z = -80; // Reset far behind
+                    // Optional: Randomize X/Y on reset for variety
+                    currentPositions[i * 3] = (Math.random() - 0.5) * 100;
+                    currentPositions[i * 3 + 1] = (Math.random() - 0.5) * 60;
                 }
+                currentPositions[i * 3 + 2] = z;
             }
-            mesh.current.geometry.attributes.position.needsUpdate = true;
+            geom.attributes.position.needsUpdate = true;
         }
     });
 
     return (
-        <points ref={mesh}>
+        <points ref={meshRef}>
             <bufferGeometry>
-                <bufferAttribute 
-                    attach="attributes-position" 
-                    count={count} 
-                    array={particles.positions} 
-                    itemSize={3} 
+                <bufferAttribute
+                    attach="attributes-position"
+                    count={count}
+                    array={positions}
+                    itemSize={3}
+                    usage={THREE.DynamicDrawUsage} 
                 />
             </bufferGeometry>
             <pointsMaterial size={0.15} color="#ffffff" transparent opacity={0.8} sizeAttenuation={true} />
@@ -88,21 +84,16 @@ const WarpStars = () => {
 const DigitalGridBackground: React.FC = () => {
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 2, 10]} fov={60} />
-      {/* Deep Space Background Color */}
-      <color attach="background" args={['#020617']} />
-      
-      {/* Fog for depth fading */}
-      <fog attach="fog" args={['#020617', 5, 60]} />
-      
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} intensity={1} color="#00f3ff" />
+      <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={75} />
+      <fog attach="fog" args={['#0B1120', 5, 40]} />
+      <ambientLight intensity={0.8} />
+      <pointLight position={[0, 5, 0]} intensity={1} color="#00aaff" />
       
       <MovingGrid />
       <WarpStars />
       
-      {/* Distant Static Stars */}
-      <Stars radius={150} depth={50} count={3000} factor={4} saturation={0} fade speed={0} />
+      {/* Distant background stars */}
+      <Stars radius={100} depth={50} count={2000} factor={4} saturation={0} fade speed={0.5} />
     </>
   );
 };

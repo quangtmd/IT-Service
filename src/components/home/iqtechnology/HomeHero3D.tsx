@@ -11,7 +11,7 @@ const HomeHero3D: React.FC = () => {
   const { theme } = useTheme();
 
   return (
-    <section className="relative w-full h-[85vh] min-h-[600px] overflow-hidden bg-black">
+    <section className="relative w-full h-[90vh] min-h-[600px] overflow-hidden bg-black">
       {/* 3D Background Layer - Digital Moving Grid */}
       <div className="absolute inset-0 z-0">
         <Canvas className="w-full h-full" dpr={[1, 2]}>
@@ -21,8 +21,8 @@ const HomeHero3D: React.FC = () => {
         </Canvas>
       </div>
 
-      {/* Gradient Overlay for text readability - Left side dark, right side transparent */}
-      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/90 via-black/50 to-transparent`}></div>
+      {/* Gradient Overlay for text readability - Adjusted to be clearer on the right side */}
+      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/80 via-black/40 to-transparent`}></div>
       
       {/* Content Layer */}
       <div className="absolute inset-0 z-20 flex items-center pointer-events-none">
@@ -48,7 +48,7 @@ const HomeHero3D: React.FC = () => {
                 </span>
               </h1>
               
-              <p className="text-lg sm:text-xl md:text-2xl mb-10 lg:mb-12 max-w-2xl mx-auto lg:mx-0 leading-relaxed text-gray-300 font-light lg:border-l-4 border-cyan-500 lg:pl-6 bg-gradient-to-r from-black/40 to-transparent backdrop-blur-sm p-4 rounded-r-xl">
+              <p className="text-lg sm:text-xl md:text-2xl mb-10 lg:mb-12 max-w-2xl mx-auto lg:mx-0 leading-relaxed text-gray-300 font-light lg:border-l-4 border-cyan-500 lg:pl-6 bg-gradient-to-r from-black/60 to-transparent backdrop-blur-sm p-4 rounded-r-xl">
                 Giải pháp IT toàn diện, bảo mật tối đa và hiệu năng vượt trội cho doanh nghiệp của bạn.
               </p>
               
