@@ -20,7 +20,9 @@ export const ADMIN_EMAIL = "quangtmdit@gmail.com";
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
 
 // --- BACKEND API CONFIGURATION ---
-// Robust configuration: Hardcode the production URL to avoid environment variable issues on static hosts.
+// Logic: Kiểm tra nếu đang chạy ở localhost thì dùng localhost:3001
+// Nếu không (đang chạy trên Render), dùng URL chính thức của Backend.
+// Cách này đảm bảo 100% frontend gọi đúng địa chỉ backend.
 const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 export const BACKEND_API_BASE_URL = isLocal 

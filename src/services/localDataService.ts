@@ -29,11 +29,17 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-const RAW_BASE_URL = Constants.BACKEND_API_BASE_URL;
-const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '');
+// Directly use the constant which now contains the full URL logic.
+// Ensure no trailing slash from the constant.
+const API_BASE_URL = Constants.BACKEND_API_BASE_URL.replace(/\/+$/, '');
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // Ensure endpoint has a leading slash
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    
+    // Construct the full URL. If API_BASE_URL contains "https://...", this forms a valid absolute URL.
+    // We add '/api' because the backend routes are prefixed with it (e.g. app.use('/api', apiRouter))
+    // UNLESS the endpoint passed already contains /api, but the service functions below just pass e.g. '/users'.
     const url = `${API_BASE_URL}/api${path}`;
     
     console.log(`[API Call] ${options.method || 'GET'} ${url}`);
@@ -79,6 +85,8 @@ export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
+
+// Hàm đặc biệt để lấy sản phẩm nổi bật
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     return fetchFromApi<Product[]>('/products/featured');
 }
@@ -116,8 +124,6 @@ export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 
 export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
-
-// Fix: savePayrollRecords accepts a records array argument
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/financials/payroll', { 
         method: 'POST', 
@@ -189,7 +195,7 @@ export const deleteWarrantyTicket = async (id: string): Promise<void> => {
 };
 
 
-// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
+// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage for now) ---
 
 // Warehouses
 export const getWarehouses = async (): Promise<Warehouse[]> => {

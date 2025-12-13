@@ -13,6 +13,8 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// --- CORS CONFIGURATION ---
+// Allow all origins for simplicity in this setup, or restrict to specific domains if needed.
 app.set('trust proxy', true);
 app.use(cors()); 
 app.use(express.json({ limit: '10mb' }));
@@ -47,7 +49,7 @@ const checkDbConnection = async () => {
             await connection.query('SELECT 1');
             console.log("✅ Kết nối DB thành công!");
             
-            // Auto-migration
+            // Auto-migration check (optional/simple)
             try {
                 await connection.query("SELECT is_featured FROM Products LIMIT 1");
             } catch (err) {
@@ -88,9 +90,7 @@ apiRouter.get('/health', async (req, res) => {
 // === USERS ===
 apiRouter.get('/users', async (req, res) => {
     try {
-        console.log("Fetching users from DB...");
         const [rows] = await pool.query('SELECT * FROM Users');
-        console.log(`Found ${rows.length} users.`);
         res.json(rows.map(deserializeUser));
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -119,6 +119,7 @@ apiRouter.post('/users/login', async (req, res) => {
 const getFeaturedHandler = async (req, res) => {
     console.log("DEBUG: Hit featured products endpoint");
     try {
+        // Lấy 4 sản phẩm có is_featured = 1 hoặc giá cao nhất nếu không có featured
         const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
         const [rows] = await pool.query(query);
         res.json(rows.map(deserializeProduct));
@@ -129,7 +130,6 @@ const getFeaturedHandler = async (req, res) => {
 };
 
 apiRouter.get('/products/featured', getFeaturedHandler); 
-apiRouter.get('/featured-products', getFeaturedHandler); 
 
 // 2. Product Detail (Dynamic ID)
 // Đặt sau /featured để tránh nhận nhầm 'featured' là :id
@@ -241,7 +241,7 @@ apiRouter.get('/users/:userId/orders', async (req, res) => {
 // Mount API Router
 app.use('/api', apiRouter);
 
-// 404 Handler for API requests
+// 404 Handler for API requests (to debug frontend calling wrong paths)
 app.use('/api/*', (req, res) => {
     console.log(`❌ 404 Not Found (API catch-all): ${req.originalUrl}`);
     res.status(404).json({ message: `API endpoint not found: ${req.originalUrl}` });
@@ -252,10 +252,11 @@ app.get('/', (req, res) => {
     res.send("Backend is running!");
 });
 
-// Serve Static Files (only in production)
+// Serve Static Files (only in production if configured to serve frontend)
 if (process.env.NODE_ENV === 'production') {
     const projectRoot = path.resolve(__dirname, '..');
     app.use(express.static(path.join(projectRoot, 'dist')));
+    // For SPA: Return index.html for any unknown non-API routes
     app.get('*', (req, res) => {
         if (req.path.startsWith('/api/')) {
              return res.status(404).json({ message: `API not found: ${req.path}` });
