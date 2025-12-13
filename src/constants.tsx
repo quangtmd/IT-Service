@@ -20,7 +20,8 @@ export const ADMIN_EMAIL = "quangtmdit@gmail.com";
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
 
 // --- BACKEND API CONFIGURATION ---
-// FIX: Sử dụng URL Backend chính xác để đảm bảo kết nối
+// FIX: Hardcoded backend URL to ensure connection. 
+// When deployed as a static site, relative paths (/api) will 404 because the frontend server doesn't host the API.
 export const BACKEND_API_BASE_URL = "https://it-service-app-n9as.onrender.com";
 
 // --- STORAGE KEYS ---
@@ -90,7 +91,7 @@ export const ARTICLE_CATEGORIES: string[] = ['Dịch vụ IT', 'Hướng dẫn',
 export const USE_CASES = ['PC Gaming', 'PC Đồ họa - Render', 'PC Văn phòng', 'PC Workstation', 'PC Streamer'];
 
 
-// --- INITIAL DYNAMIC DATA ---
+// --- INITIAL DYNAMIC DATA (Managed by Admin, stored in localStorage) ---
 
 export const INITIAL_WAREHOUSES: Warehouse[] = [
     { id: 'wh001', name: 'Kho Chính', location: '10 Huỳnh Thúc Kháng, Đà Nẵng' },
