@@ -10,13 +10,17 @@ const __dirname = dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
+    // Fix: Cast process to any to avoid type error 'Property cwd does not exist on type Process'
+    // This typically happens if @types/node is not fully loaded or configured for the config file context.
     const env = loadEnv(mode, (process as any).cwd(), '');
 
     return {
         plugins: [react()],
         resolve: {
             alias: {
-                '@': path.resolve(__dirname, 'src'),
+                // Fix: Since vite.config.ts is in 'src', __dirname points to 'src'.
+                // Map '@' to __dirname directly so '@/components' resolves to 'src/components'.
+                '@': __dirname,
             },
         },
         server: {
@@ -41,7 +45,8 @@ export default defineConfig(({ mode }) => {
             },
         },
         build: {
-            outDir: 'dist',
+            outDir: '../dist', // Output to project root dist folder, since config is in src
+            emptyOutDir: true,
             sourcemap: false,
         },
         define: {
