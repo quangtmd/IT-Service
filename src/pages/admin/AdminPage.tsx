@@ -28,6 +28,7 @@ import StockIssuesView from '@/components/admin/StockIssuesView';
 import StockTransfersView from '@/components/admin/StockTransfersView';
 import ShippingManagementView from '@/components/admin/ShippingManagementView';
 
+
 // Import new form pages using absolute paths
 import ProductFormPage from '@/pages/admin/ProductFormPage';
 import UserFormPage from '@/pages/admin/UserFormPage';
@@ -46,6 +47,7 @@ import WarrantyFormPage from '@/pages/admin/WarrantyFormPage';
 import StockReceiptFormPage from '@/pages/admin/StockReceiptFormPage';
 import StockIssueFormPage from '@/pages/admin/StockIssueFormPage';
 import StockTransferFormPage from '@/pages/admin/StockTransferFormPage';
+
 
 // Import new placeholder/skeleton views
 import QuotationManagementView from '@/components/admin/QuotationManagementView';
@@ -105,7 +107,7 @@ const AdminPage: React.FC = () => {
             id: 'service_warranty', label: 'Dịch Vụ & Bảo Hành', icon: 'fas fa-tools', permission: ['viewService'],
             children: [
                 { id: 'service_tickets', label: 'Phiếu Sửa Chữa', icon: 'fas fa-ticket-alt', permission: ['manageServiceTickets'] },
-                { id: 'warranty_claims', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
+                { id: 'warranty_tickets', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
             ]
         },
@@ -183,7 +185,7 @@ const AdminPage: React.FC = () => {
         const viewCandidates = [
             'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
             'accounting_dashboard', 'quotations', 'customers', 'orders', 
-            'returns', 'suppliers', 'service_tickets', 'warranty_claims',
+            'returns', 'suppliers', 'service_tickets', 'warranty_tickets',
             'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers'
         ];
 
@@ -246,7 +248,7 @@ const AdminPage: React.FC = () => {
             case 'inventory': return <InventoryView />;
             case 'service_tickets': return <ServiceTicketView />;
             case 'quotations': return <QuotationManagementView />;
-            case 'warranty_claims': return <WarrantyManagementView />;
+            case 'warranty_tickets': return <WarrantyManagementView />;
             case 'returns': return <ReturnManagementView />;
             case 'suppliers': return <SupplierManagementView />;
             case 'stock_receipts': return <StockReceiptsView />;
@@ -292,8 +294,8 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
         if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
         if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
-        if (path.startsWith('/admin/warranty_claims/new')) return 'Tạo Phiếu Bảo hành';
-        if (path.startsWith('/admin/warranty_claims/edit/')) return 'Chỉnh sửa Phiếu Bảo hành';
+        if (path.startsWith('/admin/warranty_tickets/new')) return 'Tạo Phiếu Bảo hành';
+        if (path.startsWith('/admin/warranty_tickets/edit/')) return 'Chỉnh sửa Phiếu Bảo hành';
         if (path.startsWith('/admin/stock_receipts/new')) return 'Tạo Phiếu Nhập Kho';
         if (path.startsWith('/admin/stock_receipts/edit/')) return 'Sửa Phiếu Nhập Kho';
         if (path.startsWith('/admin/stock_issues/new')) return 'Tạo Phiếu Xuất Kho';
@@ -354,8 +356,8 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
-                        <ReactRouterDOM.Route path="/warranty_claims/new" element={<WarrantyFormPage />} />
-                        <ReactRouterDOM.Route path="/warranty_claims/edit/:claimId" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_tickets/new" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_tickets/edit/:ticketId" element={<WarrantyFormPage />} />
                         <ReactRouterDOM.Route path="/stock_receipts/new" element={<StockReceiptFormPage />} />
                         <ReactRouterDOM.Route path="/stock_receipts/edit/:id" element={<StockReceiptFormPage />} />
                         <ReactRouterDOM.Route path="/stock_issues/new" element={<StockIssueFormPage />} />

@@ -29,19 +29,15 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-// In development (empty env), this is empty string -> request goes to http://localhost:3000/api/... -> Proxy to 3001
-// In production, this is the full backend URL.
-const RAW_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
-// Remove trailing slash and trailing /api if present to avoid duplication (e.g. /api/api/...)
-const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
+const RAW_BASE_URL = Constants.BACKEND_API_BASE_URL;
+const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '');
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Ensure endpoint starts with /
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    
-    // Final URL: BASE + /api + /endpoint
     const url = `${API_BASE_URL}/api${path}`;
     
+    console.log(`[API Call] ${options.method || 'GET'} ${url}`);
+
     try {
         const response = await fetch(url, {
             headers: {
@@ -54,9 +50,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
-            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}. Endpoint: ${url}`;
-            console.error(errorMessage);
-            throw new Error(errorMessage);
+            console.error(`[API Error] ${response.status}: ${errorMessageDetails}`);
+            throw new Error(`Lỗi API (${response.status}): ${errorMessageDetails}`);
         }
         
         const text = await response.text();
@@ -65,7 +60,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     } catch (error) {
         console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Lỗi mạng hoặc server không phản hồi. Không thể kết nối đến Backend tại ${url}`);
+            throw new Error('Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra kết nối internet hoặc trạng thái server.');
         }
         throw error;
     }
@@ -84,8 +79,6 @@ export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
-
-// Use standard REST endpoint /products/featured
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     return fetchFromApi<Product[]>('/products/featured');
 }
@@ -123,6 +116,8 @@ export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 
 export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
+
+// Fix: savePayrollRecords accepts a records array argument
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/financials/payroll', { 
         method: 'POST', 
@@ -194,7 +189,7 @@ export const deleteWarrantyTicket = async (id: string): Promise<void> => {
 };
 
 
-// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage for now) ---
+// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
 
 // Warehouses
 export const getWarehouses = async (): Promise<Warehouse[]> => {

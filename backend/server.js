@@ -14,7 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.set('trust proxy', true);
-app.use(cors()); // Allow all CORS requests for development
+app.use(cors()); 
 app.use(express.json({ limit: '10mb' }));
 
 // --- LOGGING MIDDLEWARE ---
@@ -47,7 +47,7 @@ const checkDbConnection = async () => {
             await connection.query('SELECT 1');
             console.log("✅ Kết nối DB thành công!");
             
-            // Auto-migration: Ensure is_featured column exists
+            // Auto-migration
             try {
                 await connection.query("SELECT is_featured FROM Products LIMIT 1");
             } catch (err) {
@@ -76,6 +76,10 @@ checkDbConnection();
 // ==========================================================================
 const apiRouter = express.Router();
 
+apiRouter.get('/', (req, res) => {
+    res.json({ message: "API Root is reachable" });
+});
+
 apiRouter.get('/health', async (req, res) => {
     if (dbStatus.status !== 'connected') await checkDbConnection();
     res.json(dbStatus);
@@ -84,7 +88,9 @@ apiRouter.get('/health', async (req, res) => {
 // === USERS ===
 apiRouter.get('/users', async (req, res) => {
     try {
+        console.log("Fetching users from DB...");
         const [rows] = await pool.query('SELECT * FROM Users');
+        console.log(`Found ${rows.length} users.`);
         res.json(rows.map(deserializeUser));
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -109,11 +115,10 @@ apiRouter.post('/users/login', async (req, res) => {
 // === PRODUCTS ===
 
 // 1. Featured Products (EXPLICIT ROUTE)
-// This route must be defined BEFORE /products/:id to avoid conflicts
+// QUAN TRỌNG: Route này PHẢI nằm trước /products/:id
 const getFeaturedHandler = async (req, res) => {
     console.log("DEBUG: Hit featured products endpoint");
     try {
-        // Prioritize products marked as featured, then expensive ones
         const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
         const [rows] = await pool.query(query);
         res.json(rows.map(deserializeProduct));
@@ -123,11 +128,28 @@ const getFeaturedHandler = async (req, res) => {
     }
 };
 
-// Define both routes to ensure compatibility and prevent 404s
 apiRouter.get('/products/featured', getFeaturedHandler); 
 apiRouter.get('/featured-products', getFeaturedHandler); 
 
-// 2. Product List & Filter
+// 2. Product Detail (Dynamic ID)
+// Đặt sau /featured để tránh nhận nhầm 'featured' là :id
+apiRouter.get('/products/:id', async (req, res) => {
+    const productId = req.params.id;
+    if (productId === 'featured') return getFeaturedHandler(req, res); // Fallback safety
+
+    try {
+        const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [productId]);
+        if (rows.length > 0) {
+            res.json(deserializeProduct(rows[0]));
+        } else {
+            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi server", error: error.message });
+    }
+});
+
+// 3. Product List & Filter
 apiRouter.get('/products', async (req, res) => {
     try {
         const { mainCategory, subCategory, q, tags, limit = 1000, page = 1, is_featured } = req.query;
@@ -152,20 +174,6 @@ apiRouter.get('/products', async (req, res) => {
         res.json({ products: products.map(deserializeProduct), totalProducts });
     } catch (error) {
         console.error("Error fetching products:", error);
-        res.status(500).json({ message: "Lỗi server", error: error.message });
-    }
-});
-
-// 3. Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes
-apiRouter.get('/products/:id', async (req, res) => {
-    try {
-        const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);
-        if (rows.length > 0) {
-            res.json(deserializeProduct(rows[0]));
-        } else {
-            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
-        }
-    } catch (error) {
         res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 });
