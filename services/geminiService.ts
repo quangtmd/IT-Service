@@ -1,8 +1,9 @@
+
 // Fix: Import correct types from @google/genai
 import { GoogleGenAI, Chat, GenerateContentResponse, Part, Content, Type, FunctionDeclaration } from "@google/genai"; // Added Part, Content, Type, FunctionDeclaration
 import * as Constants from '../constants.tsx';
-// Fix: Added SiteSettings, Article, Product
-import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; 
+// Fix: Added SiteSettings, Article, Product, User
+import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse, User } from "../types"; 
 import { MOCK_SERVICES } from '../data/mockData';
 // FIX: Import PRODUCT_CATEGORIES_HIERARCHY from constants
 import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
@@ -37,21 +38,37 @@ const getOrderStatusFunctionDeclaration: FunctionDeclaration = {
   name: 'getOrderStatus',
   parameters: {
     type: Type.OBJECT,
-    description: 'Tìm kiếm và lấy thông tin chi tiết đơn hàng. Cần thiết khi người dùng hỏi về trạng thái, vị trí đơn hàng, hoặc lịch sử mua hàng.',
+    description: 'Tìm kiếm và lấy thông tin chi tiết CỤ THỂ một đơn hàng dựa trên Mã Đơn Hàng. Dùng khi khách hàng cung cấp mã số cụ thể (VD: T123456).',
     properties: {
       orderId: {
         type: Type.STRING,
-        description: 'Mã đơn hàng hoặc từ khóa định danh đơn hàng mà người dùng cung cấp (VD: "12345", "dh-123", "T123"). Nếu không rõ, hãy lấy toàn bộ chuỗi số/mã mà người dùng đưa ra.',
+        description: 'Mã đơn hàng hoặc từ khóa định danh đơn hàng mà người dùng cung cấp (VD: "12345", "dh-123", "T123").',
       },
     },
     required: ['orderId'],
   },
 };
 
+const lookupCustomerOrdersFunctionDeclaration: FunctionDeclaration = {
+  name: 'lookupCustomerOrders',
+  parameters: {
+    type: Type.OBJECT,
+    description: 'Tra cứu danh sách lịch sử mua hàng của khách hàng dựa trên thông tin định danh (Số điện thoại hoặc Email). Dùng khi khách hỏi "Tôi đã mua gì?", "Kiểm tra đơn hàng của tôi".',
+    properties: {
+      identifier: {
+        type: Type.STRING,
+        description: 'Số điện thoại hoặc Email của khách hàng để tìm kiếm đơn hàng.',
+      },
+    },
+    required: ['identifier'],
+  },
+};
+
 
 // Fix: Change history type from GenerateContentParameters[] to Content[]
 export const startChat = (
-  siteSettings: SiteSettings, // Added siteSettings
+  siteSettings: SiteSettings, 
+  currentUser?: User | null, // Added currentUser to inject context
   history?: Content[], 
   systemInstructionOverride?: string
 ): Chat => {
@@ -73,42 +90,59 @@ export const startChat = (
     .map(cat => `- ${cat.name}`)
     .join('\n');
 
+  // User context block
+  let userContext = "";
+  if (currentUser) {
+    userContext = `
+**THÔNG TIN KHÁCH HÀNG ĐANG CHAT:**
+- Tên: ${currentUser.username}
+- Email: ${currentUser.email}
+- Số điện thoại: ${currentUser.phone || 'Chưa cung cấp'}
+- Địa chỉ: ${currentUser.address || 'Chưa cung cấp'}
+Hãy sử dụng thông tin này để xưng hô thân mật và hỗ trợ tra cứu đơn hàng nhanh chóng.
+`;
+  }
 
-  const defaultSystemInstruction = `Bạn là trợ lý AI của ${siteSettings.companyName}.
 
-**NHIỆM VỤ ƯU TIÊN HÀNG ĐẦU:**
-- **Tra cứu đơn hàng:** Khách hàng thường hỏi về đơn hàng bằng mã số (ví dụ: "đơn 123", "check đơn hàng T456", "xem đơn 789").
-- Khi người dùng đưa ra một mã số hoặc chuỗi ký tự trong ngữ cảnh hỏi về đơn hàng (ví dụ: "đơn của tôi là 12345", "kiểm tra giúp đơn T999"), hãy ƯU TIÊN gọi hàm \`getOrderStatus(orderId: "12345")\`.
-- KHÔNG cần hỏi lại xác nhận nếu mã đơn hàng đã được cung cấp rõ ràng.
-- Nếu kết quả tra cứu là "not_found", hãy thông báo khéo léo và gợi ý khách kiểm tra lại mã hoặc cung cấp số điện thoại.
+  const defaultSystemInstruction = `Bạn là "Trợ lý ảo IQ Tech" - một chuyên viên tư vấn công nghệ nhiệt tình, thân thiện và am hiểu sâu sắc về PC/Laptop của ${siteSettings.companyName}.
 
-**QUYỀN HẠN VÀ GIỚI HẠN KHÁC:**
-1.  **Về Sản Phẩm:** Bạn **KHÔNG** có quyền truy cập vào giá cả, tồn kho của từng sản phẩm cụ thể. Hãy hướng dẫn khách xem trên website.
-2.  **Về Đơn Hàng:** Bạn **CÓ QUYỀN** và **PHẢI** sử dụng công cụ để tra cứu trạng thái đơn hàng khi khách yêu cầu.
+**QUY TẮC BẤT DI BẤT DỊCH (QUAN TRỌNG):**
+1.  **NGÔN NGỮ:** Bạn CHỈ ĐƯỢC PHÉP sử dụng **Tiếng Việt** để trả lời. Dù khách hàng hỏi bằng tiếng Anh, tiếng Trung hay ngôn ngữ nào khác, bạn vẫn phải trả lời bằng Tiếng Việt.
+2.  **XƯNG HÔ:** Xưng là "em" hoặc "mình" và gọi khách là "bạn" hoặc "anh/chị" (nếu biết tên). Giọng điệu phải tự nhiên, vui vẻ như người thật (dùng emoji 😊, 👍, 🚀).
+3.  **TRÁNH TRẢ LỜI MÁY MÓC:** Đừng trả lời kiểu "Tôi là một mô hình ngôn ngữ lớn". Hãy nói "Em là trợ lý ảo của IQ Tech ạ".
 
-**Danh mục sản phẩm chúng tôi bán:**
+${userContext}
+
+**NHIỆM VỤ CỦA BẠN:**
+- Tư vấn cấu hình PC, linh kiện máy tính.
+- Giải đáp thắc mắc về dịch vụ IT.
+- Hỗ trợ tra cứu đơn hàng và bảo hành.
+
+**CÔNG CỤ HỖ TRỢ (TOOLS):**
+1.  **getOrderStatus(orderId):** Dùng khi khách hỏi về mã đơn hàng cụ thể.
+2.  **lookupCustomerOrders(identifier):** Dùng khi khách muốn xem lịch sử mua hàng của họ (dựa trên SĐT/Email).
+
+**THÔNG TIN CỬA HÀNG:**
+- Danh mục sản phẩm:
 ${productCategoriesInfo}
 
-**Dịch vụ IT chúng tôi cung cấp:**
+- Dịch vụ IT:
 ${serviceInfo}
 
-**Quy tắc trả lời chung:**
-- Luôn thân thiện, chuyên nghiệp và dùng tiếng Việt.
-- Nếu khách hàng hỏi về sản phẩm cụ thể, hãy nói: "Để có thông tin chính xác nhất về giá và cấu hình, mời bạn xem trực tiếp trên website nhé."
-- Khi cung cấp link, sử dụng định dạng Markdown: [Tên Link](URL).
+- Liên hệ:
+  - Hotline: ${siteSettings.companyPhone}
+  - Email: ${siteSettings.companyEmail}
+  - Địa chỉ: ${siteSettings.companyAddress}
+${socialLinksInfo}
 
-**Thông tin liên hệ:**
-- Tên công ty: ${siteSettings.companyName}
-- Hotline: ${siteSettings.companyPhone}
-- Email: ${siteSettings.companyEmail}
-- Địa chỉ: ${siteSettings.companyAddress}`;
+**Lưu ý:** Nếu không biết câu trả lời, hãy khéo léo gợi ý khách hàng liên hệ Hotline hoặc Zalo để được nhân viên hỗ trợ trực tiếp.`;
 
   chatSessionInstance = client.chats.create({
     model: CHAT_MODEL_NAME,
     history: history || [],
     config: {
       systemInstruction: systemInstructionOverride || defaultSystemInstruction,
-      tools: [{functionDeclarations: [getOrderStatusFunctionDeclaration]}],
+      tools: [{functionDeclarations: [getOrderStatusFunctionDeclaration, lookupCustomerOrdersFunctionDeclaration]}],
     },
   });
   return chatSessionInstance;
@@ -159,7 +193,7 @@ Ngân sách: ${budget}.`;
   }
 
   prompt += `\nHãy đề xuất một cấu hình PC tương thích bao gồm CPU, Bo mạch chủ (Motherboard), RAM (ghi rõ dung lượng và tốc độ), GPU (Card đồ họa), SSD (ghi rõ dung lượng), PSU (Nguồn - ghi rõ công suất), và Vỏ máy (Case).
-Cung cấp phản hồi dưới dạng một đối tượng JSON với các khóa: 'cpu', 'motherboard', 'ram', 'gpu', 'ssd', 'psu', 'case'. Mỗi khóa này nên là một đối tượng chứa hai khóa con: 'name' (tên linh kiện cụ thể) và 'reasoning' (lý do ngắn gọn chọn linh kiện đó).
+Cung cấp phản hồi dưới dạng một đối tượng JSON với các khóa: 'cpu', 'motherboard', 'ram', 'gpu', 'ssd', 'psu', 'case'. Mỗi khóa này nên là một đối tượng chứa hai khóa con: 'name' (tên linh kiện cụ thể) và 'reasoning' (lý do ngắn gọn chọn linh kiện đó bằng Tiếng Việt).
 Ví dụ: { "cpu": { "name": "AMD Ryzen 5 5600X", "reasoning": "Hiệu năng tốt cho gaming tầm trung." }, ... }.
 Nếu ngân sách quá thấp cho nhu cầu sử dụng, hãy trả về JSON có dạng { "error": "Ngân sách quá thấp cho nhu cầu này." }.`;
   
@@ -207,7 +241,7 @@ Nhu cầu của người dùng:
 - Ngân sách: ${budget} VNĐ
 - Yêu cầu thêm: ${additionalRequirements || 'Không có'}
 
-Đối với mỗi cấu hình, hãy cung cấp một tên gọi (ví dụ: "Cấu hình Gaming Tầm trung"), một tổng giá tiền ước tính (dạng số), một lý do ngắn gọn tại sao cấu hình này phù hợp, và danh sách các linh kiện cụ thể bao gồm: CPU, GPU, RAM, Motherboard, SSD, PSU, và Case.
+Đối với mỗi cấu hình, hãy cung cấp một tên gọi tiếng Việt (ví dụ: "Cấu hình Gaming Tầm trung"), một tổng giá tiền ước tính (dạng số), một lý do ngắn gọn tiếng Việt tại sao cấu hình này phù hợp, và danh sách các linh kiện cụ thể bao gồm: CPU, GPU, RAM, Motherboard, SSD, PSU, và Case.
 Phản hồi của bạn PHẢI tuân thủ nghiêm ngặt theo JSON schema đã được cung cấp.`;
 
   const responseSchema = {
@@ -221,7 +255,7 @@ Phản hồi của bạn PHẢI tuân thủ nghiêm ngặt theo JSON schema đã
           properties: {
             name: { type: Type.STRING, description: "Tên của cấu hình, ví dụ: Cấu hình Gaming Tầm Trung." },
             total_price: { type: Type.NUMBER, description: "Tổng chi phí ước tính bằng VNĐ." },
-            reasoning: { type: Type.STRING, description: "Giải thích ngắn gọn tại sao cấu hình này phù hợp." },
+            reasoning: { type: Type.STRING, description: "Giải thích ngắn gọn tại sao cấu hình này phù hợp (Tiếng Việt)." },
             components: {
               type: Type.OBJECT,
               properties: {
@@ -295,8 +329,8 @@ export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
         throw new Error(Constants.API_KEY_ERROR_MESSAGE);
     }
     // FIX: Import and use ARTICLE_CATEGORIES from constants
-    const prompt = `Làm một biên tập viên tin tức công nghệ. Sử dụng Google Search để tìm 3 tin tức công nghệ mới và thú vị nhất trong vài ngày qua. 
-    Đối với mỗi tin tức, hãy cung cấp một tiêu đề hấp dẫn, một bản tóm tắt (summary) khoảng 2-3 câu, một nội dung chi tiết (content) được định dạng bằng Markdown, một danh mục (category) từ danh sách sau: [${Constants.ARTICLE_CATEGORIES.join(', ')}], và một cụm từ khóa tìm kiếm hình ảnh bằng tiếng Anh (imageSearchQuery) ngắn gọn, phù hợp với nội dung.
+    const prompt = `Làm một biên tập viên tin tức công nghệ tại Việt Nam. Sử dụng Google Search để tìm 3 tin tức công nghệ mới và thú vị nhất trong vài ngày qua (ưu tiên tin liên quan đến PC, phần cứng, AI). 
+    Đối với mỗi tin tức, hãy cung cấp một tiêu đề tiếng Việt hấp dẫn, một bản tóm tắt (summary) tiếng Việt khoảng 2-3 câu, một nội dung chi tiết (content) tiếng Việt được định dạng bằng Markdown, một danh mục (category) từ danh sách sau: [${Constants.ARTICLE_CATEGORIES.join(', ')}], và một cụm từ khóa tìm kiếm hình ảnh bằng tiếng Anh (imageSearchQuery) ngắn gọn, phù hợp với nội dung.
     Trả về kết quả dưới dạng một mảng JSON.`;
 
     try {

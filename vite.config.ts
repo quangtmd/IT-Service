@@ -1,8 +1,8 @@
+
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'url';
-// FIX: Import 'process' to resolve TypeScript error 'Property 'cwd' does not exist on type 'Process''.
 import process from 'process';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,26 +19,32 @@ export default defineConfig(({ mode }) => {
                 '/api': {
                     target: 'http://localhost:3001',
                     changeOrigin: true,
+                    secure: false,
                 },
             },
         },
         preview: {
-            host: true, // This is equivalent to --host, allows network access
-            // Allow requests from Render's preview domains to prevent host header errors.
+            port: 3000,
+            host: true, 
             allowedHosts: ['.onrender.com'],
+            proxy: {
+                '/api': {
+                    target: 'http://localhost:3001',
+                    changeOrigin: true,
+                    secure: false,
+                },
+            },
         },
         plugins: [react()],
         resolve: {
             alias: {
-                '@': path.resolve(__dirname, './'),
+                '@': path.resolve(__dirname, './src'),
             }
         },
         define: {
             'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
-            // Use an empty string for dev (relying on proxy) and the env var for prod
-            'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(
-                mode === 'production' ? env.VITE_BACKEND_API_BASE_URL : ''
-            )
+            // Ensure the variable is always stringified, even if it's undefined (becomes empty string)
+            'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(env.VITE_BACKEND_API_BASE_URL || '')
         }
     }
 });

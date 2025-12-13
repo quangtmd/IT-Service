@@ -20,28 +20,12 @@ export const ADMIN_EMAIL = "quangtmdit@gmail.com";
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
 
 // --- BACKEND API CONFIGURATION ---
-// Robust handling to prevent "Cannot read properties of undefined" runtime errors
-let backendUrl = "https://it-service-app-n9as.onrender.com";
-let isDev = false;
+// Robust configuration: Hardcode the production URL to avoid environment variable issues on static hosts.
+const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-try {
-    // @ts-ignore
-    if (typeof import.meta !== 'undefined' && import.meta.env) {
-        // @ts-ignore
-        if (import.meta.env.DEV) {
-            isDev = true;
-        }
-        // @ts-ignore
-        if (import.meta.env.VITE_BACKEND_API_BASE_URL) {
-            // @ts-ignore
-            backendUrl = import.meta.env.VITE_BACKEND_API_BASE_URL;
-        }
-    }
-} catch (e) {
-    console.warn("Environment variable access fallback triggered.");
-}
-
-export const BACKEND_API_BASE_URL = isDev ? "" : backendUrl;
+export const BACKEND_API_BASE_URL = isLocal 
+    ? "http://127.0.0.1:3001" 
+    : "https://it-service-app-n9as.onrender.com";
 
 // --- STORAGE KEYS ---
 export const SITE_LOGO_STORAGE_KEY = "siteLogoUrl_v1";
@@ -52,8 +36,8 @@ export const THEME_SETTINGS_STORAGE_KEY = 'siteThemeSettings_v1';
 export const CUSTOM_MENU_STORAGE_KEY = 'siteCustomMenu_v1';
 export const PRODUCTS_STORAGE_KEY = 'siteProducts_v1';
 export const ORDERS_STORAGE_KEY = 'siteOrders_v1';
-export const CHAT_LOGS_STORAGE_KEY = 'siteChatLogs_v1'; 
-export const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1'; 
+export const CHAT_LOGS_STORAGE_KEY = 'siteChatLogs_v1'; // For storing chat logs
+export const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1'; // Uses sessionStorage for per-session auto-open
 export const FINANCIAL_TRANSACTIONS_STORAGE_KEY = 'siteFinancialTransactions_v1';
 export const PAYROLL_RECORDS_STORAGE_KEY = 'sitePayrollRecords_v1';
 export const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
@@ -208,7 +192,6 @@ export const INITIAL_CUSTOM_MENU_LINKS: CustomMenuLink[] = NAVIGATION_LINKS_BASE
     id: `menu-${index}`,
     order: index + 1,
     isVisible: true,
-    icon: typeof link.icon === 'string' ? link.icon : undefined,
 }));
 
 export const MOCK_PRICING_PLANS_DATA: PricingPlan[] = [

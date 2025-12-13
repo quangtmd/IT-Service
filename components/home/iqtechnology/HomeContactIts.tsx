@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Button from '../../ui/Button';
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver.ts';
-import { SITE_CONFIG_STORAGE_KEY, INITIAL_SITE_SETTINGS } from '../../../constants.tsx';
-import { SiteSettings } from '../../../types.ts';
-import { useAuth } from '../../../contexts/AuthContext.ts';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
+import { SITE_CONFIG_STORAGE_KEY, INITIAL_SITE_SETTINGS } from '../../../constants';
+import { SiteSettings } from '../../../types';
+import { useAuth } from '../../../contexts/AuthContext';
 import { Canvas } from '@react-three/fiber';
-import HolographicGridScene from '../three/HolographicGridScene.tsx';
+import HolographicGridScene from '../three/HolographicGridScene';
 
 const HomeContactIts: React.FC = () => {
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);

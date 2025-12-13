@@ -3,7 +3,8 @@ import {
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
     WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer,
-    Debt, PaymentApproval, CashflowForecastData // Added missing imports
+    Debt, PaymentApproval, CashflowForecastData, // Added missing imports
+    AdCampaign, EmailCampaign, EmailSubscriber
 } from './types';
 import * as Constants from './constants';
 
@@ -122,7 +123,8 @@ export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 
 export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
-// FIX: Updated savePayrollRecords to accept an argument to resolve TypeScript error.
+// Fix: savePayrollRecords was defined to take 0 arguments but was called with 1.
+// Updated the function to accept a 'records' array and include it in the request body.
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/financials/payroll', { 
         method: 'POST', 

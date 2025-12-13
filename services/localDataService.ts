@@ -1,10 +1,10 @@
+
 // Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
-// Fix: Correct relative imports by moving up one directory level
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
     WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer,
-    Debt, PaymentApproval, CashflowForecastData, // Added missing imports
+    Debt, PaymentApproval, CashflowForecastData,
     AdCampaign, EmailCampaign, EmailSubscriber
 } from '../types';
 import * as Constants from '../constants';
@@ -75,7 +75,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 // --- User Service ---
 // Note: The endpoint now starts with /users, and /api is prepended by fetchFromApi
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
-export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
+export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
 export const updateUser = (id: string, updates: Partial<User>): Promise<User> => fetchFromApi<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteUser = (id: string): Promise<void> => fetchFromApi<void>(`/users/${id}`, { method: 'DELETE' });
@@ -87,7 +87,7 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    const { products } = await getProducts('is_featured=true&limit=4');
+    const products = await fetchFromApi<Product[]>('/products/featured');
     return products;
 }
 
@@ -100,7 +100,7 @@ export const deleteArticle = (id: string): Promise<void> => fetchFromApi<void>(`
 
 // --- Order Service ---
 export const getOrders = (): Promise<Order[]> => fetchFromApi<Order[]>('/orders');
-export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
+export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/users/${customerId}/orders`);
 export const addOrder = (order: Order): Promise<Order> => fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
 export const updateOrder = (id: string, updates: Partial<Order>): Promise<Order> => fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const updateOrderStatus = (id: string, status: OrderStatus): Promise<Order> => fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
@@ -124,7 +124,7 @@ export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 
 export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
-// FIX: Updated savePayrollRecords to accept an argument to resolve TypeScript error.
+
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/financials/payroll', { 
         method: 'POST', 
@@ -173,11 +173,11 @@ export const deleteSupplier = (id: string): Promise<void> => fetchFromApi<void>(
 
 // --- Warranty Ticket Service ---
 export const getWarrantyTickets = async (): Promise<WarrantyTicket[]> => {
-    return fetchFromApi<WarrantyTicket[]>('/api/warranty-tickets');
+    return fetchFromApi<WarrantyTicket[]>('/warranty-tickets');
 };
 
 export const addWarrantyTicket = async (ticket: Omit<WarrantyTicket, 'id' | 'ticketNumber' | 'createdAt'>): Promise<WarrantyTicket> => {
-    return fetchFromApi<WarrantyTicket>('/api/warranty-tickets', {
+    return fetchFromApi<WarrantyTicket>('/warranty-tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ticket),
@@ -185,7 +185,7 @@ export const addWarrantyTicket = async (ticket: Omit<WarrantyTicket, 'id' | 'tic
 };
 
 export const updateWarrantyTicket = async (id: string, updates: Partial<WarrantyTicket>): Promise<WarrantyTicket> => {
-    return fetchFromApi<WarrantyTicket>(`/api/warranty-tickets/${id}`, {
+    return fetchFromApi<WarrantyTicket>(`/warranty-tickets/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -193,7 +193,7 @@ export const updateWarrantyTicket = async (id: string, updates: Partial<Warranty
 };
 
 export const deleteWarrantyTicket = async (id: string): Promise<void> => {
-    return fetchFromApi<void>(`/api/warranty-tickets/${id}`, { method: 'DELETE' });
+    return fetchFromApi<void>(`/warranty-tickets/${id}`, { method: 'DELETE' });
 };
 
 

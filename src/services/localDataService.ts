@@ -1,15 +1,14 @@
 
-// Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
     WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer,
     Debt, PaymentApproval, CashflowForecastData,
-    AdCampaign, EmailCampaign, EmailSubscriber, WarrantyClaim, AuditLog
+    AdCampaign, EmailCampaign, EmailSubscriber
 } from '../types';
 import * as Constants from '../constants';
 
-// --- Helper Functions for localStorage (kept for some client-side persistence if needed, but primarily moving to API) ---
+// --- Helper Functions for localStorage ---
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try {
         const item = localStorage.getItem(key);
@@ -23,7 +22,6 @@ const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
 const setLocalStorageItem = <T,>(key: string, value: T): void => {
     try {
         localStorage.setItem(key, JSON.stringify(value));
-        // Optional: Dispatch a custom event to notify other components of the change
         window.dispatchEvent(new CustomEvent('localStorageChange', { detail: { key } }));
     } catch (error) {
         console.error(`Error setting localStorage key "${key}":`, error);
@@ -31,12 +29,18 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-const API_BASE_URL = Constants.BACKEND_API_BASE_URL;
-console.log(`[API Config] Connected to Backend: ${API_BASE_URL}`);
+// In development (empty env), this is empty string -> request goes to http://localhost:3000/api/... -> Proxy to 3001
+// In production, this is the full backend URL.
+const RAW_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
+// Remove trailing slash and trailing /api if present to avoid duplication (e.g. /api/api/...)
+const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const fullEndpoint = `/api${endpoint}`;
-    const url = `${API_BASE_URL}${fullEndpoint}`;
+    // Ensure endpoint starts with /
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    
+    // Final URL: BASE + /api + /endpoint
+    const url = `${API_BASE_URL}/api${path}`;
     
     try {
         const response = await fetch(url, {
@@ -50,25 +54,18 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
-            
-            const contentType = response.headers.get("content-type");
-            if (response.status === 404 && (errorMessageDetails.includes('File not found') || (contentType && contentType.includes("text/html")))) {
-                 throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Vui lòng kiểm tra cấu hình Backend.`);
-            }
-
-            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}`;
-            console.error(`API Request Failed: ${fullEndpoint}`, errorMessage);
+            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}. Endpoint: ${url}`;
+            console.error(errorMessage);
             throw new Error(errorMessage);
         }
         
-        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
         console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Không thể kết nối tới Server (${API_BASE_URL}). Vui lòng kiểm tra đường truyền hoặc trạng thái Server.`);
+            throw new Error(`Lỗi mạng hoặc server không phản hồi. Không thể kết nối đến Backend tại ${url}`);
         }
         throw error;
     }
@@ -82,22 +79,15 @@ export const updateUser = (id: string, updates: Partial<User>): Promise<User> =>
 export const deleteUser = (id: string): Promise<void> => fetchFromApi<void>(`/users/${id}`, { method: 'DELETE' });
 
 // --- Product Service ---
-export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => {
-    const queryString = queryParams.startsWith('?') ? queryParams.slice(1) : queryParams;
-    return fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryString}`);
-};
+export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryParams}`);
 export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product>(`/products/${id}`);
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
+// Use standard REST endpoint /products/featured
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    try {
-        return await fetchFromApi<Product[]>('/products/featured');
-    } catch (error) {
-        console.error("Failed to fetch featured products", error);
-        return [];
-    }
+    return fetchFromApi<Product[]>('/products/featured');
 }
 
 // --- Article Service ---
@@ -141,21 +131,18 @@ export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void
     });
 };
 
-// Debts
-export const getDebts = async (): Promise<Debt[]> => fetchFromApi<Debt[]>('/debts');
-export const updateDebt = async (id: string, updates: Partial<Debt>): Promise<Debt> => fetchFromApi<Debt>(`/debts/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+export const getDebts = (): Promise<Debt[]> => fetchFromApi<Debt[]>('/debts');
+export const updateDebt = (id: string, updates: Partial<Debt>): Promise<Debt> => fetchFromApi<Debt>(`/debts/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 
-// Payment Approvals
-export const getPaymentApprovals = async (): Promise<PaymentApproval[]> => fetchFromApi<PaymentApproval[]>('/payment-approvals');
-export const updatePaymentApproval = async (id: string, updates: Partial<PaymentApproval>): Promise<PaymentApproval> => fetchFromApi<PaymentApproval>(`/payment-approvals/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+export const getPaymentApprovals = (): Promise<PaymentApproval[]> => fetchFromApi<PaymentApproval[]>('/payment-approvals');
+export const updatePaymentApproval = (id: string, updates: Partial<PaymentApproval>): Promise<PaymentApproval> => fetchFromApi<PaymentApproval>(`/payment-approvals/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 
-// Cashflow Forecast
-export const getCashflowForecast = async (): Promise<CashflowForecastData> => fetchFromApi<CashflowForecastData>('/financials/forecast');
+export const getCashflowForecast = (): Promise<CashflowForecastData> => fetchFromApi<CashflowForecastData>('/financials/forecast');
 
 
 // --- Service Tickets ---
 export const getServiceTickets = (): Promise<ServiceTicket[]> => fetchFromApi<ServiceTicket[]>('/service-tickets');
-export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id' | 'ticket_code' | 'createdAt'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
+export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
 export const updateServiceTicket = (id: string, updates: Partial<ServiceTicket>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>(`/service-tickets/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteServiceTicket = (id: string): Promise<void> => fetchFromApi<void>(`/service-tickets/${id}`, { method: 'DELETE' });
 
@@ -181,29 +168,7 @@ export const addSupplier = (supplier: Omit<Supplier, 'id'>): Promise<Supplier> =
 export const updateSupplier = (id: string, updates: Partial<Supplier>): Promise<Supplier> => fetchFromApi<Supplier>(`/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteSupplier = (id: string): Promise<void> => fetchFromApi<void>(`/suppliers/${id}`, { method: 'DELETE' });
 
-// --- Warranty Claim Service ---
-export const getWarrantyClaims = async (): Promise<WarrantyClaim[]> => {
-    return fetchFromApi<WarrantyClaim[]>('/warranty-claims');
-};
-export const addWarrantyClaim = async (claim: Omit<WarrantyClaim, 'id' | 'claim_code' | 'created_at'>): Promise<WarrantyClaim> => {
-    return fetchFromApi<WarrantyClaim>('/warranty-claims', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(claim),
-    });
-};
-export const updateWarrantyClaim = async (id: string, updates: Partial<WarrantyClaim>): Promise<WarrantyClaim> => {
-    return fetchFromApi<WarrantyClaim>(`/warranty-claims/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-    });
-};
-export const deleteWarrantyClaim = async (id: string): Promise<void> => {
-    return fetchFromApi<void>(`/warranty-claims/${id}`, { method: 'DELETE' });
-};
-
-// --- Warranty Ticket Service (if separate) ---
+// --- Warranty Ticket Service ---
 export const getWarrantyTickets = async (): Promise<WarrantyTicket[]> => {
     return fetchFromApi<WarrantyTicket[]>('/warranty-tickets');
 };
@@ -229,7 +194,7 @@ export const deleteWarrantyTicket = async (id: string): Promise<void> => {
 };
 
 
-// --- INVENTORY & LOGISTICS SERVICES (Currently using localStorage for persistence until backend endpoints are ready) ---
+// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage for now) ---
 
 // Warehouses
 export const getWarehouses = async (): Promise<Warehouse[]> => {
@@ -327,7 +292,7 @@ export const deleteStockTransfer = async (id: string): Promise<void> => {
     setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, transfers.filter(t => t.id !== id));
 };
 
-// --- Marketing & Audit Placeholders ---
+// Placeholder for other missing functions
 export const getAdCampaigns = async (): Promise<AdCampaign[]> => { return []; };
 export const addAdCampaign = async (campaign: Omit<AdCampaign, 'id'>): Promise<void> => { };
 export const updateAdCampaign = async (id: string, updates: Partial<AdCampaign>): Promise<void> => { };
@@ -341,6 +306,6 @@ export const deleteEmailCampaign = async (id: string): Promise<void> => { };
 export const getEmailSubscribers = async (): Promise<EmailSubscriber[]> => { return []; };
 export const deleteEmailSubscriber = async (id: number): Promise<void> => { };
 
-export const getAuditLogs = async (): Promise<AuditLog[]> => fetchFromApi<AuditLog[]>('/audit-logs');
+export const getAuditLogs = async (): Promise<any[]> => fetchFromApi<any[]>('/audit-logs');
 
 export const checkBackendHealth = (): Promise<any> => fetchFromApi('/health');

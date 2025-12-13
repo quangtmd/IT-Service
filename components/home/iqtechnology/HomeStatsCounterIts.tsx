@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants.tsx';
+import * as Constants from '../../../constants';
 import { SiteSettings, HomepageStatItem } from '../../../types';
 import { Canvas } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';

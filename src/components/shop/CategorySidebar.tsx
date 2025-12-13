@@ -1,28 +1,30 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import * as Constants from '@/constants';
-import Button from '@/components/ui/Button';
+import * as Constants from '../../constants.tsx';
+import Button from '../ui/Button';
 
 interface CategorySidebarProps {
   currentMainCategorySlug: string | null;
   currentSubCategorySlug: string | null;
-  isCollapsed?: boolean; 
+  isCollapsed?: boolean; // Added prop
 }
 
 const CategorySidebar: React.FC<CategorySidebarProps> = ({
   currentMainCategorySlug,
   currentSubCategorySlug,
-  isCollapsed = false,
+  isCollapsed = false, // Default to expanded
 }) => {
   return (
     <div className={`bg-bgBase rounded-lg shadow-md border border-borderDefault h-full flex flex-col overflow-hidden transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-full'}`}>
       
+      {/* Header */}
       <div className={`bg-primary text-white flex items-center transition-all duration-300 ${isCollapsed ? 'p-3 justify-center' : 'p-4'}`}>
         <i className="fas fa-bars text-xl"></i>
         {!isCollapsed && <h2 className="text-lg font-bold ml-3 whitespace-nowrap">DANH MỤC</h2>}
       </div>
       
+      {/* Navigation Items */}
       <nav className={`flex-grow p-2 space-y-1 overflow-y-auto overflow-x-hidden ${isCollapsed ? 'scrollbar-hide' : ''}`}>
         <Link
             to="/shop"
@@ -34,6 +36,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
             <i className="fas fa-th-large text-lg"></i>
             {!isCollapsed && <span className="ml-3 text-sm truncate">Tất cả sản phẩm</span>}
             
+            {/* Tooltip for collapsed mode */}
             {isCollapsed && (
                 <div className="absolute left-full ml-2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
                     Tất cả sản phẩm
@@ -58,6 +61,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
                 <i className={`fas fa-chevron-right text-xs transition-transform duration-200 ${currentMainCategorySlug === mainCat.slug ? 'rotate-90' : ''}`}></i>
               )}
 
+              {/* Tooltip for collapsed mode */}
               {isCollapsed && (
                 <div className="absolute left-full ml-2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
                     {mainCat.name}
@@ -65,6 +69,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
               )}
             </Link>
             
+            {/* Flyout Panel (Simplified logic for both modes if needed, but mostly for collapsed) */}
             {mainCat.subCategories.length > 0 && (
               <div className={`absolute left-full top-0 w-56 bg-white rounded-r-lg shadow-xl border border-gray-200 p-3 hidden group-hover:block z-50 ml-1`}>
                 <h4 className="font-bold text-primary mb-2 text-sm border-b pb-1">{mainCat.name}</h4>

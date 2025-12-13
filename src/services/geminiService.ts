@@ -1,7 +1,7 @@
 
-import { GoogleGenAI, Type } from "@google/genai"; 
+import { GoogleGenAI, Chat, GenerateContentResponse, Part, Content, Type, FunctionDeclaration } from "@google/genai"; 
 import * as Constants from '../constants.tsx';
-import { AIBuildResponse, SiteSettings, Article, Product, AIBuildSuggestionsResponse, User, GroundingChunk } from "../types"; 
+import { AIBuildResponse, SiteSettings, Article, Product, AIBuildSuggestionsResponse, User } from "../types"; 
 import { MOCK_SERVICES } from '../data/mockData';
 import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
 
@@ -9,8 +9,8 @@ import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
 const CHAT_MODEL_NAME = 'gemini-2.5-flash';
 const BUILDER_MODEL_NAME = 'gemini-2.5-flash';
 
-let aiInstance: any | null = null;
-let chatSessionInstance: any | null = null; 
+let aiInstance: GoogleGenAI | null = null;
+let chatSessionInstance: Chat | null = null; 
 
 const getAiClient = (): GoogleGenAI | null => {
   const apiKey = process.env.API_KEY;
@@ -23,7 +23,7 @@ const getAiClient = (): GoogleGenAI | null => {
   return aiInstance;
 };
 
-const getOrderStatusFunctionDeclaration: any = {
+const getOrderStatusFunctionDeclaration: FunctionDeclaration = {
   name: 'getOrderStatus',
   parameters: {
     type: Type.OBJECT,
@@ -35,7 +35,7 @@ const getOrderStatusFunctionDeclaration: any = {
   },
 };
 
-const lookupCustomerOrdersFunctionDeclaration: any = {
+const lookupCustomerOrdersFunctionDeclaration: FunctionDeclaration = {
   name: 'lookupCustomerOrders',
   parameters: {
     type: Type.OBJECT,
@@ -51,9 +51,9 @@ const lookupCustomerOrdersFunctionDeclaration: any = {
 export const startChat = (
   siteSettings: SiteSettings, 
   currentUser?: User | null, 
-  history?: any[], 
+  history?: Content[], 
   systemInstructionOverride?: string
-): any => {
+): Chat => {
   const client = getAiClient();
   if (!client) throw new Error(Constants.API_KEY_ERROR_MESSAGE);
 
@@ -107,8 +107,8 @@ Nếu khách hỏi về đơn hàng của họ, hãy ưu tiên dùng tool 'looku
 
 export const sendMessageToChatStream = async (
   message: string,
-  currentChatInstance?: any
-): Promise<AsyncIterable<any>> => {
+  currentChatInstance?: Chat
+): Promise<AsyncIterable<GenerateContentResponse>> => {
   const chatToUse = currentChatInstance || chatSessionInstance;
   if (!chatToUse) throw new Error("Chat not initialized.");
   return await chatToUse.sendMessageStream({ message });
@@ -118,13 +118,13 @@ export const sendMessageWithImage = async (
   message: string,
   base64Data: string,
   mimeType: string,
-  currentChatInstance?: any
-): Promise<AsyncIterable<any>> => {
+  currentChatInstance?: Chat
+): Promise<AsyncIterable<GenerateContentResponse>> => {
     const chatToUse = currentChatInstance || chatSessionInstance;
     if (!chatToUse) throw new Error("Chat not initialized.");
 
-    const imagePart: any = { inlineData: { data: base64Data, mimeType: mimeType } };
-    const textPart: any = { text: message };
+    const imagePart: Part = { inlineData: { data: base64Data, mimeType: mimeType } };
+    const textPart: Part = { text: message };
     
     return await chatToUse.sendMessageStream({ message: { parts: [textPart, imagePart] } });
 };
@@ -157,7 +157,7 @@ Ví dụ: { "cpu": { "name": "AMD Ryzen 5 5600X", "reasoning": "Hiệu năng t�
 Nếu ngân sách quá thấp cho nhu cầu sử dụng, hãy trả về JSON có dạng { "error": "Ngân sách quá thấp cho nhu cầu này." }.`;
   
   try {
-    const response: any = await client.models.generateContent({
+    const response: GenerateContentResponse = await client.models.generateContent({
       model: BUILDER_MODEL_NAME,
       contents: prompt,
       config: {
@@ -233,7 +233,7 @@ Phản hồi của bạn PHẢI tuân thủ nghiêm ngặt theo JSON schema đã
   };
 
   try {
-    const response: any = await client.models.generateContent({
+    const response: GenerateContentResponse = await client.models.generateContent({
       model: BUILDER_MODEL_NAME,
       contents: prompt,
       config: {
@@ -257,7 +257,7 @@ export const generateTextWithGoogleSearch = async (prompt: string): Promise<{ te
       throw new Error(Constants.API_KEY_ERROR_MESSAGE);
   }
   try {
-    const response: any = await client.models.generateContent({
+    const response: GenerateContentResponse = await client.models.generateContent({
       model: CHAT_MODEL_NAME, 
       contents: prompt,
       config: {
@@ -285,7 +285,7 @@ export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
     Trả về kết quả dưới dạng một mảng JSON.`;
 
     try {
-        const response: any = await client.models.generateContent({
+        const response = await client.models.generateContent({
             model: CHAT_MODEL_NAME,
             contents: prompt,
             config: {

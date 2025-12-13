@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product, Order } from '../../types';
 import ChatMessage from './ChatMessage';
@@ -114,8 +115,11 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   
   useEffect(() => {
     // When the bot is not loading and the chat is open, focus the input
+    // Use a slight delay to allow the UI transition to complete on mobile
     if (!isLoading && isOpen && inputRef.current) {
-        inputRef.current.focus();
+       setTimeout(() => {
+          inputRef.current?.focus();
+       }, 300); 
     }
   }, [isLoading, isOpen]);
 
@@ -126,9 +130,13 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const newChatSession = geminiService.startChat(siteSettings); 
+      // Update startChat to pass currentUser
+      const newChatSession = geminiService.startChat(siteSettings, currentUser); 
       setChatSession(newChatSession);
-      const initialBotGreeting = `Xin chào ${userName}! Tôi là trợ lý AI của ${siteSettings.companyName}. Tôi có thể giúp gì cho bạn?`;
+      const initialBotGreeting = currentUser 
+        ? `Chào ${currentUser.username}! Em là trợ lý AI của ${siteSettings.companyName}. Em có thể hỗ trợ gì cho anh/chị hôm nay ạ?`
+        : `Xin chào ${userName}! Em là trợ lý AI của ${siteSettings.companyName}. Em có thể giúp gì cho bạn ạ?`;
+        
       const welcomeMessage = { 
         id: Date.now().toString(), 
         text: initialBotGreeting,
@@ -139,8 +147,8 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
       
       const newLogSession: ChatLogSession = {
         id: `chat-${Date.now()}`,
-        userName: userName,
-        userPhone: userPhone,
+        userName: currentUser ? currentUser.username : userName,
+        userPhone: currentUser ? (currentUser.phone || '') : userPhone,
         startTime: new Date().toISOString(),
         messages: [welcomeMessage]
       };
@@ -162,7 +170,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [isOpen, isUserInfoSubmitted, chatSession, siteSettings, userName, userPhone]);
+  }, [isOpen, isUserInfoSubmitted, chatSession, siteSettings, userName, userPhone, currentUser]);
 
 
   useEffect(() => {
@@ -338,61 +346,85 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
         }
 
         if (functionCalls.length > 0) {
-            setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: "Đang tìm kiếm thông tin đơn hàng..." } : msg));
+            setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: "Đang tìm kiếm thông tin..." } : msg));
             setIsLoading(true);
 
-            const call = functionCalls[0]; // Process first function call
-            if (call.name === 'getOrderStatus') {
-                let orderResult: Order | null = null;
+            // Process all function calls (typically just one in this context)
+            for (const call of functionCalls) {
+                let toolResponsePayload;
+                let functionName = call.name;
+
                 try {
-                    let orderIdArg = call.args.orderId;
-                    if (typeof orderIdArg !== 'string') {
-                        orderIdArg = String(orderIdArg);
-                    }
-                    
-                    // Normalize input for better matching
-                    const cleanInput = orderIdArg.trim().toLowerCase();
-                    // Also prepare a digit-only version for looser matching if strict fails
-                    const cleanInputDigits = cleanInput.replace(/\D/g, '');
-        
-                    if (cleanInput) {
+                    // --- TOOL 1: getOrderStatus ---
+                    if (functionName === 'getOrderStatus') {
+                        let orderIdArg = call.args.orderId;
+                        if (typeof orderIdArg !== 'string') orderIdArg = String(orderIdArg);
+                        
+                        const cleanInput = orderIdArg.trim().toLowerCase();
+                        const cleanInputDigits = cleanInput.replace(/\D/g, '');
+            
+                        if (cleanInput) {
+                            const allOrders = await getOrders();
+                            const orderResult = allOrders.find(o => {
+                                const id = o.id.toLowerCase();
+                                if (id === cleanInput) return true;
+                                if (id.endsWith(cleanInput)) return true;
+                                if (cleanInput.length > 5 && id.includes(cleanInput)) return true;
+                                const idDigits = id.replace(/\D/g, '');
+                                if (cleanInputDigits.length >= 4 && idDigits.endsWith(cleanInputDigits)) return true;
+                                return false;
+                            }) || null;
+
+                            if (orderResult) {
+                                toolResponsePayload = {
+                                    id: orderResult.id,
+                                    status: orderResult.status,
+                                    totalAmount: orderResult.totalAmount,
+                                    shippingAddress: orderResult.customerInfo.address,
+                                    shippingCarrier: orderResult.shippingInfo?.carrier,
+                                    shippingTrackingNumber: orderResult.shippingInfo?.trackingNumber
+                                };
+                            } else {
+                                toolResponsePayload = { status: "not_found", message: `Không tìm thấy đơn hàng nào khớp với mã "${orderIdArg}".` };
+                            }
+                        }
+                    } 
+                    // --- TOOL 2: lookupCustomerOrders ---
+                    else if (functionName === 'lookupCustomerOrders') {
+                        let identifier = call.args.identifier;
+                        if (typeof identifier !== 'string') identifier = String(identifier);
+                        const cleanIdentifier = identifier.trim().toLowerCase();
+
                         const allOrders = await getOrders();
-                        orderResult = allOrders.find(o => {
-                            const id = o.id.toLowerCase();
-                            
-                            // 1. Exact match
-                            if (id === cleanInput) return true;
-                            
-                            // 2. Ends with (common for finding by suffix)
-                            if (id.endsWith(cleanInput)) return true;
+                        // Filter orders matching phone, email, or user ID
+                        const matchingOrders = allOrders.filter(o => {
+                            const phoneMatch = o.customerInfo.phone?.replace(/\D/g, '').includes(cleanIdentifier.replace(/\D/g, ''));
+                            const emailMatch = o.customerInfo.email?.toLowerCase().includes(cleanIdentifier);
+                            const userIdMatch = o.userId === cleanIdentifier;
+                            return phoneMatch || emailMatch || userIdMatch;
+                        });
 
-                            // 3. Contains (if input is significant enough, e.g. > 5 chars)
-                            if (cleanInput.length > 5 && id.includes(cleanInput)) return true;
-                            
-                            // 4. Digit suffix match (fallback)
-                            const idDigits = id.replace(/\D/g, '');
-                            // Only match digits if user provided at least 4 digits to avoid broad matches
-                            if (cleanInputDigits.length >= 4 && idDigits.endsWith(cleanInputDigits)) return true;
-                            
-                            return false;
-                        }) || null;
-                    }
-
-                    let toolResponsePayload;
-                    if (orderResult) {
-                        // Create a simplified, flat summary object for the AI.
-                        toolResponsePayload = {
-                            id: orderResult.id,
-                            status: orderResult.status,
-                            totalAmount: orderResult.totalAmount,
-                            shippingAddress: orderResult.customerInfo.address,
-                            shippingCarrier: orderResult.shippingInfo?.carrier,
-                            shippingTrackingNumber: orderResult.shippingInfo?.trackingNumber
-                        };
+                        if (matchingOrders.length > 0) {
+                            // Provide a summary of recent orders (max 5)
+                            toolResponsePayload = {
+                                count: matchingOrders.length,
+                                orders: matchingOrders.slice(0, 5).map(o => ({
+                                    id: o.id,
+                                    date: o.orderDate,
+                                    status: o.status,
+                                    total: o.totalAmount,
+                                    itemCount: o.items.length
+                                }))
+                            };
+                        } else {
+                            toolResponsePayload = { 
+                                count: 0, 
+                                message: `Không tìm thấy lịch sử mua hàng nào cho "${identifier}".` 
+                            };
+                        }
                     } else {
-                        toolResponsePayload = { status: "not_found", message: `Không tìm thấy đơn hàng nào khớp với mã "${orderIdArg}".` };
+                        toolResponsePayload = { error: "Unknown function called." };
                     }
-
 
                     const toolResponseStream = await chatSession.sendToolResponse({
                         functionResponses: [{
@@ -414,9 +446,10 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                             });
                         }
                     }
+
                 } catch (toolError) {
                      console.error("Error executing tool or sending response:", toolError);
-                     setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: 'Rất tiếc, đã có lỗi khi truy xuất thông tin đơn hàng.', sender: 'system' } : msg));
+                     setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: 'Rất tiếc, đã có lỗi khi truy xuất thông tin.', sender: 'system' } : msg));
                 }
             }
         }
@@ -448,95 +481,128 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
   return (
     <div
-      className={`fixed bottom-0 right-0 sm:bottom-6 sm:right-6 bg-bgBase rounded-t-lg sm:rounded-lg shadow-xl w-full sm:w-96 h-[70vh] sm:h-[calc(100vh-10rem)] max-h-[600px] flex flex-col z-50 transition-all duration-300 ease-in-out transform border border-borderDefault ${
-        isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full sm:translate-y-16 opacity-0 pointer-events-none'
-      }`}
+      className={`fixed z-50 transition-all duration-300 ease-in-out bg-bgBase shadow-2xl flex flex-col
+        ${isOpen 
+          ? 'translate-y-0 opacity-100 pointer-events-auto' 
+          : 'translate-y-full opacity-0 pointer-events-none'
+        }
+        /* Mobile Styles: Full screen fixed */
+        inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-96 sm:h-[calc(100vh-10rem)] sm:max-h-[600px] sm:rounded-xl sm:border sm:border-borderDefault
+      `}
       role="dialog"
       aria-modal="true"
       aria-labelledby="chatbot-title"
     >
-      <header className="bg-primary text-white p-4 flex justify-between items-center rounded-t-lg sm:rounded-t-lg">
-        <h3 id="chatbot-title" className="font-semibold text-lg">AI Chatbot {siteSettings.companyName}</h3>
-        <button onClick={() => setIsOpen(false)} className="text-xl hover:text-red-100" aria-label="Đóng chatbot">
-          <i className="fas fa-times"></i>
+      <header className="bg-primary text-white p-4 flex justify-between items-center sm:rounded-t-xl shadow-md shrink-0">
+        <div className="flex flex-col">
+            <h3 id="chatbot-title" className="font-semibold text-lg flex items-center gap-2">
+                <i className="fas fa-robot"></i>
+                Trợ lý AI {siteSettings.companyName}
+            </h3>
+            {currentUser && <span className="text-xs text-white/80">Xin chào, {currentUser.username}</span>}
+        </div>
+        <button onClick={() => setIsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors" aria-label="Đóng chatbot">
+          <i className="fas fa-times text-xl"></i>
         </button>
       </header>
 
       {!isUserInfoSubmitted ? (
-        <div className="p-6 flex-grow flex flex-col justify-center bg-bgCanvas">
-          <h4 className="text-lg font-semibold text-textBase mb-3 text-center">Thông tin của bạn</h4>
-          <p className="text-sm text-textMuted mb-4 text-center">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
-          {userInfoError && <p className="text-sm text-danger-text mb-3 bg-danger-bg p-2 rounded-md">{userInfoError}</p>}
-          <form onSubmit={handleUserInfoSubmit} className="space-y-4">
+        <div className="p-6 flex-grow flex flex-col justify-center bg-bgCanvas overflow-y-auto">
+          <div className="text-center mb-8">
+             <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
+                <i className="fas fa-user-shield text-4xl"></i>
+             </div>
+             <h4 className="text-xl font-bold text-textBase mb-2">Thông tin của bạn</h4>
+             <p className="text-sm text-textMuted">Vui lòng cung cấp thông tin để chúng tôi hỗ trợ bạn tốt hơn.</p>
+          </div>
+          
+          {userInfoError && <p className="text-sm text-danger-text mb-4 bg-danger-bg p-3 rounded-md border border-danger-border text-center">{userInfoError}</p>}
+          
+          <form onSubmit={handleUserInfoSubmit} className="space-y-5 max-w-xs mx-auto w-full">
             <div>
               <label htmlFor="userName" className="sr-only">Tên của bạn</label>
-              <input
-                type="text"
-                id="userName"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                placeholder="Tên của bạn *"
-                className="input-style bg-white text-textBase w-full" 
-                aria-required="true"
-              />
+              <div className="relative">
+                  <i className="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-textSubtle"></i>
+                  <input
+                    type="text"
+                    id="userName"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="Tên của bạn *"
+                    className="input-style pl-10 w-full py-3" 
+                    aria-required="true"
+                  />
+              </div>
             </div>
             <div>
               <label htmlFor="userPhone" className="sr-only">Số điện thoại</label>
-              <input
-                type="tel"
-                id="userPhone"
-                value={userPhone}
-                onChange={(e) => setUserPhone(e.target.value)}
-                placeholder="Số điện thoại *"
-                className="input-style bg-white text-textBase w-full" 
-                aria-required="true"
-              />
+              <div className="relative">
+                  <i className="fas fa-phone absolute left-3 top-1/2 -translate-y-1/2 text-textSubtle"></i>
+                  <input
+                    type="tel"
+                    id="userPhone"
+                    value={userPhone}
+                    onChange={(e) => setUserPhone(e.target.value)}
+                    placeholder="Số điện thoại *"
+                    className="input-style pl-10 w-full py-3" 
+                    aria-required="true"
+                  />
+              </div>
             </div>
-            <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
+            <Button type="submit" className="w-full shadow-lg shadow-primary/30" size="lg" isLoading={isLoading}>
               Bắt đầu trò chuyện
             </Button>
           </form>
         </div>
       ) : (
         <>
-          <div className="flex-grow p-4 overflow-y-auto bg-bgCanvas" aria-live="polite">
+          <div className="flex-grow p-4 overflow-y-auto bg-bgCanvas scroll-smooth" aria-live="polite">
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} groundingChunks={msg.id === currentBotMessageId ? currentGroundingChunks : undefined} />
             ))}
             <div ref={messagesEndRef} />
-            {error && <div className="text-danger-text text-sm p-2 bg-danger-bg rounded border border-danger-border">{error}</div>}
+            {error && <div className="text-danger-text text-sm p-3 bg-danger-bg rounded-lg border border-danger-border mx-4 mb-4 text-center">{error}</div>}
           </div>
 
-          <div className="p-4 border-t border-borderDefault bg-bgBase">
+          <div className="p-3 sm:p-4 border-t border-borderDefault bg-bgBase shrink-0 pb-safe">
             {imagePreview && (
-                <div className="mb-2 relative w-20 h-20">
-                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover rounded-md" />
-                    <button onClick={handleRemoveImage} className="absolute -top-1 -right-1 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md">&times;</button>
+                <div className="mb-2 relative w-20 h-20 group">
+                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover rounded-lg border border-borderDefault shadow-sm" />
+                    <button onClick={handleRemoveImage} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600 transition-colors">&times;</button>
                 </div>
             )}
-            <form onSubmit={handleSendMessage}>
-              <div className="flex items-center space-x-2">
-                <input type="file" ref={imageInputRef} onChange={handleImageChange} accept="image/*" className="hidden" aria-hidden="true" />
-                <Button type="button" variant="ghost" className="!px-2 text-textMuted" onClick={() => imageInputRef.current?.click()} aria-label="Đính kèm ảnh" title="Đính kèm ảnh">
-                    <i className="fas fa-paperclip"></i>
-                </Button>
-                 <Button type="button" variant="ghost" className={`!px-2 ${isRecording ? 'text-red-500 animate-pulse' : 'text-textMuted'}`} onClick={handleToggleRecording} aria-label="Bật/tắt nhập giọng nói" title="Nhập bằng giọng nói">
-                    <i className="fas fa-microphone"></i>
-                </Button>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Nhập tin nhắn..."
-                  className="flex-grow bg-white border border-borderStrong text-textBase rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none placeholder:text-textSubtle"
-                  disabled={isLoading || !chatSession}
-                  aria-label="Tin nhắn của bạn"
-                />
-                <Button type="submit" isLoading={isLoading} disabled={isLoading || (!input.trim() && !imageFile) || !chatSession} aria-label="Gửi tin nhắn" className="w-10 h-10 !p-0 flex-shrink-0">
-                  <i className="fas fa-paper-plane"></i>
-                </Button>
-              </div>
+            <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+               <div className="flex-shrink-0 flex gap-1">
+                    <input type="file" ref={imageInputRef} onChange={handleImageChange} accept="image/*" className="hidden" aria-hidden="true" />
+                    <button type="button" className="w-10 h-10 flex items-center justify-center text-textMuted hover:text-primary hover:bg-bgMuted rounded-full transition-colors" onClick={() => imageInputRef.current?.click()} aria-label="Đính kèm ảnh">
+                        <i className="fas fa-paperclip text-lg"></i>
+                    </button>
+                    <button type="button" className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${isRecording ? 'text-red-500 bg-red-50 animate-pulse' : 'text-textMuted hover:text-primary hover:bg-bgMuted'}`} onClick={handleToggleRecording} aria-label="Nhập giọng nói">
+                        <i className="fas fa-microphone text-lg"></i>
+                    </button>
+               </div>
+               
+               <div className="flex-grow relative">
+                    <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Nhập tin nhắn..."
+                    className="w-full bg-bgMuted border-none text-textBase rounded-2xl py-3 px-4 focus:ring-2 focus:ring-primary/50 outline-none placeholder:text-textSubtle shadow-inner"
+                    disabled={isLoading || !chatSession}
+                    aria-label="Tin nhắn của bạn"
+                    />
+               </div>
+
+                <button 
+                    type="submit" 
+                    disabled={isLoading || (!input.trim() && !imageFile) || !chatSession} 
+                    className="w-10 h-10 flex-shrink-0 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md transform active:scale-95"
+                    aria-label="Gửi"
+                >
+                  {isLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-paper-plane"></i>}
+                </button>
             </form>
           </div>
         </>

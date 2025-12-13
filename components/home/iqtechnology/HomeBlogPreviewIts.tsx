@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import useIntersectionObserver from '../../../hooks/useIntersectionObserver.ts';
-import * as Constants from '../../../constants.tsx';
-import { MOCK_ARTICLES } from '../../../data/mockData.ts';
-import { SiteSettings, Article } from '../../../types.ts';
+import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
+import * as Constants from '../../../constants';
+import { MOCK_ARTICLES } from '../../../data/mockData';
+import { SiteSettings, Article } from '../../../types';
 import Button from '../../ui/Button';
 import { Canvas } from '@react-three/fiber';
-import DataStreamTunnelScene from '../three/DataStreamTunnelScene.tsx';
-import TiltCard from '../../ui/TiltCard.tsx';
+import DataStreamTunnelScene from '../three/DataStreamTunnelScene';
+import TiltCard from '../../ui/TiltCard';
 
 const BlogItemCard: React.FC<{article: Article, index: number}> = ({article, index}) => {
     const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });

@@ -21,6 +21,11 @@ body {
   flex-direction: column;
 }
 
+/* Utility for iPhone X+ safe areas */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* --- THEME VARIABLES --- */
 :root {
   /* Light Mode Defaults */
