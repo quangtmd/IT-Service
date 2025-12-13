@@ -2,12 +2,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
-import { CartProvider } from './contexts/CartContext';
-import { AuthProvider } from './contexts/AuthContext';
-import { ChatbotProvider } from './contexts/ChatbotContext';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { ToastProvider } from './contexts/ToastContext';
-import ErrorBoundary from './ErrorBoundary';
+import { CartProvider } from './contexts/CartContext.tsx';
+import { AuthProvider } from './contexts/AuthContext.tsx';
+import { ChatbotProvider } from './contexts/ChatbotContext.tsx';
+import { ThemeProvider } from './contexts/ThemeContext.tsx';
+import { ToastProvider } from './contexts/ToastContext.tsx';
+import ErrorBoundary from './ErrorBoundary.tsx';
 import './index.css';
 
 function renderApp() {
