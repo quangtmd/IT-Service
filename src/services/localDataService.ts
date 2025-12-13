@@ -29,19 +29,18 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-// Directly use the constant which now contains the full URL logic.
-// Ensure no trailing slash from the constant.
+// FIX: Sử dụng URL từ constants để trỏ đúng về backend server (https://it-service-app-n9as.onrender.com)
+// Thay vì dùng "" (tương đối), điều này bắt buộc khi FE và BE nằm trên 2 domain khác nhau.
 const API_BASE_URL = Constants.BACKEND_API_BASE_URL.replace(/\/+$/, '');
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Ensure endpoint has a leading slash
+    // Đảm bảo endpoint bắt đầu bằng /
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
-    // Construct the full URL. If API_BASE_URL contains "https://...", this forms a valid absolute URL.
-    // We add '/api' because the backend routes are prefixed with it (e.g. app.use('/api', apiRouter))
-    // UNLESS the endpoint passed already contains /api, but the service functions below just pass e.g. '/users'.
+    // URL cuối cùng: BASE_URL + /api + endpoint
     const url = `${API_BASE_URL}/api${path}`;
     
+    // Debug log để kiểm tra URL thực tế đang gọi
     console.log(`[API Call] ${options.method || 'GET'} ${url}`);
 
     try {
