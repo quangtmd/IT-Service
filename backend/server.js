@@ -114,12 +114,10 @@ apiRouter.post('/users/login', async (req, res) => {
 
 // === PRODUCTS ===
 
-// 1. Featured Products (EXPLICIT ROUTE)
-// QUAN TRỌNG: Route này PHẢI nằm trước /products/:id
+// 1. Featured Products (EXPLICIT ROUTE) - MUST BE FIRST
 const getFeaturedHandler = async (req, res) => {
     console.log("DEBUG: Hit featured products endpoint");
     try {
-        // Lấy 4 sản phẩm có is_featured = 1 hoặc giá cao nhất nếu không có featured
         const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
         const [rows] = await pool.query(query);
         res.json(rows.map(deserializeProduct));
@@ -128,14 +126,12 @@ const getFeaturedHandler = async (req, res) => {
         res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 };
-
 apiRouter.get('/products/featured', getFeaturedHandler); 
 
-// 2. Product Detail (Dynamic ID)
-// Đặt sau /featured để tránh nhận nhầm 'featured' là :id
+// 2. Product Detail (Dynamic ID) - MUST BE AFTER STATIC ROUTES
 apiRouter.get('/products/:id', async (req, res) => {
     const productId = req.params.id;
-    if (productId === 'featured') return getFeaturedHandler(req, res); // Fallback safety
+    if (productId === 'featured') return getFeaturedHandler(req, res); // Fallback
 
     try {
         const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [productId]);

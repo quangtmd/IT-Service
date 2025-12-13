@@ -20,8 +20,9 @@ export const ADMIN_EMAIL = "quangtmdit@gmail.com";
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
 
 // --- BACKEND API CONFIGURATION ---
-// FIX: Hardcoded backend URL to ensure connection. 
-// When deployed as a static site, relative paths (/api) will 404 because the frontend server doesn't host the API.
+// FIX: Force use of the backend service URL directly.
+// The previous "tqtechnology" URL was likely the frontend static site, which cannot handle API requests.
+// We revert to the specific backend service URL you had before, or you can update this string if you have a new backend URL.
 export const BACKEND_API_BASE_URL = "https://it-service-app-n9as.onrender.com";
 
 // --- STORAGE KEYS ---
