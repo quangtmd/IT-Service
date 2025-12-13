@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import mysql from 'mysql2/promise';
+import pool from './db.js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -12,20 +12,9 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+app.set('trust proxy', true); // Enable trusting proxy headers for req.ip
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Increase limit for media uploads
-
-const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-};
-
-let pool;
 
 // Helper function to filter an object based on allowed keys
 const filterObject = (obj, allowedKeys) => {
@@ -41,7 +30,6 @@ const filterObject = (obj, allowedKeys) => {
 
 (async () => {
     try {
-        pool = mysql.createPool(dbConfig);
         const connection = await pool.getConnection();
         console.log("✅ Kết nối tới database MySQL thành công!");
         connection.release();
@@ -81,6 +69,28 @@ const filterObject = (obj, allowedKeys) => {
     }
 })();
 
+// --- Audit Log Middleware/Helper ---
+const logActivity = async (req, action, targetType, targetId, details = {}) => {
+  try {
+    // In a real app, you'd get userId from a verified JWT token or session
+    const userId = req.body.userId || req.params.id || 'system'; 
+    const username = req.body.username || 'System Action'; // Placeholder
+
+    const logEntry = {
+      userId,
+      username,
+      action,
+      targetType,
+      targetId,
+      details: JSON.stringify(details),
+      ipAddress: req.ip,
+    };
+    await pool.query('INSERT INTO AuditLogs SET ?', logEntry);
+  } catch (error) {
+    console.error('Failed to write to audit log:', error);
+  }
+};
+
 
 app.get('/api/health', async (req, res) => {
     try {
@@ -110,7 +120,7 @@ app.get('/api/health', async (req, res) => {
                 break;
             case 'ER_NO_SUCH_TABLE':
                 errorCode = 'MISSING_TABLES';
-                errorMessage = `Kết nối database thành công nhưng không tìm thấy bảng 'Products'. Vui lòng chạy SQL để tạo bảng.`;
+                errorMessage = `Kết nối database thành công nhưng không tìm thấy bảng 'Products'. Vui lòng chạy lại SQL để tạo bảng.`;
                 break;
         }
         
@@ -231,10 +241,23 @@ app.post('/api/products', async (req, res) => {
             status: productData.status || 'Mới',
             brand: productData.brand || null,
             tags: JSON.stringify(productData.tags || []),
-            isVisible: isVisible === undefined ? true : Boolean(isVisible)
+            isVisible: isVisible === undefined ? true : Boolean(isVisible),
+            productCode: productData.productCode || null,
+            printName: productData.printName || null,
+            purchasePrice: productData.purchasePrice ? Number(productData.purchasePrice) : null,
+            wholesalePrice: productData.wholesalePrice ? Number(productData.wholesalePrice) : null,
+            hasVAT: productData.hasVAT ? 1 : 0,
+            barcode: productData.barcode || null,
+            unit: productData.unit || null,
+            warrantyPeriod: productData.warrantyPeriod ? Number(productData.warrantyPeriod) : null,
+            countryOfOrigin: productData.countryOfOrigin || null,
+            yearOfManufacture: productData.yearOfManufacture ? Number(productData.yearOfManufacture) : null,
+            supplierId: productData.supplierId || null,
+            supplierName: productData.supplierName || null,
         };
 
         await pool.query('INSERT INTO Products SET ?', productToDb);
+        logActivity(req, 'Tạo mới sản phẩm', 'Product', productToDb.id, { name: productToDb.name });
         const responseProduct = { ...req.body, id: productToDb.id };
         res.status(201).json(responseProduct);
     } catch (error) {
@@ -263,9 +286,22 @@ app.put('/api/products/:id', async (req, res) => {
             brand: productData.brand || null,
             tags: JSON.stringify(productData.tags || []),
             isVisible: isVisible === undefined ? true : Boolean(isVisible),
+            productCode: productData.productCode,
+            printName: productData.printName,
+            purchasePrice: productData.purchasePrice ? Number(productData.purchasePrice) : null,
+            wholesalePrice: productData.wholesalePrice ? Number(productData.wholesalePrice) : null,
+            hasVAT: productData.hasVAT,
+            barcode: productData.barcode,
+            unit: productData.unit,
+            warrantyPeriod: productData.warrantyPeriod ? Number(productData.warrantyPeriod) : null,
+            countryOfOrigin: productData.countryOfOrigin,
+            yearOfManufacture: productData.yearOfManufacture ? Number(productData.yearOfManufacture) : null,
+            supplierId: productData.supplierId,
+            supplierName: productData.supplierName,
         };
         
         const [result] = await pool.query('UPDATE Products SET ? WHERE id = ?', [fieldsToUpdate, id]);
+        logActivity(req, 'Cập nhật sản phẩm', 'Product', id, { name: fieldsToUpdate.name });
         
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy sản phẩm để cập nhật' });
@@ -284,6 +320,7 @@ app.delete('/api/products/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy sản phẩm để xóa' });
         }
+        logActivity(req, 'Xóa sản phẩm', 'Product', id);
         res.status(204).send();
     } catch (error) {
         console.error("Lỗi khi xóa sản phẩm:", error);
@@ -352,7 +389,14 @@ app.delete('/api/articles/:id', async (req, res) => {
 // --- ORDERS API ---
 app.get('/api/orders', async (req, res) => {
     try {
-        const [orders] = await pool.query('SELECT * FROM Orders ORDER BY orderDate DESC');
+        const [orders] = await pool.query(`
+            SELECT 
+                o.*, 
+                u_creator.username as creatorName 
+            FROM Orders o
+            LEFT JOIN Users u_creator ON o.creatorId = u_creator.id
+            ORDER BY o.orderDate DESC
+        `);
         const deserializedOrders = orders.map(o => ({
             ...o,
             customerInfo: JSON.parse(o.customerInfo || '{}'),
@@ -373,14 +417,21 @@ app.post('/api/orders', async (req, res) => {
         await pool.query('INSERT INTO Orders SET ?', {
             id: newOrder.id,
             userId: newOrder.userId || null,
+            creatorId: newOrder.creatorId || null,
             customerInfo: JSON.stringify(newOrder.customerInfo),
             items: JSON.stringify(newOrder.items),
+            subtotal: newOrder.subtotal || 0,
             totalAmount: newOrder.totalAmount,
+            paidAmount: newOrder.paidAmount || 0,
+            cost: newOrder.cost || 0,
+            profit: newOrder.profit || 0,
             orderDate: newOrder.orderDate,
             status: newOrder.status,
             shippingInfo: JSON.stringify(newOrder.shippingInfo || {}),
             paymentInfo: JSON.stringify(newOrder.paymentInfo),
+            notes: newOrder.notes || null,
         });
+        logActivity(req, 'Tạo mới đơn hàng', 'Order', newOrder.id);
         res.status(201).json(newOrder);
     } catch (error) {
         console.error("Lỗi khi tạo đơn hàng:", error);
@@ -391,29 +442,40 @@ app.post('/api/orders', async (req, res) => {
 app.put('/api/orders/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const updates = req.body;
-        // Serialize JSON fields before updating
-        const updatesForDb = {
-            ...updates,
-            customerInfo: JSON.stringify(updates.customerInfo || {}),
-            items: JSON.stringify(updates.items || []),
-            paymentInfo: JSON.stringify(updates.paymentInfo || {}),
-            shippingInfo: JSON.stringify(updates.shippingInfo || {}),
-        };
-        // remove id from updates object
-        delete updatesForDb.id;
 
+        const allowedFields = [
+            'userId', 'creatorId', 'customerInfo', 'items', 'subtotal',
+            'totalAmount', 'paidAmount', 'cost', 'profit', 'orderDate',
+            'status', 'shippingInfo', 'paymentInfo', 'notes'
+        ];
+        
+        const updatesForDb = filterObject(req.body, allowedFields);
+
+        // Serialize fields that are stored as JSON
+        if (updatesForDb.customerInfo) updatesForDb.customerInfo = JSON.stringify(updatesForDb.customerInfo);
+        if (updatesForDb.items) updatesForDb.items = JSON.stringify(updatesForDb.items);
+        if (updatesForDb.paymentInfo) updatesForDb.paymentInfo = JSON.stringify(updatesForDb.paymentInfo);
+        if (updatesForDb.shippingInfo) updatesForDb.shippingInfo = JSON.stringify(updatesForDb.shippingInfo);
+
+        if (Object.keys(updatesForDb).length === 0) {
+            return res.status(400).json({ message: 'Không có trường hợp lệ nào để cập nhật.' });
+        }
+        
         const [result] = await pool.query('UPDATE Orders SET ? WHERE id = ?', [updatesForDb, id]);
-
+        
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy đơn hàng để cập nhật' });
         }
-        res.json({ id, ...req.body }); // Return original updates object
+
+        logActivity(req, 'Cập nhật đơn hàng', 'Order', id);
+        res.json({ id, ...req.body });
+
     } catch (error) {
         console.error(`Lỗi khi cập nhật đơn hàng ID ${req.params.id}:`, error);
         res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
     }
 });
+
 
 app.put('/api/orders/:id/status', async (req, res) => {
     try {
@@ -423,6 +485,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy đơn hàng để cập nhật' });
         }
+        logActivity(req, 'Cập nhật trạng thái đơn hàng', 'Order', id, { status });
         res.json({ id, status });
     } catch (error) {
         console.error(`Lỗi khi cập nhật trạng thái đơn hàng ID ${req.params.id}:`, error);
@@ -437,6 +500,7 @@ app.delete('/api/orders/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy đơn hàng để xóa' });
         }
+        logActivity(req, 'Xóa đơn hàng', 'Order', id);
         res.status(204).send();
     } catch (error) {
         console.error("Lỗi khi xóa đơn hàng:", error);
@@ -457,10 +521,19 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
         }
         const user = rows[0];
+
+        // Check if the account is locked
+        if (user.isLocked) {
+            return res.status(401).json({ message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.' });
+        }
+
         // In a real app, compare hashed passwords. Here we do a plain text comparison.
         if (user.password !== password) {
+            logActivity(req, 'Đăng nhập thất bại', 'Auth', user.id, { reason: 'Sai mật khẩu' });
             return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
         }
+        
+        logActivity(req, 'Đăng nhập thành công', 'Auth', user.id);
         // Remove password before sending user data to client
         delete user.password;
         res.json(user);
@@ -475,7 +548,7 @@ app.get('/api/users', async (req, res) => {
         const [users] = await pool.query(`
             SELECT u.id, u.username, u.email, u.password, u.role, u.staffRole, u.imageUrl, u.isLocked, 
                    u.phone, u.address, u.status, u.dateOfBirth, u.origin, u.loyaltyPoints, u.debtStatus, u.assignedStaffId,
-                   e.position, e.joinDate
+                   e.position, e.joinDate, e.salary
             FROM Users u
             LEFT JOIN Employees e ON u.id = e.userId
         `);
@@ -501,12 +574,12 @@ app.post('/api/users', async (req, res) => {
         if (userForDb.role === 'staff' || userForDb.role === 'admin') {
             const employeeColumns = ['position', 'joinDate', 'salary'];
             const employeeData = filterObject(req.body, employeeColumns);
-            if (Object.keys(employeeData).length > 0) {
-                await connection.query('INSERT INTO Employees SET ?', { userId: userForDb.id, ...employeeData });
-            }
+            // Always create an employee record if role is staff/admin
+            await connection.query('INSERT INTO Employees SET ?', { userId: userForDb.id, ...employeeData });
         }
         
         await connection.commit();
+        logActivity(req, 'Tạo người dùng mới', 'User', userForDb.id, { username: userForDb.username, role: userForDb.role });
         delete userForDb.password;
         res.status(201).json(userForDb);
 
@@ -552,6 +625,7 @@ app.put('/api/users/:id', async (req, res) => {
         }
         
         await connection.commit();
+        logActivity(req, 'Cập nhật người dùng', 'User', id);
         res.json({ id, ...req.body });
 
     } catch (error) {
@@ -573,6 +647,7 @@ app.delete('/api/users/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy người dùng' });
         }
+        logActivity(req, 'Xóa người dùng', 'User', id);
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
@@ -660,6 +735,17 @@ app.post('/api/chatlogs', async (req, res) => {
     } catch (error) {
         console.error("Lỗi khi lưu chat log:", error);
         res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
+    }
+});
+
+// --- AUDIT LOGS API ---
+app.get('/api/audit-logs', async (req, res) => {
+    try {
+        const [logs] = await pool.query('SELECT * FROM AuditLogs ORDER BY timestamp DESC LIMIT 100');
+        res.json(logs);
+    } catch (error) {
+        console.error("Error fetching audit logs:", error);
+        res.status(500).json({ message: 'Server error fetching audit logs', error: error.message });
     }
 });
 
@@ -765,6 +851,71 @@ app.post('/api/financials/payroll', async (req, res) => {
         res.status(500).json({ message: 'Lỗi server', error: error.sqlMessage || error.message });
     }
 });
+
+// --- NEW FINANCIAL APIs ---
+// Debts
+app.get('/api/debts', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Debts ORDER BY dueDate DESC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.put('/api/debts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = filterObject(req.body, ['status']);
+        await pool.query('UPDATE Debts SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...updates });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Payment Approvals
+app.get('/api/payment-approvals', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM PaymentApprovals ORDER BY createdAt DESC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.put('/api/payment-approvals/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = filterObject(req.body, ['status', 'approverId']);
+        await pool.query('UPDATE PaymentApprovals SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...updates });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Cashflow Forecast
+app.get('/api/financials/forecast', async (req, res) => {
+    try {
+        // Simple forecast: sum of upcoming receivables and payables for the next 3 months
+        const [receivables] = await pool.query("SELECT DATE_FORMAT(dueDate, '%Y-%m') as month, SUM(amount) as total FROM Debts WHERE type = 'receivable' AND status = 'Chưa thanh toán' AND dueDate > NOW() GROUP BY month ORDER BY month ASC LIMIT 3");
+        const [payables] = await pool.query("SELECT DATE_FORMAT(dueDate, '%Y-%m') as month, SUM(amount) as total FROM Debts WHERE type = 'payable' AND status = 'Chưa thanh toán' AND dueDate > NOW() GROUP BY month ORDER BY month ASC LIMIT 3");
+        
+        const forecast = {};
+        receivables.forEach(r => {
+            if (!forecast[r.month]) forecast[r.month] = { income: 0, expense: 0 };
+            forecast[r.month].income = r.total;
+        });
+        payables.forEach(p => {
+            if (!forecast[p.month]) forecast[p.month] = { income: 0, expense: 0 };
+            forecast[p.month].expense = p.total;
+        });
+        
+        res.json(forecast);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
 
 // --- NEW APIs ---
 
@@ -951,80 +1102,68 @@ app.get('/api/inventory', async (req, res) => {
     }
 });
 
-// Warranty Claims
-app.get('/api/warranty-claims', async (req, res) => {
+// Warranty Tickets (replaces Warranty Claims)
+app.get('/api/warranty-tickets', async (req, res) => {
     try {
         const query = `
             SELECT 
-                id,
-                claim_code,
-                order_id,
-                product_id,
-                product_name,
-                customer_id,
-                customer_name,
-                reported_issue,
-                status,
-                created_at
-            FROM WarrantyTickets
-            ORDER BY created_at DESC
+                wt.*,
+                u_creator.username as creatorName,
+                u_returner.username as returnStaffName
+            FROM WarrantyTickets wt
+            LEFT JOIN Users u_creator ON wt.creatorId = u_creator.id
+            LEFT JOIN Users u_returner ON wt.returnStaffId = u_returner.id
+            ORDER BY wt.createdAt DESC
         `;
         const [rows] = await pool.query(query);
-        res.json(rows);
+        res.json(rows.map(r => ({...r, items: JSON.parse(r.items || '[]')})));
     } catch (error) {
         console.error("Lỗi khi truy vấn phiếu bảo hành:", error);
-        res.status(500).json({ message: 'Lỗi server khi truy vấn phiếu bảo hành. Vui lòng kiểm tra lại DB schema có khớp với file README.md không.', error: error.message });
+        res.status(500).json({ message: 'Lỗi server khi truy vấn phiếu bảo hành.', error: error.message });
     }
 });
 
-app.post('/api/warranty-claims', async (req, res) => {
+app.post('/api/warranty-tickets', async (req, res) => {
     try {
-        const claim = req.body;
-        const newClaim = {
-            id: `wc-${Date.now()}`,
-            claim_code: `BH-${Date.now()}`,
-            created_at: new Date(),
-            order_id: claim.order_id,
-            product_id: claim.product_id,
-            product_name: claim.product_name,
-            customer_id: claim.customer_id,
-            customer_name: claim.customer_name,
-            reported_issue: claim.reported_issue,
-            status: claim.status
+        const ticket = {
+             ...req.body, 
+             id: `wt-${Date.now()}`,
+             ticketNumber: `BH-${Date.now()}`,
+             createdAt: new Date(),
+             items: JSON.stringify(req.body.items || []),
         };
-        await pool.query('INSERT INTO WarrantyTickets SET ?', newClaim);
-        res.status(201).json(newClaim);
+        await pool.query('INSERT INTO WarrantyTickets SET ?', ticket);
+        res.status(201).json(ticket);
     } catch (error) {
-        console.error("Error creating warranty claim:", error);
+        console.error("Error creating warranty ticket:", error);
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
-app.put('/api/warranty-claims/:id', async (req, res) => {
+app.put('/api/warranty-tickets/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const claim = req.body;
         const updates = {
-            order_id: claim.order_id,
-            product_id: claim.product_id,
-            product_name: claim.product_name,
-            customer_id: claim.customer_id,
-            customer_name: claim.customer_name,
-            reported_issue: claim.reported_issue,
-            status: claim.status
+            ...req.body,
+            items: JSON.stringify(req.body.items || []),
         };
+        // Fields that should not be updated via this generic PUT
+        delete updates.id;
+        delete updates.ticketNumber;
+        delete updates.createdAt;
+        
         const [result] = await pool.query('UPDATE WarrantyTickets SET ? WHERE id = ?', [updates, id]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy phiếu bảo hành' });
         }
-        res.json({ id, ...claim });
+        res.json({ id, ...updates });
     } catch (error) {
-        console.error("Error updating warranty claim:", error);
+        console.error("Error updating warranty ticket:", error);
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
-app.delete('/api/warranty-claims/:id', async (req, res) => {
+app.delete('/api/warranty-tickets/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const [result] = await pool.query('DELETE FROM WarrantyTickets WHERE id = ?', [id]);
@@ -1033,10 +1172,142 @@ app.delete('/api/warranty-claims/:id', async (req, res) => {
         }
         res.status(204).send();
     } catch (error) {
-        console.error("Error deleting warranty claim:", error);
+        console.error("Error deleting warranty ticket:", error);
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
+
+// --- INVENTORY & LOGISTICS API ---
+
+app.get('/api/warehouses', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Warehouses ORDER BY name ASC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Stock Receipts
+app.get('/api/stock-receipts', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM StockReceipts ORDER BY date DESC');
+        res.json(rows.map(r => ({...r, items: JSON.parse(r.items || '[]')})));
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.post('/api/stock-receipts', async (req, res) => {
+    try {
+        const receipt = { ...req.body, id: `sr-${Date.now()}`, items: JSON.stringify(req.body.items || []) };
+        await pool.query('INSERT INTO StockReceipts SET ?', receipt);
+        res.status(201).json({ ...req.body, id: receipt.id });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.put('/api/stock-receipts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body, items: JSON.stringify(req.body.items || []) };
+        delete updates.id;
+        await pool.query('UPDATE StockReceipts SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.delete('/api/stock-receipts/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM StockReceipts WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Stock Issues
+app.get('/api/stock-issues', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM StockIssues ORDER BY date DESC');
+        res.json(rows.map(r => ({...r, items: JSON.parse(r.items || '[]')})));
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.post('/api/stock-issues', async (req, res) => {
+    try {
+        const issue = { ...req.body, id: `si-${Date.now()}`, items: JSON.stringify(req.body.items || []) };
+        await pool.query('INSERT INTO StockIssues SET ?', issue);
+        res.status(201).json({ ...req.body, id: issue.id });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.put('/api/stock-issues/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body, items: JSON.stringify(req.body.items || []) };
+        delete updates.id;
+        await pool.query('UPDATE StockIssues SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.delete('/api/stock-issues/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM StockIssues WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+// Stock Transfers
+app.get('/api/stock-transfers', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM StockTransfers ORDER BY date DESC');
+        res.json(rows.map(r => ({...r, items: JSON.parse(r.items || '[]')})));
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.post('/api/stock-transfers', async (req, res) => {
+    try {
+        const transfer = { ...req.body, id: `stf-${Date.now()}`, items: JSON.stringify(req.body.items || []) };
+        await pool.query('INSERT INTO StockTransfers SET ?', transfer);
+        res.status(201).json({ ...req.body, id: transfer.id });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.put('/api/stock-transfers/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body, items: JSON.stringify(req.body.items || []) };
+        delete updates.id;
+        await pool.query('UPDATE StockTransfers SET ? WHERE id = ?', [updates, id]);
+        res.json({ id, ...req.body });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+app.delete('/api/stock-transfers/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM StockTransfers WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+});
+
+
+// --- PLACEHOLDER APIs for NEW MODULES ---
+app.get('/api/contracts', (req, res) => res.json([]));
+app.get('/api/assets', (req, res) => res.json([]));
+app.get('/api/kpis', (req, res) => res.json([]));
+app.get('/api/employee-kpis', (req, res) => res.json([]));
 
 
 // Serve static files in production

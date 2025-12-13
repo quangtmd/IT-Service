@@ -1,15 +1,15 @@
-
 // Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
+// Fix: Correct relative imports by moving up one directory level
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
     WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer,
-    Debt, PaymentApproval, CashflowForecastData,
-    AdCampaign, EmailCampaign, EmailSubscriber, WarrantyClaim, AuditLog
+    Debt, PaymentApproval, CashflowForecastData, // Added missing imports
+    AdCampaign, EmailCampaign, EmailSubscriber
 } from '../types';
 import * as Constants from '../constants';
 
-// --- Helper Functions for localStorage (kept for some client-side persistence if needed, but primarily moving to API) ---
+// --- Helper Functions for localStorage ---
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try {
         const item = localStorage.getItem(key);
@@ -30,11 +30,15 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
     }
 };
 
-// --- API BASE URL CONFIGURATION ---
-const API_BASE_URL = Constants.BACKEND_API_BASE_URL;
-console.log(`[API Config] Connected to Backend: ${API_BASE_URL}`);
+
+// The base URL is now an empty string. This assumes the frontend is served
+// from the same domain as the backend, which simplifies deployment.
+// All API requests will be relative, e.g., /api/users.
+const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // All API endpoints are prefixed with /api on the server.
+    // This ensures the correct path is always used.
     const fullEndpoint = `/api${endpoint}`;
     const url = `${API_BASE_URL}${fullEndpoint}`;
     
@@ -48,16 +52,9 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
-            
-            const contentType = response.headers.get("content-type");
-            if (response.status === 404 && (errorMessageDetails.includes('File not found') || (contentType && contentType.includes("text/html")))) {
-                 throw new Error(`Lỗi 404: Không tìm thấy API tại ${url}. Vui lòng kiểm tra cấu hình Backend.`);
-            }
-
-            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}`;
-            console.error(`API Request Failed: ${fullEndpoint}`, errorMessage);
+            const errorData = await response.json().catch(() => ({ message: response.statusText }));
+            // Simplified, more robust error message for a monolithic setup.
+            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
             throw new Error(errorMessage);
         }
         
@@ -66,15 +63,17 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
-        console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Không thể kết nối tới Server (${API_BASE_URL}). Vui lòng kiểm tra đường truyền hoặc trạng thái Server.`);
+            // This now more clearly indicates a server-down issue.
+            throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động.');
         }
+        // Re-throw other errors (like the custom one from response.ok check)
         throw error;
     }
 }
 
 // --- User Service ---
+// Note: The endpoint now starts with /users, and /api is prepended by fetchFromApi
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
 export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
@@ -82,22 +81,14 @@ export const updateUser = (id: string, updates: Partial<User>): Promise<User> =>
 export const deleteUser = (id: string): Promise<void> => fetchFromApi<void>(`/users/${id}`, { method: 'DELETE' });
 
 // --- Product Service ---
-export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => {
-    const queryString = queryParams.startsWith('?') ? queryParams.slice(1) : queryParams;
-    return fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryString}`);
-};
+export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryParams}`);
 export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product>(`/products/${id}`);
 export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
-
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    try {
-        return await fetchFromApi<Product[]>('/products/featured');
-    } catch (error) {
-        console.error("Failed to fetch featured products", error);
-        return [];
-    }
+    const { products } = await getProducts('is_featured=true&limit=4');
+    return products;
 }
 
 // --- Article Service ---
@@ -109,7 +100,7 @@ export const deleteArticle = (id: string): Promise<void> => fetchFromApi<void>(`
 
 // --- Order Service ---
 export const getOrders = (): Promise<Order[]> => fetchFromApi<Order[]>('/orders');
-export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/users/${customerId}/orders`);
+export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
 export const addOrder = (order: Order): Promise<Order> => fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
 export const updateOrder = (id: string, updates: Partial<Order>): Promise<Order> => fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const updateOrderStatus = (id: string, status: OrderStatus): Promise<Order> => fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
@@ -133,6 +124,7 @@ export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 
 export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
+// FIX: Updated savePayrollRecords to accept an argument to resolve TypeScript error.
 export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
     return fetchFromApi<void>('/financials/payroll', { 
         method: 'POST', 
@@ -141,21 +133,19 @@ export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void
     });
 };
 
-// Debts
-export const getDebts = async (): Promise<Debt[]> => fetchFromApi<Debt[]>('/debts');
-export const updateDebt = async (id: string, updates: Partial<Debt>): Promise<Debt> => fetchFromApi<Debt>(`/debts/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+export const getDebts = (): Promise<Debt[]> => fetchFromApi<Debt[]>('/debts');
+export const updateDebt = (id: string, updates: Partial<Debt>): Promise<Debt> => fetchFromApi<Debt>(`/debts/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 
-// Payment Approvals
-export const getPaymentApprovals = async (): Promise<PaymentApproval[]> => fetchFromApi<PaymentApproval[]>('/payment-approvals');
-export const updatePaymentApproval = async (id: string, updates: Partial<PaymentApproval>): Promise<PaymentApproval> => fetchFromApi<PaymentApproval>(`/payment-approvals/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+export const getPaymentApprovals = (): Promise<PaymentApproval[]> => fetchFromApi<PaymentApproval[]>('/payment-approvals');
+export const updatePaymentApproval = (id: string, updates: Partial<PaymentApproval>): Promise<PaymentApproval> => fetchFromApi<PaymentApproval>(`/payment-approvals/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 
-// Cashflow Forecast
-export const getCashflowForecast = async (): Promise<CashflowForecastData> => fetchFromApi<CashflowForecastData>('/financials/forecast');
+export const getCashflowForecast = (): Promise<CashflowForecastData> => fetchFromApi<CashflowForecastData>('/financials/forecast');
 
 
 // --- Service Tickets ---
 export const getServiceTickets = (): Promise<ServiceTicket[]> => fetchFromApi<ServiceTicket[]>('/service-tickets');
-export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id' | 'ticket_code' | 'createdAt'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
+// Fix: Cast to any to prevent type errors with backend generated fields like ticket_code
+export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
 export const updateServiceTicket = (id: string, updates: Partial<ServiceTicket>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>(`/service-tickets/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteServiceTicket = (id: string): Promise<void> => fetchFromApi<void>(`/service-tickets/${id}`, { method: 'DELETE' });
 
@@ -181,35 +171,13 @@ export const addSupplier = (supplier: Omit<Supplier, 'id'>): Promise<Supplier> =
 export const updateSupplier = (id: string, updates: Partial<Supplier>): Promise<Supplier> => fetchFromApi<Supplier>(`/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteSupplier = (id: string): Promise<void> => fetchFromApi<void>(`/suppliers/${id}`, { method: 'DELETE' });
 
-// --- Warranty Claim Service ---
-export const getWarrantyClaims = async (): Promise<WarrantyClaim[]> => {
-    return fetchFromApi<WarrantyClaim[]>('/warranty-claims');
-};
-export const addWarrantyClaim = async (claim: Omit<WarrantyClaim, 'id' | 'claim_code' | 'created_at'>): Promise<WarrantyClaim> => {
-    return fetchFromApi<WarrantyClaim>('/warranty-claims', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(claim),
-    });
-};
-export const updateWarrantyClaim = async (id: string, updates: Partial<WarrantyClaim>): Promise<WarrantyClaim> => {
-    return fetchFromApi<WarrantyClaim>(`/warranty-claims/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-    });
-};
-export const deleteWarrantyClaim = async (id: string): Promise<void> => {
-    return fetchFromApi<void>(`/warranty-claims/${id}`, { method: 'DELETE' });
-};
-
-// --- Warranty Ticket Service (if separate) ---
+// --- Warranty Ticket Service ---
 export const getWarrantyTickets = async (): Promise<WarrantyTicket[]> => {
-    return fetchFromApi<WarrantyTicket[]>('/warranty-tickets');
+    return fetchFromApi<WarrantyTicket[]>('/api/warranty-tickets');
 };
 
 export const addWarrantyTicket = async (ticket: Omit<WarrantyTicket, 'id' | 'ticketNumber' | 'createdAt'>): Promise<WarrantyTicket> => {
-    return fetchFromApi<WarrantyTicket>('/warranty-tickets', {
+    return fetchFromApi<WarrantyTicket>('/api/warranty-tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ticket),
@@ -217,7 +185,7 @@ export const addWarrantyTicket = async (ticket: Omit<WarrantyTicket, 'id' | 'tic
 };
 
 export const updateWarrantyTicket = async (id: string, updates: Partial<WarrantyTicket>): Promise<WarrantyTicket> => {
-    return fetchFromApi<WarrantyTicket>(`/warranty-tickets/${id}`, {
+    return fetchFromApi<WarrantyTicket>(`/api/warranty-tickets/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -225,11 +193,11 @@ export const updateWarrantyTicket = async (id: string, updates: Partial<Warranty
 };
 
 export const deleteWarrantyTicket = async (id: string): Promise<void> => {
-    return fetchFromApi<void>(`/warranty-tickets/${id}`, { method: 'DELETE' });
+    return fetchFromApi<void>(`/api/warranty-tickets/${id}`, { method: 'DELETE' });
 };
 
 
-// --- INVENTORY & LOGISTICS SERVICES (Currently using localStorage for persistence until backend endpoints are ready) ---
+// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
 
 // Warehouses
 export const getWarehouses = async (): Promise<Warehouse[]> => {
@@ -327,7 +295,7 @@ export const deleteStockTransfer = async (id: string): Promise<void> => {
     setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, transfers.filter(t => t.id !== id));
 };
 
-// --- Marketing & Audit Placeholders ---
+// Placeholder for other missing functions
 export const getAdCampaigns = async (): Promise<AdCampaign[]> => { return []; };
 export const addAdCampaign = async (campaign: Omit<AdCampaign, 'id'>): Promise<void> => { };
 export const updateAdCampaign = async (id: string, updates: Partial<AdCampaign>): Promise<void> => { };
@@ -341,6 +309,6 @@ export const deleteEmailCampaign = async (id: string): Promise<void> => { };
 export const getEmailSubscribers = async (): Promise<EmailSubscriber[]> => { return []; };
 export const deleteEmailSubscriber = async (id: number): Promise<void> => { };
 
-export const getAuditLogs = async (): Promise<AuditLog[]> => fetchFromApi<AuditLog[]>('/audit-logs');
+export const getAuditLogs = async (): Promise<any[]> => fetchFromApi<any[]>('/audit-logs');
 
 export const checkBackendHealth = (): Promise<any> => fetchFromApi('/health');

@@ -1,5 +1,6 @@
+
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,8 +24,8 @@
     "express": "https://aistudiocdn.com/express@^5.1.0",
     "mysql2/": "https://aistudiocdn.com/mysql2@^3.15.3/",
     "url": "https://aistudiocdn.com/url@^0.11.4",
-    "three": "https://aistudiocdn.com/three@^0.181.2",
-    "@react-three/fiber": "https://aistudiocdn.com/@react-three/fiber@^9.4.2",
+    "three": "https://aistudiocdn.com/three@^0.181.1",
+    "@react-three/fiber": "https://aistudiocdn.com/@react-three/fiber@^9.4.0",
     "@react-three/drei": "https://aistudiocdn.com/@react-three/drei@^10.7.7"
   }
 }
@@ -42,6 +43,7 @@
         const storedThemeSettings = localStorage.getItem(THEME_SETTINGS_STORAGE_KEY);
         const root = document.documentElement;
         
+        // Default colors
         const fallbacks = {
           primaryColorDefault: '#ef4444', // red-500
           primaryColorLight: '#f87171',  // red-400
@@ -74,6 +76,7 @@
     applyThemeFromLocalStorage();
 
     tailwind.config = {
+      darkMode: 'class', // Enable class-based dark mode
       theme: {
         extend: {
           colors: {
@@ -87,26 +90,25 @@
               DEFAULT: 'var(--color-secondary-default)',
               dark: 'var(--color-secondary-dark)',
             },
-            textBase: '#1f2937',      // Gray 800
-            textMuted: '#6b7280',    // Gray 500
-            textSubtle: '#9ca3af',   // Gray 400
+            // Using CSS variables for theme switching
+            textBase: 'var(--color-text-base)',
+            textMuted: 'var(--color-text-muted)',
+            textSubtle: 'var(--color-text-subtle)',
 
-            bgBase: '#ffffff',         // White
-            bgCanvas: '#f8fafc',       // Slate 50 (very light gray)
-            bgMuted: '#f1f5f9',        // Slate 100 (light gray)
-
-            borderStrong: '#d1d5db', // Gray 300
-            borderDefault: '#e5e7eb',  // Gray 200
+            bgBase: 'var(--color-bg-base)',
+            bgCanvas: 'var(--color-bg-canvas)',
+            bgMuted: 'var(--color-bg-muted)',
             
-            success: { text: '#059669', bg: '#ecfdf5', border: '#a7f3d0' }, // Green
-            warning: { text: '#d97706', bg: '#fffbeb', border: '#fde68a' }, // Amber
-            danger:  { text: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }, // Red
+            borderStrong: 'var(--color-border-strong)',
+            borderDefault: 'var(--color-border-default)',
+            
+            // Keep static colors
+            success: { text: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+            warning: { text: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+            danger:  { text: '#dc2626', bg: '#fee2e2', border: '#fca5a5' },
             'danger-bg': '#fee2e2',
             'danger-text': '#b91c1c',
             'danger-border': '#fca5a5',
-
-            'black-alpha-80': 'rgba(0, 0, 0, 0.80)',
-            'black-alpha-90': 'rgba(23, 23, 23, 0.9)',
 
             admin: {
               sidebarBg: '#1e293b', 
@@ -123,14 +125,14 @@
               accentTeal: '#14b8a6',
             },
             'pricing-blue': {
-                DEFAULT: '#3b82f6', // blue-500
-                dark: '#1e40af', // blue-800
-                light: '#93c5fd', // blue-300
-                bg: '#eff6ff' // blue-50
+                DEFAULT: '#3b82f6',
+                dark: '#1e40af',
+                light: '#93c5fd',
+                bg: '#eff6ff'
             },
             'pricing-orange': {
-                DEFAULT: '#f97316', // orange-500
-                dark: '#ea580c', // orange-600
+                DEFAULT: '#f97316',
+                dark: '#ea580c',
             },
             'pricing-bg': '#F0F2FE',
           }

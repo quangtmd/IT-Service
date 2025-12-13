@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
 import Button from '../../components/ui/Button';
@@ -219,14 +218,15 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
         const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
         const net = income - expense;
 
-        const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce((acc, t) => {
+        const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce<Record<string, number>>((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount;
             return acc;
-        }, {} as Record<string, number>);
-        const expenseByCategory = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => {
+        }, {});
+        
+        const expenseByCategory = filteredTransactions.filter(t => t.type === 'expense').reduce<Record<string, number>>((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount;
             return acc;
-        }, {} as Record<string, number>);
+        }, {});
 
         return { income, expense, net, incomeByCategory, expenseByCategory };
     }, [filteredTransactions]);
@@ -307,8 +307,8 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             return [updatedRecord, ...otherRecords];
         });
     };
-
-    const handleSettlePayroll = useCallback(async () => {
+    
+    const handleSettlePayroll = async () => {
         if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
 
         const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
@@ -320,7 +320,10 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
 
         try {
-            const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+            const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod).map(r => {
+                const shouldSettle = recordsToSettle.some(s => s.id === r.id);
+                return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
+            });
             await savePayrollRecords(recordsToSave);
             await onAddTransaction({
                 date: new Date().toISOString(),
@@ -329,18 +332,29 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 category: 'Chi phí Lương',
                 description: `Thanh toán lương tháng ${payPeriod}`
             });
-            onDataChange();
+            alert('Chốt lương và tạo giao dịch chi thành công!');
+            await onDataChange();
         } catch (error) {
+            console.error("Lỗi khi chốt lương:", error);
             alert('Lỗi khi chốt lương.');
         }
-    }, [localPayroll, payPeriod, onAddTransaction, onDataChange]);
-
-    const handleSaveDraft = useCallback(async () => {
+    };
+    
+    const handleSaveDraft = async () => {
         const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
-        await savePayrollRecords(recordsToSave);
-        alert('Đã lưu nháp lương thành công!');
-        onDataChange();
-    }, [localPayroll, payPeriod, onDataChange]);
+        if(recordsToSave.length === 0) {
+            alert("Không có dữ liệu lương để lưu nháp.");
+            return;
+        }
+        try {
+            await savePayrollRecords(recordsToSave);
+            alert('Đã lưu nháp lương thành công!');
+            await onDataChange();
+        } catch (error) {
+            console.error("Lỗi khi lưu nháp lương:", error);
+            alert("Đã có lỗi xảy ra khi lưu nháp lương.");
+        }
+    };
 
 
     return (

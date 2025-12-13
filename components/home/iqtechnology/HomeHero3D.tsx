@@ -12,15 +12,9 @@ const HomeHero3D: React.FC = () => {
 
   return (
     <section className="relative w-full h-[85vh] min-h-[600px] overflow-hidden bg-bgCanvas">
-      {/* Static Background Fallback - Ensures screen isn't pitch black if 3D fails */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center opacity-30" 
-        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1558494949-ef526b0042a0?q=80&w=1920&auto=format&fit=crop')" }}
-      ></div>
-
-      {/* 3D Background Layer */}
-      <div className="absolute inset-0 z-0 bg-black/80">
-        <Canvas className="w-full h-full" dpr={[1, 2]}>
+      {/* 3D Background Layer - Server Room Simulation */}
+      <div className="absolute inset-0 z-0 bg-black">
+        <Canvas className="w-full h-full">
           <Suspense fallback={null}>
             <ServerTechScene />
           </Suspense>
@@ -79,7 +73,7 @@ const HomeHero3D: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Column: LED Board */}
+            {/* Right Column: LED Board (Hidden on mobile/tablet, shown on desktop) */}
             <div className="lg:col-span-5 hidden lg:flex justify-center lg:justify-end items-center animate-on-scroll slide-in-right is-visible" style={{animationDelay: '0.5s'}}>
                <HeroLEDBoard />
             </div>

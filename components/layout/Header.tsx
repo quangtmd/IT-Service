@@ -1,52 +1,43 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Use named imports for react-router-dom components and hooks
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import * as Constants from '../../constants.tsx';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../ui/Button';
 import { CustomMenuLink, SiteSettings, NavLinkItem } from '../../types';
 import HeaderSearchBar from '../shared/GlobalSearch';
-import MegaMenu from './MegaMenu';
-import TiltCard from '../ui/TiltCard'; // Reuse TiltCard for 3D logo effect
+import MegaMenu from './MegaMenu'; // Import the new MegaMenu component
+import { useTheme } from '../../contexts/ThemeContext'; // Import useTheme
 
-// Styled Action Link with 3D hover effect
+// New component for right-side action links, styled as per the image
 const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badgeCount?: number }> = ({ to, icon, label, badgeCount }) => (
-    <ReactRouterDOM.Link 
-        to={to} 
-        className="hidden lg:flex flex-col items-center justify-center text-cyan-100 hover:text-white transition-all duration-300 text-xs font-medium space-y-1 w-[70px] text-center group relative perspective-500"
-    >
-        <div className="relative p-2 rounded-xl transition-all duration-300 group-hover:bg-white/10 group-hover:shadow-[0_0_15px_rgba(34,211,238,0.3)] group-hover:translate-z-4 group-hover:scale-110">
-            <i className={`fas ${icon} text-xl md:text-2xl drop-shadow-[0_0_5px_rgba(0,0,0,0.5)]`}></i>
-            {badgeCount !== undefined && badgeCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 border border-red-400 text-white text-[10px] font-bold rounded-full h-4 min-w-[1rem] px-1 flex items-center justify-center shadow-md animate-pulse">
+    // Fix: Use Link directly
+    <Link to={to} className="hidden lg:flex flex-col items-center text-white hover:text-primary transition-colors text-xs font-medium space-y-1 w-[70px] text-center group">
+        <div className="relative transition-transform duration-300 group-hover:scale-110">
+            <i className={`fas ${icon} text-2xl`}></i>
+            {badgeCount && badgeCount > 0 ? (
+                <span className="absolute -top-1 -right-2 bg-secondary text-white text-[10px] font-bold rounded-full h-4 min-w-[1rem] px-1 flex items-center justify-center animate-bounce">
                     {badgeCount > 9 ? '9+' : badgeCount}
                 </span>
-            )}
+            ) : null}
         </div>
-        <span className="opacity-80 group-hover:opacity-100 transition-opacity">{label}</span>
-    </ReactRouterDOM.Link>
+        <span>{label}</span>
+    </Link>
 );
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const { cart } = useCart();
   const { isAuthenticated, currentUser, logout, isLoading } = useAuth();
-  const navigate = ReactRouterDOM.useNavigate();
+  const { theme, toggleTheme } = useTheme(); // Use theme context
+  // Fix: Use useNavigate directly
+  const navigate = useNavigate();
   const totalItemsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
   const [currentNavLinks, setCurrentNavLinks] = useState<(CustomMenuLink | NavLinkItem)[]>([]);
-
-  // Scroll detection for 3D header transformation
-  useEffect(() => {
-    const handleScroll = () => {
-        const offset = window.scrollY;
-        setIsScrolled(offset > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const loadData = useCallback(() => {
     const storedSettings = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
@@ -77,6 +68,7 @@ const Header: React.FC = () => {
     return currentNavLinks.filter(link => link.path !== '/admin');
   }, [currentNavLinks]);
 
+
   useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? 'hidden' : 'unset';
     return () => { document.body.style.overflow = 'unset'; };
@@ -92,32 +84,27 @@ const Header: React.FC = () => {
   const desktopNavLinks = mainNavLinks.filter(link => link.path !== Constants.PC_BUILDER_PATH && link.path !== '/blog');
 
   const renderUserAuth = (isMobile = false) => {
-    if (isLoading) return <div className={`h-8 w-24 rounded-full ${isMobile ? 'bg-gray-700' : 'bg-white/10'} animate-pulse`}></div>;
+    if (isLoading) return <div className={`h-6 w-24 rounded ${isMobile ? 'bg-gray-700' : 'bg-red-700/50'} animate-pulse`}></div>;
 
     if (isAuthenticated && currentUser) {
       return (
         <div className="relative group">
-          <button className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${isMobile ? 'text-gray-200 w-full hover:bg-white/10' : 'text-cyan-100 hover:text-white hover:bg-white/10 border border-transparent hover:border-cyan-500/30'}`}>
-            <img src={currentUser.imageUrl || `https://ui-avatars.com/api/?name=${currentUser.username.charAt(0)}&background=random`} alt="avatar" className="w-7 h-7 rounded-full border border-cyan-500/50" />
+          <button className={`flex items-center gap-2 ${isMobile ? 'text-gray-200' : 'text-white'}`}>
+            <img src={currentUser.imageUrl || `https://ui-avatars.com/api/?name=${currentUser.username.charAt(0)}&background=random`} alt="avatar" className="w-6 h-6 rounded-full" />
             <span className={`text-xs font-semibold ${isMobile ? '' : 'hidden md:inline'}`}>{currentUser.username}</span>
-            <i className="fas fa-chevron-down text-[10px] transition-transform duration-200 group-hover:rotate-180"></i>
+            <i className="fas fa-chevron-down text-xs transition-transform duration-200 group-hover:rotate-180"></i>
           </button>
-          
-          {/* Dropdown with glassmorphism */}
-          <div className={`absolute right-0 w-56 backdrop-blur-xl bg-slate-900/90 border border-cyan-500/20 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] py-2 z-50 transition-all duration-200 transform origin-top-right ${isMobile ? 'static w-full mt-2 opacity-100 scale-100' : 'absolute top-full mt-2 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto'}`}>
-            <div className="px-4 py-3 border-b border-white/10">
-                <p className="text-sm font-bold text-white">{currentUser.username}</p>
-                <p className="text-xs text-cyan-300/70 truncate">{currentUser.email}</p>
+          <div className={`absolute top-full ${isMobile ? 'bottom-full top-auto' : 'right-0 mt-2'} w-48 bg-bgBase rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto border border-borderDefault`}>
+            <div className="px-3 py-2 border-b border-borderDefault">
+                <p className="text-sm font-semibold text-textBase">{currentUser.username}</p>
+                <p className="text-xs text-textMuted truncate">{currentUser.email}</p>
             </div>
             {(currentUser.role === 'admin' || currentUser.role === 'staff') && (
-                <ReactRouterDOM.Link to="/admin" className="flex items-center px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                    <i className="fas fa-shield-alt w-6 text-cyan-400"></i>Quản trị
-                </ReactRouterDOM.Link>
+                // Fix: Use Link directly
+                <Link to="/admin" className="flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted"><i className="fas fa-user-shield w-6"></i>Quản trị</Link>
             )}
-             <ReactRouterDOM.Link to="/account/orders" className="flex items-center px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                <i className="fas fa-box w-6 text-cyan-400"></i>Đơn hàng của tôi
-            </ReactRouterDOM.Link>
-            <button onClick={handleLogout} className="w-full flex items-center px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-white/10 transition-colors">
+            <Link to="/account/orders" className="flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted"><i className="fas fa-receipt w-6"></i>Đơn hàng của tôi</Link>
+            <button onClick={handleLogout} className="w-full flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted">
                 <i className="fas fa-sign-out-alt w-6"></i>Đăng xuất
             </button>
           </div>
@@ -127,197 +114,140 @@ const Header: React.FC = () => {
 
     return (
       <div className={`flex items-center gap-3 ${isMobile ? 'flex-col w-full' : ''}`}>
-        <ReactRouterDOM.Link to="/login" className={`${isMobile ? 'w-full' : ''}`}>
-          <Button variant="ghost" size='sm' className={`w-full font-semibold ${isMobile ? 'text-gray-200' : 'text-cyan-100 hover:text-white hover:bg-white/10'}`}>Đăng nhập</Button>
-        </ReactRouterDOM.Link>
-        <ReactRouterDOM.Link to="/register" className={`${isMobile ? 'w-full' : ''}`}>
-          <Button variant='primary' size='sm' className={`w-full shadow-lg hover:shadow-cyan-500/20 bg-gradient-to-r from-cyan-600 to-blue-600 border-none ${isMobile ? '' : ''}`}>Đăng ký</Button>
-        </ReactRouterDOM.Link>
+        {/* Fix: Use Link directly */}
+        <Link to="/login" className={`${isMobile ? 'w-full' : ''}`}>
+          <Button variant={isMobile ? 'outline' : 'ghost'} size='sm' className={`w-full ${isMobile ? 'border-gray-500 text-gray-200' : 'text-white hover:bg-white/20'}`}>Đăng nhập</Button>
+        </Link>
+        {/* Fix: Use Link directly */}
+        <Link to="/register" className={`${isMobile ? 'w-full' : ''}`}>
+          <Button variant='secondary' size='sm' className="w-full">Đăng ký</Button>
+        </Link>
       </div>
     );
   };
 
   return (
     <>
-      {/* 3D HEADER CONTAINER */}
-      <header 
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] 
-            ${isScrolled ? 'pt-0' : 'pt-2 md:pt-4'} 
-            perspective-[1000px]`}
-      >
-        {/* Floating Glass Panel */}
-        <div 
-            className={`
-                relative mx-auto transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
-                ${isScrolled 
-                    ? 'w-full rounded-none bg-slate-900/95 shadow-xl border-b border-cyan-500/30' 
-                    : 'w-[95%] max-w-[1400px] rounded-2xl bg-slate-900/80 mt-0 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] border border-white/10'
-                }
-                backdrop-blur-xl
-            `}
-            style={{
-                transform: isScrolled ? 'rotateX(0deg)' : 'rotateX(0.5deg)', // Subtle tilt when not scrolled
-                transformOrigin: 'top center',
-            }}
-        >
-            {/* Top Info Bar - Collapses on scroll */}
-            <div className={`
-                flex justify-between items-center px-4 md:px-6 transition-all duration-300 border-b border-white/5
-                ${isScrolled ? 'h-0 opacity-0 overflow-hidden py-0' : 'h-10 opacity-100 py-1'}
-            `}>
-                 <div className="flex items-center gap-4 text-xs font-medium text-cyan-200/80">
-                    {siteSettings.companyPhone && <span className="hover:text-cyan-300 transition-colors"><i className="fas fa-phone-alt mr-1.5 animate-pulse"></i>{siteSettings.companyPhone}</span>}
-                    {siteSettings.companyEmail && <span className="hidden sm:inline hover:text-cyan-300 transition-colors"><i className="fas fa-envelope mr-1.5"></i>{siteSettings.companyEmail}</span>}
-                </div>
-                <div className="hidden lg:block">
-                     {renderUserAuth()}
-                </div>
+      <header className="fixed top-0 w-full z-50 shadow-lg transition-colors duration-300">
+        {/* TOP BAR */}
+        <div className="bg-primary text-white text-xs h-8">
+          <div className="container mx-auto px-4 h-full flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              {siteSettings.companyPhone && <span><i className="fas fa-phone-alt mr-1"></i> {siteSettings.companyPhone}</span>}
+              {siteSettings.companyEmail && <span className="hidden sm:inline"><i className="fas fa-envelope mr-1"></i> {siteSettings.companyEmail}</span>}
             </div>
-
-            {/* Main Header Content */}
-            <div className="px-4 md:px-6 py-3 md:py-4">
-                <div className="flex items-center justify-between gap-6 md:gap-8">
-                    {/* Logo with 3D Tilt */}
-                    <div className="flex-shrink-0 relative group">
-                        <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <TiltCard className="!p-0 !bg-transparent !border-none !shadow-none cursor-pointer">
-                            <ReactRouterDOM.Link to="/" className="block transform transition-transform duration-300 group-hover:scale-105">
-                                <svg width="140" height="50" viewBox="0 0 140 50" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
-                                    <defs>
-                                        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                            <stop offset="0%" stopColor="#22d3ee" />
-                                            <stop offset="100%" stopColor="#3b82f6" />
-                                        </linearGradient>
-                                    </defs>
-                                    <style>{`.logo-main { font-family: Impact, sans-serif; font-size: 40px; fill: url(#logoGradient); font-style: italic; } .logo-white { font-family: Impact, sans-serif; font-size: 40px; fill: #ffffff; font-style: italic; } .logo-sub { font-family: 'Arial', sans-serif; font-weight: 700; font-size: 11px; fill: #94a3b8; letter-spacing: 3px; }`}</style>
-                                    <text x="0" y="35" className="logo-main">IQ</text>
-                                    <text x="42" y="35" className="logo-white">TECH</text>
-                                    <text x="42" y="48" className="logo-sub">TECHNOLOGY</text>
-                                    <rect x="0" y="42" width="35" height="3" fill="#22d3ee" className="animate-pulse" />
-                                </svg>
-                            </ReactRouterDOM.Link>
-                        </TiltCard>
-                    </div>
-                    
-                    {/* Search Bar - Integrated Glass Style */}
-                    <div className="hidden lg:block flex-grow max-w-2xl transform transition-all hover:scale-[1.01]">
-                        <HeaderSearchBar variant="glass" />
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 md:gap-4">
-                        <HeaderActionLink to="/blog" icon="fa-newspaper" label="Tin tức" />
-                        <HeaderActionLink to={Constants.PC_BUILDER_PATH} icon="fa-tools" label="Build PC" />
-                        <HeaderActionLink to="/cart" icon="fa-shopping-cart" label="Giỏ hàng" badgeCount={totalItemsInCart} />
-                        
-                        {/* Mobile Menu Toggle */}
-                        <button 
-                            className="lg:hidden w-10 h-10 flex items-center justify-center text-cyan-400 hover:text-white bg-white/5 rounded-lg hover:bg-white/10 transition-all border border-transparent hover:border-cyan-500/30" 
-                            onClick={() => setIsMobileMenuOpen(true)} 
-                            aria-label="Mở menu"
-                        >
-                            <i className="fas fa-bars text-xl"></i>
-                        </button>
-                    </div>
-                </div>
+            <div className="hidden lg:flex items-center gap-4">
+              {renderUserAuth()}
+              <button 
+                onClick={toggleTheme} 
+                className="text-white hover:text-yellow-300 transition-colors focus:outline-none" 
+                title={theme === 'light' ? "Chuyển sang chế độ tối" : "Chuyển sang chế độ sáng"}
+              >
+                <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun'} text-sm`}></i>
+              </button>
             </div>
-
-            {/* Navigation Bar - 3D Shelf Look */}
-            <div className={`hidden lg:block border-t border-white/5 transition-all duration-300 ${isScrolled ? 'bg-slate-950/50' : 'bg-transparent'}`}>
-                <div className="px-6">
-                    <nav className="flex items-center gap-1 justify-center relative">
-                        {/* Glowing line at top of nav */}
-                        {isScrolled && <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>}
-                        
-                        {desktopNavLinks.map((link) => {
-                             if (link.path === '/shop') {
-                                return <MegaMenu key={link.path} />;
-                              }
-                            return (
-                                <ReactRouterDOM.NavLink
-                                    key={link.path}
-                                    to={link.path}
-                                    className={({ isActive }) => `
-                                        relative px-5 py-3 text-sm font-bold uppercase tracking-wide transition-all duration-300
-                                        ${isActive ? 'text-white text-shadow-cyan' : 'text-gray-400 hover:text-cyan-300'}
-                                        group overflow-hidden
-                                    `}
-                                    end={link.path === "/"}
-                                >
-                                    {({ isActive }) => (
-                                        <>
-                                            <span className="relative z-10 flex items-center gap-2">
-                                                {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} text-xs`}></i>}
-                                                {link.label}
-                                            </span>
-                                            
-                                            {/* Hover/Active Effect Background */}
-                                            <div className={`absolute inset-0 bg-gradient-to-t from-cyan-500/20 to-transparent opacity-0 transition-opacity duration-300 ${isActive ? 'opacity-100' : 'group-hover:opacity-100'}`}></div>
-                                            
-                                            {/* Bottom Highlight Line */}
-                                            <div className={`absolute bottom-0 left-0 w-full h-[2px] bg-cyan-400 transform origin-left transition-transform duration-300 ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}></div>
-                                        </>
-                                    )}
-                                </ReactRouterDOM.NavLink>
-                            );
-                        })}
-                    </nav>
-                </div>
-            </div>
+          </div>
         </div>
+
+        {/* MAIN HEADER */}
+        <div className="bg-black/95 dark:bg-slate-900 text-white backdrop-blur-md border-b border-white/10 transition-colors duration-300">
+          <div className="container mx-auto px-4 flex items-center justify-between gap-4 h-20">
+            {/* Fix: Use Link directly */}
+            <Link to="/" className="flex-shrink-0">
+              <svg width="125" height="45" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg">
+                  <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: var(--color-primary-default); font-style: italic; } .logo-main-white { font-family: Impact, sans-serif; font-size: 36px; fill: #ffffff; font-style: italic; } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #ffffff; letter-spacing: 2px; }`}</style>
+                  <text x="0" y="30" className="logo-main-red">IQ</text>
+                  <text x="38" y="30" className="logo-main-white">TECH</text>
+                  <text x="38" y="42" className="logo-sub">TECHNOLOGY</text>
+              </svg>
+            </Link>
+            
+            <div className="flex-grow max-w-2xl hidden lg:block">
+              <HeaderSearchBar />
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <HeaderActionLink to="/blog" icon="fa-newspaper" label="Tin tức" />
+              <HeaderActionLink to={Constants.PC_BUILDER_PATH} icon="fa-tools" label="Xây dựng PC" />
+              <HeaderActionLink to="/cart" icon="fa-shopping-cart" label="Giỏ hàng" badgeCount={totalItemsInCart} />
+            </div>
+            
+            <button className="lg:hidden text-2xl text-white" onClick={() => setIsMobileMenuOpen(true)} aria-label="Mở menu">
+              <i className="fas fa-bars"></i>
+            </button>
+          </div>
+        </div>
+        
+        {/* MAIN NAVIGATION BAR */}
+        <nav className="main-navbar">
+          <div className="main-navbar-links">
+            {desktopNavLinks.map((link) => {
+              if (link.path === '/shop') {
+                return <MegaMenu key={link.path} />;
+              }
+              return (
+                // Fix: Use NavLink directly
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  className={({ isActive }) => `nav-link-item ${isActive ? 'active' : ''}`}
+                  end={link.path === "/"}
+                >
+                  {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} mr-2`}></i>}
+                  <span>{link.label}</span>
+                </NavLink>
+              );
+            })}
+          </div>
+        </nav>
+
       </header>
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsMobileMenuOpen(false)}
       ></div>
 
-      {/* Mobile Menu Panel - Cyberpunk Style */}
-      <div className={`fixed top-0 right-0 h-full w-[85%] max-w-sm bg-[#0b1120] border-l border-cyan-500/20 shadow-2xl z-[70] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="flex flex-col h-full relative overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[80px] pointer-events-none"></div>
-
-            <div className="p-5 flex justify-between items-center border-b border-white/10 bg-black/20">
-                <h3 className="text-xl font-bold text-white tracking-wider flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span> MENU
-                </h3>
-                <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                    <i className="fas fa-times"></i>
+      {/* Mobile Menu Panel */}
+      <div className={`fixed top-0 right-0 h-full w-full max-w-xs bg-gray-800 dark:bg-slate-900 shadow-xl z-50 transition-transform duration-300 ease-in-out lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex flex-col h-full text-white">
+          <div className="p-4 flex justify-between items-center border-b border-gray-700">
+            <div className="flex items-center gap-3">
+                <h3 className="text-lg font-semibold">Menu</h3>
+                <button 
+                    onClick={toggleTheme} 
+                    className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-yellow-400 hover:bg-gray-600 transition-colors"
+                >
+                    <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
                 </button>
             </div>
+            <button className="text-2xl text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)} aria-label="Đóng menu"><i className="fas fa-times"></i></button>
+          </div>
           
-            <div className="p-5 border-b border-white/10">
-                <HeaderSearchBar variant="glass" />
-            </div>
+          <div className="p-4 border-b border-gray-700">
+            <HeaderSearchBar />
+          </div>
 
-            <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
-                {mainNavLinks.map((link) => (
-                <ReactRouterDOM.NavLink 
-                    key={link.path} 
-                    to={link.path} 
-                    onClick={() => setIsMobileMenuOpen(false)} 
-                    className={({ isActive }) => `
-                        flex items-center text-base font-medium py-3 px-4 rounded-lg transition-all duration-200 border border-transparent
-                        ${isActive 
-                            ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' 
-                            : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                        }
-                    `} 
-                    end={link.path === "/"}
-                >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 ${link.path === window.location.pathname ? 'bg-cyan-500 text-black' : 'bg-white/5 text-gray-400'}`}>
-                        {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} text-sm`}></i>}
-                    </div>
-                    {link.label}
-                </ReactRouterDOM.NavLink>
-                ))}
-            </nav>
+          <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
+            {mainNavLinks.map((link) => (
+              // Fix: Use NavLink directly
+              <NavLink key={link.path} to={link.path} onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `flex items-center text-lg py-3 px-4 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'text-gray-200 hover:bg-white/10'}`} end={link.path === "/"}>
+                {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} mr-4 w-5 text-center`}></i>}
+                {link.label}
+              </NavLink>
+            ))}
+             {isAuthenticated && (
+              <NavLink to="/account/orders" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `flex items-center text-lg py-3 px-4 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'text-gray-200 hover:bg-white/10'}`}>
+                <i className="fas fa-receipt mr-4 w-5 text-center"></i>
+                Đơn hàng của tôi
+              </NavLink>
+            )}
+          </nav>
 
-            <div className="p-5 border-t border-white/10 space-y-4 bg-black/20">
-                {renderUserAuth(true)}
-            </div>
+          <div className="p-4 border-t border-gray-700 space-y-3">
+            {renderUserAuth(true)}
+          </div>
         </div>
       </div>
     </>

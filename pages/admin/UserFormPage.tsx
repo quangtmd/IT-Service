@@ -11,7 +11,9 @@ const UserFormPage: React.FC = () => {
     const { users, addUser, updateUser, currentUser } = useAuth();
     const isEditing = !!userId;
 
-    const [formData, setFormData] = useState<User | null>(null);
+    const [formData, setFormData] = useState<Partial<User> | null>(null);
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +41,7 @@ const UserFormPage: React.FC = () => {
                 phone: '',
                 address: '',
                 imageUrl: '',
+                salary: 0,
             });
             setIsLoading(false);
         }
@@ -46,25 +49,51 @@ const UserFormPage: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         if (!formData) return;
-        const { name, value } = e.target;
-        setFormData(prev => prev ? ({ ...prev, [name]: value }) : null);
+        const { name, value, type } = e.target;
+        const isNumber = type === 'number';
+        setFormData(prev => prev ? ({ ...prev, [name]: isNumber ? Number(value) : value }) : null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData) return;
+        setError(null);
+
+        // Password validation
+        if (!isEditing) { // When creating a new user, password is required
+            if (password.length < 6) {
+                setError('Mật khẩu phải có ít nhất 6 ký tự.');
+                return;
+            }
+            if (password !== confirmPassword) {
+                setError('Mật khẩu và xác nhận mật khẩu không khớp.');
+                return;
+            }
+        } else { // When editing, password is optional
+            if (password && password.length < 6) {
+                setError('Mật khẩu mới phải có ít nhất 6 ký tự.');
+                return;
+            }
+            if (password && password !== confirmPassword) {
+                setError('Mật khẩu mới và xác nhận mật khẩu không khớp.');
+                return;
+            }
+        }
 
         try {
             if (isEditing) {
                 const { id, ...updates } = formData;
-                await updateUser(id, updates);
+                if (password) {
+                    (updates as Partial<User>).password = password;
+                }
+                await updateUser(id as string, updates);
                 alert('Cập nhật hồ sơ nhân sự thành công!');
             } else {
                 const { id, ...dto } = formData;
-                await addUser(dto);
+                await addUser({ ...dto, password } as Omit<User, 'id'>);
                 alert('Thêm nhân viên mới thành công!');
             }
-            navigate('/admin/hrm_dashboard'); // Navigate back to HRM list
+            navigate('/admin/hrm_dashboard');
         } catch (err) {
             alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi lưu hồ sơ nhân sự.');
         }
@@ -81,7 +110,7 @@ const UserFormPage: React.FC = () => {
         );
     }
 
-    if (error) {
+    if (error && !formData) {
         return (
             <div className="admin-card">
                 <div className="admin-card-body text-center py-8 text-danger-text">
@@ -103,6 +132,7 @@ const UserFormPage: React.FC = () => {
                     <Button type="button" variant="outline" onClick={() => navigate('/admin/hrm_dashboard')}>Hủy</Button>
                 </div>
                 <div className="admin-card-body admin-product-form-page-body"> {/* Using similar class for scrolling */}
+                    {error && <div className="p-3 bg-danger-bg border border-danger-border text-danger-text rounded-md text-sm mb-4">{error}</div>}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-1">
                             <ImageUploadInput
@@ -121,21 +151,36 @@ const UserFormPage: React.FC = () => {
                                 <label htmlFor="email">Email *</label>
                                 <input type="email" name="email" id="email" value={formData.email || ''} onChange={handleChange} required disabled={isEditing} />
                             </div>
+
+                            <div className="admin-form-group">
+                                <label htmlFor="password">{isEditing ? 'Mật khẩu mới' : 'Mật khẩu *'}</label>
+                                <input type="password" name="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required={!isEditing} autoComplete="new-password" />
+                                {isEditing && <p className="form-input-description">Để trống nếu không muốn thay đổi.</p>}
+                            </div>
+                            <div className="admin-form-group">
+                                <label htmlFor="confirmPassword">{isEditing ? 'Xác nhận mật khẩu mới' : 'Xác nhận mật khẩu *'}</label>
+                                <input type="password" name="confirmPassword" id="confirmPassword" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required={!isEditing || !!password} autoComplete="new-password" />
+                            </div>
+
                             <div className="admin-form-group">
                                 <label htmlFor="position">Chức vụ</label>
                                 <input type="text" name="position" id="position" value={formData.position || ''} onChange={handleChange} />
+                            </div>
+                             <div className="admin-form-group">
+                                <label htmlFor="salary">Lương cơ bản</label>
+                                <input type="number" name="salary" id="salary" value={formData.salary || 0} onChange={handleChange} />
                             </div>
                             <div className="admin-form-group">
                                 <label htmlFor="phone">Số điện thoại</label>
                                 <input type="tel" name="phone" id="phone" value={formData.phone || ''} onChange={handleChange} />
                             </div>
-                            <div className="admin-form-group sm:col-span-2">
-                                <label htmlFor="address">Địa chỉ</label>
-                                <input type="text" name="address" id="address" value={formData.address || ''} onChange={handleChange} />
-                            </div>
                             <div className="admin-form-group">
                                 <label htmlFor="joinDate">Ngày vào làm</label>
                                 <input type="date" name="joinDate" id="joinDate" value={formData.joinDate ? formData.joinDate.split('T')[0] : ''} onChange={handleChange} />
+                            </div>
+                             <div className="admin-form-group sm:col-span-2">
+                                <label htmlFor="address">Địa chỉ</label>
+                                <input type="text" name="address" id="address" value={formData.address || ''} onChange={handleChange} />
                             </div>
                             <div className="admin-form-group">
                                 <label htmlFor="status">Trạng thái</label>
@@ -143,7 +188,7 @@ const UserFormPage: React.FC = () => {
                                     {USER_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
                             </div>
-                            <div className="admin-form-group sm:col-span-2">
+                            <div className="admin-form-group">
                                 <label htmlFor="staffRole">Vai trò hệ thống</label>
                                 <select name="staffRole" id="staffRole" value={formData.staffRole || 'Chuyên viên Hỗ trợ'} onChange={handleChange} disabled={formData.email === currentUser?.email}>
                                     {STAFF_ROLE_OPTIONS.map(role => <option key={role} value={role}>{role}</option>)}

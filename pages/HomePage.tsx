@@ -18,7 +18,7 @@ import HomePricingPlansIts from '../components/home/iqtechnology/HomePricingPlan
 const HomePage: React.FC = () => {
   return (
     <div>
-      {/* 1. 3D Server Room Hero Banner */}
+      {/* 1. 3D Hero Section (Thay thế Banner cũ) */}
       <HomeHero3D />
 
       {/* 2. Giới thiệu nhanh: IQ Technology là ai, dịch vụ chính */}

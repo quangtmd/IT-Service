@@ -1,12 +1,9 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { CartProvider } from './contexts/CartContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ChatbotProvider } from './contexts/ChatbotContext'; // Import the new provider
-import { ThemeProvider } from './contexts/ThemeContext'; // Import ThemeProvider
-import { ToastProvider } from './contexts/ToastContext'; // Import ToastProvider
 import ErrorBoundary from './ErrorBoundary'; // Import the ErrorBoundary
 
 function renderApp() {
@@ -23,15 +20,11 @@ function renderApp() {
     <React.StrictMode>
       <ErrorBoundary fallbackMessage="Ứng dụng gặp sự cố. Vui lòng thử tải lại trang hoặc liên hệ hỗ trợ.">
         <AuthProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              <CartProvider>
-                <ChatbotProvider>
-                  <App />
-                </ChatbotProvider>
-              </CartProvider>
-            </ToastProvider>
-          </ThemeProvider>
+          <CartProvider>
+            <ChatbotProvider>
+              <App />
+            </ChatbotProvider>
+          </CartProvider>
         </AuthProvider>
       </ErrorBoundary>
     </React.StrictMode>

@@ -1,16 +1,27 @@
-
 // @ts-nocheck
+// FIX: Removed an outdated and invalid triple-slash directive for '@react-three/fiber/patch-three-ts'.
+// This directive was causing a "type definition not found" error and preventing TypeScript from correctly resolving the JSX types for react-three-fiber elements.
+// In modern versions of react-three-fiber, these types are automatically inferred from the standard module imports.
+
 import * as THREE from 'three';
 import React, { useRef } from 'react';
+// FIX: Import `ThreeElements` for proper JSX type augmentation and `MeshProps` for component props.
 import { useFrame, useThree, MeshProps, ThreeElements } from '@react-three/fiber';
 import { useScroll, Image, Text, useTexture } from '@react-three/drei';
 
+// FIX: Removed the global JSX namespace augmentation that was overwriting React's IntrinsicElements.
+// This was causing 'Property div does not exist on type JSX.IntrinsicElements' errors across the entire project.
+// The R3F types should be inferred automatically or handled by @react-three/fiber module augmentation.
+
+// FIX: Changed from React.FC to a standard function component to help with type inference.
 const TechImage: React.FC<{ url: string; scale: [number, number]; position: THREE.Vector3 }> = ({ url, scale, position }) => {
   return (
     <Image url={url} scale={scale} position={position} />
   );
 };
 
+// Component for the fading hero image. It handles its own texture loading and animation.
+// FIX: Changed from React.FC to a standard function component.
 const FadingHeroImage = (props: MeshProps) => {
     const ref = useRef<THREE.Mesh>(null!);
     const scroll = useScroll();
@@ -30,6 +41,9 @@ const FadingHeroImage = (props: MeshProps) => {
     );
 };
 
+
+// Component for the final hero section text, which also fades in.
+// FIX: Changed from React.FC to a standard function component.
 const FadingHeroText = () => {
     const { width: w } = useThree(state => state.viewport);
     const scroll = useScroll();

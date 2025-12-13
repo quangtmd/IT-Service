@@ -2,12 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { User } from '../../types';
 import Button from '../ui/Button';
-import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Use named import for useNavigate
+import { useNavigate } from 'react-router-dom';
 
 const HRMProfileView: React.FC = () => {
     const { users, deleteUser, currentUser } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
-    const navigate = ReactRouterDOM.useNavigate();
+    // Fix: Use useNavigate directly
+    const navigate = useNavigate();
 
     const staffUsers = useMemo(() =>
         users.filter(u => u.role === 'staff' || u.role === 'admin')
@@ -73,13 +75,23 @@ const HRMProfileView: React.FC = () => {
                                         </div>
                                     </td>
                                     <td>{user.position || 'N/A'}</td>
-                                    <td>{user.staffRole || 'N/A'}</td>
-                                    <td><span className={`status-badge ${user.status === 'Đang hoạt động' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>{user.status}</span></td>
+                                    <td>
+                                        <span className="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                            {user.staffRole || user.role}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span className={`status-badge ${user.status === 'Đang hoạt động' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                            {user.status}
+                                        </span>
+                                    </td>
                                     <td>{user.joinDate ? new Date(user.joinDate).toLocaleDateString('vi-VN') : 'N/A'}</td>
                                     <td>
                                         <div className="flex gap-2">
                                             <Button onClick={() => handleEditUser(user.id)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
-                                            <Button onClick={() => handleDelete(user.id)} size="sm" variant="ghost" className="text-red-500 hover:bg-red-50" disabled={user.id === currentUser?.id}><i className="fas fa-trash"></i></Button>
+                                            {currentUser?.id !== user.id && (
+                                                <Button onClick={() => handleDelete(user.id)} size="sm" variant="ghost" className="text-red-500 hover:bg-red-50"><i className="fas fa-trash"></i></Button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

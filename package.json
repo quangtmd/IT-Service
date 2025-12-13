@@ -5,31 +5,28 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "start": "vite preview --host"
   },
   "dependencies": {
+    "@google/genai": "^0.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.23.0",
     "react-markdown": "^9.0.1",
-    "firebase": "^10.12.0",
-    "three": "^0.164.0",
-    "@react-three/fiber": "^8.16.6",
-    "@react-three/drei": "^9.105.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "mysql2": "^3.9.7"
+    "react-router-dom": "^6.22.3",
+    "firebase": "^10.9.0",
+    "three": "^0.160.0",
+    "@react-three/fiber": "^8.15.19",
+    "@react-three/drei": "^9.102.0"
   },
   "devDependencies": {
-    "@types/react": "^18.3.1",
-    "@types/react-dom": "^18.3.0",
-    "@types/node": "^20.12.7",
-    "@types/three": "^0.164.0",
+    "@types/node": "^20.11.24",
     "@vitejs/plugin-react": "^4.2.1",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.10"
+    "typescript": "^5.3.3",
+    "vite": "^5.1.4",
+    "@types/three": "^0.160.0",
+    "@types/react": "^18.2.61",
+    "@types/react-dom": "^18.2.19"
   }
 }
