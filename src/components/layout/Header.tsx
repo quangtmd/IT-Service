@@ -10,6 +10,7 @@ import HeaderSearchBar from '../shared/GlobalSearch';
 import MegaMenu from './MegaMenu'; 
 import { useTheme } from '../../contexts/ThemeContext';
 
+// 3D Header Action Link Component
 const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badgeCount?: number }> = ({ to, icon, label, badgeCount }) => (
     <Link to={to} className="hidden lg:flex flex-col items-center text-gray-300 hover:text-cyan-400 transition-all duration-300 text-xs font-medium space-y-1 w-[70px] text-center group perspective-500">
         <div className="relative transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-hover:rotate-x-10 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
