@@ -111,7 +111,7 @@ export interface Testimonial {
 export interface NavLinkItem {
   label: string;
   path: string;
-  icon?: React.ReactNode; 
+  icon?: string; 
   authRequired?: boolean;
   hideWhenAuth?: boolean; 
 }
@@ -200,7 +200,7 @@ export type AdminView =
   // Sales & CRM
   | 'customers' | 'quotations' | 'orders' | 'discounts' | 'returns' | 'suppliers' | 'helpdesk_tickets'
   // Service & Warranty
-  | 'service_tickets' | 'warranty_claims' | 'chat_logs' | 'warranty_tickets'
+  | 'service_tickets' | 'chat_logs' | 'warranty_tickets'
   // CMS & Marketing
   | 'products' | 'articles' | 'media_library' | 'email_marketing' | 'seo_management'
   // Inventory & Logistics
@@ -750,7 +750,50 @@ export interface WarrantyTicket {
     id: string;
     ticketNumber?: string;
     createdAt?: string;
+    customerName?: string;
+    creatorName?: string;
+    creatorId?: string;
+    customerPhone?: string;
+    totalAmount?: number;
+    status: WarrantyTicketStatus;
+    reportedIssue?: string;
+    resolution_notes?: string;
+    receiveDate?: string;
+    returnDate?: string;
+    productModel?: string;
+    productSerial?: string;
+    productId?: string;
+    priority?: string;
+    warrantyType?: string;
+    technician_notes?: string;
+    repairDate?: string;
+    returnStaffId?: string;
+    returnStaffName?: string;
+    items?: WarrantyTicketItem[];
+    serviceFee?: number;
+    discount?: number;
+    vat?: number;
+    transactionType?: string;
+    department?: string;
+    departmentCode?: string;
+    currency?: string;
+    totalQuantity?: number;
+    paymentStatus?: string;
+    paymentNotes?: string;
 }
+
+export interface WarrantyTicketItem {
+    id: string;
+    itemCode: string;
+    itemName: string;
+    quantity: number;
+    price: number;
+}
+
+export type WarrantyTicketStatus = 
+  'Mới Tạo' | 'Chờ duyệt' | 'Đã duyệt' | 'Đang sửa chữa' | 'Hoàn thành' | 'Đã trả khách' | 
+  'Chờ linh kiện' | 'Đợi KH đồng ý giá' | 'Đợi KH nhận lại' | 
+  'Từ chối bảo hành' | 'Hủy' | 'Lập chứng từ' | 'Đang duyệt' | 'Đang thực hiện' | 'Chờ xem lại';
 
 export interface Supplier {
   id: string;
@@ -773,7 +816,7 @@ export interface ReturnTicket {
   createdAt: string; // ISO
 }
 
-export type ServiceTicketStatus = 'Mới' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Đã đóng';
+export type ServiceTicketStatus = 'Mới' | 'Mới tiếp nhận' | 'Đang xử lý' | 'Chờ linh kiện' | 'Đợi KH đồng ý giá' | 'Đợi KH nhận lại' | 'Hoàn thành' | 'Đã đóng' | 'Không đồng ý sửa máy' | 'Hủy bỏ';
 export interface ServiceTicket {
   id: string;
   ticket_code: string;
@@ -788,6 +831,11 @@ export interface ServiceTicket {
   status: ServiceTicketStatus;
   assigneeId?: string;
   rating?: 1 | 2 | 3 | 4 | 5;
+  invoiceId?: string;
+  receiverId?: string;
+  work_items?: string;
+  appointment_date?: string;
+  physical_condition?: string;
 }
 
 // New Interfaces for Inventory & Logistics
@@ -893,6 +941,22 @@ export interface AuditLog {
 }
 
 // Placeholders for missing types referenced in code
-export interface Debt { id: string; }
+export interface Debt { 
+    id: string;
+    entityId: string; 
+    entityName: string;
+    entityType: 'customer' | 'supplier';
+    type: 'receivable' | 'payable'; 
+    amount: number;
+    dueDate?: string;
+    relatedTransactionId?: string;
+    status: 'Chưa thanh toán' | 'Đã thanh toán' | 'Quá hạn';
+}
 export interface PaymentApproval { id: string; }
 export interface CashflowForecastData { }
+export interface BackendHealthStatus {
+  status: 'ok' | 'error';
+  database: 'connected' | 'disconnected';
+  errorCode?: string;
+  message?: string;
+}
