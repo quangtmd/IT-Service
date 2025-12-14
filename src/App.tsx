@@ -1,6 +1,5 @@
 
 import React, { useEffect } from 'react';
-// Fix: Use named imports from react-router-dom instead of namespace import
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -14,7 +13,7 @@ import ArticleDetailPage from '@/pages/ArticleDetailPage';
 import AboutPage from '@/pages/AboutPage';
 import ContactPage from '@/pages/ContactPage';
 import CartPage from '@/pages/CartPage';
-import { PCBuilderPage } from '@/pages/PCBuilderPage'; 
+import { PCBuilderPage } from '@/pages/PCBuilderPage';
 import ProjectsPage from '@/pages/ProjectsPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import ScrollToTop from '@/components/shared/ScrollToTop';
