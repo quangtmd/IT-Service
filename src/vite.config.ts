@@ -10,7 +10,7 @@ const __dirname = dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, (process as any).cwd(), '');
+    const env = loadEnv(mode, process.cwd(), '');
 
     return {
         plugins: [react()],
