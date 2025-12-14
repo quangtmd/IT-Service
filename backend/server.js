@@ -82,6 +82,7 @@ apiRouter.get('/health', async (req, res) => {
 });
 
 // === USERS ===
+// Static user routes first
 apiRouter.get('/users', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM Users');
@@ -106,12 +107,14 @@ apiRouter.post('/users/login', async (req, res) => {
     }
 });
 
+// Dynamic user routes (e.g. /users/:id) would go here
+
 // === PRODUCTS ===
 
-// 1. Featured Products (EXPLICIT ROUTE)
-// This route must be defined BEFORE /products/:id to avoid conflicts
+// 1. Featured Products (EXPLICIT STATIC ROUTES FIRST)
+// These must be defined BEFORE /products/:id to prevent ":id" from capturing "featured"
 const getFeaturedHandler = async (req, res) => {
-    console.log("DEBUG: Hit featured products endpoint");
+    // console.log("DEBUG: Hit featured products endpoint");
     try {
         // Prioritize products marked as featured, then expensive ones
         const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
@@ -123,11 +126,10 @@ const getFeaturedHandler = async (req, res) => {
     }
 };
 
-// Define both routes to ensure compatibility and prevent 404s
 apiRouter.get('/products/featured', getFeaturedHandler); 
 apiRouter.get('/featured-products', getFeaturedHandler); 
 
-// 2. Product List & Filter
+// 2. Product List & Filter (General Route)
 apiRouter.get('/products', async (req, res) => {
     try {
         const { mainCategory, subCategory, q, tags, limit = 1000, page = 1, is_featured } = req.query;
@@ -156,7 +158,7 @@ apiRouter.get('/products', async (req, res) => {
     }
 });
 
-// 3. Product Detail (Dynamic ID) - MUST be defined AFTER specific product routes
+// 3. Product Detail (Dynamic ID Route LAST)
 apiRouter.get('/products/:id', async (req, res) => {
     try {
         const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);
@@ -203,6 +205,7 @@ apiRouter.post('/financials/payroll', async (req, res) => {
 });
 
 // === ORDERS ===
+// 1. General Order List
 apiRouter.get('/orders', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM Orders ORDER BY orderDate DESC');
@@ -216,9 +219,12 @@ apiRouter.get('/orders', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-apiRouter.get('/users/:userId/orders', async (req, res) => {
+// 2. Specific Order Routes (e.g. by Customer) - Place before generic :id if any
+const getOrdersByCustomer = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [req.params.userId]);
+        // Param is called 'userId' in route, but we use it as customerId
+        const userId = req.params.userId;
+        const [rows] = await pool.query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [userId]);
         res.json(rows.map(order => ({
             ...order,
             items: JSON.parse(order.items || '[]'),
@@ -227,7 +233,11 @@ apiRouter.get('/users/:userId/orders', async (req, res) => {
             shippingInfo: JSON.parse(order.shippingInfo || '{}'),
         })));
     } catch (error) { res.status(500).json({ message: error.message }); }
-});
+};
+
+// Map both route styles to the same handler to support different frontend service patterns
+apiRouter.get('/users/:userId/orders', getOrdersByCustomer);
+apiRouter.get('/orders/customer/:userId', getOrdersByCustomer);
 
 
 // Mount API Router
