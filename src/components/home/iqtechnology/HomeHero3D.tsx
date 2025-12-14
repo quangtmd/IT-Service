@@ -1,5 +1,5 @@
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 import { Canvas } from '@react-three/fiber';
@@ -9,12 +9,30 @@ import HeroLEDBoard from './HeroLEDBoard';
 
 const HomeHero3D: React.FC = () => {
   const { theme } = useTheme();
+  const backgroundRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (backgroundRef.current) {
+        const scrolled = window.scrollY;
+        // Parallax effect: Move background at half the speed of scroll
+        backgroundRef.current.style.transform = `translateY(${scrolled * 0.5}px)`;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <section className="relative w-full h-[90vh] min-h-[600px] overflow-hidden bg-black">
-      {/* 3D Background Layer - Digital Moving Grid */}
-      <div className="absolute inset-0 z-0">
-        <Canvas className="w-full h-full" dpr={[1, 2]}>
+      {/* 3D Background Layer - Digital Moving Grid with Parallax */}
+      <div 
+        ref={backgroundRef}
+        className="absolute inset-0 z-0 will-change-transform"
+        style={{ height: '120%' }} // Taller than container to allow parallax movement without gaps
+      >
+        <Canvas className="w-full h-full" dpr={[1, 2]} camera={{ position: [0, 0, 5], fov: 75 }}>
           <Suspense fallback={null}>
             <DigitalGridBackground />
           </Suspense>
