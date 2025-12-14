@@ -29,9 +29,13 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-// In development (empty env), this is empty string -> request goes to http://localhost:3000/api/... -> Proxy to 3001
-// In production, this is the full backend URL.
-const RAW_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
+// In production, this uses the env variable. 
+// In development, if the env variable is missing, it falls back to http://localhost:3001
+let RAW_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
+if (!RAW_BASE_URL && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    // Fallback for local dev if .env is missing or not picked up
+    RAW_BASE_URL = "http://localhost:3001";
+}
 // Remove trailing slash and trailing /api if present to avoid duplication (e.g. /api/api/...)
 const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
 
@@ -99,7 +103,7 @@ export const deleteArticle = (id: string): Promise<void> => fetchFromApi<void>(`
 
 // --- Order Service ---
 export const getOrders = (): Promise<Order[]> => fetchFromApi<Order[]>('/orders');
-export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/users/${customerId}/orders`);
+export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
 export const addOrder = (order: Order): Promise<Order> => fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
 export const updateOrder = (id: string, updates: Partial<Order>): Promise<Order> => fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const updateOrderStatus = (id: string, status: OrderStatus): Promise<Order> => fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });

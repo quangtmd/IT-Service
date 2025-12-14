@@ -1,7 +1,6 @@
 import React from 'react';
 import { ThreeElements } from '@react-three/fiber';
 
-// Moved AdminPermission from AuthContext to break circular dependency
 export type AdminPermission = 
   // General
   | 'viewDashboard' | 'viewNotifications'

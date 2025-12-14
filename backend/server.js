@@ -114,7 +114,6 @@ apiRouter.post('/users/login', async (req, res) => {
 // 1. Featured Products (EXPLICIT STATIC ROUTES FIRST)
 // These must be defined BEFORE /products/:id to prevent ":id" from capturing "featured"
 const getFeaturedHandler = async (req, res) => {
-    // console.log("DEBUG: Hit featured products endpoint");
     try {
         // Prioritize products marked as featured, then expensive ones
         const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
