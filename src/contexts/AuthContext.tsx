@@ -1,9 +1,8 @@
+
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User, UserRole, AdminNotification, StaffRole, AdminPermission } from '../types'; 
 import * as Constants from '../constants';
 import { getUsers, addUser as apiAddUser, updateUser as apiUpdateUser, deleteUser as apiDeleteUser, loginUser } from '../services/localDataService';
-
-// AdminPermission is now imported from ../types to avoid circular dependencies and import errors
 
 export interface AuthContextType {
   isAuthenticated: boolean;

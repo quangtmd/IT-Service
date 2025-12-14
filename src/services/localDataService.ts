@@ -29,23 +29,21 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-// In production, this uses the env variable. 
-// In development, if the env variable is missing, it falls back to http://localhost:3001
-let RAW_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
-if (!RAW_BASE_URL && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    // Fallback for local dev if .env is missing or not picked up
-    RAW_BASE_URL = "http://localhost:3001";
-}
-// Remove trailing slash and trailing /api if present to avoid duplication (e.g. /api/api/...)
-const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
+// Directly use the constant which now contains the full URL logic.
+// Ensure no trailing slash from the constant.
+const API_BASE_URL = Constants.BACKEND_API_BASE_URL.replace(/\/+$/, '');
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Ensure endpoint starts with /
+    // Ensure endpoint has a leading slash
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
-    // Final URL: BASE + /api + /endpoint
+    // Construct the full URL. If API_BASE_URL contains "https://...", this forms a valid absolute URL.
+    // We add '/api' because the backend routes are prefixed with it (e.g. app.use('/api', apiRouter))
+    // UNLESS the endpoint passed already contains /api, but the service functions below just pass e.g. '/users'.
     const url = `${API_BASE_URL}/api${path}`;
     
+    console.log(`[API Call] ${options.method || 'GET'} ${url}`);
+
     try {
         const response = await fetch(url, {
             headers: {
@@ -58,9 +56,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
-            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}. Endpoint: ${url}`;
-            console.error(errorMessage);
-            throw new Error(errorMessage);
+            console.error(`[API Error] ${response.status}: ${errorMessageDetails}`);
+            throw new Error(`Lỗi API (${response.status}): ${errorMessageDetails}`);
         }
         
         const text = await response.text();
@@ -69,7 +66,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     } catch (error) {
         console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error(`Lỗi mạng hoặc server không phản hồi. Không thể kết nối đến Backend tại ${url}`);
+            throw new Error('Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra kết nối internet hoặc trạng thái server.');
         }
         throw error;
     }
@@ -89,7 +86,7 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
-// Use standard REST endpoint /products/featured
+// Hàm đặc biệt để lấy sản phẩm nổi bật
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     return fetchFromApi<Product[]>('/products/featured');
 }
@@ -103,7 +100,7 @@ export const deleteArticle = (id: string): Promise<void> => fetchFromApi<void>(`
 
 // --- Order Service ---
 export const getOrders = (): Promise<Order[]> => fetchFromApi<Order[]>('/orders');
-export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
+export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/users/${customerId}/orders`);
 export const addOrder = (order: Order): Promise<Order> => fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
 export const updateOrder = (id: string, updates: Partial<Order>): Promise<Order> => fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const updateOrderStatus = (id: string, status: OrderStatus): Promise<Order> => fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });

@@ -10,10 +10,7 @@ const __dirname = dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-    // Load env file based on `mode` in the current working directory.
-    // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
-    // Using path.resolve() without arguments is equivalent to process.cwd() but avoids type errors with 'process'.
-    const env = loadEnv(mode, path.resolve(), '');
+    const env = loadEnv(mode, (process as any).cwd(), '');
 
     return {
         plugins: [react()],

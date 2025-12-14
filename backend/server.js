@@ -13,8 +13,10 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// --- CORS CONFIGURATION ---
+// Allow all origins for simplicity in this setup, or restrict to specific domains if needed.
 app.set('trust proxy', true);
-app.use(cors()); // Allow all CORS requests for development
+app.use(cors()); 
 app.use(express.json({ limit: '10mb' }));
 
 // --- LOGGING MIDDLEWARE ---
@@ -47,7 +49,7 @@ const checkDbConnection = async () => {
             await connection.query('SELECT 1');
             console.log("✅ Kết nối DB thành công!");
             
-            // Auto-migration: Ensure is_featured column exists
+            // Auto-migration check (optional/simple)
             try {
                 await connection.query("SELECT is_featured FROM Products LIMIT 1");
             } catch (err) {
@@ -76,13 +78,16 @@ checkDbConnection();
 // ==========================================================================
 const apiRouter = express.Router();
 
+apiRouter.get('/', (req, res) => {
+    res.json({ message: "API Root is reachable" });
+});
+
 apiRouter.get('/health', async (req, res) => {
     if (dbStatus.status !== 'connected') await checkDbConnection();
     res.json(dbStatus);
 });
 
 // === USERS ===
-// Static user routes first
 apiRouter.get('/users', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM Users');
@@ -107,15 +112,14 @@ apiRouter.post('/users/login', async (req, res) => {
     }
 });
 
-// Dynamic user routes (e.g. /users/:id) would go here
-
 // === PRODUCTS ===
 
-// 1. Featured Products (EXPLICIT STATIC ROUTES FIRST)
-// These must be defined BEFORE /products/:id to prevent ":id" from capturing "featured"
+// 1. Featured Products (EXPLICIT ROUTE)
+// QUAN TRỌNG: Route này PHẢI nằm trước /products/:id
 const getFeaturedHandler = async (req, res) => {
+    console.log("DEBUG: Hit featured products endpoint");
     try {
-        // Prioritize products marked as featured, then expensive ones
+        // Lấy 4 sản phẩm có is_featured = 1 hoặc giá cao nhất nếu không có featured
         const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
         const [rows] = await pool.query(query);
         res.json(rows.map(deserializeProduct));
@@ -126,9 +130,26 @@ const getFeaturedHandler = async (req, res) => {
 };
 
 apiRouter.get('/products/featured', getFeaturedHandler); 
-apiRouter.get('/featured-products', getFeaturedHandler); 
 
-// 2. Product List & Filter (General Route)
+// 2. Product Detail (Dynamic ID)
+// Đặt sau /featured để tránh nhận nhầm 'featured' là :id
+apiRouter.get('/products/:id', async (req, res) => {
+    const productId = req.params.id;
+    if (productId === 'featured') return getFeaturedHandler(req, res); // Fallback safety
+
+    try {
+        const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [productId]);
+        if (rows.length > 0) {
+            res.json(deserializeProduct(rows[0]));
+        } else {
+            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi server", error: error.message });
+    }
+});
+
+// 3. Product List & Filter
 apiRouter.get('/products', async (req, res) => {
     try {
         const { mainCategory, subCategory, q, tags, limit = 1000, page = 1, is_featured } = req.query;
@@ -153,20 +174,6 @@ apiRouter.get('/products', async (req, res) => {
         res.json({ products: products.map(deserializeProduct), totalProducts });
     } catch (error) {
         console.error("Error fetching products:", error);
-        res.status(500).json({ message: "Lỗi server", error: error.message });
-    }
-});
-
-// 3. Product Detail (Dynamic ID Route LAST)
-apiRouter.get('/products/:id', async (req, res) => {
-    try {
-        const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [req.params.id]);
-        if (rows.length > 0) {
-            res.json(deserializeProduct(rows[0]));
-        } else {
-            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
-        }
-    } catch (error) {
         res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 });
@@ -204,7 +211,6 @@ apiRouter.post('/financials/payroll', async (req, res) => {
 });
 
 // === ORDERS ===
-// 1. General Order List
 apiRouter.get('/orders', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM Orders ORDER BY orderDate DESC');
@@ -218,12 +224,9 @@ apiRouter.get('/orders', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// 2. Specific Order Routes (e.g. by Customer) - Place before generic :id if any
-const getOrdersByCustomer = async (req, res) => {
+apiRouter.get('/users/:userId/orders', async (req, res) => {
     try {
-        // Param is called 'userId' in route, but we use it as customerId
-        const userId = req.params.userId;
-        const [rows] = await pool.query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [userId]);
+        const [rows] = await pool.query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [req.params.userId]);
         res.json(rows.map(order => ({
             ...order,
             items: JSON.parse(order.items || '[]'),
@@ -232,17 +235,13 @@ const getOrdersByCustomer = async (req, res) => {
             shippingInfo: JSON.parse(order.shippingInfo || '{}'),
         })));
     } catch (error) { res.status(500).json({ message: error.message }); }
-};
-
-// Map both route styles to the same handler to support different frontend service patterns
-apiRouter.get('/users/:userId/orders', getOrdersByCustomer);
-apiRouter.get('/orders/customer/:userId', getOrdersByCustomer);
+});
 
 
 // Mount API Router
 app.use('/api', apiRouter);
 
-// 404 Handler for API requests
+// 404 Handler for API requests (to debug frontend calling wrong paths)
 app.use('/api/*', (req, res) => {
     console.log(`❌ 404 Not Found (API catch-all): ${req.originalUrl}`);
     res.status(404).json({ message: `API endpoint not found: ${req.originalUrl}` });
@@ -253,10 +252,11 @@ app.get('/', (req, res) => {
     res.send("Backend is running!");
 });
 
-// Serve Static Files (only in production)
+// Serve Static Files (only in production if configured to serve frontend)
 if (process.env.NODE_ENV === 'production') {
     const projectRoot = path.resolve(__dirname, '..');
     app.use(express.static(path.join(projectRoot, 'dist')));
+    // For SPA: Return index.html for any unknown non-API routes
     app.get('*', (req, res) => {
         if (req.path.startsWith('/api/')) {
              return res.status(404).json({ message: `API not found: ${req.path}` });
