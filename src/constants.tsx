@@ -20,10 +20,12 @@ export const ADMIN_EMAIL = "quangtmdit@gmail.com";
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
 
 // --- BACKEND API CONFIGURATION ---
-// FIX: Force use of the backend service URL directly.
-// The previous "tqtechnology" URL was likely the frontend static site, which cannot handle API requests.
-// We revert to the specific backend service URL you had before, or you can update this string if you have a new backend URL.
-export const BACKEND_API_BASE_URL = "https://it-service-app-n9as.onrender.com";
+// Robust configuration: Hardcode the production URL to avoid environment variable issues on static hosts.
+const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+export const BACKEND_API_BASE_URL = isLocal 
+    ? "http://127.0.0.1:3001" 
+    : "https://it-service-app-n9as.onrender.com";
 
 // --- STORAGE KEYS ---
 export const SITE_LOGO_STORAGE_KEY = "siteLogoUrl_v1";
@@ -341,7 +343,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
     socialYoutubeUrl: 'https://youtube.com',
 
     homepageBanners: INITIAL_HOMEPAGE_BANNERS,
-    homepageLEDBoard: INITIAL_HOMEPAGE_LED_BOARD, 
+    homepageLEDBoard: INITIAL_HOMEPAGE_LED_BOARD, // Add this
     homepageAbout: INITIAL_HOMEPAGE_ABOUT,
     homepageServicesBenefits: INITIAL_HOMEPAGE_SERVICES_BENEFITS,
     homepageWhyChooseUs: INITIAL_HOMEPAGE_WHY_CHOOSE_US,

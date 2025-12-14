@@ -29,20 +29,19 @@ const setLocalStorageItem = <T,>(key: string, value: T): void => {
 };
 
 // --- API BASE URL CONFIGURATION ---
-// FIX: Sử dụng URL từ constants để trỏ đúng về backend server (https://it-service-app-n9as.onrender.com)
-// Thay vì dùng "" (tương đối), điều này bắt buộc khi FE và BE nằm trên 2 domain khác nhau.
-const API_BASE_URL = Constants.BACKEND_API_BASE_URL.replace(/\/+$/, '');
+// In development (empty env), this is empty string -> request goes to http://localhost:3000/api/... -> Proxy to 3001
+// In production, this is the full backend URL.
+const RAW_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
+// Remove trailing slash and trailing /api if present to avoid duplication (e.g. /api/api/...)
+const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Đảm bảo endpoint bắt đầu bằng /
+    // Ensure endpoint starts with /
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
-    // URL cuối cùng: BASE_URL + /api + endpoint
+    // Final URL: BASE + /api + /endpoint
     const url = `${API_BASE_URL}/api${path}`;
     
-    // Debug log để kiểm tra URL thực tế đang gọi
-    console.log(`[API Call] ${options.method || 'GET'} ${url}`);
-
     try {
         const response = await fetch(url, {
             headers: {
@@ -55,8 +54,9 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
-            console.error(`[API Error] ${response.status}: ${errorMessageDetails}`);
-            throw new Error(`Lỗi API (${response.status}): ${errorMessageDetails}`);
+            const errorMessage = `Lỗi API (${response.status}): ${errorMessageDetails}. Endpoint: ${url}`;
+            console.error(errorMessage);
+            throw new Error(errorMessage);
         }
         
         const text = await response.text();
@@ -65,7 +65,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     } catch (error) {
         console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error('Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra kết nối internet hoặc trạng thái server.');
+            throw new Error(`Lỗi mạng hoặc server không phản hồi. Không thể kết nối đến Backend tại ${url}`);
         }
         throw error;
     }
@@ -85,7 +85,7 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
-// Hàm đặc biệt để lấy sản phẩm nổi bật
+// Use standard REST endpoint /products/featured
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     return fetchFromApi<Product[]>('/products/featured');
 }
