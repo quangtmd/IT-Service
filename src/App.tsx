@@ -2,34 +2,34 @@
 import React, { useEffect } from 'react';
 // Fix: Use named imports from react-router-dom instead of namespace import
 import { HashRouter, Routes, Route } from 'react-router-dom';
-import Header from './components/layout/Header';
-import Footer from './components/layout/Footer';
-import HomePage from './pages/HomePage';
-import ShopPage from './pages/ShopPage';
-import ProductDetailPage from './pages/ProductDetailPage';
-import ServicesPage from './pages/ServicesPage';
-import ServiceDetailPage from './pages/ServiceDetailPage';
-import BlogPage from './pages/BlogPage';
-import ArticleDetailPage from './pages/ArticleDetailPage';
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import CartPage from './pages/CartPage';
-import { PCBuilderPage } from './pages/PCBuilderPage'; 
-import ProjectsPage from './pages/ProjectsPage';
-import NotFoundPage from './pages/NotFoundPage';
-import ScrollToTop from './components/shared/ScrollToTop';
-import FloatingActionButtons from './components/shared/FloatingActionButtons';
-import PCBuildSuggestionsPage from './pages/PCBuildSuggestionsPage';
-import CustomerOrdersPage from './pages/CustomerOrdersPage';
-import CustomerOrderDetailPage from './pages/CustomerOrderDetailPage';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+import HomePage from '@/pages/HomePage';
+import ShopPage from '@/pages/ShopPage';
+import ProductDetailPage from '@/pages/ProductDetailPage';
+import ServicesPage from '@/pages/ServicesPage';
+import ServiceDetailPage from '@/pages/ServiceDetailPage';
+import BlogPage from '@/pages/BlogPage';
+import ArticleDetailPage from '@/pages/ArticleDetailPage';
+import AboutPage from '@/pages/AboutPage';
+import ContactPage from '@/pages/ContactPage';
+import CartPage from '@/pages/CartPage';
+import { PCBuilderPage } from '@/pages/PCBuilderPage'; 
+import ProjectsPage from '@/pages/ProjectsPage';
+import NotFoundPage from '@/pages/NotFoundPage';
+import ScrollToTop from '@/components/shared/ScrollToTop';
+import FloatingActionButtons from '@/components/shared/FloatingActionButtons';
+import PCBuildSuggestionsPage from '@/pages/PCBuildSuggestionsPage';
+import CustomerOrdersPage from '@/pages/CustomerOrdersPage';
+import CustomerOrderDetailPage from '@/pages/CustomerOrderDetailPage';
 
 // Auth and Admin
-import AdminPage from './pages/admin/AdminPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import CheckoutPage from './pages/CheckoutPage';
-import { ThemeProvider } from './contexts/ThemeContext'; 
+import AdminPage from '@/pages/admin/AdminPage';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import CheckoutPage from '@/pages/CheckoutPage';
+import { ThemeProvider } from '@/contexts/ThemeContext'; 
 
 const App: React.FC = () => {
 
