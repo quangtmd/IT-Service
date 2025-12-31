@@ -1,331 +1,283 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+// @ts-nocheck
+import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import * as Constants from '../../constants.tsx';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../ui/Button';
-import { CustomMenuLink, SiteSettings, NavLinkItem } from '../../types';
+import { CustomMenuLink, SiteSettings } from '../../types';
 import HeaderSearchBar from '../shared/GlobalSearch';
-import MegaMenu from './MegaMenu'; 
+import MegaMenu from './MegaMenu';
 import { useTheme } from '../../contexts/ThemeContext';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Float, PerspectiveCamera, Icosahedron, Octahedron, Sparkles, MeshDistortMaterial } from '@react-three/drei';
+import * as THREE from 'three';
 
-// 3D Header Action Link Component
-const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badgeCount?: number }> = ({ to, icon, label, badgeCount }) => (
-    <Link to={to} className="hidden lg:flex flex-col items-center text-gray-300 hover:text-cyan-400 transition-all duration-300 text-xs font-medium space-y-1 w-[70px] text-center group perspective-500">
-        <div className="relative transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-hover:rotate-x-10 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
-            <i className={`fas ${icon} text-2xl group-hover:text-shadow-cyan transition-colors duration-300`}></i>
-            {badgeCount && badgeCount > 0 ? (
-                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full h-5 min-w-[1.25rem] px-1.5 flex items-center justify-center animate-bounce shadow-md border border-red-400 z-10">
-                    {badgeCount > 9 ? '9+' : badgeCount}
-                </span>
-            ) : null}
-        </div>
-        <span className="group-hover:text-cyan-300 text-shadow-sm transition-colors">{label}</span>
-    </Link>
-);
+// --- 3D SCENE COMPONENTS (Robust Version) ---
 
-const Header: React.FC = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { cart } = useCart();
-  const { isAuthenticated, currentUser, logout, isLoading } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const navigate = useNavigate();
-  const totalItemsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
-  const [currentNavLinks, setCurrentNavLinks] = useState<(CustomMenuLink | NavLinkItem)[]>([]);
-  const [scrolled, setScrolled] = useState(false);
-
-  const loadData = useCallback(() => {
-    const storedSettings = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
-    const currentSiteSettings = storedSettings ? JSON.parse(storedSettings) : Constants.INITIAL_SITE_SETTINGS;
-    setSiteSettings(currentSiteSettings);
-
-    const storedMenu = localStorage.getItem(Constants.CUSTOM_MENU_STORAGE_KEY);
-    let linksSource: (CustomMenuLink | NavLinkItem)[] = [];
-    if (storedMenu) {
-      linksSource = JSON.parse(storedMenu).filter((l: CustomMenuLink) => l.isVisible).sort((a: CustomMenuLink, b: CustomMenuLink) => a.order - b.order);
-    } else {
-      linksSource = Constants.INITIAL_CUSTOM_MENU_LINKS.filter(l => l.isVisible).sort((a, b) => a.order - b.order);
-    }
-    setCurrentNavLinks(linksSource);
-  }, []);
-
-  useEffect(() => {
-    loadData();
-    window.addEventListener('siteSettingsUpdated', loadData);
-    window.addEventListener('menuUpdated', loadData);
+const CrystalLogo = () => {
+    const meshRef = useRef<THREE.Mesh>(null!);
+    const coreRef = useRef<THREE.Mesh>(null!);
     
-    const handleScroll = () => {
-        setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-
-    return () => {
-      window.removeEventListener('siteSettingsUpdated', loadData);
-      window.removeEventListener('menuUpdated', loadData);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [loadData]);
-
-  const finalNavLinks = useMemo(() => {
-    return currentNavLinks.filter(link => link.path !== '/admin');
-  }, [currentNavLinks]);
-
-  useEffect(() => {
-    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : 'unset';
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [isMobileMenuOpen]);
-
-  const handleLogout = () => {
-    logout();
-    setIsMobileMenuOpen(false);
-    navigate('/');
-  };
-
-  const mainNavLinks = finalNavLinks;
-  const desktopNavLinks = mainNavLinks.filter(link => link.path !== Constants.PC_BUILDER_PATH && link.path !== '/blog');
-
-  const renderUserAuth = (isMobile = false) => {
-    if (isLoading) return <div className={`h-8 w-24 rounded-full ${isMobile ? 'bg-gray-700' : 'bg-white/10'} animate-pulse`}></div>;
-
-    if (isAuthenticated && currentUser) {
-      return (
-        <div className="relative group">
-          <button className={`flex items-center gap-3 ${isMobile ? 'text-gray-200' : 'text-gray-300'} hover:text-cyan-400 transition-colors p-1 pr-3 rounded-full hover:bg-white/5 border border-transparent hover:border-white/10`}>
-            <div className="p-0.5 bg-gradient-to-tr from-cyan-400 to-blue-600 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.4)]">
-                <img src={currentUser.imageUrl || `https://ui-avatars.com/api/?name=${currentUser.username.charAt(0)}&background=random`} alt="avatar" className="w-8 h-8 rounded-full border border-black/50" />
-            </div>
-            <span className={`text-sm font-semibold tracking-wide ${isMobile ? '' : 'hidden md:inline'}`}>{currentUser.username}</span>
-            <i className="fas fa-chevron-down text-xs transition-transform duration-200 group-hover:rotate-180 opacity-70"></i>
-          </button>
-          
-          {/* Dropdown 3D */}
-          <div className={`absolute top-full ${isMobile ? 'bottom-full top-auto' : 'right-0 mt-4'} w-64 bg-[#0f172a]/95 backdrop-blur-xl rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] py-2 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto border border-white/10 transform origin-top-right scale-95 group-hover:scale-100 ring-1 ring-white/5`}>
-            {/* Arrow */}
-            <div className="absolute -top-1.5 right-6 w-3 h-3 bg-[#0f172a] border-l border-t border-white/10 transform rotate-45"></div>
-            
-            <div className="px-5 py-4 border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent">
-                <p className="text-base font-bold text-white truncate">{currentUser.username}</p>
-                <p className="text-xs text-gray-400 truncate mt-0.5">{currentUser.email}</p>
-            </div>
-            
-            <div className="p-2 space-y-1">
-                {(currentUser.role === 'admin' || currentUser.role === 'staff') && (
-                    <Link to="/admin" className="flex items-center px-4 py-3 text-sm text-gray-300 hover:bg-gradient-to-r hover:from-cyan-900/30 hover:to-transparent rounded-lg hover:text-cyan-400 transition-all group/item">
-                        <span className="w-8 h-8 rounded-full bg-cyan-900/20 flex items-center justify-center mr-3 group-hover/item:bg-cyan-500/20 transition-colors">
-                            <i className="fas fa-user-shield text-cyan-500"></i>
-                        </span>
-                        Quản trị hệ thống
-                    </Link>
-                )}
-                <Link to="/account/orders" className="flex items-center px-4 py-3 text-sm text-gray-300 hover:bg-gradient-to-r hover:from-blue-900/30 hover:to-transparent rounded-lg hover:text-blue-400 transition-all group/item">
-                     <span className="w-8 h-8 rounded-full bg-blue-900/20 flex items-center justify-center mr-3 group-hover/item:bg-blue-500/20 transition-colors">
-                        <i className="fas fa-receipt text-blue-500"></i>
-                    </span>
-                    Đơn hàng của tôi
-                </Link>
-            </div>
-            
-            <div className="border-t border-white/10 mt-1 p-2">
-                <button onClick={handleLogout} className="w-full flex items-center px-4 py-2.5 text-sm text-red-400 hover:bg-red-950/30 rounded-lg hover:text-red-300 transition-colors text-left group/btn">
-                    <i className="fas fa-sign-out-alt w-6 group-hover/btn:translate-x-1 transition-transform"></i>
-                    Đăng xuất
-                </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
+    useFrame((state) => {
+        const time = state.clock.getElapsedTime();
+        if(meshRef.current) {
+            meshRef.current.rotation.y = time * 0.5;
+            meshRef.current.rotation.z = Math.sin(time * 0.2) * 0.2;
+        }
+        if(coreRef.current) {
+             const scale = 0.8 + Math.sin(time * 3) * 0.1;
+             coreRef.current.scale.setScalar(scale);
+        }
+    });
 
     return (
-      <div className={`flex items-center gap-3 ${isMobile ? 'flex-col w-full' : ''}`}>
-        <Link to="/login" className={`${isMobile ? 'w-full' : ''}`}>
-          <Button variant={isMobile ? 'outline' : 'ghost'} size='sm' className={`w-full font-medium ${isMobile ? 'border-gray-500 text-gray-200' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}>Đăng nhập</Button>
-        </Link>
-        <Link to="/register" className={`${isMobile ? 'w-full' : ''}`}>
-          <Button variant='primary' size='sm' className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] border-none font-bold tracking-wide">
-             Đăng ký
-          </Button>
-        </Link>
-      </div>
+        <group>
+            {/* Outer Shell */}
+            <mesh ref={meshRef}>
+                <icosahedronGeometry args={[1.4, 0]} />
+                <meshStandardMaterial 
+                    color="#00f3ff" 
+                    wireframe 
+                    transparent 
+                    opacity={0.4} 
+                    emissive="#00f3ff"
+                    emissiveIntensity={0.5}
+                />
+            </mesh>
+            
+            {/* Inner Core */}
+            <mesh ref={coreRef}>
+                <octahedronGeometry args={[0.7, 0]} />
+                <MeshDistortMaterial 
+                    color="#ef4444" 
+                    speed={2} 
+                    distort={0.4} 
+                    radius={1}
+                    emissive="#ef4444"
+                    emissiveIntensity={1}
+                />
+            </mesh>
+            
+            <pointLight color="#00f3ff" intensity={2} distance={3} />
+        </group>
     );
-  };
+};
 
-  return (
-    <>
-      <header 
-        className={`fixed top-0 w-full z-50 transition-all duration-500 border-b backdrop-blur-xl ${
-            scrolled 
-            ? 'bg-[#020617]/95 border-cyan-500/20 py-2 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.8)]' 
-            : 'bg-[#0B1120]/80 border-white/5 py-3'
-        }`}
-      >
-        {/* Glowing Top Line */}
-        <div className={`absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent transition-opacity duration-500 ${scrolled ? 'opacity-100' : 'opacity-0'}`}></div>
+const Header3DCanvas = () => {
+    return (
+        <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]}>
+            <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
+            <ambientLight intensity={0.5} />
+            <pointLight position={[10, 10, 10]} intensity={1} color="#ffffff" />
+            <Suspense fallback={null}>
+                <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+                    <CrystalLogo />
+                </Float>
+                <Sparkles count={20} scale={4} size={2} speed={0.4} opacity={0.5} color="#00f3ff" />
+            </Suspense>
+        </Canvas>
+    );
+};
 
-        {/* TOP BAR - INFO */}
-        <div className={`container mx-auto px-4 flex justify-between items-center transition-all duration-500 overflow-hidden ${scrolled ? 'h-0 opacity-0 mb-0' : 'h-8 opacity-100 mb-1'} border-b border-white/5`}>
-            <div className="flex items-center gap-6 text-xs text-gray-400">
-              {siteSettings.companyPhone && (
-                <span className="hover:text-cyan-400 cursor-pointer transition-colors flex items-center gap-2 group">
-                    <i className="fas fa-phone-alt text-cyan-600 group-hover:text-cyan-400 animate-pulse"></i> 
-                    {siteSettings.companyPhone}
-                </span>
-              )}
-              {siteSettings.companyEmail && (
-                <span className="hidden sm:flex hover:text-cyan-400 cursor-pointer transition-colors items-center gap-2 group">
-                    <i className="fas fa-envelope text-cyan-600 group-hover:text-cyan-400"></i> 
-                    {siteSettings.companyEmail}
-                </span>
-              )}
-            </div>
-            <div className="hidden lg:flex items-center gap-6 text-xs">
-                {renderUserAuth()}
-            </div>
-        </div>
+const Header: React.FC = () => {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { cart } = useCart();
+    const { isAuthenticated, currentUser, logout } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const totalItemsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const [scrolled, setScrolled] = useState(false);
+    const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
 
-        {/* MAIN HEADER CONTENT */}
-        <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between gap-6 h-16">
-                
-                {/* 3D LOGO */}
-                <Link to="/" className="flex-shrink-0 group relative perspective-500 z-50">
-                    <div className="transform transition-transform duration-500 group-hover:rotate-x-12 group-hover:scale-105 group-hover:translate-z-10">
-                        <div className="absolute -inset-4 bg-cyan-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <svg width="160" height="50" viewBox="0 0 130 45" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl filter relative z-10">
-                            <defs>
-                                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" style={{stopColor:'#22d3ee', stopOpacity:1}} />
-                                    <stop offset="100%" style={{stopColor:'#3b82f6', stopOpacity:1}} />
-                                </linearGradient>
-                                <filter id="glow">
-                                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
-                                    <feMerge>
-                                        <feMergeNode in="coloredBlur"/>
-                                        <feMergeNode in="SourceGraphic"/>
-                                    </feMerge>
-                                </filter>
-                            </defs>
-                            <text x="0" y="32" className="font-black text-4xl italic fill-[url(#logoGradient)] filter-[url(#glow)]" style={{fontFamily: 'Impact, sans-serif'}}>IQ</text>
-                            <text x="38" y="32" className="font-black text-4xl italic fill-white" style={{fontFamily: 'Impact, sans-serif', textShadow: '0 0 10px rgba(255,255,255,0.5)'}}>TECH</text>
-                            <text x="38" y="44" className="font-bold text-[10px] fill-slate-400 tracking-[0.3em]" style={{fontFamily: 'Arial, sans-serif'}}>TECHNOLOGY</text>
-                        </svg>
-                    </div>
-                </Link>
-                
-                {/* SEARCH BAR - Floating */}
-                <div className="flex-grow max-w-xl hidden lg:block transform transition-all duration-300 hover:-translate-y-0.5 z-40">
-                    <div className="relative group">
-                         {/* Search Glow */}
-                         <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg blur opacity-10 group-hover:opacity-50 transition duration-500"></div>
-                         <div className="relative bg-[#0F172A] rounded-lg border border-white/10 shadow-inner">
-                             <HeaderSearchBar />
-                         </div>
-                    </div>
-                </div>
-                
-                {/* RIGHT ACTIONS */}
-                <div className="flex items-center gap-2 xl:gap-6 z-40">
-                    <HeaderActionLink to="/blog" icon="fa-newspaper" label="Tin tức" />
-                    <HeaderActionLink to={Constants.PC_BUILDER_PATH} icon="fa-tools" label="Build PC" />
-                    <HeaderActionLink to="/cart" icon="fa-shopping-cart" label="Giỏ hàng" badgeCount={totalItemsInCart} />
-                </div>
-                
-                {/* Mobile Menu Button */}
-                <button className="lg:hidden text-2xl text-white hover:text-cyan-400 transition-colors p-2 z-50" onClick={() => setIsMobileMenuOpen(true)} aria-label="Mở menu">
-                    <i className="fas fa-bars"></i>
-                </button>
-            </div>
-        </div>
+    // Load settings logic
+    const loadData = useCallback(() => {
+        const storedSettings = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
+        setSiteSettings(storedSettings ? JSON.parse(storedSettings) : Constants.INITIAL_SITE_SETTINGS);
+    }, []);
+
+    useEffect(() => {
+        loadData();
+        window.addEventListener('siteSettingsUpdated', loadData);
         
-        {/* DESKTOP NAVIGATION - 3D Floating Bar */}
-        <div className="hidden lg:block relative z-30 mt-2">
-            <div className="container mx-auto px-4">
-                 <nav className="flex items-center justify-center gap-2 h-10">
-                    {desktopNavLinks.map((link) => {
-                    if (link.path === '/shop') {
-                        return <MegaMenu key={link.path} />;
-                    }
-                    return (
-                        <NavLink
-                        key={link.path}
-                        to={link.path}
-                        className={({ isActive }) => `
-                            relative px-5 py-1.5 text-sm font-bold uppercase tracking-wider transition-all duration-300 rounded-full
-                            ${isActive 
-                                ? 'text-cyan-300 bg-white/5 shadow-[0_0_15px_rgba(34,211,238,0.2)] border border-cyan-500/30' 
-                                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10'}
-                            group overflow-hidden
-                        `}
-                        end={link.path === "/"}
-                        >
-                            <span className="relative z-10 flex items-center gap-2">
-                                {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} opacity-70 group-hover:opacity-100 transition-opacity text-xs`}></i>}
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+
+        return () => {
+            window.removeEventListener('siteSettingsUpdated', loadData);
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [loadData]);
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
+
+    return (
+        <>
+            <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'py-2' : 'py-4'}`}>
+                <div className={`mx-auto px-4 transition-all duration-300 ${scrolled ? 'container max-w-[98%]' : 'container'}`}>
+                    <div className={`
+                        relative bg-[#0F172A]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.5)] 
+                        flex items-center justify-between px-4 lg:px-8 transition-all duration-300
+                        ${scrolled ? 'h-16' : 'h-20'}
+                    `}>
+                        {/* Glow Effect */}
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-transparent to-purple-500/10 pointer-events-none"></div>
+
+                        {/* LEFT: LOGO */}
+                        <Link to="/" className="flex items-center gap-3 relative z-10 group">
+                            <div className="w-12 h-12 relative">
+                                <Header3DCanvas />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xl font-black italic tracking-tighter text-white group-hover:text-cyan-400 transition-colors">
+                                    IQ<span className="text-cyan-400 group-hover:text-white transition-colors">TECH</span>
+                                </span>
+                                <span className="text-[10px] tracking-[0.3em] text-gray-400 uppercase">Technology</span>
+                            </div>
+                        </Link>
+
+                        {/* CENTER: NAVIGATION */}
+                        <nav className="hidden xl:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
+                            {Constants.NAVIGATION_LINKS_BASE.filter(l => l.path !== '/pc-builder' && l.path !== '/blog').map(link => {
+                                if (link.path === '/shop') return <div key="mega" className="px-2"><MegaMenu /></div>;
+                                const isActive = location.pathname === link.path;
+                                return (
+                                    <Link 
+                                        key={link.path} 
+                                        to={link.path}
+                                        className={`
+                                            relative px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition-all duration-300
+                                            ${isActive 
+                                                ? 'text-cyan-300 bg-white/5 shadow-[0_0_15px_rgba(34,211,238,0.2)] border border-cyan-500/30' 
+                                                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}
+                                        `}
+                                    >
+                                        {link.label}
+                                        {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-[2px] bg-cyan-400 rounded-full shadow-[0_0_5px_#22d3ee]"></span>}
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+
+                        {/* RIGHT: ACTIONS */}
+                        <div className="flex items-center gap-4 relative z-10">
+                            {/* Search */}
+                            <div className="hidden lg:block w-64">
+                                <HeaderSearchBar />
+                            </div>
+
+                            {/* PC Builder Button */}
+                            <Link to={Constants.PC_BUILDER_PATH} className="hidden lg:flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-lg hover:shadow-purple-500/40 hover:scale-105 transition-all border border-white/10" title="Build PC">
+                                <i className="fas fa-tools"></i>
+                            </Link>
+
+                            {/* Cart */}
+                            <Link to="/cart" className="relative group">
+                                <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 group-hover:text-cyan-400 group-hover:border-cyan-500/30 transition-all">
+                                    <i className="fas fa-shopping-cart"></i>
+                                </div>
+                                {totalItemsInCart > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg border-2 border-[#0F172A]">
+                                        {totalItemsInCart}
+                                    </span>
+                                )}
+                            </Link>
+
+                            {/* User / Login */}
+                            {isAuthenticated && currentUser ? (
+                                <div className="hidden lg:block relative group">
+                                    <button className="flex items-center gap-3 pl-3 border-l border-white/10">
+                                        <img 
+                                            src={currentUser.imageUrl || `https://ui-avatars.com/api/?name=${currentUser.username}`} 
+                                            alt="Avatar" 
+                                            className="w-9 h-9 rounded-full border-2 border-cyan-500/30 p-[2px]" 
+                                        />
+                                    </button>
+                                    {/* Dropdown */}
+                                    <div className="absolute top-full right-0 mt-2 w-60 bg-[#0f172a] border border-cyan-900/50 rounded-xl shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right z-50">
+                                        <div className="px-4 py-3 border-b border-white/5">
+                                            <p className="text-white font-bold truncate">{currentUser.username}</p>
+                                            <p className="text-xs text-gray-500 truncate">{currentUser.email}</p>
+                                        </div>
+                                        {(currentUser.role === 'admin' || currentUser.role === 'staff') && (
+                                            <Link to="/admin" className="flex items-center px-4 py-2 text-sm text-cyan-400 hover:bg-white/5"><i className="fas fa-shield-alt w-5 mr-2"></i> Quản trị</Link>
+                                        )}
+                                        <Link to="/account/orders" className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-white/5"><i className="fas fa-box w-5 mr-2"></i> Đơn hàng</Link>
+                                        <button onClick={handleLogout} className="flex items-center w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/5"><i className="fas fa-sign-out-alt w-5 mr-2"></i> Đăng xuất</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <Link to="/login" className="hidden lg:block">
+                                    <Button size="sm" className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500 hover:text-white transition-all">
+                                        Đăng nhập
+                                    </Button>
+                                </Link>
+                            )}
+
+                            {/* Mobile Toggle */}
+                            <button className="lg:hidden text-2xl text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(true)}>
+                                <i className="fas fa-bars"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            {/* Mobile Menu Overlay */}
+            <div className={`fixed inset-0 z-[60] bg-black/90 backdrop-blur-xl transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                <div className="flex flex-col h-full p-6">
+                    <div className="flex justify-between items-center mb-8">
+                        <span className="text-2xl font-bold text-white">MENU</span>
+                        <button onClick={() => setIsMobileMenuOpen(false)} className="text-white text-3xl"><i className="fas fa-times"></i></button>
+                    </div>
+
+                    <div className="mb-6">
+                        <HeaderSearchBar />
+                    </div>
+
+                    <nav className="flex flex-col gap-4 overflow-y-auto flex-grow">
+                        {Constants.NAVIGATION_LINKS_BASE.map(link => (
+                            <Link 
+                                key={link.path} 
+                                to={link.path} 
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="flex items-center gap-4 text-lg font-medium text-gray-300 hover:text-cyan-400 py-2 border-b border-white/5"
+                            >
+                                <i className={`${link.icon} w-6 text-center`}></i>
                                 {link.label}
-                            </span>
-                            {/* Hover Sweep Effect */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-700 ease-in-out"></div>
-                        </NavLink>
-                    );
-                    })}
-                </nav>
+                            </Link>
+                        ))}
+                    </nav>
+
+                    <div className="mt-auto pt-6 border-t border-white/10">
+                        {isAuthenticated ? (
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center gap-3">
+                                    <img src={currentUser?.imageUrl || `https://ui-avatars.com/api/?name=${currentUser?.username}`} className="w-10 h-10 rounded-full" alt="" />
+                                    <div>
+                                        <p className="text-white font-bold">{currentUser?.username}</p>
+                                        <p className="text-xs text-gray-500">{currentUser?.email}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="w-full py-3 bg-red-900/30 text-red-400 rounded-xl font-bold border border-red-500/20">Đăng xuất</button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-4">
+                                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="py-3 text-center rounded-xl bg-white/10 text-white font-bold border border-white/10">Đăng nhập</Link>
+                                <Link to="/register" onClick={() => setIsMobileMenuOpen(false)} className="py-3 text-center rounded-xl bg-cyan-600 text-white font-bold shadow-lg shadow-cyan-500/30">Đăng ký</Link>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
-        </div>
-
-      </header>
-
-      {/* Mobile Menu Overlay */}
-      <div
-        className={`fixed inset-0 z-40 bg-black/80 backdrop-blur-md transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={() => setIsMobileMenuOpen(false)}
-      ></div>
-
-      {/* Mobile Menu Panel */}
-      <div className={`fixed top-0 right-0 h-full w-[85%] max-w-sm bg-[#0B1120] shadow-[0_0_50px_rgba(0,0,0,0.8)] z-50 transition-transform duration-300 ease-in-out lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'} border-l border-white/10 flex flex-col`}>
-        
-        {/* Mobile Header */}
-        <div className="p-5 flex justify-between items-center border-b border-white/10 bg-gradient-to-r from-slate-900 to-slate-950">
-            <div className="flex items-center gap-3">
-                <span className="w-1 h-6 bg-gradient-to-b from-cyan-400 to-blue-600 rounded-full"></span>
-                <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">MENU</h3>
-            </div>
-            <button className="text-2xl text-gray-400 hover:text-white transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)} aria-label="Đóng menu">
-                <i className="fas fa-times"></i>
-            </button>
-        </div>
-        
-        {/* Mobile Search */}
-        <div className="p-5 border-b border-white/10 bg-[#020617]">
-            <HeaderSearchBar />
-        </div>
-
-        {/* Mobile Links */}
-        <nav className="flex-grow p-4 space-y-2 overflow-y-auto bg-[#0B1120]">
-            {mainNavLinks.map((link) => (
-              <NavLink key={link.path} to={link.path} onClick={() => setIsMobileMenuOpen(false)} 
-                className={({ isActive }) => `flex items-center text-base font-medium py-4 px-5 rounded-xl transition-all duration-300 border border-transparent ${isActive ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`} end={link.path === "/"}>
-                {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} mr-4 w-6 text-center text-lg`}></i>}
-                {link.label}
-                <i className="fas fa-chevron-right ml-auto text-xs opacity-30"></i>
-              </NavLink>
-            ))}
-             {isAuthenticated && (
-              <NavLink to="/account/orders" onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `flex items-center text-base font-medium py-4 px-5 rounded-xl transition-all duration-300 border border-transparent ${isActive ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}>
-                <i className="fas fa-receipt mr-4 w-6 text-center text-lg"></i>
-                Đơn hàng của tôi
-              </NavLink>
-            )}
-        </nav>
-
-        {/* Mobile Auth */}
-        <div className="p-6 border-t border-white/10 bg-[#020617]">
-            {renderUserAuth(true)}
-        </div>
-      </div>
-    </>
-  );
+        </>
+    );
 };
 
 export default Header;

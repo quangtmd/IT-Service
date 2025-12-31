@@ -1,4 +1,5 @@
 
+// Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
     FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
@@ -22,28 +23,27 @@ const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
 const setLocalStorageItem = <T,>(key: string, value: T): void => {
     try {
         localStorage.setItem(key, JSON.stringify(value));
+        // Optional: Dispatch a custom event to notify other components of the change
         window.dispatchEvent(new CustomEvent('localStorageChange', { detail: { key } }));
     } catch (error) {
         console.error(`Error setting localStorage key "${key}":`, error);
     }
 };
 
-// --- API BASE URL CONFIGURATION ---
-// Directly use the constant which now contains the full URL logic.
-// Ensure no trailing slash from the constant.
-const API_BASE_URL = Constants.BACKEND_API_BASE_URL.replace(/\/+$/, '');
+
+// The base URL is now an empty string. This assumes the frontend is served
+// from the same domain as the backend, which simplifies deployment.
+// All API requests will be relative, e.g., /api/users.
+const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Ensure endpoint has a leading slash
+    // All API endpoints are prefixed with /api on the server.
+    // This ensures the correct path is always used.
+    // If the endpoint passed already starts with /api (legacy calls), we don't prepend it again to avoid /api/api/...
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const fullEndpoint = path.startsWith('/api/') ? path : `/api${path}`;
+    const url = `${API_BASE_URL}${fullEndpoint}`;
     
-    // Construct the full URL. If API_BASE_URL contains "https://...", this forms a valid absolute URL.
-    // We add '/api' because the backend routes are prefixed with it (e.g. app.use('/api', apiRouter))
-    // UNLESS the endpoint passed already contains /api, but the service functions below just pass e.g. '/users'.
-    const url = `${API_BASE_URL}/api${path}`;
-    
-    console.log(`[API Call] ${options.method || 'GET'} ${url}`);
-
     try {
         const response = await fetch(url, {
             headers: {
@@ -54,25 +54,28 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            const errorMessageDetails = errorData && errorData.message ? errorData.message : response.statusText;
-            console.error(`[API Error] ${response.status}: ${errorMessageDetails}`);
-            throw new Error(`Lỗi API (${response.status}): ${errorMessageDetails}`);
+            const errorData = await response.json().catch(() => ({ message: response.statusText }));
+            // Simplified, more robust error message for a monolithic setup.
+            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
+            throw new Error(errorMessage);
         }
         
+        // Handle cases where the response might be empty (e.g., DELETE requests)
         const text = await response.text();
         return text ? JSON.parse(text) : null;
 
     } catch (error) {
-        console.error(`Fetch error for ${url}:`, error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            throw new Error('Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra kết nối internet hoặc trạng thái server.');
+            // This now more clearly indicates a server-down issue.
+            throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động.');
         }
+        // Re-throw other errors (like the custom one from response.ok check)
         throw error;
     }
 }
 
 // --- User Service ---
+// Note: The endpoint now starts with /users, and /api is prepended by fetchFromApi
 export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
 export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
 export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
@@ -86,9 +89,11 @@ export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fe
 export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 
-// Hàm đặc biệt để lấy sản phẩm nổi bật
+// Use filtering endpoint for featured products to be more robust against specific route issues
 export const getFeaturedProducts = async (): Promise<Product[]> => {
-    return fetchFromApi<Product[]>('/products/featured');
+    // Switch to using the query param which is handled by the general /products endpoint
+    const { products } = await getProducts('is_featured=true&limit=4');
+    return products;
 }
 
 // --- Article Service ---
@@ -170,6 +175,7 @@ export const updateSupplier = (id: string, updates: Partial<Supplier>): Promise<
 export const deleteSupplier = (id: string): Promise<void> => fetchFromApi<void>(`/suppliers/${id}`, { method: 'DELETE' });
 
 // --- Warranty Ticket Service ---
+// Fixed double /api prefix issue in these calls
 export const getWarrantyTickets = async (): Promise<WarrantyTicket[]> => {
     return fetchFromApi<WarrantyTicket[]>('/warranty-tickets');
 };

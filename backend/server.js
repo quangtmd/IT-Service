@@ -14,7 +14,6 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // --- CORS CONFIGURATION ---
-// Allow all origins for simplicity in this setup, or restrict to specific domains if needed.
 app.set('trust proxy', true);
 app.use(cors()); 
 app.use(express.json({ limit: '10mb' }));
@@ -40,38 +39,18 @@ const deserializeUser = (u) => {
     return userWithoutPassword;
 };
 
-// --- DB CONNECTION CHECK & INIT ---
-let dbStatus = { status: 'unknown', error: null, tableExists: false };
+// --- DB CONNECTION CHECK ---
 const checkDbConnection = async () => {
     try {
         const connection = await pool.getConnection();
-        try {
-            await connection.query('SELECT 1');
-            console.log("✅ Kết nối DB thành công!");
-            
-            // Auto-migration check (optional/simple)
-            try {
-                await connection.query("SELECT is_featured FROM Products LIMIT 1");
-            } catch (err) {
-                console.log("⚠️ Cột is_featured chưa tồn tại, đang thêm...");
-                await connection.query("ALTER TABLE Products ADD COLUMN is_featured BOOLEAN DEFAULT FALSE");
-                console.log("✅ Đã thêm cột is_featured.");
-            }
-
-            dbStatus = { status: 'connected', error: null, tableExists: true };
-        } catch (tableError) {
-             console.error("⚠️ Lỗi DB:", tableError);
-             dbStatus = { status: 'error', error: tableError, tableExists: false };
-        } finally {
-            connection.release();
-        }
+        await connection.query('SELECT 1');
+        connection.release();
+        return { status: 'connected' };
     } catch (error) {
-        console.error("\n⚠️ CẢNH BÁO: KHÔNG THỂ KẾT NỐI DATABASE");
-        dbStatus = { status: 'error', error: { code: error.code, message: error.message }, tableExists: false };
+        console.error("DB Connection Failed:", error);
+        return { status: 'error', error: error.message };
     }
 };
-checkDbConnection();
-
 
 // ==========================================================================
 // API ROUTER
@@ -83,8 +62,8 @@ apiRouter.get('/', (req, res) => {
 });
 
 apiRouter.get('/health', async (req, res) => {
-    if (dbStatus.status !== 'connected') await checkDbConnection();
-    res.json(dbStatus);
+    const status = await checkDbConnection();
+    res.json(status);
 });
 
 // === USERS ===
@@ -114,42 +93,21 @@ apiRouter.post('/users/login', async (req, res) => {
 
 // === PRODUCTS ===
 
-// 1. Featured Products (EXPLICIT ROUTE)
-// QUAN TRỌNG: Route này PHẢI nằm trước /products/:id
-const getFeaturedHandler = async (req, res) => {
-    console.log("DEBUG: Hit featured products endpoint");
+// 1. Featured Products - Explicit Route
+apiRouter.get('/products/featured', async (req, res) => {
+    console.log("Fetching featured products...");
     try {
-        // Lấy 4 sản phẩm có is_featured = 1 hoặc giá cao nhất nếu không có featured
+        // Fetch products that are featured OR have high price/views if no featured found
         const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
         const [rows] = await pool.query(query);
         res.json(rows.map(deserializeProduct));
     } catch (error) {
-        console.error("Lỗi lấy sản phẩm nổi bật:", error);
-        res.status(500).json({ message: "Lỗi server", error: error.message });
-    }
-};
-
-apiRouter.get('/products/featured', getFeaturedHandler); 
-
-// 2. Product Detail (Dynamic ID)
-// Đặt sau /featured để tránh nhận nhầm 'featured' là :id
-apiRouter.get('/products/:id', async (req, res) => {
-    const productId = req.params.id;
-    if (productId === 'featured') return getFeaturedHandler(req, res); // Fallback safety
-
-    try {
-        const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [productId]);
-        if (rows.length > 0) {
-            res.json(deserializeProduct(rows[0]));
-        } else {
-            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
-        }
-    } catch (error) {
+        console.error("Error fetching featured products:", error);
         res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 });
 
-// 3. Product List & Filter
+// 2. Product List & Filter
 apiRouter.get('/products', async (req, res) => {
     try {
         const { mainCategory, subCategory, q, tags, limit = 1000, page = 1, is_featured } = req.query;
@@ -178,6 +136,21 @@ apiRouter.get('/products', async (req, res) => {
     }
 });
 
+// 3. Product Detail - Dynamic ID (Must be after specific routes)
+apiRouter.get('/products/:id', async (req, res) => {
+    const productId = req.params.id;
+    try {
+        const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [productId]);
+        if (rows.length > 0) {
+            res.json(deserializeProduct(rows[0]));
+        } else {
+            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi server", error: error.message });
+    }
+});
+
 // === FINANCIALS ===
 apiRouter.get('/financials/transactions', async (req, res) => {
     try {
@@ -190,23 +163,6 @@ apiRouter.get('/financials/payroll', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM PayrollRecords');
         res.json(rows);
-    } catch (error) { res.status(500).json({ message: error.message }); }
-});
-
-apiRouter.post('/financials/payroll', async (req, res) => {
-    try {
-        const records = req.body;
-        if (!Array.isArray(records)) return res.status(400).json({ message: "Input must be array" });
-        for (const record of records) {
-            const { id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, status, notes } = record;
-            await pool.query(
-                `INSERT INTO PayrollRecords (id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, status, notes)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE baseSalary=VALUES(baseSalary), bonus=VALUES(bonus), deduction=VALUES(deduction), finalSalary=VALUES(finalSalary), status=VALUES(status), notes=VALUES(notes)`,
-                [id, employeeId, employeeName, payPeriod, baseSalary, bonus, deduction, finalSalary, status, notes]
-            );
-        }
-        res.json({ message: "Saved" });
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
@@ -237,26 +193,24 @@ apiRouter.get('/users/:userId/orders', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-
 // Mount API Router
 app.use('/api', apiRouter);
 
-// 404 Handler for API requests (to debug frontend calling wrong paths)
+// 404 Handler for API requests
 app.use('/api/*', (req, res) => {
     console.log(`❌ 404 Not Found (API catch-all): ${req.originalUrl}`);
     res.status(404).json({ message: `API endpoint not found: ${req.originalUrl}` });
 });
 
-// Root route for health check
+// Root route
 app.get('/', (req, res) => {
     res.send("Backend is running!");
 });
 
-// Serve Static Files (only in production if configured to serve frontend)
+// Serve Static Files (Production)
 if (process.env.NODE_ENV === 'production') {
     const projectRoot = path.resolve(__dirname, '..');
     app.use(express.static(path.join(projectRoot, 'dist')));
-    // For SPA: Return index.html for any unknown non-API routes
     app.get('*', (req, res) => {
         if (req.path.startsWith('/api/')) {
              return res.status(404).json({ message: `API not found: ${req.path}` });

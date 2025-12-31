@@ -38,7 +38,8 @@ const App: React.FC = () => {
         <ScrollToTop />
         <div className="flex flex-col min-h-screen bg-bgCanvas text-textBase transition-colors duration-300">
           <Header />
-          <main className="flex-grow pt-[168px] print:pt-0">
+          {/* Reduced padding-top to fit the new floating header style (approx 120px) */}
+          <main className="flex-grow pt-[120px] print:pt-0">
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/shop" element={<ShopPage />} />

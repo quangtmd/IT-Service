@@ -20,14 +20,10 @@ export const ADMIN_EMAIL = "quangtmdit@gmail.com";
 export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
 
 // --- BACKEND API CONFIGURATION ---
-// Logic: Kiểm tra nếu đang chạy ở localhost thì dùng localhost:3001
-// Nếu không (đang chạy trên Render), dùng URL chính thức của Backend.
-// Cách này đảm bảo 100% frontend gọi đúng địa chỉ backend.
-const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-export const BACKEND_API_BASE_URL = isLocal 
-    ? "http://127.0.0.1:3001" 
-    : "https://it-service-app-n9as.onrender.com";
+// Use the environment variable if defined (production), otherwise default to empty string
+// to let the Vite proxy handle the routing to the backend (e.g., http://localhost:3001).
+// This avoids hardcoding 127.0.0.1:3001 which can bypass the proxy and cause CORS/404 issues.
+export const BACKEND_API_BASE_URL = process.env.VITE_BACKEND_API_BASE_URL || "";
 
 // --- STORAGE KEYS ---
 export const SITE_LOGO_STORAGE_KEY = "siteLogoUrl_v1";

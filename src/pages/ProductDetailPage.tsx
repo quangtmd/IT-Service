@@ -10,7 +10,7 @@ import * as Constants from '../constants';
 import { getProduct, getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError'; 
 import { useChatbotContext } from '../contexts/ChatbotContext'; 
-import ImageMagnifier from '../components/ui/ImageMagnifier'; // Import the new component
+import ImageMagnifier from '../components/ui/ImageMagnifier'; 
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -255,12 +255,16 @@ const ProductDetailPage: React.FC = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm border border-borderDefault">
                             <tbody>
-                            {Object.entries(product.specifications).map(([key, value], index) => (
-                                <tr key={key} className={`border-b border-borderDefault ${index % 2 === 0 ? 'bg-bgCanvas' : 'bg-bgBase'}`}>
-                                    <td className="py-2 px-3 md:px-4 font-semibold text-textBase w-1/3 md:w-1/4">{key}</td>
-                                    <td className="py-2 px-3 md:px-4 text-textMuted">{value}</td>
-                                </tr>
-                            ))}
+                            {product.specifications && Object.keys(product.specifications).length > 0 ? (
+                                Object.entries(product.specifications).map(([key, value], index) => (
+                                    <tr key={key} className={`border-b border-borderDefault ${index % 2 === 0 ? 'bg-bgCanvas' : 'bg-bgBase'}`}>
+                                        <td className="py-2 px-3 md:px-4 font-semibold text-textBase w-1/3 md:w-1/4">{key}</td>
+                                        <td className="py-2 px-3 md:px-4 text-textMuted">{value}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr><td colSpan={2} className="p-4 text-center text-textMuted">Chưa có thông tin kỹ thuật.</td></tr>
+                            )}
                             </tbody>
                         </table>
                     </div>
