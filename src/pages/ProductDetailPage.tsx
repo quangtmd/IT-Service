@@ -255,6 +255,7 @@ const ProductDetailPage: React.FC = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm border border-borderDefault">
                             <tbody>
+                            {/* FIX: Add guard clause to prevent Object.entries(null) crash */}
                             {product.specifications && Object.keys(product.specifications).length > 0 ? (
                                 Object.entries(product.specifications).map(([key, value], index) => (
                                     <tr key={key} className={`border-b border-borderDefault ${index % 2 === 0 ? 'bg-bgCanvas' : 'bg-bgBase'}`}>

@@ -11,7 +11,8 @@ const MovingGrid = () => {
   useFrame((state) => {
     if (gridRef.current) {
       // Move grid towards camera to simulate flying through a tunnel
-      gridRef.current.position.z = (state.clock.elapsedTime * 4) % 20;
+      const z = (state.clock.elapsedTime * 4) % 20;
+      gridRef.current.position.setZ(z);
     }
   });
 
@@ -24,7 +25,7 @@ const MovingGrid = () => {
 };
 
 const EnergyParticles = () => {
-    const pointsRef = useRef<THREE.Points>(null!);
+    const meshRef = useRef<THREE.Points>(null!);
     const count = 200;
 
     const positions = useMemo(() => {
@@ -38,13 +39,14 @@ const EnergyParticles = () => {
     }, [count]);
     
     useFrame((state) => {
-        if (pointsRef.current) {
-            pointsRef.current.position.z = (state.clock.getElapsedTime() * 2) % 20;
+        if (meshRef.current) {
+            const z = (state.clock.getElapsedTime() * 2) % 20;
+            meshRef.current.position.setZ(z);
         }
     });
 
     return (
-        <points ref={pointsRef} position={[0,0,-10]}>
+        <points ref={meshRef} position={[0,0,-10]}>
             <bufferGeometry>
                 <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
             </bufferGeometry>
@@ -69,4 +71,3 @@ const DigitalGridBackground: React.FC = () => {
 };
 
 export default DigitalGridBackground;
-      

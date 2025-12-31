@@ -15,8 +15,9 @@ declare global {
 const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
     try { 
         const item = localStorage.getItem(key); 
+        // FIX: Handle "null" string or actual null value explicitly
         if (item === null || item === "null") return defaultValue;
-        return JSON.parse(item);
+        return JSON.parse(item); 
     } catch (e) { 
         console.error(`Error reading localStorage key "${key}":`, e); 
         return defaultValue; 
@@ -89,9 +90,9 @@ const SiteSettingsView: React.FC<{ initialTab?: SettingsTab }> = ({ initialTab =
                     <button onClick={() => setActiveTab('menu_settings')} className={`admin-tab-button ${activeTab === 'menu_settings' ? 'active' : ''}`}>Menu điều hướng</button>
                 </nav>
                 <div className="mt-6">
-                    {activeTab === 'site_settings' && <SiteInfoForm settings={siteSettings} setSettings={setSiteSettings} />}
-                    {activeTab === 'theme_settings' && <ThemeSettingsForm settings={themeSettings} setSettings={setThemeSettings} />}
-                    {activeTab === 'menu_settings' && <MenuSettingsForm links={menuLinks} setLinks={setMenuLinks} />}
+                    {activeTab === 'site_settings' && <SiteInfoForm settings={siteSettings || Constants.INITIAL_SITE_SETTINGS} setSettings={setSiteSettings} />}
+                    {activeTab === 'theme_settings' && <ThemeSettingsForm settings={themeSettings || Constants.INITIAL_THEME_SETTINGS} setSettings={setThemeSettings} />}
+                    {activeTab === 'menu_settings' && <MenuSettingsForm links={menuLinks || Constants.INITIAL_CUSTOM_MENU_LINKS} setLinks={setMenuLinks} />}
                 </div>
             </div>
         </div>
@@ -100,19 +101,22 @@ const SiteSettingsView: React.FC<{ initialTab?: SettingsTab }> = ({ initialTab =
 
 // --- Sub-forms ---
 const SiteInfoForm: React.FC<{settings: SiteSettings, setSettings: React.Dispatch<React.SetStateAction<SiteSettings>>}> = ({settings, setSettings}) => {
+    // FIX: Guard clause in case settings is null
+    if (!settings) return <div className="text-red-500">Dữ liệu cài đặt không hợp lệ. Vui lòng tải lại trang.</div>;
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSettings(p => ({...p, [e.target.name]: e.target.value}));
     }
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="admin-form-group"><label>Tên công ty</label><input type="text" name="companyName" value={settings.companyName} onChange={handleChange} /></div>
-            <div className="admin-form-group"><label>Slogan</label><input type="text" name="companySlogan" value={settings.companySlogan} onChange={handleChange} /></div>
-            <div className="admin-form-group"><label>Số điện thoại</label><input type="text" name="companyPhone" value={settings.companyPhone} onChange={handleChange} /></div>
-            <div className="admin-form-group"><label>Email</label><input type="email" name="companyEmail" value={settings.companyEmail} onChange={handleChange} /></div>
-            <div className="admin-form-group md:col-span-2"><label>Địa chỉ</label><input type="text" name="companyAddress" value={settings.companyAddress} onChange={handleChange} /></div>
-            <div className="admin-form-group"><label>Facebook URL</label><input type="text" name="socialFacebookUrl" value={settings.socialFacebookUrl} onChange={handleChange} /></div>
-            <div className="admin-form-group"><label>Zalo URL</label><input type="text" name="socialZaloUrl" value={settings.socialZaloUrl} onChange={handleChange} /></div>
-            <div className="admin-form-group"><label>YouTube URL</label><input type="text" name="socialYoutubeUrl" value={settings.socialYoutubeUrl} onChange={handleChange} /></div>
+            <div className="admin-form-group"><label>Tên công ty</label><input type="text" name="companyName" value={settings.companyName || ''} onChange={handleChange} /></div>
+            <div className="admin-form-group"><label>Slogan</label><input type="text" name="companySlogan" value={settings.companySlogan || ''} onChange={handleChange} /></div>
+            <div className="admin-form-group"><label>Số điện thoại</label><input type="text" name="companyPhone" value={settings.companyPhone || ''} onChange={handleChange} /></div>
+            <div className="admin-form-group"><label>Email</label><input type="email" name="companyEmail" value={settings.companyEmail || ''} onChange={handleChange} /></div>
+            <div className="admin-form-group md:col-span-2"><label>Địa chỉ</label><input type="text" name="companyAddress" value={settings.companyAddress || ''} onChange={handleChange} /></div>
+            <div className="admin-form-group"><label>Facebook URL</label><input type="text" name="socialFacebookUrl" value={settings.socialFacebookUrl || ''} onChange={handleChange} /></div>
+            <div className="admin-form-group"><label>Zalo URL</label><input type="text" name="socialZaloUrl" value={settings.socialZaloUrl || ''} onChange={handleChange} /></div>
+            <div className="admin-form-group"><label>YouTube URL</label><input type="text" name="socialYoutubeUrl" value={settings.socialYoutubeUrl || ''} onChange={handleChange} /></div>
         </div>
     );
 }
@@ -122,7 +126,7 @@ const ThemeSettingsForm: React.FC<{settings: SiteThemeSettings, setSettings: Rea
         setSettings(p => ({...p, [e.target.name]: e.target.value}));
     }
     
-    // Safety check: if settings is somehow null/undefined despite initialization, render a fallback or empty div
+    // FIX: Guard clause in case settings is null to prevent Object.entries(null) error
     if (!settings) return <div className="text-red-500">Lỗi: Cấu hình theme bị lỗi. Hãy thử reset lại trang.</div>;
 
     return (
@@ -141,6 +145,8 @@ const ThemeSettingsForm: React.FC<{settings: SiteThemeSettings, setSettings: Rea
 }
 
 const MenuSettingsForm: React.FC<{links: CustomMenuLink[], setLinks: React.Dispatch<React.SetStateAction<CustomMenuLink[]>>}> = ({links, setLinks}) => {
+    if (!links) return <div className="text-red-500">Dữ liệu menu bị lỗi.</div>;
+
     const handleMove = (index: number, direction: 'up' | 'down') => {
         const newLinks = [...links];
         const item = newLinks[index];

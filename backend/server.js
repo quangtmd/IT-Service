@@ -67,16 +67,6 @@ apiRouter.get('/health', async (req, res) => {
 });
 
 // === USERS ===
-apiRouter.get('/users', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM Users');
-        res.json(rows.map(deserializeUser));
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ message: error.message });
-    }
-});
-
 apiRouter.post('/users/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -91,9 +81,33 @@ apiRouter.post('/users/login', async (req, res) => {
     }
 });
 
+apiRouter.get('/users/:userId/orders', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [req.params.userId]);
+        res.json(rows.map(order => ({
+            ...order,
+            items: JSON.parse(order.items || '[]'),
+            customerInfo: JSON.parse(order.customerInfo || '{}'),
+            paymentInfo: JSON.parse(order.paymentInfo || '{}'),
+            shippingInfo: JSON.parse(order.shippingInfo || '{}'),
+        })));
+    } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+apiRouter.get('/users', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Users');
+        res.json(rows.map(deserializeUser));
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // === PRODUCTS ===
 
-// 1. Featured Products - Explicit Route
+// IMPORTANT: Specific routes (like /featured) MUST come before dynamic routes (like /:id)
+// 1. Featured Products
 apiRouter.get('/products/featured', async (req, res) => {
     console.log("Fetching featured products...");
     try {
@@ -136,7 +150,7 @@ apiRouter.get('/products', async (req, res) => {
     }
 });
 
-// 3. Product Detail - Dynamic ID (Must be after specific routes)
+// 3. Product Detail - Dynamic ID (Must be LAST)
 apiRouter.get('/products/:id', async (req, res) => {
     const productId = req.params.id;
     try {
@@ -170,19 +184,6 @@ apiRouter.get('/financials/payroll', async (req, res) => {
 apiRouter.get('/orders', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM Orders ORDER BY orderDate DESC');
-        res.json(rows.map(order => ({
-            ...order,
-            items: JSON.parse(order.items || '[]'),
-            customerInfo: JSON.parse(order.customerInfo || '{}'),
-            paymentInfo: JSON.parse(order.paymentInfo || '{}'),
-            shippingInfo: JSON.parse(order.shippingInfo || '{}'),
-        })));
-    } catch (error) { res.status(500).json({ message: error.message }); }
-});
-
-apiRouter.get('/users/:userId/orders', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [req.params.userId]);
         res.json(rows.map(order => ({
             ...order,
             items: JSON.parse(order.items || '[]'),
