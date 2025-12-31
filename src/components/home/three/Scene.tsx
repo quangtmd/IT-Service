@@ -96,7 +96,7 @@ const Scene = () => {
         const totalPages = 4;
         
         if (group.current) {
-            // Safe assignment to vector component
+            // FIX: Use simple property access if possible, usually fine for group.position.y
             group.current.position.y = THREE.MathUtils.lerp(group.current.position.y, scrollOffset * h * totalPages, 0.1);
         }
         
