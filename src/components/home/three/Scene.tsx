@@ -96,8 +96,8 @@ const Scene = () => {
         const totalPages = 4;
         
         if (group.current) {
-            // FIX: Use simple property access if possible, usually fine for group.position.y
-            group.current.position.y = THREE.MathUtils.lerp(group.current.position.y, scrollOffset * h * totalPages, 0.1);
+            // FIX: Use setY method instead of direct assignment to avoid "read only property" errors
+            group.current.position.setY(THREE.MathUtils.lerp(group.current.position.y, scrollOffset * h * totalPages, 0.1));
         }
         
         // FIX: Use setZ method instead of direct assignment to immutable camera.position.z property
