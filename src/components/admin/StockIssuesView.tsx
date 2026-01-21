@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { StockIssue } from '@/types';
-import { getStockIssues, deleteStockIssue } from '@/services/localDataService';
-import Button from '@/components/ui/Button';
-import BackendConnectionError from '@/components/shared/BackendConnectionError';
+import { StockIssue } from '../../types';
+import { getStockIssues, deleteStockIssue } from '../../services/localDataService';
+import Button from '../ui/Button';
+import BackendConnectionError from '../shared/BackendConnectionError';
 
 const StockIssuesView: React.FC = () => {
     const [issues, setIssues] = useState<StockIssue[]>([]);

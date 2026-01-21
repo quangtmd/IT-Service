@@ -430,6 +430,22 @@ export interface HomepageBannerSettings {
   isActive: boolean; 
 }
 
+// --- LED Board Item ---
+export interface LEDBoardItem {
+  id: string;
+  title: string;
+  content: string;
+  highlight: string;
+  isEnabled: boolean;
+  order: number;
+  imageUrl?: string;
+}
+
+export interface HomepageLEDBoardSettings {
+  enabled: boolean;
+  items: LEDBoardItem[];
+}
+
 export interface HomepageAboutFeature {
   id: string;
   icon: string; 
@@ -586,22 +602,6 @@ export interface HomepageContactSectionSettings {
   sectionTitleIconUrl?: string; 
 }
 
-// Added LED Board types
-export interface LEDBoardItem {
-  id: string;
-  title: string;
-  content: string;
-  highlight: string;
-  isEnabled: boolean;
-  order: number;
-  imageUrl?: string;
-}
-
-export interface HomepageLEDBoardSettings {
-  enabled: boolean;
-  items: LEDBoardItem[];
-}
-
 export interface SMTPSettings {
   host: string;
   port: number;
@@ -666,7 +666,7 @@ export interface SiteSettings {
 
   // Homepage Content Sections
   homepageBanners: HomepageBannerSettings[]; 
-  homepageLEDBoard?: HomepageLEDBoardSettings; // Added LED board settings to SiteSettings
+  homepageLEDBoard?: HomepageLEDBoardSettings; // Added LED board settings
   homepageAbout: HomepageAboutSettings;
   homepageServicesBenefits: HomepageServicesBenefitsSettings;
   homepageWhyChooseUs: HomepageWhyChooseUsSettings;

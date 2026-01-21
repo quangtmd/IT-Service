@@ -10,44 +10,44 @@ export interface Product {
   price: number;
   originalPrice?: number;
   imageUrls: string[]; 
-  description: string; // Detailed description
-  shortDescription?: string; // New field for short description
+  description: string; 
+  shortDescription?: string; 
   specifications: Record<string, string>;
   stock: number;
   status?: 'Mới' | 'Cũ' | 'Like new';
   rating?: number;
   reviews?: number;
   brand?: string;
-  tags: string[]; // Changed from optional to required, default to []
+  tags: string[]; 
   brandLogoUrl?: string;
-  isVisible?: boolean; // New field for product visibility
-  is_featured?: boolean; // Added for featured products
-  seoMetaTitle?: string; // New SEO field
-  seoMetaDescription?: string; // New SEO field
-  slug?: string; // New field for custom URL slug
+  isVisible?: boolean; 
+  is_featured?: boolean; 
+  seoMetaTitle?: string; 
+  seoMetaDescription?: string; 
+  slug?: string; 
   
   // New fields based on image
-  productCode?: string; // Mã Hàng
-  printName?: string; // Tên Hàng (in)
-  purchasePrice?: number; // Giá Nhập
-  wholesalePrice?: number; // Giá Bán Sỉ
-  hasVAT?: boolean; // Phải cộng VAT
-  barcode?: string; // Mã Vạch
-  unit?: string; // ĐVT
-  warrantyPeriod?: number; // Bảo Hành (in months)
-  countryOfOrigin?: string; // Xuất Xứ
-  yearOfManufacture?: number; // Năm SX
+  productCode?: string; 
+  printName?: string; 
+  purchasePrice?: number; 
+  wholesalePrice?: number; 
+  hasVAT?: boolean; 
+  barcode?: string; 
+  unit?: string; 
+  warrantyPeriod?: number; 
+  countryOfOrigin?: string; 
+  yearOfManufacture?: number; 
 
   // New fields for supplier
-  supplierId?: string; // ID Nhà cung cấp
-  supplierName?: string; // Tên nhà cung cấp (denormalized)
+  supplierId?: string; 
+  supplierName?: string; 
 }
 
 export interface Service {
   id: string;
   name: string;
   description: string;
-  icon: string; // FontAwesome class string
+  icon: string; 
   imageUrl: string; 
   slug: string;     
 }
@@ -61,10 +61,10 @@ export interface Article {
   date: string;
   category: string; 
   content?: string; 
-  isAIGenerated?: boolean; // New field to mark AI-generated articles
-  imageSearchQuery?: string; // New field for AI-suggested image search term
-  tags?: string[]; // New field for tags
-  slug?: string; // New field for SEO URL
+  isAIGenerated?: boolean; 
+  imageSearchQuery?: string; 
+  tags?: string[]; 
+  slug?: string; 
 }
 
 export interface CartItem extends Product {
@@ -73,31 +73,23 @@ export interface CartItem extends Product {
   buildComponents?: Record<string, { name: string; price?: number }>; 
 }
 
-// FIX: Modified CustomPCBuildCartItem to extend Product directly and explicitly define its properties.
-// This ensures it correctly implements all Product properties (including `specifications` and `stock`)
-// while also adding custom build-specific fields, resolving type compatibility issues with `addToCart`.
 export interface CustomPCBuildCartItem extends Product {
   id: string;
   name: string; 
   price: number;
   quantity: number;
   description: string; 
-  imageUrl: string; // For CustomPCBuildCartItem, this will usually be a single generic image.
+  imageUrl: string; 
   isCustomBuild: true;
   buildComponents: Record<string, { name: string; price?: number }>; 
   mainCategory: "PC Xây Dựng";
   subCategory: "Theo Yêu Cầu";
   category: "PC Xây Dựng";
-  imageUrls: [string]; // Override Product's string[] to a single-element tuple for custom builds
+  imageUrls: [string]; 
   tags: string[];
 
-  // Explicitly defining specifications and stock to satisfy Product interface,
-  // even if they are empty or default for a custom build.
   specifications: Record<string, string>;
   stock: number; 
-
-  // Other optional Product fields can be implicitly inherited or set to undefined
-  // if not relevant for a custom build product representation.
 }
 
 
@@ -125,14 +117,12 @@ export interface ChatMessage {
   imageUrl?: string;
 }
 
-// New Type for Chat Log Sessions
 export interface ChatLogSession {
-  id: string; // Unique ID for the session
+  id: string; 
   userName: string;
   userPhone: string;
-  startTime: string; // ISO string date
+  startTime: string; 
   messages: ChatMessage[];
-  // Optionally, add end time, duration, etc.
 }
 
 
@@ -169,7 +159,6 @@ export interface AIBuildResponse {
   error?: string;
 }
 
-// FIX: Defined PCBuildSuggestion interface.
 export interface PCBuildSuggestion {
   name: string;
   total_price: number;
@@ -202,7 +191,6 @@ export type AdminView =
   | 'reports'
   | 'partners'
   | 'system_management'
-  // Old views - keep for compatibility if needed
   | 'customers' | 'quotations' | 'orders' | 'discounts' | 'returns' | 'suppliers' | 'helpdesk_tickets'
   | 'service_tickets' | 'warranty_tickets' | 'chat_logs'
   | 'products' | 'articles' | 'media_library' | 'email_marketing' | 'seo_management'
@@ -221,8 +209,6 @@ export const STAFF_ROLE_OPTIONS: StaffRole[] = ['Quản lý Bán hàng', 'Biên 
 export type UserStatus = 'Đang hoạt động' | 'Tạm nghỉ' | 'Đã nghỉ việc';
 export const USER_STATUS_OPTIONS: UserStatus[] = ['Đang hoạt động', 'Tạm nghỉ', 'Đã nghỉ việc'];
 
-
-// Fix: Add DebtStatus type and CRM fields to User interface to resolve multiple TypeScript errors in CustomerFormPage.
 export type DebtStatus = 'Không có' | 'Có nợ' | 'Quá hạn';
 
 export interface User {
@@ -233,13 +219,13 @@ export interface User {
   role: UserRole;
   staffRole?: StaffRole; 
   imageUrl?: string; 
-  isLocked?: boolean; // Added for user locking
+  isLocked?: boolean; 
 
   // HRM Fields
   position?: string;
   phone?: string;
   address?: string;
-  joinDate?: string; // ISO string date
+  joinDate?: string; 
   status?: UserStatus;
   salary?: number;
   
@@ -249,7 +235,7 @@ export interface User {
   loyaltyPoints?: number;
   debtStatus?: DebtStatus;
   assignedStaffId?: string;
-  createdAt?: string; // For tracking new customers
+  createdAt?: string; 
 }
 
 export interface Project {
@@ -288,11 +274,10 @@ export interface OrderItem {
   productName: string;
   quantity: number;
   price: number;
-  purchasePrice?: number; // Added for profit calculation
+  purchasePrice?: number; 
   unit?: string;
 }
 
-// FIX: Add 'Đang xác nhận' to OrderStatus type to fix type error.
 export type OrderStatus = 'Chờ xử lý' | 'Đang xác nhận' | 'Đang chuẩn bị' | 'Đang giao' | 'Hoàn thành' | 'Đã hủy' | 'Đã xác nhận' | 'Phiếu tạm';
 
 export interface ShippingInfo {
@@ -304,25 +289,25 @@ export interface ShippingInfo {
 export interface PaymentInfo {
   method: 'Thanh toán khi nhận hàng (COD)' | 'Chuyển khoản ngân hàng' | 'Tiền mặt';
   status: 'Chưa thanh toán' | 'Đã thanh toán' | 'Đã cọc';
-  transactionId?: string; // Optional: For online gateway transaction IDs
-  amountToPay?: number; // Optional: To store deposit/full amount to be paid
+  transactionId?: string; 
+  amountToPay?: number; 
 }
 
 export interface Order {
   id: string;
-  userId?: string; // Link to the user who placed the order
-  creatorId?: string; // Link to the staff/admin who created the order
-  creatorName?: string; // Denormalized name for display
+  userId?: string; 
+  creatorId?: string; 
+  creatorName?: string; 
   customerInfo: CheckoutFormData;
   items: OrderItem[];
-  subtotal?: number; // Total before discounts/taxes
-  totalAmount: number; // Final total
-  paidAmount?: number; // Amount paid by customer
-  cost?: number; // Cost of goods for this order
-  profit?: number; // totalAmount - cost
+  subtotal?: number; 
+  totalAmount: number; 
+  paidAmount?: number; 
+  cost?: number; 
+  profit?: number; 
   orderDate: string; 
-  status: OrderStatus; // Fulfillment status
-  shippingInfo?: ShippingInfo; // Added for shipping management
+  status: OrderStatus; 
+  shippingInfo?: ShippingInfo; 
   paymentInfo: PaymentInfo;
   notes?: string;
 }
@@ -335,7 +320,6 @@ export interface AdminNotification {
   isRead: boolean;
 }
 
-// New types for Admin Panel Expansion
 export interface FaqItem {
   id: string;
   question: string;
@@ -404,7 +388,7 @@ export interface PricingPlan {
 }
 
 // --- Homepage Content Specific Types ---
-export interface HomepageBannerSettings { // Renamed from SiteBanner to HomepageBannerSettings for clarity
+export interface HomepageBannerSettings { 
   id: string; 
   preTitle?: string;
   title: string;
@@ -421,8 +405,24 @@ export interface HomepageBannerSettings { // Renamed from SiteBanner to Homepage
   decorExtraImageUrl?: string; 
   decorExtraText?: string;
   sectionTitleIconUrl?: string; 
-  order: number; // Added for managing multiple banners
-  isActive: boolean; // Added for managing multiple banners
+  order: number; 
+  isActive: boolean; 
+}
+
+// --- LED Board Item ---
+export interface LEDBoardItem {
+  id: string;
+  title: string;
+  content: string;
+  highlight: string;
+  isEnabled: boolean;
+  order: number;
+  imageUrl?: string;
+}
+
+export interface HomepageLEDBoardSettings {
+  enabled: boolean;
+  items: LEDBoardItem[];
 }
 
 export interface HomepageAboutFeature {
@@ -585,22 +585,22 @@ export interface SMTPSettings {
   host: string;
   port: number;
   user: string;
-  pass: string; // Consider secure storage for this if it were a real app
-  secure: boolean; // true for 465, false for other ports
+  pass: string; 
+  secure: boolean; 
 }
 export interface PaymentGatewaySettings {
   momoEnabled: boolean;
   vnPayEnabled: boolean;
   paypalEnabled: boolean;
-  momoApiKey?: string; // Example, real app would have more complex config
+  momoApiKey?: string; 
   vnPayApiKey?: string;
   paypalClientId?: string;
 }
 export interface MediaItem {
   id: string;
-  url: string; // dataURL or external URL
+  url: string; 
   name: string;
-  type: string; // e.g., 'image/jpeg', 'image/png'
+  type: string; 
   uploadedAt: string;
   altText?: string;
   associatedEntityType?: 'product' | 'article';
@@ -644,7 +644,8 @@ export interface SiteSettings {
   socialTwitterUrl?: string;
 
   // Homepage Content Sections
-  homepageBanners: HomepageBannerSettings[]; // Changed to array for multiple banners
+  homepageBanners: HomepageBannerSettings[]; 
+  homepageLEDBoard?: HomepageLEDBoardSettings; // Added LED board settings
   homepageAbout: HomepageAboutSettings;
   homepageServicesBenefits: HomepageServicesBenefitsSettings;
   homepageWhyChooseUs: HomepageWhyChooseUsSettings;
@@ -674,15 +675,15 @@ export interface FinancialTransaction {
   type: TransactionType;
   category: TransactionCategory;
   description: string;
-  relatedEntity?: string; // e.g., Supplier Name, Customer Name, Employee Name
+  relatedEntity?: string; 
   invoiceNumber?: string;
 }
 
 export interface PayrollRecord {
-  id: string; // e.g., 'payroll-2024-08-user001'
+  id: string; 
   employeeId: string;
   employeeName: string;
-  payPeriod: string; // e.g., '2024-08'
+  payPeriod: string; 
   baseSalary: number;
   bonus: number;
   deduction: number;
@@ -713,7 +714,7 @@ export interface QuotationItem {
 export interface Quotation {
   id: string;
   customer_id?: string;
-  customerInfo?: { name: string, email: string }; // Denormalized for display
+  customerInfo?: { name: string, email: string }; 
   creation_date: string; // ISO
   expiry_date?: string; // ISO
   items: QuotationItem[];
@@ -725,77 +726,66 @@ export interface Quotation {
   terms?: string;
 }
 
-export interface WarrantyTicketItem {
+export interface WarrantyClaim {
     id: string;
-    itemCode: string; // Mã linh kiện
-    itemName: string; // Tên linh kiện
-    quantity: number; // Số lượng
-    price: number; // Giá
+    claim_code: string;
+    order_id: string;
+    product_id: string;
+    product_name: string;
+    customer_id?: string;
+    customer_name: string;
+    reported_issue: string;
+    status: 'Đang tiếp nhận' | 'Đang xử lý' | 'Chờ linh kiện' | 'Hoàn thành' | 'Từ chối';
+    created_at: string; // ISO
 }
 
 export type WarrantyTicketStatus = 
-  // Main workflow statuses
-  'Mới Tạo' | 
-  'Chờ duyệt' |
-  'Đã duyệt' |
-  'Đang sửa chữa' |
-  'Hoàn thành' | 
-  'Đã trả khách' | 
-  // Waiting statuses
-  'Chờ linh kiện' | 
-  'Đợi KH đồng ý giá' |
-  'Đợi KH nhận lại' |
-  // Alternative outcomes
-  'Từ chối bảo hành' | 
-  'Hủy' |
-  // New statuses from images for a more ERP-like flow
-  'Lập chứng từ' |
-  'Đang duyệt' |
-  'Đang thực hiện' | // From "Giao dịch" column
-  'Chờ xem lại'; // Typo fix for "Chơi bạn xem lại"
+  | 'Mới Tạo' | 'Chờ duyệt' | 'Đã duyệt' | 'Đang sửa chữa' | 'Hoàn thành' | 'Đã trả khách' 
+  | 'Chờ linh kiện' | 'Đợi KH đồng ý giá' | 'Đợi KH nhận lại' 
+  | 'Từ chối bảo hành' | 'Hủy' | 'Lập chứng từ' | 'Đang duyệt' | 'Đang thực hiện' | 'Chờ xem lại';
 
+export interface WarrantyTicketItem {
+    id: string;
+    itemCode: string;
+    itemName: string;
+    quantity: number;
+    price: number;
+}
 
 export interface WarrantyTicket {
     id: string;
-    ticketNumber: string; // Số phiếu / Số c/từ
-    productModel?: string; // Model sản phẩm
-    productSerial?: string; // Serial sản phẩm
-    customerName: string; // Tên khách hàng
-    creatorName?: string; // Người tạo / Người tiếp nhận
-    customerPhone?: string; // Số ĐT
-    totalAmount: number; // Tổng tiền / Tổng chi phí
+    ticketNumber: string;
+    productModel?: string;
+    productSerial?: string;
+    customerName: string;
+    creatorName?: string;
+    customerPhone?: string;
+    totalAmount: number;
     status: WarrantyTicketStatus;
-    createdAt: string; // Ngày tạo / Ngày c/từ
-    reportedIssue: string; // Mô tả lỗi / Diễn giải / Tình trạng hư hỏng
-    resolution_notes?: string; // Ghi chú xử lý / Giải pháp xử lý
-    receiveDate?: string; // Ngày nhận
-    returnDate?: string; // Ngày trả
-    
+    createdAt: string;
+    reportedIssue: string;
+    resolution_notes?: string;
+    receiveDate?: string;
+    returnDate?: string;
     orderId?: string;
     productId?: string;
     customerId?: string;
-    creatorId?: string; // ID người tạo
-    
-    priority?: 'Bình thường' | 'Gấp'; // Thứ tự
-    warrantyType?: string; // Diện bảo hành
-    technician_notes?: string; // Kỹ thuật ghi chú
-    repairDate?: string; // Ngày sửa
-    returnStaffId?: string; // Nhân viên trả
-    returnStaffName?: string; // Denormalized for display
-    
-    // Detailed costs from Print Slip
-    items: WarrantyTicketItem[];
-    serviceFee: number; // Phí dịch vụ
-    discount: number; // Giảm giá
-    vat: number; // Thuế VAT
-    
-    // Fields from List View
-    transactionType?: 'Sửa chữa' | 'Bảo dưỡng' | 'Thay thế' | 'Bảo hành'; // Giao dịch
-    department?: string; // Đơn vị
-    departmentCode?: string; // Mã bộ phận
-    currency?: string; // Ngoại tệ
-    totalQuantity?: number; // Số lượng (tổng)
-
+    creatorId?: string;
+    priority?: 'Bình thường' | 'Gấp';
+    warrantyType?: string;
+    technician_notes?: string;
+    repairDate?: string;
+    returnStaffId?: string;
+    returnStaffName?: string;
+    items?: WarrantyTicketItem[];
+    serviceFee?: number;
+    discount?: number;
+    vat?: number;
+    transactionType?: 'Sửa chữa' | 'Bảo dưỡng' | 'Thay thế' | 'Bảo hành';
+    department?: string;
+    departmentCode?: string;
+    currency?: string;
+    totalQuantity?: number;
     paymentStatus?: 'Chưa thanh toán' | 'Đã thanh toán' | 'Công nợ';
     paymentNotes?: string;
 }
@@ -821,18 +811,7 @@ export interface ReturnTicket {
   createdAt: string; // ISO
 }
 
-export type ServiceTicketStatus = 
-  'Mới' | 
-  'Mới tiếp nhận' |
-  'Đang xử lý' | 
-  'Chờ linh kiện' |
-  'Đợi KH đồng ý giá' |
-  'Đợi KH nhận lại' |
-  'Hoàn thành' | 
-  'Đã đóng' |
-  'Không đồng ý sửa máy' |
-  'Hủy bỏ';
-
+export type ServiceTicketStatus = 'Mới' | 'Mới tiếp nhận' | 'Đang xử lý' | 'Chờ linh kiện' | 'Đợi KH đồng ý giá' | 'Đợi KH nhận lại' | 'Hoàn thành' | 'Đã đóng' | 'Không đồng ý sửa máy' | 'Hủy bỏ';
 export interface ServiceTicket {
   id: string;
   ticket_code: string;
@@ -845,16 +824,16 @@ export interface ServiceTicket {
   reported_issue: string;
   createdAt: string; // ISO string date
   status: ServiceTicketStatus;
-  assigneeId?: string; // Kỹ thuật
+  assigneeId?: string;
   rating?: 1 | 2 | 3 | 4 | 5;
-  invoiceId?: string; // Số hóa đơn
-  receiverId?: string; // Người nhận
-  work_items?: string; // Hạng mục công việc
-  appointment_date?: string; // Thời gian hẹn
-  physical_condition?: string; // Tình trạng vật lý & phụ kiện
+  invoiceId?: string;
+  receiverId?: string;
+  work_items?: string;
+  appointment_date?: string;
+  physical_condition?: string;
 }
 
-// --- NEW INVENTORY & LOGISTICS TYPES ---
+// New Interfaces for Inventory & Logistics
 export interface Warehouse {
   id: string;
   name: string;
@@ -867,20 +846,21 @@ export interface StockReceiptItem {
   quantity: number;
   purchasePrice: number;
 }
+
 export interface StockReceipt {
   id: string;
   receiptNumber: string;
   supplierId: string;
   supplierName?: string;
-  date: string; // ISO
+  date: string;
   items: StockReceiptItem[];
-  subTotal: number;
-  discount: number;
+  subTotal?: number;
   totalAmount: number;
+  discount?: number;
   amountPaid: number;
-  paymentMethod: 'Tiền mặt' | 'Thẻ';
-  notes?: string;
+  paymentMethod?: 'Tiền mặt' | 'Thẻ';
   status: 'Nháp' | 'Hoàn thành' | 'Công nợ';
+  notes?: string;
 }
 
 export interface StockIssueItem {
@@ -888,14 +868,15 @@ export interface StockIssueItem {
   productName: string;
   quantity: number;
 }
+
 export interface StockIssue {
   id: string;
   issueNumber: string;
-  orderId: string;
-  date: string; // ISO
+  orderId?: string;
+  date: string;
   items: StockIssueItem[];
+  status: 'Nháp' | 'Hoàn thành' | 'Đã hủy';
   notes?: string;
-  status: 'Nháp' | 'Hoàn thành';
 }
 
 export interface StockTransferItem {
@@ -903,21 +884,62 @@ export interface StockTransferItem {
   productName: string;
   quantity: number;
 }
+
 export interface StockTransfer {
   id: string;
   transferNumber: string;
+  date: string;
   sourceWarehouseId: string;
   sourceWarehouseName?: string;
   destWarehouseId: string;
   destWarehouseName?: string;
-  date: string; // ISO
   items: StockTransferItem[];
-  notes?: string;
   status: 'Chờ duyệt' | 'Đã duyệt' | 'Đang vận chuyển' | 'Hoàn thành' | 'Đã hủy';
   approverId?: string;
+  notes?: string;
 }
 
-// --- NEW FINANCE MODULE TYPES ---
+// New Interfaces for Marketing & Audit
+export interface EmailCampaign {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  status: 'Nháp' | 'Đã gửi' | 'Đang gửi';
+  sentAt?: string;
+  createdAt: string;
+}
+
+export interface EmailSubscriber {
+  id: number;
+  email: string;
+  name?: string;
+  subscribedAt: string;
+}
+
+export interface AdCampaign {
+  id: string;
+  name: string;
+  source: string;
+  cost: number;
+  clicks: number;
+  conversions: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface AuditLog {
+  id: number;
+  timestamp: string;
+  username: string;
+  userId: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  details?: string;
+  ipAddress?: string;
+}
+
 export interface Debt {
     id: string;
     entityId: string; // Customer or Supplier ID
@@ -948,64 +970,11 @@ export interface CashflowForecastData {
     };
 }
 
-// --- NEW WEBSITE & MARKETING TYPES ---
-export interface ProductReview {
-  id: string;
-  productId: string;
-  reviewerName: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-}
-
-export interface EmailSubscriber {
-  id: number;
-  email: string;
-  name?: string;
-  subscribedAt: string;
-}
-
-export interface EmailCampaign {
-  id: string;
-  name: string;
-  subject: string;
-  content: string;
-  status: 'Nháp' | 'Đã gửi' | 'Đang gửi';
-  sentAt?: string;
-  createdAt: string;
-}
-
-export interface AdCampaign {
-  id: string;
-  name: string;
-  source: string;
-  cost: number;
-  clicks: number;
-  conversions: number;
-  startDate?: string;
-  endDate?: string;
-}
-
-// NEW: For dashboard backend status
 export interface BackendHealthStatus {
   status: 'ok' | 'error';
   database: 'connected' | 'disconnected';
   errorCode?: string;
   message?: string;
-}
-
-
-// --- NEW SYSTEM & HR TYPES ---
-export interface AuditLog {
-  id: number;
-  userId: string;
-  username: string; // Denormalized for easy display
-  action: string;
-  targetType: string;
-  targetId: string;
-  details?: string;
-  ipAddress?: string;
-  timestamp: string;
 }
 
 export interface Contract {
@@ -1044,4 +1013,12 @@ export interface EmployeeKPI {
   kpiId: string;
   actualValue: number;
   period: string; // e.g., '2024-08'
+}
+export interface ProductReview {
+    id: string;
+    productId: string;
+    reviewerName: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
 }

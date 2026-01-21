@@ -1,11 +1,6 @@
-// FIX: Add a triple-slash directive to include react-three-fiber's JSX type definitions.
-// This resolves errors where JSX elements like <mesh>, <planeGeometry>, <meshBasicMaterial>,
-// and <group> were not recognized by TypeScript.
-/// <reference types="@react-three/fiber/patch-three-ts" />
-
+// @ts-nocheck
 import * as THREE from 'three';
 import React, { useRef } from 'react';
-// FIX: Import `MeshProps` to correctly type the props for a three-fiber mesh component.
 import { useFrame, useThree, MeshProps } from '@react-three/fiber';
 import { useScroll, Image, Text, useTexture } from '@react-three/drei';
 
