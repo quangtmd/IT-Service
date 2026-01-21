@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { Product } from '../../types';
 import ProductCard from '../shop/ProductCard';
 import Button from '../ui/Button';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 import { getFeaturedProducts } from '../../services/localDataService';
+import BackendConnectionError from '../shared/BackendConnectionError'; // Cập nhật đường dẫn
 
 const HotProducts: React.FC = () => {
   const [titleRef, isTitleVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: true });
@@ -21,8 +22,8 @@ const HotProducts: React.FC = () => {
         const featured = await getFeaturedProducts();
         setHotProducts(featured);
       } catch (err) {
-        setError("Không thể tải sản phẩm nổi bật.");
-        console.error("Lỗi khi tải sản phẩm nổi bật từ Local Storage:", err);
+        setError(err instanceof Error ? err.message : "Không thể tải sản phẩm nổi bật.");
+        console.error("Lỗi khi tải sản phẩm nổi bật từ API:", err);
       } finally {
         setIsLoading(false);
       }
@@ -32,46 +33,46 @@ const HotProducts: React.FC = () => {
 
   if (isLoading) {
     return (
-      <section className="home-section bg-primary">
+      <section className="home-section bg-bgMuted">
         <div className="container mx-auto px-4 text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white mx-auto"></div>
-            <p className="mt-4 text-red-100">Đang tải sản phẩm nổi bật...</p>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-textMuted">Đang tải sản phẩm nổi bật...</p>
         </div>
       </section>
     );
   }
   
   if (error) {
-     return (
-      <section className="home-section bg-primary">
-        <div className="container mx-auto px-4 text-center text-white bg-red-800/50 p-4 rounded-lg">
-           <p>{error}</p>
-        </div>
-      </section>
+    return (
+        <section className="home-section bg-bgMuted">
+            <div className="container mx-auto px-4">
+                <BackendConnectionError error={error} />
+            </div>
+        </section>
     );
   }
 
 
   if (hotProducts.length === 0) {
     return (
-      <section className="home-section bg-primary">
+      <section className="home-section bg-bgMuted">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold mb-6 !text-white">Sản Phẩm Nổi Bật</h2>
-          <p className="home-section-subtitle mb-8 !text-red-100">Hiện chưa có sản phẩm nổi bật nào. Vui lòng quay lại sau!</p>
-          <Link to="/shop">
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">Khám phá tất cả sản phẩm</Button>
-          </Link>
+          <h2 className="home-section-title text-4xl md:text-5xl font-extrabold mb-6">Sản Phẩm Nổi Bật</h2>
+          <p className="home-section-subtitle mb-8">Hiện chưa có sản phẩm nổi bật nào. Vui lòng quay lại sau!</p>
+          <ReactRouterDOM.Link to="/shop">
+            <Button size="lg" variant="primary">Khám phá tất cả sản phẩm</Button>
+          </ReactRouterDOM.Link>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="home-section bg-primary">
+    <section className="home-section bg-bgMuted">
       <div className="container mx-auto px-4">
         <div ref={titleRef} className={`home-section-title-area animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`}>
-             <h2 className="home-section-title text-4xl md:text-5xl font-extrabold mb-4 !text-white">Sản Phẩm Nổi Bật</h2>
-             <p className="home-section-subtitle !text-red-100">
+             <h2 className="home-section-title text-4xl md:text-5xl font-extrabold mb-4">Sản Phẩm Nổi Bật</h2>
+             <p className="home-section-subtitle">
                 Khám phá các linh kiện PC đang được ưa chuộng nhất và những ưu đãi đặc biệt từ chúng tôi.
              </p>
         </div>
@@ -89,11 +90,11 @@ const HotProducts: React.FC = () => {
         </div>
 
         <div className={`text-center mt-12 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`} style={{animationDelay: '0.5s'}}>
-          <Link to="/shop">
-            <Button size="lg" variant="outline" className="px-10 py-3.5 text-base shadow-lg border-white text-white hover:bg-white hover:text-primary">
+          <ReactRouterDOM.Link to="/shop">
+            <Button size="lg" variant="primary" className="px-10 py-3.5 text-base shadow-lg hover:shadow-primary/40">
                 Xem Tất Cả Sản Phẩm
             </Button>
-          </Link>
+          </ReactRouterDOM.Link>
         </div>
       </div>
     </section>

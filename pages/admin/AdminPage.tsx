@@ -35,6 +35,7 @@ import OrderFormPage from './OrderFormPage';
 import ReturnFormPage from './ReturnFormPage';
 import SupplierFormPage from './SupplierFormPage';
 import ServiceTicketFormPage from './ServiceTicketFormPage';
+import WarrantyFormPage from './WarrantyFormPage';
 
 
 // Import new placeholder/skeleton views
@@ -173,7 +174,7 @@ const AdminPage: React.FC = () => {
         const viewCandidates = [
             'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
             'accounting_dashboard', 'quotations', 'customers', 'orders', 
-            'returns', 'suppliers', 'service_tickets'
+            'returns', 'suppliers', 'service_tickets', 'warranty_claims'
         ];
 
         let foundView = null;
@@ -277,6 +278,8 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
         if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
         if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
+        if (path.startsWith('/admin/warranty_claims/new')) return 'Tạo Phiếu Bảo hành';
+        if (path.startsWith('/admin/warranty_claims/edit/')) return 'Chỉnh sửa Phiếu Bảo hành';
 
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
@@ -331,6 +334,8 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_claims/new" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_claims/edit/:claimId" element={<WarrantyFormPage />} />
                         
                         {/* Generic route for views */}
                         <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />

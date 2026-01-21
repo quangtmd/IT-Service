@@ -1,14 +1,9 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card'; 
-import { 
-    Product, Article, User, StaffRole, Order, OrderStatus, AdminNotification, UserRole, 
-    FaqItem, DiscountCode, SiteThemeSettings, CustomMenuLink, SiteSettings,
-    MediaItem, ChatLogSession, FinancialTransaction, PayrollRecord, TransactionType, TransactionCategory
-} from '../types';
-import * as Constants from '../constants.tsx';
+import React, { useState, useEffect, useMemo } from 'react';
+import * as ReactRouterDOM from 'react-router-dom';
+import { User, AdminNotification, AdminView } from '../types';
 import { useAuth, AdminPermission } from '../contexts/AuthContext';
+
+// Import existing views
 import HRMProfileView from '../components/admin/HRMProfileView';
 import ProductManagementView from '../components/admin/ProductManagementView';
 import ArticleManagementView from '../components/admin/ArticleManagementView';
@@ -22,20 +17,35 @@ import MediaLibraryView from '../components/admin/MediaLibraryView';
 import NotificationsView from '../components/admin/NotificationsView';
 import HomepageManagementView from '../components/admin/HomepageManagementView';
 import FinancialManagementView from '../components/admin/FinancialManagementView';
-import { getOrders, getProducts } from '../services/localDataService';
+import DashboardView from '../components/admin/DashboardView';
+import InventoryView from '../components/admin/InventoryView';
+import ServiceTicketView from '../components/admin/ServiceTicketView';
 
-type AdminView = 
-  | 'dashboard' | 'products' | 'articles' | 'media_library' | 'faqs' 
-  | 'staff' | 'customers' 
-  | 'orders' | 'discounts' | 'chat_logs' 
-  | 'theme_settings' | 'menu_settings' | 'site_settings'
-  | 'notifications_panel'
-  | 'homepage_management'
-  // Placeholders
-  | 'accounting_dashboard' | 'hrm_dashboard' | 'analytics_dashboard';
+// Import new form pages
+import ProductFormPage from './admin/ProductFormPage';
+import UserFormPage from './admin/UserFormPage';
+import ArticleFormPage from './admin/ArticleFormPage';
+import DiscountFormPage from './admin/DiscountFormPage';
+import FaqFormPage from './admin/FaqFormPage';
+import TransactionFormPage from './admin/TransactionFormPage';
+import QuotationFormPage from './admin/QuotationFormPage';
+import CustomerFormPage from './admin/CustomerFormPage';
+import CustomerProfilePage from './admin/CustomerProfilePage';
+import OrderFormPage from './admin/OrderFormPage';
+import ReturnFormPage from './admin/ReturnFormPage';
+import SupplierFormPage from './admin/SupplierFormPage';
+import ServiceTicketFormPage from './admin/ServiceTicketFormPage';
+
+
+// Import new placeholder/skeleton views
+import QuotationManagementView from '../components/admin/QuotationManagementView';
+import WarrantyManagementView from '../components/admin/WarrantyManagementView';
+import ReturnManagementView from '../components/admin/ReturnManagementView';
+import SupplierManagementView from '../components/admin/SupplierManagementView';
+
 
 interface MenuItemConfig {
-    id: AdminView | string; 
+    id: AdminView | string;
     label: string;
     icon: string;
     permission: AdminPermission[];
@@ -45,35 +55,17 @@ interface MenuItemConfig {
 
 
 const AdminPage: React.FC = () => {
-    const { 
-        currentUser, users: authUsers,
-        adminNotifications, hasPermission,
-    } = useAuth();
-    
+    const { currentUser, adminNotifications, hasPermission } = useAuth();
+    const location = ReactRouterDOM.useLocation();
+    const navigate = ReactRouterDOM.useNavigate();
+
     const [activeView, setActiveView] = useState<AdminView>('dashboard');
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-        content_management: true, sales_management: true, hrm_management: true,
+        'sales_crm': true, 'service_warranty': true, 'cms_marketing': true, 'inventory_logistics': false,
+        'finance_accounting': false, 'procurement': false, 'system_hr': false,
     });
-    
-    // State for dashboard data only
-    const [dashboardProducts, setDashboardProducts] = useState<Product[]>([]);
-    const [dashboardOrders, setDashboardOrders] = useState<Order[]>([]);
-    const customerUsers = useMemo(() => authUsers.filter(u => u.role === 'customer'), [authUsers]);
-
-    const loadDashboardData = useCallback(async () => {
-        try {
-            setDashboardProducts(await getProducts());
-            setDashboardOrders(await getOrders());
-        } catch (error) {
-            console.error("Failed to load dashboard data from Local Storage:", error);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadDashboardData();
-    }, [loadDashboardData]);
 
     useEffect(() => {
         document.body.classList.add('admin-panel-active');
@@ -83,61 +75,139 @@ const AdminPage: React.FC = () => {
     }, []);
 
     const unreadNotificationCount = adminNotifications.filter(n => !n.isRead).length;
+
     const MENU_CONFIG: MenuItemConfig[] = useMemo(() => [
         { id: 'dashboard', label: 'Tổng Quan', icon: 'fas fa-tachometer-alt', permission: ['viewDashboard'] },
-        { 
-            id: 'sales_management', label: 'Quản Lý Bán Hàng', icon: 'fas fa-chart-line', permission: ['viewSales'],
+        // I. Sales & CRM
+        {
+            id: 'sales_crm', label: 'Bán Hàng & CRM', icon: 'fas fa-hand-holding-usd', permission: ['viewSales'],
             children: [
+                { id: 'customers', label: 'Khách Hàng', icon: 'fas fa-users', permission: ['viewCustomers'] },
+                { id: 'quotations', label: 'Báo Giá', icon: 'fas fa-file-invoice-dollar', permission: ['viewQuotations'] },
                 { id: 'orders', label: 'Đơn Hàng', icon: 'fas fa-receipt', permission: ['viewOrders'] },
                 { id: 'discounts', label: 'Mã Giảm Giá', icon: 'fas fa-tags', permission: ['manageDiscounts'] },
-                { id: 'customers', label: 'Khách Hàng', icon: 'fas fa-user-friends', permission: ['viewCustomers'] },
-                { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewOrders'] },
+                { id: 'returns', label: 'Hoàn Trả', icon: 'fas fa-undo-alt', permission: ['manageOrders'] },
+                { id: 'suppliers', label: 'Nhà Cung Cấp', icon: 'fas fa-truck-loading', permission: ['viewSuppliers'] },
             ]
         },
-        { 
-            id: 'content_management', label: 'Quản Trị Website', icon: 'fas fa-file-alt', permission: ['viewContent'],
+        // II. Service & Warranty
+        {
+            id: 'service_warranty', label: 'Dịch Vụ & Bảo Hành', icon: 'fas fa-tools', permission: ['viewService'],
+            children: [
+                { id: 'service_tickets', label: 'Phiếu Sửa Chữa', icon: 'fas fa-ticket-alt', permission: ['manageServiceTickets'] },
+                { id: 'warranty_claims', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
+                { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
+            ]
+        },
+         // III. CMS & Marketing
+        {
+            id: 'cms_marketing', label: 'Website & Marketing', icon: 'fas fa-desktop', permission: ['viewContent'],
             children: [
                 { id: 'homepage_management', label: 'Quản lý Trang chủ', icon: 'fas fa-home', permission: ['manageSiteSettings'] },
                 { id: 'products', label: 'Sản Phẩm', icon: 'fas fa-box-open', permission: ['viewProducts'] },
                 { id: 'articles', label: 'Bài Viết', icon: 'fas fa-newspaper', permission: ['viewArticles'] },
-                { id: 'media_library', label: 'Thư Viện Media', icon: 'fas fa-photo-video', permission: ['manageSiteSettings'] },
-                { id: 'faqs', label: 'FAQs', icon: 'fas fa-question-circle', permission: ['manageFaqs'] },
+                { id: 'media_library', label: 'Thư Viện Media', icon: 'fas fa-photo-video', permission: ['manageMedia'] },
+                { id: 'email_marketing', label: 'Email Marketing', icon: 'fas fa-envelope-open-text', permission: ['viewAnalytics'] },
+                { id: 'seo_management', label: 'Quản lý SEO', icon: 'fas fa-search-dollar', permission: ['viewAnalytics'] },
             ]
         },
-        { 
-            id: 'hrm_management', label: 'Quản Lý Nhân Sự (HRM)', icon: 'fas fa-users-cog', permission: ['viewHrm'],
-            children: [
-                { id: 'hrm_dashboard', label: 'Hồ Sơ Nhân Sự', icon: 'fas fa-id-card', permission: ['manageEmployees'] },
-            ]
-        },
-        { 
-            id: 'accounting_management', label: 'Tài Chính - Kế Toán', icon: 'fas fa-calculator', permission: ['viewAccounting'],
-            children: [
-                { id: 'accounting_dashboard', label: 'Tổng Quan Tài Chính', icon: 'fas fa-chart-pie', permission: ['viewReports'] },
-            ]
-        },
+        // IV. Inventory & Logistics
         {
-            id: 'settings_management', label: 'Danh Mục & Cấu Hình', icon: 'fas fa-cogs', permission: ['viewAppearance'], 
+            id: 'inventory_logistics', label: 'Kho & Logistics', icon: 'fas fa-warehouse', permission: ['viewInventory'],
             children: [
-                { id: 'site_settings', label: 'Cài Đặt Trang', icon: 'fas fa-cog', permission: ['manageSiteSettings'] }, 
-                { id: 'theme_settings', label: 'Theme Màu', icon: 'fas fa-palette', permission: ['manageTheme'] },
-                { id: 'menu_settings', label: 'Menu Điều Hướng', icon: 'fas fa-list-ul', permission: ['manageMenu'] },
+                { id: 'inventory', label: 'Tồn Kho', icon: 'fas fa-boxes', permission: ['viewInventory'] },
+                { id: 'stock_receipts', label: 'Phiếu Nhập Kho', icon: 'fas fa-dolly-flatbed', permission: ['manageInventory'] },
+                { id: 'stock_issues', label: 'Phiếu Xuất Kho', icon: 'fas fa-dolly', permission: ['manageInventory'] },
+                { id: 'shipping', label: 'Vận Chuyển', icon: 'fas fa-shipping-fast', permission: ['manageOrders'] },
+                { id: 'stock_transfers', label: 'Điều Chuyển Kho', icon: 'fas fa-exchange-alt', permission: ['manageInventory'] },
             ]
         },
+         // V. Finance & Accounting
+        {
+            id: 'finance_accounting', label: 'Tài Chính - Kế Toán', icon: 'fas fa-calculator', permission: ['viewAccounting'],
+            children: [
+                { id: 'accounting_dashboard', label: 'Tổng Quan Tài Chính', icon: 'fas fa-chart-pie', permission: ['viewAccounting'] },
+                { id: 'invoices', label: 'Hóa Đơn / Phiếu Thu', icon: 'fas fa-file-invoice', permission: ['manageTransactions'] },
+                { id: 'expenses', label: 'Phiếu Chi', icon: 'fas fa-file-export', permission: ['manageTransactions'] },
+                { id: 'debt_management', label: 'Công Nợ', icon: 'fas fa-book', permission: ['viewAccounting'] },
+                { id: 'cashflow_forecast', label: 'Dự Báo Dòng Tiền', icon: 'fas fa-water', permission: ['viewAccounting'] },
+                { id: 'payment_approval', label: 'Phê Duyệt Chi', icon: 'fas fa-check-double', permission: ['viewAccounting'] },
+            ]
+        },
+        // VI. Procurement
+        {
+            id: 'procurement', label: 'Mua Hàng', icon: 'fas fa-shopping-cart', permission: ['viewProcurement'],
+            children: [
+                { id: 'purchase_requests', label: 'Yêu Cầu Mua Hàng (PR)', icon: 'fas fa-file-signature', permission: ['viewProcurement'] },
+                { id: 'purchase_orders', label: 'Đơn Đặt Hàng (PO)', icon: 'fas fa-file-alt', permission: ['viewProcurement'] },
+                { id: 'procurement_approval', label: 'Duyệt & Nhập Kho', icon: 'fas fa-clipboard-check', permission: ['viewProcurement'] },
+            ]
+        },
+        // VII. System & HR
+        {
+            id: 'system_hr', label: 'Hệ Thống & Nhân Sự', icon: 'fas fa-users-cog', permission: ['viewSystem'],
+            children: [
+                { id: 'hrm_dashboard', label: 'Hồ Sơ Nhân Sự', icon: 'fas fa-id-card', permission: ['viewHrm'] },
+                { id: 'user_permissions', label: 'Phân Quyền Người Dùng', icon: 'fas fa-user-shield', permission: ['manageEmployees'] },
+                { id: 'site_settings', label: 'Cài Đặt Chung', icon: 'fas fa-cog', permission: ['manageSiteSettings'] },
+                { id: 'activity_log', label: 'Nhật Ký Hoạt Động', icon: 'fas fa-history', permission: ['viewSystem'] },
+                { id: 'contract_management', label: 'Quản Lý Hợp Đồng', icon: 'fas fa-file-contract', permission: ['viewSystem'] },
+                { id: 'asset_management', label: 'Quản Lý Tài Sản', icon: 'fas fa-laptop-house', permission: ['viewSystem'] },
+                { id: 'kpi_management', label: 'KPI & Hiệu Suất', icon: 'fas fa-chart-line', permission: ['viewHrm'] },
+            ]
+        },
+        // Other top-level items
         { id: 'notifications_panel', label: 'Thông Báo', icon: 'fas fa-bell', count: unreadNotificationCount, permission: ['viewNotifications'] },
     ], [unreadNotificationCount]);
+
+    // Determine the active view based on URL path
+    useEffect(() => {
+        const path = location.pathname;
+        const parts = path.split('/');
+        const adminIndex = parts.indexOf('admin');
+        if (adminIndex === -1) {
+            setActiveView('dashboard');
+            return;
+        }
+
+        const viewCandidates = [
+            'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
+            'accounting_dashboard', 'quotations', 'customers', 'orders', 
+            'returns', 'suppliers', 'service_tickets'
+        ];
+
+        let foundView = null;
+        for (const candidate of viewCandidates) {
+            if(path.startsWith(`/admin/${candidate}`)) {
+                foundView = candidate;
+                break;
+            }
+        }
+        
+        if (foundView) {
+             setActiveView(foundView as AdminView);
+        } else {
+            const lastSegment = parts[adminIndex + 1] || 'dashboard';
+            const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
+            const matchingItem = allMenuItems.find(item => item.id === lastSegment);
+            setActiveView(matchingItem ? matchingItem.id as AdminView : 'dashboard');
+        }
+    }, [location.pathname, MENU_CONFIG]);
+
 
     const handleMenuClick = (viewId: AdminView | string, isParent: boolean) => {
         if (isParent) {
             setOpenMenus(prev => ({ ...prev, [viewId]: !prev[viewId] }));
         } else {
-            setActiveView(viewId as AdminView);
+            navigate(`/admin/${viewId}`);
             setIsMobileSidebarOpen(false);
         }
     };
-    
-    const renderContent = () => {
-        const currentMenuItem = MENU_CONFIG.flatMap(m => m.children || m).find(i => i.id === activeView);
+
+    const renderContent = (currentView: AdminView) => {
+        const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
+        const currentMenuItem = allMenuItems.find(i => i.id === currentView);
+
         if (currentMenuItem && !hasPermission(currentMenuItem.permission)) {
             if (hasPermission(['viewDashboard'])) {
                 setActiveView('dashboard');
@@ -145,8 +215,8 @@ const AdminPage: React.FC = () => {
             return <div className="admin-card"><div className="admin-card-body">Bạn không có quyền truy cập mục này.</div></div>;
         }
 
-        switch(activeView) {
-            case 'dashboard': return <DashboardView orders={dashboardOrders} products={dashboardProducts} customers={customerUsers} />;
+        switch(currentView) {
+            case 'dashboard': return <DashboardView setActiveView={setActiveView} />;
             case 'products': return <ProductManagementView />;
             case 'articles': return <ArticleManagementView />;
             case 'orders': return <OrderManagementView />;
@@ -157,22 +227,66 @@ const AdminPage: React.FC = () => {
             case 'chat_logs': return <ChatLogView />;
             case 'media_library': return <MediaLibraryView />;
             case 'homepage_management': return <HomepageManagementView />;
-            case 'site_settings':
-            case 'theme_settings':
-            case 'menu_settings':
-                return <SiteSettingsView initialTab={activeView} />;
+            case 'site_settings': return <SiteSettingsView initialTab="site_settings" />;
+            case 'theme_settings': return <SiteSettingsView initialTab="theme_settings" />;
+            case 'menu_settings': return <SiteSettingsView initialTab="menu_settings" />;
             case 'notifications_panel': return <NotificationsView />;
-
             case 'accounting_dashboard': return <FinancialManagementView />;
-            case 'analytics_dashboard': return <div className="admin-card"><div className="admin-card-body">Module Phân tích Báo cáo đang trong kế hoạch phát triển.</div></div>;
-
-            default: return <div className="admin-card"><div className="admin-card-body"><h3 className="admin-card-title">{currentMenuItem?.label || 'Chào mừng'}</h3><p>Tính năng này đang được phát triển.</p></div></div>;
+            case 'inventory': return <InventoryView />;
+            case 'service_tickets': return <ServiceTicketView />;
+            case 'quotations': return <QuotationManagementView />;
+            case 'warranty_claims': return <WarrantyManagementView />;
+            case 'returns': return <ReturnManagementView />;
+            case 'suppliers': return <SupplierManagementView />;
+            default: return (
+                <div className="admin-card">
+                    <div className="admin-card-body text-center py-12">
+                         <i className="fas fa-cogs text-4xl text-gray-300 mb-4"></i>
+                         <h3 className="text-xl font-semibold text-textBase">Tính năng "{currentMenuItem?.label || 'Không xác định'}"</h3>
+                         <p className="text-textMuted mt-2">Module này đang trong quá trình phát triển và sẽ sớm được ra mắt.</p>
+                    </div>
+                </div>
+            );
         }
     };
 
+    const getPageTitle = useMemo(() => {
+        const path = location.pathname;
+        if (path.startsWith('/admin/products/new')) return 'Thêm Sản phẩm Mới';
+        if (path.startsWith('/admin/products/edit/')) return 'Chỉnh sửa Sản phẩm';
+        if (path.startsWith('/admin/hrm_dashboard/new')) return 'Thêm Nhân viên Mới';
+        if (path.startsWith('/admin/hrm_dashboard/edit/')) return 'Chỉnh sửa Hồ sơ Nhân sự';
+        if (path.startsWith('/admin/articles/new')) return 'Thêm Bài viết Mới';
+        if (path.startsWith('/admin/articles/edit/')) return 'Chỉnh sửa Bài viết';
+        if (path.startsWith('/admin/discounts/new')) return 'Thêm Mã giảm giá Mới';
+        if (path.startsWith('/admin/discounts/edit/')) return 'Chỉnh sửa Mã giảm giá';
+        if (path.startsWith('/admin/faqs/new')) return 'Thêm FAQ Mới';
+        if (path.startsWith('/admin/faqs/edit/')) return 'Chỉnh sửa FAQ';
+        if (path.startsWith('/admin/accounting_dashboard/transactions/new')) return 'Thêm Giao dịch Mới';
+        if (path.startsWith('/admin/accounting_dashboard/transactions/edit/')) return 'Chỉnh sửa Giao dịch';
+        if (path.startsWith('/admin/quotations/new')) return 'Tạo Báo giá Mới';
+        if (path.startsWith('/admin/quotations/edit/')) return 'Chỉnh sửa Báo giá';
+        if (path.startsWith('/admin/customers/new')) return 'Thêm Khách hàng Mới';
+        if (path.startsWith('/admin/customers/edit/')) return 'Chỉnh sửa Khách hàng';
+        if (path.startsWith('/admin/customers/view/')) return 'Hồ sơ Khách hàng';
+        if (path.startsWith('/admin/orders/new')) return 'Tạo Đơn hàng Mới';
+        if (path.startsWith('/admin/orders/edit/')) return 'Chỉnh sửa Đơn hàng';
+        if (path.startsWith('/admin/returns/new')) return 'Tạo Phiếu Hoàn Trả';
+        if (path.startsWith('/admin/returns/edit/')) return 'Chỉnh sửa Phiếu Hoàn Trả';
+        if (path.startsWith('/admin/suppliers/new')) return 'Thêm Nhà Cung Cấp';
+        if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
+        if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
+        if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
+
+
+        const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
+        return allMenuItems.find(i => i.id === activeView)?.label || "Tổng Quan";
+    }, [activeView, location.pathname, MENU_CONFIG]);
+
+
     return (
         <div className="admin-wrapper">
-            <AdminSidebar 
+            <AdminSidebar
                 isOpen={isMobileSidebarOpen}
                 isCollapsed={isSidebarCollapsed}
                 onClose={() => setIsMobileSidebarOpen(false)}
@@ -184,13 +298,44 @@ const AdminPage: React.FC = () => {
                 authContext={{ currentUser, hasPermission }}
             />
             <main className={`admin-main-content ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-                <AdminHeader 
+                <AdminHeader
                     onMobileMenuOpen={() => setIsMobileSidebarOpen(true)}
-                    pageTitle={MENU_CONFIG.flatMap(m => m.children || m).find(i => i.id === activeView)?.label || "Tổng Quan"}
+                    pageTitle={getPageTitle}
                     currentUser={currentUser}
                 />
                 <div className="admin-content-area">
-                    {renderContent()}
+                    <ReactRouterDOM.Routes>
+                        {/* Define form pages first as they are more specific */}
+                        <ReactRouterDOM.Route path="/products/new" element={<ProductFormPage />} />
+                        <ReactRouterDOM.Route path="/products/edit/:productId" element={<ProductFormPage />} />
+                        <ReactRouterDOM.Route path="/hrm_dashboard/new" element={<UserFormPage />} />
+                        <ReactRouterDOM.Route path="/hrm_dashboard/edit/:userId" element={<UserFormPage />} />
+                        <ReactRouterDOM.Route path="/customers/new" element={<CustomerFormPage />} />
+                        <ReactRouterDOM.Route path="/customers/edit/:customerId" element={<CustomerFormPage />} />
+                        <ReactRouterDOM.Route path="/customers/view/:customerId" element={<CustomerProfilePage />} />
+                        <ReactRouterDOM.Route path="/articles/new" element={<ArticleFormPage />} />
+                        <ReactRouterDOM.Route path="/articles/edit/:articleId" element={<ArticleFormPage />} />
+                        <ReactRouterDOM.Route path="/discounts/new" element={<DiscountFormPage />} />
+                        <ReactRouterDOM.Route path="/discounts/edit/:discountId" element={<DiscountFormPage />} />
+                        <ReactRouterDOM.Route path="/faqs/new" element={<FaqFormPage />} />
+                        <ReactRouterDOM.Route path="/faqs/edit/:faqId" element={<FaqFormPage />} />
+                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/new" element={<TransactionFormPage />} />
+                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
+                        <ReactRouterDOM.Route path="/quotations/new" element={<QuotationFormPage />} />
+                        <ReactRouterDOM.Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
+                        <ReactRouterDOM.Route path="/orders/new" element={<OrderFormPage />} />
+                        <ReactRouterDOM.Route path="/orders/edit/:orderId" element={<OrderFormPage />} />
+                        <ReactRouterDOM.Route path="/returns/new" element={<ReturnFormPage />} />
+                        <ReactRouterDOM.Route path="/returns/edit/:returnId" element={<ReturnFormPage />} />
+                        <ReactRouterDOM.Route path="/suppliers/new" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
+                        <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
+                        
+                        {/* Generic route for views */}
+                        <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />
+                        <ReactRouterDOM.Route path="/" element={renderContent('dashboard')} />
+                    </ReactRouterDOM.Routes>
                 </div>
             </main>
         </div>
@@ -206,67 +351,75 @@ const AdminSidebar: React.FC<{
     menuConfig: MenuItemConfig[];
     authContext: { currentUser: User | null; hasPermission: (p: AdminPermission[]) => boolean; };
 }> = ({ isOpen, isCollapsed, onClose, onToggleCollapse, activeView, openMenus, onMenuClick, menuConfig, authContext }) => {
-    
-    const renderSidebarItem = (item: MenuItemConfig, isChild = false) => {
+
+    const renderSidebarItem = (item: MenuItemConfig) => {
         if (!authContext.hasPermission(item.permission)) return null;
 
-        const isActive = activeView === item.id;
         const isParentOpen = !!item.children && !!openMenus[item.id];
-        
-        const itemClasses = `w-full flex items-center p-3 my-1 rounded-md transition-colors text-sm ${
-            isChild ? '' : ''
-        } ${
-            isActive 
-            ? 'bg-primary/90 text-white font-semibold shadow-inner' 
-            : 'text-gray-300 hover:bg-slate-700 hover:text-white'
-        }`;
 
         if (item.children) {
+             const hasActiveChild = item.children.some(child => activeView === child.id);
             return (
                 <div key={item.id}>
-                    <button className={`${itemClasses} justify-between`} onClick={() => onMenuClick(item.id, true)}>
+                    <button
+                        className={`w-full flex items-center justify-between p-3 my-1 rounded-md transition-colors text-sm font-semibold
+                                    ${hasActiveChild ? 'text-white' : 'text-gray-400 hover:bg-slate-700 hover:text-white'}`}
+                        onClick={() => onMenuClick(item.id, true)}
+                    >
                         <div className="flex items-center">
                             <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
                             <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
                         </div>
                         <i className={`fas fa-chevron-right text-xs transition-transform duration-200 ${isParentOpen ? 'rotate-90' : ''} ${isCollapsed ? 'hidden' : ''}`}></i>
                     </button>
-                    <div className={`pl-6 mt-1 border-l border-slate-700 ml-5 transition-all duration-300 ease-in-out overflow-hidden ${isParentOpen ? 'max-h-96' : 'max-h-0'} ${isCollapsed ? 'hidden' : ''}`}>
-                        {item.children.map(child => renderSidebarItem(child, true))}
+                    <div className={`pl-6 mt-1 border-l-2 border-slate-700 ml-5 transition-all duration-300 ease-in-out overflow-hidden ${isParentOpen ? 'max-h-[500px]' : 'max-h-0'} ${isCollapsed ? 'hidden' : ''}`}>
+                        {item.children.map(child => renderChildItem(child))}
                     </div>
                 </div>
             );
         }
 
+        return renderChildItem(item); // Render as a child item if it has no children
+    };
+
+    const renderChildItem = (item: MenuItemConfig) => {
+        if (!authContext.hasPermission(item.permission)) return null;
+        const isActive = activeView === item.id;
         return (
-          <button key={item.id} className={itemClasses} onClick={() => onMenuClick(item.id, false)}>
-            <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
-            <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
-            {!isCollapsed && item.count !== undefined && item.count > 0 && 
-                <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{item.count}</span>
-            }
-          </button>
+             <button key={item.id}
+                className={`w-full flex items-center p-2.5 my-0.5 rounded-md transition-colors text-sm ${isActive ? 'bg-primary/90 text-white font-semibold shadow-inner' : 'text-gray-300 hover:bg-slate-700 hover:text-white'}`}
+                onClick={() => onMenuClick(item.id, false)}
+            >
+                <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
+                <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
+                {!isCollapsed && item.count !== undefined && item.count > 0 &&
+                    <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{item.count > 9 ? '9+' : item.count}</span>
+                }
+            </button>
         );
     };
-    
+
     return (
         <>
-            <div className={`fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
+            <div className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
             <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`}>
                 <div className="admin-sidebar-header justify-between">
-                    {!isCollapsed && <Link to="/home"><span className="text-xl font-bold text-white">IQ Technology</span></Link>}
-                    <button onClick={onToggleCollapse} className="hidden md:block text-slate-400 hover:text-white text-lg">
+                    {!isCollapsed && <ReactRouterDOM.Link to="/"><span className="text-xl font-bold text-white">IQ Technology</span></ReactRouterDOM.Link>}
+                    <button onClick={onToggleCollapse} className="hidden lg:block text-slate-400 hover:text-white text-lg">
                         <i className={`fas ${isCollapsed ? 'fa-align-right' : 'fa-align-left'}`}></i>
+                    </button>
+                     <button onClick={onClose} className="lg:hidden text-2xl text-slate-400 hover:text-white">
+                        <i className="fas fa-times"></i>
                     </button>
                 </div>
                 <nav className="flex-grow p-2">
                     {menuConfig.map(item => renderSidebarItem(item))}
                 </nav>
                 <div className="admin-sidebar-footer">
-                    <Link to="/home" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
+                    <ReactRouterDOM.Link to="/" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
                         <i className="fas fa-globe w-6 text-center mr-3"></i>
                         {!isCollapsed && <span className="text-sm">Về trang chủ</span>}
-                    </Link>
+                    </ReactRouterDOM.Link>
                 </div>
             </aside>
         </>
@@ -280,70 +433,16 @@ const AdminHeader: React.FC<{
 }> = ({ onMobileMenuOpen, pageTitle, currentUser }) => (
     <header className="admin-page-header flex justify-between items-center">
         <div className="flex items-center">
-            <button onClick={onMobileMenuOpen} className="md:hidden text-2xl text-slate-600 mr-4"><i className="fas fa-bars"></i></button>
+            <button onClick={onMobileMenuOpen} className="lg:hidden text-2xl text-slate-600 mr-4"><i className="fas fa-bars"></i></button>
             <h1 className="admin-page-title">{pageTitle}</h1>
         </div>
          <div className="flex items-center gap-4">
             <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
-            <Link to="/home">
+            <ReactRouterDOM.Link to="/">
                 <i className="fas fa-user-circle text-2xl text-admin-textSecondary hover:text-primary"></i>
-            </Link>
+            </ReactRouterDOM.Link>
         </div>
     </header>
 );
-
-const DashboardView: React.FC<{
-    orders: Order[];
-    products: Product[];
-    customers: User[];
-}> = ({ orders, products, customers }) => {
-    const totalRevenue = orders.filter(o => o.status === 'Hoàn thành').reduce((sum, o) => sum + o.totalAmount, 0);
-    const newOrdersCount = orders.filter(o => o.status === 'Chờ xử lý').length;
-    const lowStockCount = products.filter(p => p.stock > 0 && p.stock < 5).length;
-    
-    return (
-        <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <Card className="admin-card !shadow-sm"><div className="admin-card-body">
-                    <h4 className="text-sm text-admin-textSecondary">Tổng Doanh Thu</h4>
-                    <p className="text-2xl font-bold text-admin-textPrimary">{totalRevenue.toLocaleString('vi-VN')}₫</p>
-                </div></Card>
-                <Card className="admin-card !shadow-sm"><div className="admin-card-body">
-                    <h4 className="text-sm text-admin-textSecondary">Đơn Hàng Mới</h4>
-                    <p className="text-2xl font-bold text-admin-textPrimary">{newOrdersCount}</p>
-                </div></Card>
-                <Card className="admin-card !shadow-sm"><div className="admin-card-body">
-                    <h4 className="text-sm text-admin-textSecondary">Sản Phẩm Sắp Hết</h4>
-                    <p className="text-2xl font-bold text-admin-textPrimary">{lowStockCount}</p>
-                </div></Card>
-                <Card className="admin-card !shadow-sm"><div className="admin-card-body">
-                    <h4 className="text-sm text-admin-textSecondary">Tổng Khách Hàng</h4>
-                    <p className="text-2xl font-bold text-admin-textPrimary">{customers.length}</p>
-                </div></Card>
-            </div>
-            <Card className="admin-card">
-                <div className="admin-card-header"><h3 className="admin-card-title">5 Đơn hàng gần nhất</h3></div>
-                <div className="admin-card-body !p-0 overflow-x-auto">
-                    <table className="admin-table">
-                        <thead><tr><th>Mã ĐH</th><th>Khách hàng</th><th>Ngày</th><th>Tổng tiền</th><th>Trạng thái</th><th></th></tr></thead>
-                        <tbody>
-                            {orders.slice(0, 5).map(o => (
-                                <tr key={o.id}>
-                                    <td><span className="font-mono text-xs bg-gray-100 p-1 rounded">#{o.id.slice(-6)}</span></td>
-                                    <td>{o.customerInfo.fullName}</td>
-                                    <td>{new Date(o.orderDate).toLocaleDateString('vi-VN')}</td>
-                                    <td className="font-semibold">{o.totalAmount.toLocaleString('vi-VN')}₫</td>
-                                    <td><span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">{o.status}</span></td>
-                                    <td><Button size="sm" variant="ghost">Chi tiết</Button></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
-        </div>
-    );
-};
-
 
 export default AdminPage;

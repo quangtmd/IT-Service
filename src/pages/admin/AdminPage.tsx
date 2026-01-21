@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-// FIX: Use named imports from react-router-dom
-import { useLocation, useNavigate, Routes, Route, Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { User, AdminNotification, AdminView, AdminPermission } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -66,113 +65,11 @@ interface MenuItemConfig {
     children?: MenuItemConfig[];
 }
 
-// --- Sub-components for AdminPage ---
-
-const AdminSidebar: React.FC<{
-    isOpen: boolean; isCollapsed: boolean; onClose: () => void; onToggleCollapse: () => void;
-    activeView: AdminView; openMenus: Record<string, boolean>;
-    onMenuClick: (viewId: string, isParent: boolean) => void;
-    menuConfig: MenuItemConfig[];
-    authContext: { currentUser: User | null; hasPermission: (p: AdminPermission[]) => boolean; };
-}> = ({ isOpen, isCollapsed, onClose, onToggleCollapse, activeView, openMenus, onMenuClick, menuConfig, authContext }) => {
-
-    const renderSidebarItem = (item: MenuItemConfig) => {
-        if (!authContext.hasPermission(item.permission)) return null;
-
-        const isParentOpen = !!item.children && !!openMenus[item.id];
-
-        if (item.children) {
-             const hasActiveChild = item.children.some(child => activeView === child.id);
-            return (
-                <div key={item.id}>
-                    <button
-                        className={`w-full flex items-center justify-between p-3 my-1 rounded-md transition-colors text-sm font-semibold
-                                    ${hasActiveChild ? 'text-white' : 'text-gray-400 hover:bg-slate-700 hover:text-white'}`}
-                        onClick={() => onMenuClick(item.id, true)}
-                    >
-                        <div className="flex items-center">
-                            <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
-                            <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
-                        </div>
-                        <i className={`fas fa-chevron-right text-xs transition-transform duration-200 ${isParentOpen ? 'rotate-90' : ''} ${isCollapsed ? 'hidden' : ''}`}></i>
-                    </button>
-                    <div className={`pl-6 mt-1 border-l-2 border-slate-700 ml-5 transition-all duration-300 ease-in-out overflow-hidden ${isParentOpen ? 'max-h-[500px]' : 'max-h-0'} ${isCollapsed ? 'hidden' : ''}`}>
-                        {item.children.map(child => renderChildItem(child))}
-                    </div>
-                </div>
-            );
-        }
-
-        return renderChildItem(item); // Render as a child item if it has no children
-    };
-
-    const renderChildItem = (item: MenuItemConfig) => {
-        if (!authContext.hasPermission(item.permission)) return null;
-        const isActive = activeView === item.id;
-        return (
-             <button key={item.id}
-                className={`w-full flex items-center p-2.5 my-0.5 rounded-md transition-colors text-sm ${isActive ? 'bg-primary/90 text-white font-semibold shadow-inner' : 'text-gray-300 hover:bg-slate-700 hover:text-white'}`}
-                onClick={() => onMenuClick(item.id, false)}
-            >
-                <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
-                <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
-                {!isCollapsed && item.count !== undefined && item.count > 0 &&
-                    <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{item.count > 9 ? '9+' : item.count}</span>
-                }
-            </button>
-        );
-    };
-
-    return (
-        <>
-            <div className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
-            <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`}>
-                <div className="admin-sidebar-header justify-between">
-                    {!isCollapsed && <Link to="/"><span className="text-xl font-bold text-white">IQ Technology</span></Link>}
-                    <button onClick={onToggleCollapse} className="hidden lg:block text-slate-400 hover:text-white text-lg">
-                        <i className={`fas ${isCollapsed ? 'fa-align-right' : 'fa-align-left'}`}></i>
-                    </button>
-                     <button onClick={onClose} className="lg:hidden text-2xl text-slate-400 hover:text-white">
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <nav className="flex-grow p-2">
-                    {menuConfig.map(item => renderSidebarItem(item))}
-                </nav>
-                <div className="admin-sidebar-footer">
-                    <Link to="/" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
-                        <i className="fas fa-globe w-6 text-center mr-3"></i>
-                        {!isCollapsed && <span className="text-sm">Về trang chủ</span>}
-                    </Link>
-                </div>
-            </aside>
-        </>
-    );
-};
-
-const AdminHeader: React.FC<{
-    onMobileMenuOpen: () => void;
-    pageTitle: string;
-    currentUser: User | null;
-}> = ({ onMobileMenuOpen, pageTitle, currentUser }) => (
-    <header className="admin-page-header flex justify-between items-center">
-        <div className="flex items-center">
-            <button onClick={onMobileMenuOpen} className="lg:hidden text-2xl text-slate-600 mr-4"><i className="fas fa-bars"></i></button>
-            <h1 className="admin-page-title">{pageTitle}</h1>
-        </div>
-         <div className="flex items-center gap-4">
-            <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
-            <Link to="/">
-                <i className="fas fa-user-circle text-2xl text-admin-textSecondary hover:text-primary"></i>
-            </Link>
-        </div>
-    </header>
-);
 
 const AdminPage: React.FC = () => {
     const { currentUser, adminNotifications, hasPermission } = useAuth();
-    const location = useLocation();
-    const navigate = useNavigate();
+    const location = ReactRouterDOM.useLocation();
+    const navigate = ReactRouterDOM.useNavigate();
 
     const [activeView, setActiveView] = useState<AdminView>('dashboard');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
@@ -433,50 +330,153 @@ const AdminPage: React.FC = () => {
                     currentUser={currentUser}
                 />
                 <div className="admin-content-area">
-                    <Routes>
+                    <ReactRouterDOM.Routes>
                         {/* Define form pages first as they are more specific */}
-                        <Route path="/products/new" element={<ProductFormPage />} />
-                        <Route path="/products/edit/:productId" element={<ProductFormPage />} />
-                        <Route path="/hrm_dashboard/new" element={<UserFormPage />} />
-                        <Route path="/hrm_dashboard/edit/:userId" element={<UserFormPage />} />
-                        <Route path="/customers/new" element={<CustomerFormPage />} />
-                        <Route path="/customers/edit/:customerId" element={<CustomerFormPage />} />
-                        <Route path="/customers/view/:customerId" element={<CustomerProfilePage />} />
-                        <Route path="/articles/new" element={<ArticleFormPage />} />
-                        <Route path="/articles/edit/:articleId" element={<ArticleFormPage />} />
-                        <Route path="/discounts/new" element={<DiscountFormPage />} />
-                        <Route path="/discounts/edit/:discountId" element={<DiscountFormPage />} />
-                        <Route path="/faqs/new" element={<FaqFormPage />} />
-                        <Route path="/faqs/edit/:faqId" element={<FaqFormPage />} />
-                        <Route path="/accounting_dashboard/transactions/new" element={<TransactionFormPage />} />
-                        <Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
-                        <Route path="/quotations/new" element={<QuotationFormPage />} />
-                        <Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
-                        <Route path="/orders/new" element={<OrderFormPage />} />
-                        <Route path="/orders/edit/:orderId" element={<OrderFormPage />} />
-                        <Route path="/returns/new" element={<ReturnFormPage />} />
-                        <Route path="/returns/edit/:returnId" element={<ReturnFormPage />} />
-                        <Route path="/suppliers/new" element={<SupplierFormPage />} />
-                        <Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
-                        <Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
-                        <Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
-                        <Route path="/warranty_tickets/new" element={<WarrantyFormPage />} />
-                        <Route path="/warranty_tickets/edit/:ticketId" element={<WarrantyFormPage />} />
-                        <Route path="/stock_receipts/new" element={<StockReceiptFormPage />} />
-                        <Route path="/stock_receipts/edit/:id" element={<StockReceiptFormPage />} />
-                        <Route path="/stock_issues/new" element={<StockIssueFormPage />} />
-                        <Route path="/stock_issues/edit/:id" element={<StockIssueFormPage />} />
-                        <Route path="/stock_transfers/new" element={<StockTransferFormPage />} />
-                        <Route path="/stock_transfers/edit/:id" element={<StockTransferFormPage />} />
+                        <ReactRouterDOM.Route path="/products/new" element={<ProductFormPage />} />
+                        <ReactRouterDOM.Route path="/products/edit/:productId" element={<ProductFormPage />} />
+                        <ReactRouterDOM.Route path="/hrm_dashboard/new" element={<UserFormPage />} />
+                        <ReactRouterDOM.Route path="/hrm_dashboard/edit/:userId" element={<UserFormPage />} />
+                        <ReactRouterDOM.Route path="/customers/new" element={<CustomerFormPage />} />
+                        <ReactRouterDOM.Route path="/customers/edit/:customerId" element={<CustomerFormPage />} />
+                        <ReactRouterDOM.Route path="/customers/view/:customerId" element={<CustomerProfilePage />} />
+                        <ReactRouterDOM.Route path="/articles/new" element={<ArticleFormPage />} />
+                        <ReactRouterDOM.Route path="/articles/edit/:articleId" element={<ArticleFormPage />} />
+                        <ReactRouterDOM.Route path="/discounts/new" element={<DiscountFormPage />} />
+                        <ReactRouterDOM.Route path="/discounts/edit/:discountId" element={<DiscountFormPage />} />
+                        <ReactRouterDOM.Route path="/faqs/new" element={<FaqFormPage />} />
+                        <ReactRouterDOM.Route path="/faqs/edit/:faqId" element={<FaqFormPage />} />
+                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/new" element={<TransactionFormPage />} />
+                        <ReactRouterDOM.Route path="/accounting_dashboard/transactions/edit/:transactionId" element={<TransactionFormPage />} />
+                        <ReactRouterDOM.Route path="/quotations/new" element={<QuotationFormPage />} />
+                        <ReactRouterDOM.Route path="/quotations/edit/:quotationId" element={<QuotationFormPage />} />
+                        <ReactRouterDOM.Route path="/orders/new" element={<OrderFormPage />} />
+                        <ReactRouterDOM.Route path="/orders/edit/:orderId" element={<OrderFormPage />} />
+                        <ReactRouterDOM.Route path="/returns/new" element={<ReturnFormPage />} />
+                        <ReactRouterDOM.Route path="/returns/edit/:returnId" element={<ReturnFormPage />} />
+                        <ReactRouterDOM.Route path="/suppliers/new" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
+                        <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
+                        <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_tickets/new" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/warranty_tickets/edit/:ticketId" element={<WarrantyFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_receipts/new" element={<StockReceiptFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_receipts/edit/:id" element={<StockReceiptFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_issues/new" element={<StockIssueFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_issues/edit/:id" element={<StockIssueFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_transfers/new" element={<StockTransferFormPage />} />
+                        <ReactRouterDOM.Route path="/stock_transfers/edit/:id" element={<StockTransferFormPage />} />
                         
                         {/* Generic route for views */}
-                        <Route path="/:viewId/*" element={renderContent(activeView)} />
-                        <Route path="/" element={renderContent('dashboard')} />
-                    </Routes>
+                        <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />
+                        <ReactRouterDOM.Route path="/" element={renderContent('dashboard')} />
+                    </ReactRouterDOM.Routes>
                 </div>
             </main>
         </div>
     );
 };
+
+// --- Sub-components for AdminPage ---
+
+const AdminSidebar: React.FC<{
+    isOpen: boolean; isCollapsed: boolean; onClose: () => void; onToggleCollapse: () => void;
+    activeView: AdminView; openMenus: Record<string, boolean>;
+    onMenuClick: (viewId: string, isParent: boolean) => void;
+    menuConfig: MenuItemConfig[];
+    authContext: { currentUser: User | null; hasPermission: (p: AdminPermission[]) => boolean; };
+}> = ({ isOpen, isCollapsed, onClose, onToggleCollapse, activeView, openMenus, onMenuClick, menuConfig, authContext }) => {
+
+    const renderSidebarItem = (item: MenuItemConfig) => {
+        if (!authContext.hasPermission(item.permission)) return null;
+
+        const isParentOpen = !!item.children && !!openMenus[item.id];
+
+        if (item.children) {
+             const hasActiveChild = item.children.some(child => activeView === child.id);
+            return (
+                <div key={item.id}>
+                    <button
+                        className={`w-full flex items-center justify-between p-3 my-1 rounded-md transition-colors text-sm font-semibold
+                                    ${hasActiveChild ? 'text-white' : 'text-gray-400 hover:bg-slate-700 hover:text-white'}`}
+                        onClick={() => onMenuClick(item.id, true)}
+                    >
+                        <div className="flex items-center">
+                            <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
+                            <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
+                        </div>
+                        <i className={`fas fa-chevron-right text-xs transition-transform duration-200 ${isParentOpen ? 'rotate-90' : ''} ${isCollapsed ? 'hidden' : ''}`}></i>
+                    </button>
+                    <div className={`pl-6 mt-1 border-l-2 border-slate-700 ml-5 transition-all duration-300 ease-in-out overflow-hidden ${isParentOpen ? 'max-h-[500px]' : 'max-h-0'} ${isCollapsed ? 'hidden' : ''}`}>
+                        {item.children.map(child => renderChildItem(child))}
+                    </div>
+                </div>
+            );
+        }
+
+        return renderChildItem(item); // Render as a child item if it has no children
+    };
+
+    const renderChildItem = (item: MenuItemConfig) => {
+        if (!authContext.hasPermission(item.permission)) return null;
+        const isActive = activeView === item.id;
+        return (
+             <button key={item.id}
+                className={`w-full flex items-center p-2.5 my-0.5 rounded-md transition-colors text-sm ${isActive ? 'bg-primary/90 text-white font-semibold shadow-inner' : 'text-gray-300 hover:bg-slate-700 hover:text-white'}`}
+                onClick={() => onMenuClick(item.id, false)}
+            >
+                <i className={`fas ${item.icon} w-6 text-center mr-3`}></i>
+                <span className={`admin-nav-label ${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
+                {!isCollapsed && item.count !== undefined && item.count > 0 &&
+                    <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{item.count > 9 ? '9+' : item.count}</span>
+                }
+            </button>
+        );
+    };
+
+    return (
+        <>
+            <div className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
+            <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`}>
+                <div className="admin-sidebar-header justify-between">
+                    {!isCollapsed && <ReactRouterDOM.Link to="/"><span className="text-xl font-bold text-white">IQ Technology</span></ReactRouterDOM.Link>}
+                    <button onClick={onToggleCollapse} className="hidden lg:block text-slate-400 hover:text-white text-lg">
+                        <i className={`fas ${isCollapsed ? 'fa-align-right' : 'fa-align-left'}`}></i>
+                    </button>
+                     <button onClick={onClose} className="lg:hidden text-2xl text-slate-400 hover:text-white">
+                        <i className="fas fa-times"></i>
+                    </button>
+                </div>
+                <nav className="flex-grow p-2">
+                    {menuConfig.map(item => renderSidebarItem(item))}
+                </nav>
+                <div className="admin-sidebar-footer">
+                    <ReactRouterDOM.Link to="/" className="flex items-center p-2 text-slate-400 hover:text-white rounded-md">
+                        <i className="fas fa-globe w-6 text-center mr-3"></i>
+                        {!isCollapsed && <span className="text-sm">Về trang chủ</span>}
+                    </ReactRouterDOM.Link>
+                </div>
+            </aside>
+        </>
+    );
+};
+
+const AdminHeader: React.FC<{
+    onMobileMenuOpen: () => void;
+    pageTitle: string;
+    currentUser: User | null;
+}> = ({ onMobileMenuOpen, pageTitle, currentUser }) => (
+    <header className="admin-page-header flex justify-between items-center">
+        <div className="flex items-center">
+            <button onClick={onMobileMenuOpen} className="lg:hidden text-2xl text-slate-600 mr-4"><i className="fas fa-bars"></i></button>
+            <h1 className="admin-page-title">{pageTitle}</h1>
+        </div>
+         <div className="flex items-center gap-4">
+            <span className="text-sm text-admin-textSecondary hidden sm:inline">Xin chào, <strong>{currentUser?.username}</strong></span>
+            <ReactRouterDOM.Link to="/">
+                <i className="fas fa-user-circle text-2xl text-admin-textSecondary hover:text-primary"></i>
+            </ReactRouterDOM.Link>
+        </div>
+    </header>
+);
 
 export default AdminPage;

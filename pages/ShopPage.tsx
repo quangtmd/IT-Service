@@ -1,31 +1,20 @@
+
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import ProductCard from '../components/shop/ProductCard';
 import { Product, MainCategoryInfo } from '../types';
 import SearchBar from '../components/shared/SearchBar';
 import Pagination from '../components/shared/Pagination';
-import * as Constants from '../constants.tsx';
+import * as Constants from '../constants';
 import CategorySidebar from '../components/shop/CategorySidebar';
 import { getProducts } from '../services/localDataService';
+import BackendConnectionError from '../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
+import SkeletonProductCard from '../components/shop/SkeletonProductCard';
+import ShopBanner from '../components/shop/ShopBanner'; // New import
+import ShopProductSection from '../components/shop/ShopProductSection'; // New import
 
 const PRODUCTS_PER_PAGE = 12;
-
-// Helper to get category name from slug
-const getCategoryNameFromSlug = (slug: string, type: 'main' | 'sub'): string | null => {
-    if (type === 'main') {
-        const mainCat = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
-        return mainCat ? mainCat.name : null;
-    }
-    if (type === 'sub') {
-        for (const mainCat of Constants.PRODUCT_CATEGORIES_HIERARCHY) {
-            const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
-            if (subCat) return subCat.name;
-        }
-        return null;
-    }
-    return null;
-};
-
 
 const ProductCategoryNav: React.FC<{
   categories: MainCategoryInfo[];
@@ -54,11 +43,10 @@ const ProductCategoryNav: React.FC<{
 };
 
 const ShopPage: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const location = ReactRouterDOM.useLocation();
+  const navigate = ReactRouterDOM.useNavigate();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,60 +65,23 @@ const ShopPage: React.FC = () => {
   const currentPage = parseInt(queryParams.get('page') || '1', 10);
 
    useEffect(() => {
-    const loadAndFilterProducts = async () => {
+    const loadProducts = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const productsFromDb = await getProducts();
-        setAllProducts(productsFromDb);
-
-        // Apply filters from queryParams
-        const params = new URLSearchParams(location.search);
-        const q = params.get('q')?.toLowerCase() || '';
-        const mainCategorySlug = params.get('mainCategory');
-        const subCategorySlug = params.get('subCategory');
-        const brand = params.get('brand');
-        const status = params.get('status');
-        const tags = params.get('tags');
-
-        let filtered = productsFromDb.filter(p => p.isVisible !== false);
-
-        if (q) {
-          filtered = filtered.filter(p => 
-            p.name.toLowerCase().includes(q) ||
-            (p.brand && p.brand.toLowerCase().includes(q)) ||
-            p.description.toLowerCase().includes(q) ||
-            (p.tags && p.tags.some(t => t.toLowerCase().includes(q)))
-          );
+        // Pass the entire search string from the URL to the service
+        const searchParams = new URLSearchParams(location.search);
+        if (!searchParams.has('limit')) {
+            searchParams.set('limit', String(PRODUCTS_PER_PAGE));
         }
-        if (mainCategorySlug) {
-            const mainCategoryName = getCategoryNameFromSlug(mainCategorySlug, 'main');
-            if(mainCategoryName) filtered = filtered.filter(p => p.mainCategory === mainCategoryName);
-        }
-        if (subCategorySlug) {
-            const subCategoryName = getCategoryNameFromSlug(subCategorySlug, 'sub');
-            if(subCategoryName) filtered = filtered.filter(p => p.subCategory === subCategoryName);
-        }
-        if (brand) {
-            filtered = filtered.filter(p => p.brand === brand);
-        }
-        if (status) {
-            filtered = filtered.filter(p => p.status === status);
-        }
-        if (tags) {
-            filtered = filtered.filter(p => p.tags && p.tags.includes(tags));
-        }
-
-        setTotalProducts(filtered.length);
-
-        // Apply pagination
-        const page = parseInt(params.get('page') || '1', 10);
-        const startIndex = (page - 1) * PRODUCTS_PER_PAGE;
-        setDisplayedProducts(filtered.slice(startIndex, startIndex + PRODUCTS_PER_PAGE));
+        
+        const { products, totalProducts } = await getProducts(searchParams.toString());
+        setDisplayedProducts(products);
+        setTotalProducts(totalProducts);
         
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu sản phẩm.');
-        console.error("Lỗi khi tải sản phẩm từ Local Storage:", err);
+        console.error("Lỗi khi tải sản phẩm từ API:", err);
         setDisplayedProducts([]);
         setTotalProducts(0);
       } finally {
@@ -138,8 +89,20 @@ const ShopPage: React.FC = () => {
       }
     };
     
-    loadAndFilterProducts();
-  }, [location.search]);
+    // Only load products if there are active filters or a search term, 
+    // otherwise the page will display sections.
+    const hasActiveFilters = Array.from(queryParams.keys()).some(key => 
+      key !== 'page' && key !== 'limit' && queryParams.get(key)
+    );
+    
+    if (hasActiveFilters) {
+        loadProducts();
+    } else {
+        setIsLoading(false); // Not loading filtered products, will show sections
+        setDisplayedProducts([]);
+        setTotalProducts(0);
+    }
+  }, [location.search, queryParams]);
 
 
   const handleScroll = useCallback(() => {
@@ -216,58 +179,90 @@ const ShopPage: React.FC = () => {
     return name;
   };
   
+  const hasActiveFiltersExcludingPage = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    for (const [key, value] of params.entries()) {
+      if (key !== 'page' && key !== 'limit' && value) {
+        return true;
+      }
+    }
+    return false;
+  }, [location.search]);
+
+
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="text-center py-20 w-full flex-grow">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4">Đang tải sản phẩm...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+          {Array.from({ length: PRODUCTS_PER_PAGE }).map((_, index) => (
+            <SkeletonProductCard key={index} />
+          ))}
         </div>
       );
     }
     if (error) {
-      return (
-        <div className="text-center py-20 w-full flex-grow text-red-500 bg-red-50 p-4 rounded-lg">
-          <strong>Lỗi:</strong> {error}
-        </div>
-      );
+        return <BackendConnectionError error={error} />;
     }
     
-    return (
-        <main className="flex-grow w-full min-w-0">
-            <ProductCategoryNav
-                categories={Constants.PRODUCT_CATEGORIES_HIERARCHY.filter(cat => cat.name !== "PC Xây Dựng")}
-                activeSlug={currentFilters.mainCategory}
-                onSelect={(slug) => handleFilterChange('mainCategory', slug)}
-            />
-            <div className="flex justify-between items-center mb-6 px-1">
-              <h1 className="text-2xl font-bold text-textBase">{getCurrentCategoryName()}</h1>
-              <span className="text-sm text-textMuted">{totalProducts} sản phẩm</span>
-            </div>
-            {displayedProducts.length > 0 ? (
-            <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-                {displayedProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
-                ))}
+    if (hasActiveFiltersExcludingPage) {
+        // Show filtered products if filters are active
+        return (
+            <main className="flex-grow w-full min-w-0">
+                <div className="flex justify-between items-center mb-6 px-1">
+                <h1 className="text-2xl font-bold text-textBase">{getCurrentCategoryName()}</h1>
+                <span className="text-sm text-textMuted">{totalProducts} sản phẩm</span>
                 </div>
-                {totalPages > 1 && (
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                />
+                {displayedProducts.length > 0 ? (
+                <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+                    {displayedProducts.map(product => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
+                    </div>
+                    {totalPages > 1 && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                    )}
+                </>
+                ) : (
+                <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
+                    <i className="fas fa-search text-5xl text-textSubtle mb-4"></i>
+                    <h3 className="text-xl font-semibold text-textBase mb-2">Không tìm thấy sản phẩm</h3>
+                    <p className="text-textMuted">Vui lòng thử lại với bộ lọc hoặc từ khóa khác.</p>
+                </div>
                 )}
-            </>
-            ) : (
-            <div className="text-center py-12 bg-bgBase rounded-lg border border-borderDefault">
-                <i className="fas fa-search text-5xl text-textSubtle mb-4"></i>
-                <h3 className="text-xl font-semibold text-textBase mb-2">Không tìm thấy sản phẩm</h3>
-                <p className="text-textMuted">Vui lòng thử lại với bộ lọc hoặc từ khóa khác.</p>
+            </main>
+        );
+    } else {
+        // Show default sections if no filters are active
+        return (
+            <div className="space-y-10">
+                <ShopBanner />
+                <ShopProductSection 
+                    title="SẢN PHẨM BÁN CHẠY" 
+                    linkToAll="/shop?tags=Bán%20chạy" 
+                    fetchType="featured" 
+                    limit={4} 
+                />
+                <ShopProductSection 
+                    title="MÁY TÍNH XÁCH TAY" 
+                    linkToAll="/shop?mainCategory=laptop" 
+                    fetchParams="mainCategory=laptop" 
+                    limit={4} 
+                />
+                <ShopProductSection 
+                    title="LINH KIỆN MÁY TÍNH" 
+                    linkToAll="/shop?mainCategory=linh_kien_may_tinh" 
+                    fetchParams="mainCategory=linh_kien_may_tinh" 
+                    limit={4} 
+                />
+                {/* You can add more sections here */}
             </div>
-            )}
-        </main>
-    )
+        );
+    }
   }
 
   return (

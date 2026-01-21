@@ -1,381 +1,369 @@
-const express = require('express');
-const mysql = require('mysql2/promise');
-const cors = require('cors');
+
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import pool from './db.js';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import https from 'https';
+
+dotenv.config();
 
 const app = express();
-// Railway hoặc Hostinger sẽ cung cấp biến PORT. Nếu không có, dùng cổng 3001 cho local.
-const port = process.env.PORT || 3001; 
-
-// Kích hoạt CORS để React App (chạy ở cổng khác) có thể gọi API
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increase limit for data URLs
 
-/*
--- HƯỚNG DẪN CÀI ĐẶT DATABASE MYSQL --
-1. Hãy chắc chắn rằng bạn đã cài đặt MySQL Server.
-2. Tạo một database mới, ví dụ: CREATE DATABASE iq_technology_db;
-3. Chạy câu lệnh SQL dưới đây để tạo bảng 'products':
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-CREATE TABLE products (
-    id VARCHAR(255) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    mainCategory VARCHAR(255),
-    subCategory VARCHAR(255),
-    category VARCHAR(255),
-    price DECIMAL(10, 0) NOT NULL,
-    originalPrice DECIMAL(10, 0),
-    imageUrls JSON, -- Lưu dưới dạng mảng JSON: '["url1", "url2"]'
-    description TEXT,
-    shortDescription TEXT,
-    specifications JSON, -- Lưu dưới dạng đối tượng JSON: '{"CPU": "Intel Core i5", "RAM": "16GB"}'
-    stock INT NOT NULL,
-    status VARCHAR(50),
-    rating FLOAT,
-    reviews INT,
-    brand VARCHAR(255),
-    tags JSON, -- Lưu dưới dạng mảng JSON: '["tag1", "tag2"]'
-    brandLogoUrl VARCHAR(255),
-    isVisible BOOLEAN DEFAULT TRUE,
-    seoMetaTitle VARCHAR(255),
-    seoMetaDescription TEXT,
-    slug VARCHAR(255) UNIQUE
-);
-
-4. Chạy câu lệnh SQL dưới đây để tạo bảng 'orders':
-CREATE TABLE orders (
-    id VARCHAR(255) PRIMARY KEY,
-    customerInfo JSON NOT NULL, -- { fullName, phone, address, email, notes }
-    items JSON NOT NULL, -- [{ productId, productName, quantity, price }]
-    totalAmount DECIMAL(12, 0) NOT NULL,
-    orderDate DATETIME NOT NULL,
-    status VARCHAR(50) NOT NULL, -- 'Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'
-    shippingInfo JSON, -- { carrier, trackingNumber, shippingStatus }
-    paymentInfo JSON NOT NULL -- { method, status, transactionId, amountToPay }
-);
-
-5. Thêm một vài dữ liệu mẫu vào bảng 'products'.
-*/
+// --- Static assets and Frontend serving ---
+// This assumes the frontend is built into a 'dist' folder in the project root
+// On Render, this would be '../dist' relative to the 'backend' folder.
+const frontendDistPath = path.join(__dirname, '../dist');
+app.use(express.static(frontendDistPath));
 
 
-// --- CẤU HÌNH KẾT NỐI MYSQL ---
-// Đọc thông tin kết nối từ các biến môi trường (ưu tiên) hoặc dùng giá trị fallback.
-// Các biến môi trường này cần được thiết lập trên server hosting của bạn (ví dụ: Hostinger, Railway).
-// Khi chạy local, bạn có thể tạo file .env trong thư mục backend để định nghĩa chúng.
-const dbConfig = {
-  host: process.env.MYSQLHOST || 'your_hostinger_mysql_host', // Thay thế bằng Host của Hostinger
-  user: process.env.MYSQLUSER || 'your_hostinger_mysql_user', // Thay thế bằng User của Hostinger
-  password: process.env.MYSQLPASSWORD || 'your_database_password', // Thay thế bằng mật khẩu DB
-  database: process.env.MYSQLDATABASE || 'your_hostinger_database_name', // Thay thế bằng tên DB
-  port: process.env.MYSQLPORT || 3306
-};
-
-
-let pool;
-try {
-    pool = mysql.createPool(dbConfig);
-    console.log('Đã tạo kết nối MySQL pool thành công.');
-} catch (error) {
-    console.error('Lỗi khi tạo kết nối MySQL pool:', error);
-    process.exit(1); // Thoát ứng dụng nếu không thể tạo pool
-}
-
-// --- HELPERS FOR JSON FIELDS ---
-
-// PRODUCTS
-const parseJsonFields = (product) => {
-    try {
-        if (product.imageUrls && typeof product.imageUrls === 'string') product.imageUrls = JSON.parse(product.imageUrls);
-        if (product.specifications && typeof product.specifications === 'string') product.specifications = JSON.parse(product.specifications);
-        if (product.tags && typeof product.tags === 'string') product.tags = JSON.parse(product.tags);
-    } catch (e) {
-        console.error(`Lỗi khi phân tích JSON cho sản phẩm ID ${product.id}:`, e);
-        if (typeof product.imageUrls !== 'object' || product.imageUrls === null) product.imageUrls = [];
-        if (typeof product.specifications !== 'object' || product.specifications === null) product.specifications = {};
-        if (typeof product.tags !== 'object' || product.tags === null) product.tags = [];
+// --- Helper Functions ---
+const parseJsonFields = (items, fields) => {
+  if (!items) return;
+  const processItem = (item) => {
+    for (const field of fields) {
+      if (item[field] && typeof item[field] === 'string') {
+        try {
+          item[field] = JSON.parse(item[field]);
+        } catch (e) {
+          console.error(`Could not parse JSON for field ${field}:`, item[field]);
+        }
+      }
     }
-    return product;
-}
-const prepareProductForDb = (product) => {
-    const dbProduct = { ...product };
-    if (Array.isArray(dbProduct.imageUrls)) dbProduct.imageUrls = JSON.stringify(dbProduct.imageUrls);
-    if (typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null) dbProduct.specifications = JSON.stringify(dbProduct.specifications);
-    if (Array.isArray(dbProduct.tags)) dbProduct.tags = JSON.stringify(dbProduct.tags);
-    return dbProduct;
+    return item;
+  };
+  if (Array.isArray(items)) {
+    items.forEach(processItem);
+  } else {
+    processItem(items);
+  }
 };
 
-// ORDERS
-const parseOrderJsonFields = (order) => {
-    try {
-        if (order.customerInfo && typeof order.customerInfo === 'string') order.customerInfo = JSON.parse(order.customerInfo);
-        if (order.items && typeof order.items === 'string') order.items = JSON.parse(order.items);
-        if (order.shippingInfo && typeof order.shippingInfo === 'string') order.shippingInfo = JSON.parse(order.shippingInfo);
-        if (order.paymentInfo && typeof order.paymentInfo === 'string') order.paymentInfo = JSON.parse(order.paymentInfo);
-    } catch (e) {
-        console.error(`Lỗi khi phân tích JSON cho đơn hàng ID ${order.id}:`, e);
-    }
-    return order;
-};
-const prepareOrderForDb = (order) => {
-    const dbOrder = { ...order };
-    if (typeof dbOrder.customerInfo === 'object') dbOrder.customerInfo = JSON.stringify(dbOrder.customerInfo);
-    if (Array.isArray(dbOrder.items)) dbOrder.items = JSON.stringify(dbOrder.items);
-    if (typeof dbOrder.shippingInfo === 'object' && dbOrder.shippingInfo !== null) dbOrder.shippingInfo = JSON.stringify(dbOrder.shippingInfo);
-    if (typeof dbOrder.paymentInfo === 'object') dbOrder.paymentInfo = JSON.stringify(dbOrder.paymentInfo);
-    return dbOrder;
-};
+const API_PREFIX = '/api';
 
-// Share category hierarchy with backend for slug mapping
-const PRODUCT_CATEGORIES_HIERARCHY = [
-  { name: "Máy tính để bàn (PC)", slug: "may_tinh_de_ban", icon: "fas fa-desktop", subCategories: [ { name: "Máy tính văn phòng", slug: "pc_van_phong" }, {name: "Máy tính Gaming", slug: "pc_gaming"}, {name: "Workstation (Máy trạm)", slug:"pc_workstation"}, { name: "Máy đồng bộ", slug: "pc_dong_bo" }, ] },
-  { name: "Laptop", slug: "laptop", icon: "fas fa-laptop", subCategories: [ { name: "Laptop văn phòng", slug: "laptop_van_phong" }, {name: "Laptop Gaming", slug: "laptop_gaming"}, {name: "MacBook", slug:"macbook"}, { name: "Laptop cũ", slug: "laptop_cu" }, ] },
-  { name: "Linh kiện máy tính", slug: "linh_kien_may_tinh", icon: "fas fa-microchip", subCategories: [ { name: "CPU (Vi xử lý Intel, AMD)", slug: "cpu" }, { name: "RAM (DDR4, DDR5…)", slug: "ram" }, { name: "Ổ cứng HDD / SSD (SATA, NVMe)", slug: "storage" }, { name: "VGA (Card màn hình)", slug: "vga" }, { name: "Bo mạch chủ (Mainboard)", slug: "mainboard"}, { name: "Nguồn máy tính (PSU)", slug: "psu"}, { name: "Vỏ máy (Case)", slug: "case"}, { name: "Tản nhiệt (Khí, Nước)", slug: "cooling"} ] },
-  { name: "Thiết bị ngoại vi", slug: "thiet_bi_ngoai_vi", icon: "fas fa-keyboard", subCategories: [ { name: "Màn hình (LCD, LED, 2K, 4K, Gaming…)", slug: "man_hinh" }, { name: "Bàn phím (Cơ, Giả cơ, Thường)", slug: "ban_phim" }, { name: "Chuột (Gaming, Văn phòng)", slug: "chuot" }, { name: "Tai nghe (Có dây, Không dây)", slug: "tai_nghe" } ] },
-  { name: "Camera giám sát", slug: "camera_giam_sat", icon: "fas fa-video", subCategories: [ { name: "Camera IP (WiFi / LAN)", slug: "camera_ip" }, { name: "Đầu ghi hình (DVR, NVR)", slug: "dau_ghi_hinh" } ] },
-  { name: "Thiết bị mạng", slug: "thiet_bi_mang", icon: "fas fa-wifi", subCategories: [ { name: "Router WiFi (TP-Link, Asus, UniFi…)", slug: "router_wifi" }, { name: "Switch mạng (PoE, Thường)", slug: "switch_mang" } ] },
-  { name: "Phần mềm & dịch vụ", slug: "phan_mem_dich_vu", icon: "fas fa-cogs", subCategories: [ { name: "Bản quyền Windows, Office", slug: "ban_quyen_phan_mem" }, { name: "Dịch vụ cài đặt (Tận nơi / Online)", slug: "dich_vu_cai_dat" } ] },
-  { name: "Phụ kiện & thiết bị khác", slug: "phu_kien_khac", icon: "fas fa-plug", subCategories: [ { name: "Cáp chuyển, Hub USB, Docking", slug: "cap_hub_docking" }, { name: "Balo, Túi chống sốc", slug: "balo_tui" } ] },
-  { name: "PC Xây Dựng", slug: "pc_xay_dung", icon: "fas fa-tools", subCategories: [ { name: "Theo Yêu Cầu", slug: "theo_yeu_cau" } ] }
-];
+// --- API Endpoints ---
 
-const MOCK_SERVICES = [
-  { id: 'svc001', name: 'Thiết Kế & Phát Triển Web Chuyên Nghiệp', description: 'Chúng tôi cung cấp giải pháp website toàn diện, từ thiết kế UX/UI hiện đại, trực quan đến phát triển frontend & backend mạnh mẽ, đảm bảo tối ưu hóa SEO và mang lại trải nghiệm người dùng vượt trội.', icon: 'fas fa-laptop-code', imageUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1770&auto=format&fit=crop', slug: 'thiet-ke-phat-trien-web' },
-  { id: 'svc002', name: 'Quản Trị Hệ Thống Mạng Doanh Nghiệp', description: 'Dịch vụ quản trị, giám sát và bảo trì hệ thống mạng chuyên nghiệp cho doanh nghiệp. Đảm bảo hệ thống của bạn hoạt động ổn định, an toàn, hiệu quả với hiệu suất tối đa.', icon: 'fas fa-network-wired', imageUrl: 'https://images.unsplash.com/photo-1587135304381-e3f43845b4ca?q=80&w=1770&auto=format&fit=crop', slug: 'quan-tri-he-thong-mang'},
-  { id: 'svc003', name: 'Giải Pháp Lưu Trữ & Sao Lưu Đám Mây', description: 'Tư vấn và triển khai các giải pháp lưu trữ đám mây (Cloud Storage) và sao lưu dữ liệu (Cloud Backup) linh hoạt, an toàn và tiết kiệm chi phí cho cá nhân và doanh nghiệp.', icon: 'fas fa-cloud-upload-alt', imageUrl: 'https://images.unsplash.com/photo-1534972195531-d756b9bfa9f2?q=80&w=1770&auto=format&fit=crop', slug: 'luu-tru-sao-luu-dam-may' },
-  { id: 'svc004', name: 'Hỗ Trợ Kỹ Thuật Từ Xa Nhanh Chóng', description: 'Đội ngũ kỹ thuật viên chuyên nghiệp của chúng tôi sẵn sàng giải quyết nhanh chóng các sự cố máy tính, phần mềm qua TeamViewer, UltraViewer, đảm bảo công việc của bạn không bị gián đoạn.', icon: 'fas fa-headset', imageUrl: 'https://images.unsplash.com/photo-1616587894285-3d17c752531a?q=80&w=1770&auto=format&fit=crop', slug: 'ho-tro-ky-thuat-tu-xa'},
-  { id: 'svc005', name: 'Tư Vấn & Triển Khai Chuyển Đổi Số', description: 'Đánh giá toàn diện hiện trạng công nghệ và tư vấn lộ trình chuyển đổi số tối ưu, giúp doanh nghiệp của bạn tự động hóa quy trình, nâng cao năng lực cạnh tranh và phát triển bền vững.', icon: 'fas fa-project-diagram', imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1774&auto=format&fit=crop', slug: 'tu-van-chuyen-doi-so' },
-  { id: 'svc006', name: 'Bảo Mật Hệ Thống & An Toàn Dữ Liệu', description: 'Dịch vụ kiểm tra, đánh giá lỗ hổng và triển khai các giải pháp bảo mật tiên tiến. Phòng chống hiệu quả virus, mã độc, tấn công mạng, bảo vệ an toàn tuyệt đối cho dữ liệu quan trọng.', icon: 'fas fa-shield-alt', imageUrl: 'https://images.unsplash.com/photo-1558006511-aa7131a44e53?q=80&w=1770&auto=format&fit=crop', slug: 'bao-mat-he-thong-du-lieu' },
-];
-
-
-// --- PRODUCTS API ENDPOINTS ---
-
-app.get('/api/products', async (req, res) => {
+// Health Check Endpoint to verify DB connection
+app.get(`${API_PREFIX}/health`, async (req, res) => {
   try {
-    const getCategoryNameFromSlug_Backend = (slug, type) => {
-        if (type === 'main') {
-            const mainCat = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
-            return mainCat ? mainCat.name : null;
-        }
-        if (type === 'sub') {
-            for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
-                const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
-                if (subCat) return subCat.name;
-            }
-            return null;
-        }
-        return null;
-    };
-
-    const { q, mainCategory, subCategory, brand, status, tags, page = 1, limit = 12 } = req.query;
-
-    let whereClauses = ["isVisible = TRUE"];
-    const params = [];
-
-    if (q) {
-        whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR tags LIKE ?)");
-        const searchTerm = `%${q}%`;
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-    }
-    if (mainCategory) {
-        const mainCategoryName = getCategoryNameFromSlug_Backend(mainCategory, 'main');
-        if (mainCategoryName) {
-            whereClauses.push("mainCategory = ?");
-            params.push(mainCategoryName);
-        }
-    }
-    if (subCategory) {
-        const subCategoryName = getCategoryNameFromSlug_Backend(subCategory, 'sub');
-        if (subCategoryName) {
-            whereClauses.push("subCategory = ?");
-            params.push(subCategoryName);
-        }
-    }
-    if (brand) {
-        whereClauses.push("brand = ?");
-        params.push(brand);
-    }
-    if (status) {
-        whereClauses.push("status = ?");
-        params.push(status);
-    }
-    if (tags) {
-      whereClauses.push("JSON_CONTAINS(tags, JSON_QUOTE(?))");
-      params.push(tags);
-    }
-
-    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-    // Query for total count
-    const countQuery = `SELECT COUNT(*) as total FROM products ${whereString}`;
-    const [countRows] = await pool.query(countQuery, params);
-    const totalProducts = countRows[0].total;
-
-    // Query for paginated data
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const offset = (pageNum - 1) * limitNum;
-    
-    const dataQuery = `SELECT * FROM products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
-    const dataParams = [...params, limitNum, offset];
-
-    const [rows] = await pool.query(dataQuery, dataParams);
-    const products = rows.map(parseJsonFields);
-
-    res.json({ products, totalProducts });
+    const connection = await pool.getConnection();
+    await connection.ping();
+    connection.release();
+    res.status(200).json({ status: 'ok', message: 'Backend is running and connected to the database.' });
   } catch (err) {
-    console.error("Lỗi khi truy vấn sản phẩm:", err);
-    res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu sản phẩm.' });
+    console.error('Health check failed:', err);
+    res.status(500).json({
+      status: 'error',
+      message: 'Backend is running but could not connect to the database.',
+      // In production, avoid sending detailed error messages to the client.
+      error: process.env.NODE_ENV === 'production' ? 'Database connection error' : err.message
+    });
   }
 });
 
-app.get('/api/products/featured', async (req, res) => {
-    try {
-        const [rows] = await pool.query(`
-            (SELECT * FROM products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, '["Bán chạy"]'))
-            UNION
-            (SELECT * FROM products WHERE isVisible = TRUE AND originalPrice IS NOT NULL AND id NOT IN (SELECT id FROM products WHERE JSON_CONTAINS(tags, '["Bán chạy"]')))
-            LIMIT 4
-        `);
-        const products = rows.map(parseJsonFields);
-        res.json(products);
-    } catch (err) {
-        console.error("Lỗi khi truy vấn sản phẩm nổi bật:", err);
-        res.status(500).json({ error: 'Lỗi server.' });
+
+// Server Info
+app.get(`${API_PREFIX}/server-info`, (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        https.get('https://api.ipify.org', ipRes => {
+            let data = '';
+            ipRes.on('data', chunk => data += chunk);
+            ipRes.on('end', () => res.json({ outboundIp: data }));
+        }).on('error', (err) => {
+            res.status(500).json({ outboundIp: 'Error fetching IP' });
+        });
+    } else {
+        res.json({ outboundIp: 'Not available in dev' });
     }
 });
 
-app.get('/api/products/:id', async (req, res) => {
-    const productId = req.params.id;
+
+// Users
+app.get(`${API_PREFIX}/users`, async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productId]);
-        if (rows.length > 0) {
-            const product = parseJsonFields(rows[0]);
-            res.json(product);
-        } else {
-            res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
+        const [rows] = await pool.query('SELECT * FROM `users`');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.post(`${API_PREFIX}/users/login`, async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const [rows] = await pool.query('SELECT * FROM `users` WHERE email = ?', [email]);
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Email không tồn tại.' });
         }
-    } catch (err) {
-        console.error(`Lỗi khi truy vấn sản phẩm ID ${productId}:`, err);
-        res.status(500).json({ error: 'Lỗi server.' });
-    }
-});
-
-app.post('/api/products', async (req, res) => {
-    const newProductData = req.body;
-    const productForDb = prepareProductForDb(newProductData);
-    try {
-        await pool.query("INSERT INTO products SET ?", [productForDb]);
-        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productForDb.id]);
-        res.status(201).json(parseJsonFields(rows[0]));
-    } catch (err) {
-        console.error("Lỗi khi tạo sản phẩm:", err);
-        res.status(500).json({ error: 'Lỗi server khi tạo sản phẩm.' });
-    }
-});
-
-app.put('/api/products/:id', async (req, res) => {
-    const productId = req.params.id;
-    const updatedProductData = req.body;
-    delete updatedProductData.id; 
-    const productForDb = prepareProductForDb(updatedProductData);
-    try {
-        const [result] = await pool.query("UPDATE products SET ? WHERE id = ?", [productForDb, productId]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Không tìm thấy sản phẩm để cập nhật.' });
+        // NOTE: In a real app, hash passwords! This is simplified.
+        if (rows[0].password !== password) {
+            return res.status(401).json({ message: 'Mật khẩu không chính xác.' });
         }
-        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productId]);
-        res.json(parseJsonFields(rows[0]));
+        const { password: _, ...user } = rows[0];
+        res.json(user);
     } catch (err) {
-        console.error(`Lỗi khi cập nhật sản phẩm ID ${productId}:`, err);
-        res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm.' });
+        res.status(500).json({ message: err.message });
     }
 });
 
-app.delete('/api/products/:id', async (req, res) => {
-    const productId = req.params.id;
+app.post(`${API_PREFIX}/users`, async (req, res) => {
     try {
-        const [result] = await pool.query("DELETE FROM products WHERE id = ?", [productId]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Không tìm thấy sản phẩm để xóa.' });
-        }
-        res.status(200).json({ message: 'Sản phẩm đã được xóa thành công.' });
+        const user = req.body;
+        const id = `user-${Date.now()}`;
+        const newUser = { id, ...user };
+        // NOTE: Hashing password should be done here
+        await pool.query('INSERT INTO `users` SET ?', [newUser]);
+        res.status(201).json(newUser);
     } catch (err) {
-        console.error(`Lỗi khi xóa sản phẩm ID ${productId}:`, err);
-        res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm.' });
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.put(`${API_PREFIX}/users/:id`, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        await pool.query('UPDATE `users` SET ? WHERE id = ?', [updates, id]);
+        res.json({ message: 'User updated' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.delete(`${API_PREFIX}/users/:id`, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM `users` WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 });
 
 
-// --- SERVICES API ENDPOINTS ---
-app.get('/api/services/search', (req, res) => {
-  const { query } = req.query;
-  if (!query) {
-    return res.json(MOCK_SERVICES.slice(0, 3)); // Return a few if no query
+// Products
+app.get(`${API_PREFIX}/products`, async (req, res) => {
+    try {
+        let query = 'SELECT * FROM `products` WHERE 1=1';
+        const params = [];
+        if (req.query.is_featured === 'true') {
+            query += ' AND is_featured = ?';
+            params.push(true);
+        }
+        if (req.query.mainCategory) {
+            query += ' AND mainCategory = ?';
+            params.push(req.query.mainCategory);
+        }
+        if (req.query.subCategory) {
+            query += ' AND subCategory = ?';
+            params.push(req.query.subCategory);
+        }
+        if (req.query.tags) {
+            query += ' AND JSON_CONTAINS(tags, ?)';
+            params.push(JSON.stringify(req.query.tags));
+        }
+        if (req.query.q) {
+            query += ' AND `name` LIKE ?';
+            params.push(`%${req.query.q}%`);
+        }
+        
+        const [countResult] = await pool.query(query.replace('*', 'COUNT(*) as total'), params);
+        const totalProducts = countResult[0].total;
+
+        const limit = parseInt(req.query.limit) || 12;
+        const page = parseInt(req.query.page) || 1;
+        const offset = (page - 1) * limit;
+
+        query += ` LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+        
+        const [rows] = await pool.query(query, params);
+        parseJsonFields(rows, ['imageUrls', 'specifications', 'tags']);
+        res.json({ products: rows, totalProducts });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.get(`${API_PREFIX}/products/:id`, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM `products` WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) return res.status(404).json({ message: 'Product not found' });
+        parseJsonFields(rows[0], ['imageUrls', 'specifications', 'tags']);
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.post(`${API_PREFIX}/products`, async (req, res) => {
+    try {
+        const product = req.body;
+        const id = `prod-${Date.now()}`;
+        const newProduct = { ...product, id,
+            imageUrls: JSON.stringify(product.imageUrls || []),
+            specifications: JSON.stringify(product.specifications || {}),
+            tags: JSON.stringify(product.tags || [])
+        };
+        await pool.query('INSERT INTO `products` SET ?', [newProduct]);
+        res.status(201).json({ id, ...product });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.put(`${API_PREFIX}/products/:id`, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        ['imageUrls', 'specifications', 'tags'].forEach(field => {
+            if (updates[field]) updates[field] = JSON.stringify(updates[field]);
+        });
+        await pool.query('UPDATE `products` SET ? WHERE id = ?', [updates, id]);
+        res.json({ message: 'Product updated' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.delete(`${API_PREFIX}/products/:id`, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM `products` WHERE id = ?', [req.params.id]);
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
+// Generic CRUD factory
+const createCrudEndpoints = (app, resource, table, jsonFields = []) => {
+    app.get(`${API_PREFIX}/${resource}`, async (req, res) => {
+        try {
+            const [rows] = await pool.query(`SELECT * FROM \`${table}\``);
+            if (jsonFields.length) parseJsonFields(rows, jsonFields);
+            res.json(rows);
+        } catch (err) { res.status(500).json({ message: err.message }); }
+    });
+    app.get(`${API_PREFIX}/${resource}/:id`, async (req, res) => {
+        try {
+            const [rows] = await pool.query(`SELECT * FROM \`${table}\` WHERE id = ?`, [req.params.id]);
+            if (rows.length === 0) return res.status(404).json({ message: 'Not found' });
+            if (jsonFields.length) parseJsonFields(rows[0], jsonFields);
+            res.json(rows[0]);
+        } catch (err) { res.status(500).json({ message: err.message }); }
+    });
+    app.post(`${API_PREFIX}/${resource}`, async (req, res) => {
+        try {
+            const item = req.body;
+            const id = `${resource.slice(0, 4)}-${Date.now()}`;
+            const newItem = { ...item, id };
+            jsonFields.forEach(field => {
+                if (newItem[field]) newItem[field] = JSON.stringify(newItem[field]);
+            });
+            await pool.query(`INSERT INTO \`${table}\` SET ?`, [newItem]);
+            res.status(201).json({ id, ...item });
+        } catch (err) { res.status(500).json({ message: err.message }); }
+    });
+    app.put(`${API_PREFIX}/${resource}/:id`, async (req, res) => {
+        try {
+            const updates = req.body;
+            jsonFields.forEach(field => {
+                if (updates[field]) updates[field] = JSON.stringify(updates[field]);
+            });
+            await pool.query(`UPDATE \`${table}\` SET ? WHERE id = ?`, [updates, req.params.id]);
+            res.json({ message: 'Updated' });
+        } catch (err) { res.status(500).json({ message: err.message }); }
+    });
+    app.delete(`${API_PREFIX}/${resource}/:id`, async (req, res) => {
+        try {
+            await pool.query(`DELETE FROM \`${table}\` WHERE id = ?`, [req.params.id]);
+            res.status(204).send();
+        } catch (err) { res.status(500).json({ message: err.message }); }
+    });
+};
+
+// Create CRUD for simple models
+createCrudEndpoints(app, 'articles', 'articles');
+createCrudEndpoints(app, 'chatlogs', 'chatlogs', ['messages']);
+createCrudEndpoints(app, 'media', 'media');
+createCrudEndpoints(app, 'financials/transactions', 'financial_transactions');
+createCrudEndpoints(app, 'debts', 'debts');
+createCrudEndpoints(app, 'inventory', 'inventory'); // Assuming read-only for now
+createCrudEndpoints(app, 'quotations', 'quotations', ['customerInfo', 'items']);
+createCrudEndpoints(app, 'returns', 'returns');
+createCrudEndpoints(app, 'suppliers', 'suppliers', ['contactInfo']);
+createCrudEndpoints(app, 'warranty-claims', 'warranty_claims');
+createCrudEndpoints(app, 'service-tickets', 'service_tickets', ['customer_info', 'details']);
+
+// Custom Order Endpoints
+createCrudEndpoints(app, 'orders', 'orders', ['customerInfo', 'items', 'paymentInfo']);
+app.get(`${API_PREFIX}/orders/customer/:customerId`, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM `orders` WHERE userId = ?', [req.params.customerId]);
+        parseJsonFields(rows, ['customerInfo', 'items', 'paymentInfo']);
+        res.json(rows);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+app.patch(`${API_PREFIX}/orders/:id/status`, async (req, res) => {
+    try {
+        await pool.query('UPDATE `orders` SET status = ? WHERE id = ?', [req.body.status, req.params.id]);
+        res.json({ message: 'Order status updated' });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+
+// Payroll
+app.get(`${API_PREFIX}/financials/payroll`, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM `payroll_records`');
+        res.json(rows);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+app.post(`${API_PREFIX}/financials/payroll`, async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+        const records = req.body;
+        for (const record of records) {
+             // Upsert logic
+            await connection.query('INSERT INTO `payroll_records` SET ? ON DUPLICATE KEY UPDATE ?', [record, record]);
+        }
+        await connection.commit();
+        res.status(201).json({ message: 'Payroll saved' });
+    } catch (err) {
+        await connection.rollback();
+        res.status(500).json({ message: err.message });
+    } finally {
+        connection.release();
+    }
+});
+
+// --- Frontend Catch-all ---
+// This handler serves the `index.html` for any request that doesn't match an API route.
+// It's essential for client-side routing (React Router) to work correctly in a single-server setup.
+app.get('*', (req, res) => {
+  // Check if the request is for an API endpoint that was missed. If so, return a 404.
+  if (req.originalUrl.startsWith(API_PREFIX)) {
+    return res.status(404).json({ message: 'API endpoint not found.' });
   }
-  const lowerQuery = query.toLowerCase();
-  const results = MOCK_SERVICES.filter(s => 
-    s.name.toLowerCase().includes(lowerQuery) || 
-    s.description.toLowerCase().includes(lowerQuery)
-  );
-  res.json(results);
+  // Otherwise, serve the main frontend file.
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 
 
-// --- ORDERS API ENDPOINTS ---
-
-// GET all orders
-app.get('/api/orders', async (req, res) => {
-    try {
-        const [rows] = await pool.query("SELECT * FROM orders ORDER BY orderDate DESC");
-        const orders = rows.map(parseOrderJsonFields);
-        res.json(orders);
-    } catch (err) {
-        console.error("Lỗi khi truy vấn đơn hàng:", err);
-        res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu đơn hàng.' });
-    }
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
 });
 
-// POST a new order
-app.post('/api/orders', async (req, res) => {
-    const newOrderData = req.body;
-    // Đảm bảo orderDate là đối tượng Date hợp lệ của SQL
-    newOrderData.orderDate = new Date(newOrderData.orderDate);
-
-    const orderForDb = prepareOrderForDb(newOrderData);
-    try {
-        await pool.query("INSERT INTO orders SET ?", [orderForDb]);
-        const [rows] = await pool.query("SELECT * FROM orders WHERE id = ?", [newOrderData.id]);
-        res.status(201).json(parseOrderJsonFields(rows[0]));
-    } catch (err) {
-        console.error("Lỗi khi tạo đơn hàng:", err);
-        res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng.' });
-    }
-});
-
-// PUT to update an order's status
-app.put('/api/orders/:id/status', async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!status) {
-        return res.status(400).json({ error: 'Trạng thái mới là bắt buộc.' });
-    }
-
-    try {
-        const [result] = await pool.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Không tìm thấy đơn hàng để cập nhật.' });
-        }
-        const [rows] = await pool.query("SELECT * FROM orders WHERE id = ?", [id]);
-        res.json(parseOrderJsonFields(rows[0]));
-    } catch (err) {
-        console.error(`Lỗi khi cập nhật trạng thái đơn hàng ID ${id}:`, err);
-        res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái.' });
-    }
-});
-
-
-// Khởi động server
-app.listen(port, () => {
-  console.log(`Backend server đang chạy tại http://localhost:${port}`);
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
 });

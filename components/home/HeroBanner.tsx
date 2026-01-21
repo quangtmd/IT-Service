@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
+import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../ui/Button';
 import * as Constants from '../../constants.tsx';
 
@@ -23,12 +23,12 @@ const HeroBanner: React.FC = () => {
           Linh kiện PC chính hãng, dịch vụ IT chuyên nghiệp, hỗ trợ tận tâm. Khám phá ngay!
         </p>
         <div className="space-x-0 space-y-4 sm:space-y-0 sm:space-x-4 animate-fade-in-up opacity-0" style={{animationDelay: '0.6s'}}>
-          <Link to="/services">
+          <ReactRouterDOM.Link to="/services">
             <Button size="lg" variant="primary" className="w-full sm:w-auto">
               <i className="fas fa-headset mr-2"></i> Yêu Cầu Hỗ Trợ
             </Button>
-          </Link>
-          <Link to="/shop">
+          </ReactRouterDOM.Link>
+          <ReactRouterDOM.Link to="/shop">
             <Button
               size="lg"
               variant="outline"
@@ -36,7 +36,7 @@ const HeroBanner: React.FC = () => {
             >
               <i className="fas fa-microchip mr-2"></i> Xem Linh Kiện
             </Button>
-          </Link>
+          </ReactRouterDOM.Link>
         </div>
       </div>
     </div>

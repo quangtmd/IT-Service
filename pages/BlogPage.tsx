@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import ArticlePreview from '../components/blog/ArticlePreview';
 import SearchBar from '../components/shared/SearchBar';
@@ -5,6 +7,7 @@ import { Article } from '../types';
 import geminiService from '../services/geminiService';
 import { getArticles } from '../services/localDataService';
 import * as Constants from '../constants';
+import BackendConnectionError from '../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
 
 const AI_ARTICLES_KEY = 'aiGeneratedArticles_v1';
 const AI_LAST_FETCHED_KEY = 'aiArticlesLastFetched_v1';
@@ -15,66 +18,72 @@ const BlogPage: React.FC = () => {
   const [allArticles, setAllArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<number | null>(null);
 
   useEffect(() => {
     const loadAndFetchArticles = async () => {
       setIsLoading(true);
+      setPageError(null);
       
-      // Load manual articles from Local Storage
-      const manualArticles = await getArticles();
+      try {
+        // Load manual articles from the backend API
+        const manualArticles = await getArticles();
 
-      // Load cached AI articles
-      const aiArticlesRaw = localStorage.getItem(AI_ARTICLES_KEY);
-      const cachedAiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
+        // Load cached AI articles from local storage
+        const aiArticlesRaw = localStorage.getItem(AI_ARTICLES_KEY);
+        const cachedAiArticles: Article[] = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
 
-      // Load last fetch time
-      const lastFetchedTimestamp = localStorage.getItem(AI_LAST_FETCHED_KEY);
-      const lastFetchedTime = lastFetchedTimestamp ? parseInt(lastFetchedTimestamp, 10) : null;
-      setLastFetched(lastFetchedTime);
-      
-      setAllArticles([...manualArticles, ...cachedAiArticles]);
-      setIsLoading(false);
+        // Load last fetch time
+        const lastFetchedTimestamp = localStorage.getItem(AI_LAST_FETCHED_KEY);
+        const lastFetchedTime = lastFetchedTimestamp ? parseInt(lastFetchedTimestamp, 10) : null;
+        setLastFetched(lastFetchedTime);
+        
+        setAllArticles([...manualArticles, ...cachedAiArticles]);
+        
+        const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
+        const apiKey = process.env.API_KEY;
 
-      const isCacheStale = !lastFetchedTime || (Date.now() - lastFetchedTime > CACHE_DURATION_MS);
-      const apiKey = process.env.API_KEY;
+        if (apiKey && apiKey !== 'undefined' && isCacheStale) {
+          setIsLoadingAI(true);
+          try {
+            const newAiArticlesData = await geminiService.fetchLatestTechNews();
+            const newAiArticles: Article[] = newAiArticlesData.map((art, index) => ({
+              id: `ai-${Date.now()}-${index}`,
+              title: art.title || "Không có tiêu đề",
+              summary: art.summary || "Không có tóm tắt",
+              content: art.content || "Nội dung đang được cập nhật.",
+              category: art.category || "Tin tức công nghệ",
+              imageSearchQuery: art.imageSearchQuery || "technology",
+              imageUrl: '', // Will be generated from query
+              author: "AI News Bot",
+              date: new Date().toISOString(),
+              isAIGenerated: true,
+            }));
+            
+            localStorage.setItem(AI_ARTICLES_KEY, JSON.stringify(newAiArticles));
+            const now = Date.now();
+            localStorage.setItem(AI_LAST_FETCHED_KEY, now.toString());
+            setLastFetched(now);
+            setAllArticles([...manualArticles, ...newAiArticles]);
 
-      if (apiKey && apiKey !== 'undefined' && isCacheStale) {
-        setIsLoadingAI(true);
-        setAiError(null);
-        try {
-          const newAiArticlesData = await geminiService.fetchLatestTechNews();
-          const newAiArticles: Article[] = newAiArticlesData.map((art, index) => ({
-            id: `ai-${Date.now()}-${index}`,
-            title: art.title || "Không có tiêu đề",
-            summary: art.summary || "Không có tóm tắt",
-            content: art.content || "Nội dung đang được cập nhật.",
-            category: art.category || "Tin tức công nghệ",
-            imageSearchQuery: art.imageSearchQuery || "technology",
-            imageUrl: '', // Will be generated from query
-            author: "AI News Bot",
-            date: new Date().toISOString(),
-            isAIGenerated: true,
-          }));
-          
-          localStorage.setItem(AI_ARTICLES_KEY, JSON.stringify(newAiArticles));
-          const now = Date.now();
-          localStorage.setItem(AI_LAST_FETCHED_KEY, now.toString());
-          setLastFetched(now);
-          setAllArticles([...manualArticles, ...newAiArticles]);
-
-        } catch (error) {
-          console.error("Failed to fetch AI articles:", error);
-          const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
-          if (errorMessage.includes("API Key chưa được cấu hình")) {
-            setAiError(Constants.API_KEY_ERROR_MESSAGE);
-          } else {
-            setAiError(errorMessage);
+          } catch (error) {
+            console.error("Failed to fetch AI articles:", error);
+            const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
+            if (errorMessage.includes("API Key")) {
+              setPageError(Constants.API_KEY_ERROR_MESSAGE);
+            } else {
+              setPageError(errorMessage);
+            }
+          } finally {
+            setIsLoadingAI(false);
           }
-        } finally {
-          setIsLoadingAI(false);
         }
+      } catch (error) {
+          console.error("Failed to load articles from API:", error);
+          setPageError(error instanceof Error ? error.message : "Không thể tải danh sách bài viết từ server.");
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -91,7 +100,20 @@ const BlogPage: React.FC = () => {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [allArticles, searchTerm]);
 
-  const renderStatus = () => {
+  const renderStatusAndErrors = () => {
+     if (pageError) {
+        // Only display BackendConnectionError component if it's a backend specific error.
+        // Other errors (e.g., API_KEY_ERROR_MESSAGE, AI specific errors) can be simpler text.
+        if (pageError.includes('Lỗi API') || pageError.includes('Lỗi mạng hoặc server không phản hồi') || pageError.includes('Không thể tải danh sách bài viết')) {
+            return <BackendConnectionError error={pageError} />;
+        }
+        return (
+            <div className="text-sm text-danger-text bg-danger-bg p-3 rounded-lg border border-danger-border">
+              <strong>Lỗi:</strong> {pageError}
+            </div>
+        );
+    }
+
     if (isLoadingAI) {
       return (
         <div className="flex items-center justify-center text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
@@ -103,13 +125,7 @@ const BlogPage: React.FC = () => {
         </div>
       );
     }
-    if (aiError) {
-      return (
-        <div className="text-sm text-danger-text bg-danger-bg p-3 rounded-lg border border-danger-border">
-          <strong>Lỗi cập nhật tin tức AI:</strong> {aiError}
-        </div>
-      );
-    }
+   
     if (lastFetched) {
       return (
         <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-200 text-center">
@@ -132,7 +148,7 @@ const BlogPage: React.FC = () => {
 
       <div className="mb-8 max-w-3xl mx-auto space-y-4">
         <SearchBar onSearch={setSearchTerm} placeholder="Tìm kiếm bài viết..."/>
-        {renderStatus()}
+        {renderStatusAndErrors()}
       </div>
 
       {isLoading && allArticles.length === 0 ? (
@@ -140,6 +156,8 @@ const BlogPage: React.FC = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-textMuted">Đang tải bài viết...</p>
          </div>
+      ) : pageError && allArticles.length === 0 && (pageError.includes('Lỗi mạng') || pageError.includes('Không thể tải') || pageError.includes('Lỗi API')) ? (
+        null // The error is already displayed by renderStatusAndErrors in its own component
       ) : filteredArticles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredArticles.map(article => (

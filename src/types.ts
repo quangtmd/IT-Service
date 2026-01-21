@@ -38,6 +38,7 @@ export interface Product {
   seoMetaTitle?: string;
   seoMetaDescription?: string;
   slug?: string;
+  // Added fields
   productCode?: string;
   purchasePrice?: number;
   wholesalePrice?: number;

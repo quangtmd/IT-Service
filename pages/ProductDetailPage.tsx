@@ -1,14 +1,18 @@
+
+
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { Product } from '../types';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/shop/ProductCard';
 import * as Constants from '../constants';
 import { getProduct, getProducts } from '../services/localDataService';
+import BackendConnectionError from '../components/shared/BackendConnectionError'; // Cập nhật đường dẫn
+import { useChatbotContext } from '../contexts/ChatbotContext'; // Import the context hook
 
 const ProductDetailPage: React.FC = () => {
-  const { productId } = useParams<{ productId: string }>();
+  const { productId } = ReactRouterDOM.useParams<{ productId: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -18,7 +22,19 @@ const ProductDetailPage: React.FC = () => {
   const [mainImage, setMainImage] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'description' | 'specs'>('description');
   const { addToCart } = useCart();
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate();
+  const { setCurrentContext } = useChatbotContext(); // Get the context setter
+
+  useEffect(() => {
+    // When the product data is loaded, set the chatbot context.
+    if (product) {
+      setCurrentContext(`Khách hàng đang xem sản phẩm: "${product.name}".`);
+    }
+    // Cleanup function to clear the context when the component unmounts.
+    return () => {
+      setCurrentContext(null);
+    };
+  }, [product, setCurrentContext]);
 
   useEffect(() => {
     const loadProductData = async () => {
@@ -37,16 +53,17 @@ const ProductDetailPage: React.FC = () => {
           setProduct(foundProduct);
           setMainImage(foundProduct.imageUrls?.[0] || `https://source.unsplash.com/600x400/?${encodeURIComponent(foundProduct.name)}`);
           
-          const allProducts = await getProducts();
-          const related = allProducts.filter(p => p.subCategory === foundProduct.subCategory && p.id !== foundProduct.id).slice(0, 4);
+          const query = `?subCategory=${foundProduct.subCategory}&limit=4`;
+          const { products: allProducts } = await getProducts(query);
+          const related = allProducts.filter(p => p.id !== foundProduct.id);
           setRelatedProducts(related);
 
         } else {
           setError('Không tìm thấy sản phẩm.');
         }
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu sản phẩm từ Local Storage:", err);
-        setError("Đã xảy ra lỗi khi tải sản phẩm.");
+        console.error("Lỗi khi tải dữ liệu sản phẩm từ API:", err);
+        setError(err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải sản phẩm.");
       } finally {
         setIsLoading(false);
         window.scrollTo(0, 0);
@@ -70,13 +87,21 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  if (error || !product) {
+  if (error) {
+    return (
+        <div className="container mx-auto px-4 py-8">
+            <BackendConnectionError error={error} />
+        </div>
+    );
+  }
+  
+  if (!product) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-semibold text-textBase">{error || 'Không tìm thấy sản phẩm'}</h2>
-        <Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
+        <h2 className="text-2xl font-semibold text-textBase">Không tìm thấy sản phẩm</h2>
+        <ReactRouterDOM.Link to="/shop" className="text-primary hover:underline mt-4 inline-block">
           Quay lại cửa hàng
-        </Link>
+        </ReactRouterDOM.Link>
       </div>
     );
   }
@@ -90,19 +115,19 @@ const ProductDetailPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <nav aria-label="breadcrumb" className="text-sm text-textMuted mb-6 bg-bgBase p-3 rounded-md border border-borderDefault">
           <ol className="flex items-center space-x-1.5 flex-wrap">
-            <li><Link to="/home" className="hover:text-primary">Trang chủ</Link></li>
+            <li><ReactRouterDOM.Link to="/home" className="hover:text-primary">Trang chủ</ReactRouterDOM.Link></li>
             <li><span className="text-textSubtle">/</span></li>
-            <li><Link to="/shop" className="hover:text-primary">Sản phẩm</Link></li>
+            <li><ReactRouterDOM.Link to="/shop" className="hover:text-primary">Sản phẩm</ReactRouterDOM.Link></li>
             {mainCategoryInfo && (
               <>
                 <li><span className="text-textSubtle">/</span></li>
-                <li><Link to={`/shop?mainCategory=${mainCategoryInfo.slug}`} className="hover:text-primary">{mainCategoryInfo.name}</Link></li>
+                <li><ReactRouterDOM.Link to={`/shop?mainCategory=${mainCategoryInfo.slug}`} className="hover:text-primary">{mainCategoryInfo.name}</ReactRouterDOM.Link></li>
               </>
             )}
             {subCategoryInfo && (
               <>
                 <li><span className="text-textSubtle">/</span></li>
-                <li><Link to={`/shop?mainCategory=${mainCategoryInfo?.slug}&subCategory=${subCategoryInfo.slug}`} className="hover:text-primary">{subCategoryInfo.name}</Link></li>
+                <li><ReactRouterDOM.Link to={`/shop?mainCategory=${mainCategoryInfo?.slug}&subCategory=${subCategoryInfo.slug}`} className="hover:text-primary">{subCategoryInfo.name}</ReactRouterDOM.Link></li>
               </>
             )}
             <li><span className="text-textSubtle">/</span></li>
@@ -211,7 +236,7 @@ const ProductDetailPage: React.FC = () => {
                         {Object.entries(product.specifications).map(([key, value], index) => (
                             <tr key={key} className={`border-b border-borderDefault ${index % 2 === 0 ? 'bg-bgCanvas' : 'bg-bgBase'}`}>
                                 <td className="py-3 px-4 font-semibold text-textBase w-1/3 md:w-1/4">{key}</td>
-                                <td className="py-3 px-4 text-textMuted">{value}</td>
+                                <td className="py-3 px-4 text-textMuted">{value as React.ReactNode}</td>
                             </tr>
                         ))}
                         </tbody>

@@ -1,16 +1,37 @@
-
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  base: './', // Ensures all asset paths are relative, good for subfolder deployment
-  define: {
-    // Defensively check for both API_KEY and VITE_API_KEY from the build environment.
-    // This makes the configuration more robust regardless of how the user names the variable.
-    'process.env.API_KEY': JSON.stringify(process.env.API_KEY || process.env.VITE_API_KEY),
-    
-    // The backend URL is no longer needed in a backend-less architecture.
-  }
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, process.cwd(), '');
+    return {
+        publicDir: false,
+        plugins: [react()],
+        server: {
+            port: 3000,
+            host: '0.0.0.0',
+            proxy: {
+              '/api': {
+                target: 'http://localhost:3001',
+                changeOrigin: true,
+              },
+            },
+        },
+        preview: {
+            host: true,
+            allowedHosts: ['.onrender.com'],
+        },
+        resolve: {
+            alias: {
+                '@': path.resolve(process.cwd(), '.'),
+            }
+        },
+        define: {
+            'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+            'process.env.VITE_BACKEND_API_BASE_URL': JSON.stringify(
+                mode === 'production' ? 'https://it-service-backend.onrender.com' : ''
+            )
+        }
+    };
 });

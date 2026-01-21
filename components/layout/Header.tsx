@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import * as Constants from '../../constants.tsx';
+import * as ReactRouterDOM from 'react-router-dom';
+import * as Constants from '../../constants';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../ui/Button';
@@ -10,7 +10,7 @@ import MegaMenu from './MegaMenu'; // Import the new MegaMenu component
 
 // New component for right-side action links, styled as per the image
 const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badgeCount?: number }> = ({ to, icon, label, badgeCount }) => (
-    <Link to={to} className="hidden lg:flex flex-col items-center text-white hover:text-primary transition-colors text-xs font-medium space-y-1 w-[70px] text-center">
+    <ReactRouterDOM.Link to={to} className="hidden lg:flex flex-col items-center text-white hover:text-primary transition-colors text-xs font-medium space-y-1 w-[70px] text-center">
         <div className="relative">
             <i className={`fas ${icon} text-2xl`}></i>
             {badgeCount && badgeCount > 0 ? (
@@ -20,14 +20,14 @@ const HeaderActionLink: React.FC<{ to: string; icon: string; label: string; badg
             ) : null}
         </div>
         <span>{label}</span>
-    </Link>
+    </ReactRouterDOM.Link>
 );
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cart } = useCart();
   const { isAuthenticated, currentUser, logout, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate();
   const totalItemsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
@@ -71,7 +71,7 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     logout();
     setIsMobileMenuOpen(false);
-    navigate('/home');
+    navigate('/');
   };
 
   const mainNavLinks = finalNavLinks;
@@ -94,7 +94,7 @@ const Header: React.FC = () => {
                 <p className="text-xs text-textMuted truncate">{currentUser.email}</p>
             </div>
             {(currentUser.role === 'admin' || currentUser.role === 'staff') && (
-                <Link to="/admin" className="flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted"><i className="fas fa-user-shield w-6"></i>Quản trị</Link>
+                <ReactRouterDOM.Link to="/admin" className="flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted"><i className="fas fa-user-shield w-6"></i>Quản trị</ReactRouterDOM.Link>
             )}
             <button onClick={handleLogout} className="w-full flex items-center px-3 py-2 text-sm text-textBase hover:bg-bgMuted">
                 <i className="fas fa-sign-out-alt w-6"></i>Đăng xuất
@@ -106,12 +106,12 @@ const Header: React.FC = () => {
 
     return (
       <div className={`flex items-center gap-3 ${isMobile ? 'flex-col w-full' : ''}`}>
-        <Link to="/login" className={`${isMobile ? 'w-full' : ''}`}>
+        <ReactRouterDOM.Link to="/login" className={`${isMobile ? 'w-full' : ''}`}>
           <Button variant={isMobile ? 'outline' : 'ghost'} size='sm' className={`w-full ${isMobile ? 'border-gray-500 text-gray-200' : 'text-white hover:bg-white/20'}`}>Đăng nhập</Button>
-        </Link>
-        <Link to="/register" className={`${isMobile ? 'w-full' : ''}`}>
+        </ReactRouterDOM.Link>
+        <ReactRouterDOM.Link to="/register" className={`${isMobile ? 'w-full' : ''}`}>
           <Button variant='secondary' size='sm' className="w-full">Đăng ký</Button>
-        </Link>
+        </ReactRouterDOM.Link>
       </div>
     );
   };
@@ -135,14 +135,14 @@ const Header: React.FC = () => {
         {/* MAIN HEADER */}
         <div className="bg-black text-white">
           <div className="container mx-auto px-4 flex items-center justify-between gap-4 h-20">
-            <Link to="/home" className="flex-shrink-0">
+            <ReactRouterDOM.Link to="/" className="flex-shrink-0">
               <svg width="125" height="45" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg">
                   <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: var(--color-primary-default); font-style: italic; } .logo-main-white { font-family: Impact, sans-serif; font-size: 36px; fill: #ffffff; font-style: italic; } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #ffffff; letter-spacing: 2px; }`}</style>
                   <text x="0" y="30" className="logo-main-red">IQ</text>
                   <text x="38" y="30" className="logo-main-white">TECH</text>
                   <text x="38" y="42" className="logo-sub">TECHNOLOGY</text>
               </svg>
-            </Link>
+            </ReactRouterDOM.Link>
             
             <div className="flex-grow max-w-2xl hidden lg:block">
               <HeaderSearchBar />
@@ -168,15 +168,15 @@ const Header: React.FC = () => {
                 return <MegaMenu key={link.path} />;
               }
               return (
-                <NavLink
+                <ReactRouterDOM.NavLink
                   key={link.path}
                   to={link.path}
                   className={({ isActive }) => `nav-link-item ${isActive ? 'active' : ''}`}
-                  end={link.path === "/home"}
+                  end={link.path === "/"}
                 >
                   {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} mr-2`}></i>}
                   <span>{link.label}</span>
-                </NavLink>
+                </ReactRouterDOM.NavLink>
               );
             })}
           </div>
@@ -204,10 +204,10 @@ const Header: React.FC = () => {
 
           <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
             {mainNavLinks.map((link) => (
-              <NavLink key={link.path} to={link.path} onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `flex items-center text-lg py-3 px-4 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'text-gray-200 hover:bg-white/10'}`} end={link.path === "/home"}>
+              <ReactRouterDOM.NavLink key={link.path} to={link.path} onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => `flex items-center text-lg py-3 px-4 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'text-gray-200 hover:bg-white/10'}`} end={link.path === "/"}>
                 {link.icon && typeof link.icon === 'string' && <i className={`${link.icon} mr-4 w-5 text-center`}></i>}
                 {link.label}
-              </NavLink>
+              </ReactRouterDOM.NavLink>
             ))}
           </nav>
 

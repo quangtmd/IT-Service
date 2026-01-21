@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
@@ -67,7 +66,7 @@ const HomeProcessIts: React.FC = () => {
             </span>
           )}
           <h2 className="home-section-title text-4xl md:text-5xl font-extrabold">
-            {processConfig.title || "Default Process Title"}
+            {processConfig.title || "Quy Trình Của Chúng Tôi"}
           </h2>
         </div>
         {sortedSteps.length > 0 ? (
@@ -77,7 +76,7 @@ const HomeProcessIts: React.FC = () => {
             ))}
             </div>
         ) : (
-            <p className="text-center text-textMuted">Process steps are being updated.</p>
+            <p className="text-center text-textMuted">Các bước quy trình đang được cập nhật.</p>
         )}
       </div>
     </section>

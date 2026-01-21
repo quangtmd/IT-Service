@@ -1,19 +1,15 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
-import * as Constants from '../../constants';
 import Button from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../ui/Card';
+import {
+    getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction,
+    getPayrollRecords, savePayrollRecords
+} from '../../services/localDataService';
+import * as ReactRouterDOM from 'react-router-dom';
 
 // --- HELPER FUNCTIONS ---
-const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
-    try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultValue; } 
-    catch (error) { console.error(`Lỗi đọc localStorage key "${key}":`, error); return defaultValue; }
-};
-const setLocalStorageItem = <T,>(key: string, value: T) => {
-    try { localStorage.setItem(key, JSON.stringify(value)); } 
-    catch (error) { console.error(`Lỗi cài đặt localStorage key "${key}":`, error); }
-};
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
 const getStartOfWeek = (d: Date) => {
     const date = new Date(d);
@@ -27,29 +23,51 @@ type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll';
 // --- MAIN COMPONENT ---
 const FinancialManagementView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<FinancialTab>('overview');
-    const [transactions, setTransactions] = useState<FinancialTransaction[]>(() => getLocalStorageItem(Constants.FINANCIAL_TRANSACTIONS_STORAGE_KEY, []));
-    const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>(() => getLocalStorageItem(Constants.PAYROLL_RECORDS_STORAGE_KEY, []));
+    const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
+    const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const navigate = ReactRouterDOM.useNavigate();
 
-    const handleUpdateTransactions = (updated: FinancialTransaction[]) => {
-        setTransactions(updated);
-        setLocalStorageItem(Constants.FINANCIAL_TRANSACTIONS_STORAGE_KEY, updated);
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [trans, payroll] = await Promise.all([
+                getFinancialTransactions(),
+                getPayrollRecords()
+            ]);
+            setTransactions(trans);
+            setPayrollRecords(payroll);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Không thể tải dữ liệu tài chính.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    const addTransaction = async (newTransaction: Omit<FinancialTransaction, 'id'>) => {
+        try {
+            await addFinancialTransaction(newTransaction);
+            loadData(); // Re-fetch all data to ensure consistency
+        } catch (error) {
+            console.error(error);
+            alert("Lỗi khi thêm giao dịch.");
+        }
     };
 
-    const handleUpdatePayroll = (updated: PayrollRecord[]) => {
-        setPayrollRecords(updated);
-        setLocalStorageItem(Constants.PAYROLL_RECORDS_STORAGE_KEY, updated);
-    };
-
-    const addTransaction = (newTransaction: Omit<FinancialTransaction, 'id'>) => {
-        const transactionWithId: FinancialTransaction = { ...newTransaction, id: `trans-${Date.now()}` };
-        handleUpdateTransactions([transactionWithId, ...transactions]);
-    };
-    
     const renderTabContent = () => {
+        if (isLoading) return <div className="text-center p-8">Đang tải dữ liệu tài chính...</div>;
+        if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
+
         switch (activeTab) {
-            case 'transactions': return <TransactionsTab transactions={transactions} onUpdate={handleUpdateTransactions} />;
+            case 'transactions': return <TransactionsTab transactions={transactions} onDataChange={loadData} navigate={navigate} />;
             case 'reports': return <ReportsTab transactions={transactions} />;
-            case 'payroll': return <PayrollTab payrollRecords={payrollRecords} onUpdatePayroll={handleUpdatePayroll} onAddTransaction={addTransaction} />;
+            case 'payroll': return <PayrollTab payrollRecords={payrollRecords} onDataChange={loadData} onAddTransaction={addTransaction} />;
             case 'overview':
             default: return <OverviewTab transactions={transactions} />;
         }
@@ -116,32 +134,31 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
     );
 };
 
-const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onUpdate: (updated: FinancialTransaction[]) => void }> = ({ transactions, onUpdate }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
+const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: ReactRouterDOM.NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
 
-    const handleSave = (data: FinancialTransaction) => {
-        let updated;
-        if (data.id) {
-            updated = transactions.map(t => t.id === data.id ? data : t);
-        } else {
-            updated = [{...data, id: `trans-${Date.now()}`}, ...transactions];
-        }
-        onUpdate(updated.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        setIsModalOpen(false);
-        setEditingTransaction(null);
+    const handleAddNewTransaction = () => {
+        navigate('/admin/accounting_dashboard/transactions/new');
     };
 
-    const handleDelete = (id: string) => {
+    const handleEditTransaction = (transactionId: string) => {
+        navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
+    };
+
+    const handleDelete = async (id: string) => {
         if(window.confirm('Bạn có chắc muốn xóa giao dịch này?')) {
-            onUpdate(transactions.filter(t => t.id !== id));
+            try {
+                await deleteFinancialTransaction(id);
+                onDataChange();
+            } catch (error) {
+                alert("Lỗi khi xóa giao dịch.");
+            }
         }
     };
 
     return (
         <div>
             <div className="flex justify-end mb-4">
-                <Button onClick={() => { setEditingTransaction(null); setIsModalOpen(true); }} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
+                <Button onClick={handleAddNewTransaction} size="sm" leftIcon={<i className="fas fa-plus"></i>}>Thêm Giao dịch</Button>
             </div>
              <div className="overflow-x-auto">
                 <table className="admin-table">
@@ -156,7 +173,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onUpdate
                                 <td className={`font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{t.amount.toLocaleString('vi-VN')}₫</td>
                                 <td>
                                     <div className="flex gap-1">
-                                        <Button onClick={() => { setEditingTransaction(t); setIsModalOpen(true); }} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
+                                        <Button onClick={() => handleEditTransaction(t.id)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
                                         <Button onClick={() => handleDelete(t.id)} size="sm" variant="ghost" className="text-red-500"><i className="fas fa-trash"></i></Button>
                                     </div>
                                 </td>
@@ -165,19 +182,13 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onUpdate
                     </tbody>
                 </table>
             </div>
-            {isModalOpen && <TransactionModal transaction={editingTransaction} onSave={handleSave} onClose={() => setIsModalOpen(false)} />}
         </div>
     );
 };
 
 const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
-    const [startDate, setStartDate] = useState<string>(() => {
-        const d = new Date();
-        d.setDate(1);
-        return formatDate(d);
-    });
+    const [startDate, setStartDate] = useState<string>(formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
     const [endDate, setEndDate] = useState<string>(formatDate(new Date()));
-    const [filterSource, setFilterSource] = useState<'all' | 'internal' | 'supplier'>('all');
 
     const setDateRange = (period: 'week' | 'month' | 'year') => {
         const today = new Date();
@@ -185,43 +196,28 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
             setStartDate(formatDate(getStartOfWeek(today)));
             setEndDate(formatDate(today));
         } else if (period === 'month') {
-            // Fix: To avoid a potential linter error on the new Date() constructor with arguments, this uses an alternative method to get the first day of the month.
-            const startOfMonth = new Date(today);
-            startOfMonth.setDate(1);
-            setStartDate(formatDate(startOfMonth));
+            setStartDate(formatDate(new Date(today.getFullYear(), today.getMonth(), 1)));
             setEndDate(formatDate(today));
         } else if (period === 'year') {
-            // Fix: To avoid a potential linter error on the new Date() constructor with arguments, this uses an alternative method to get the first day of the year.
-            const startOfYear = new Date(today);
-            startOfYear.setMonth(0, 1);
-            setStartDate(formatDate(startOfYear));
+            setStartDate(formatDate(new Date(today.getFullYear(), 0, 1)));
             setEndDate(formatDate(today));
         }
     };
-    
+
     const filteredTransactions = useMemo(() => {
         const start = new Date(startDate);
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999); // Include entire end day
-        
-        const dateFiltered = transactions.filter(t => {
+
+        return transactions.filter(t => {
             const tDate = new Date(t.date);
             return tDate >= start && tDate <= end;
         });
-
-        if (filterSource === 'internal') {
-            return dateFiltered.filter(t => t.category === 'Thu nội bộ');
-        }
-        if (filterSource === 'supplier') {
-            return dateFiltered.filter(t => t.category === 'Chi phí Nhà Cung Cấp');
-        }
-        
-        return dateFiltered; // 'all' case
-    }, [transactions, startDate, endDate, filterSource]);
+    }, [transactions, startDate, endDate]);
 
     const summary = useMemo(() => {
         const income = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-        const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+        const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
         const net = income - expense;
 
         const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce((acc, t) => {
@@ -249,14 +245,8 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
                     <span>-</span>
                     <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="admin-form-group" />
                 </div>
-                <div className="flex items-center gap-2 border-l pl-4 ml-4">
-                    <span className="text-sm font-medium text-gray-600">Xem theo:</span>
-                    <Button size="sm" variant={filterSource === 'all' ? 'primary' : 'outline'} onClick={() => setFilterSource('all')}>Tổng hợp</Button>
-                    <Button size="sm" variant={filterSource === 'internal' ? 'primary' : 'outline'} onClick={() => setFilterSource('internal')}>Nội bộ</Button>
-                    <Button size="sm" variant={filterSource === 'supplier' ? 'primary' : 'outline'} onClick={() => setFilterSource('supplier')}>Nhà Cung Cấp</Button>
-                </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <Card className="!p-4"><h5 className="text-sm">Tổng Thu</h5><p className="text-2xl font-bold text-green-600">{summary.income.toLocaleString('vi-VN')}₫</p></Card>
                 <Card className="!p-4"><h5 className="text-sm">Tổng Chi</h5><p className="text-2xl font-bold text-red-600">{summary.expense.toLocaleString('vi-VN')}₫</p></Card>
@@ -285,71 +275,85 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     );
 };
 
-const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onUpdatePayroll: (updated: PayrollRecord[]) => void, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => void }> = ({ payrollRecords, onUpdatePayroll, onAddTransaction }) => {
+const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onDataChange: () => Promise<void>, onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void> }> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
     const { users } = useAuth();
     const staff = users.filter(u => u.role === 'admin' || u.role === 'staff');
     const [payPeriod, setPayPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
 
-    const handlePayrollChange = (employeeId: string, field: 'baseSalary' | 'bonus' | 'deduction' | 'notes', value: string | number) => {
-        const existingRecord = payrollRecords.find(p => p.payPeriod === payPeriod && p.employeeId === employeeId);
-        let updatedRecord: PayrollRecord;
+    const [localPayroll, setLocalPayroll] = useState<PayrollRecord[]>(payrollRecords);
+    useEffect(() => setLocalPayroll(payrollRecords), [payrollRecords]);
 
-        if (existingRecord) {
-            updatedRecord = { ...existingRecord, [field]: value };
-        } else {
-            const employee = staff.find(s => s.id === employeeId)!;
-            updatedRecord = {
-                id: `payroll-${payPeriod}-${employeeId}`, employeeId, employeeName: employee.username, payPeriod,
-                baseSalary: 0, bonus: 0, deduction: 0, finalSalary: 0, notes: '', status: 'Chưa thanh toán',
-                [field]: value
-            };
+    const handlePayrollChange = (employeeId: string, field: 'baseSalary' | 'bonus' | 'deduction' | 'notes', value: string | number) => {
+        setLocalPayroll(currentPayroll => {
+             const existingRecord = currentPayroll.find(p => p.payPeriod === payPeriod && p.employeeId === employeeId);
+             let updatedRecord: PayrollRecord;
+            if (existingRecord) {
+                updatedRecord = { ...existingRecord, [field]: value };
+            } else {
+                const employee = staff.find(s => s.id === employeeId)!;
+                updatedRecord = {
+                    id: `payroll-${payPeriod}-${employeeId}`, employeeId, employeeName: employee.username, payPeriod,
+                    baseSalary: 0, bonus: 0, deduction: 0, finalSalary: 0, notes: '', status: 'Chưa thanh toán',
+                    [field]: value
+                };
+            }
+            updatedRecord.finalSalary = Number(updatedRecord.baseSalary) + Number(updatedRecord.bonus) - Number(updatedRecord.deduction);
+            const otherRecords = currentPayroll.filter(p => p.id !== updatedRecord.id);
+            return [updatedRecord, ...otherRecords];
+        });
+    };
+
+    const handleSettlePayroll = async () => {
+        if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}?`)) return;
+
+        const recordsToSettle = localPayroll.filter(p => p.payPeriod === payPeriod && p.status === 'Chưa thanh toán' && p.finalSalary > 0);
+        if (recordsToSettle.length === 0) {
+            alert('Không có lương để thanh toán cho kỳ này.');
+            return;
         }
         
-        updatedRecord.finalSalary = Number(updatedRecord.baseSalary) + Number(updatedRecord.bonus) - Number(updatedRecord.deduction);
-        
-        const otherRecords = payrollRecords.filter(p => p.id !== updatedRecord.id);
-        onUpdatePayroll([updatedRecord, ...otherRecords]);
-    };
-    
-    const handleSettlePayroll = () => {
-        if (!window.confirm(`Bạn có chắc muốn chốt và thanh toán lương cho tháng ${payPeriod}? Hành động này sẽ tạo một giao dịch chi phí.`)) return;
+        const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
 
-        let totalSalaryExpense = 0;
-        const updatedRecords = payrollRecords.map(p => {
-            if (p.payPeriod === payPeriod && p.status === 'Chưa thanh toán') {
-                totalSalaryExpense += p.finalSalary;
-                return { ...p, status: 'Đã thanh toán' as const };
-            }
-            return p;
-        });
-
-        if (totalSalaryExpense > 0) {
-            onAddTransaction({
+        try {
+            const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+            await savePayrollRecords(recordsToSave);
+            await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
                 type: 'expense',
                 category: 'Chi phí Lương',
                 description: `Thanh toán lương tháng ${payPeriod}`
             });
-            onUpdatePayroll(updatedRecords);
-        } else {
-            alert('Không có lương để thanh toán cho kỳ này.');
+            await onDataChange();
+        } catch (error) {
+            alert('Lỗi khi chốt lương.');
         }
     };
-    
+
+    const handleSaveDraft = async () => {
+        const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+        await savePayrollRecords(recordsToSave);
+        alert('Đã lưu nháp lương thành công!');
+        await onDataChange();
+    };
+
+
     return (
         <div>
-            <div className="flex items-center gap-4 mb-4">
-                <label htmlFor="payPeriod">Chọn kỳ lương:</label>
-                <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group"/>
-                <Button onClick={handleSettlePayroll} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+            <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
+                <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
+                {/* Fix: Wrapped onClick handlers in arrow functions to prevent passing the event object. */}
+                <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
+                {/* Fix: Wrapped onClick handlers in arrow functions to prevent passing the event object. */}
+                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">
                     <thead><tr><th>Nhân viên</th><th>Lương Cơ bản</th><th>Thưởng</th><th>Phạt</th><th>Tổng Lương</th><th>Ghi chú</th><th>Trạng thái</th></tr></thead>
                     <tbody>
                         {staff.map(employee => {
-                            const record = payrollRecords.find(p => p.payPeriod === payPeriod && p.employeeId === employee.id);
+                            const record = localPayroll.find(p => p.payPeriod === payPeriod && p.employeeId === employee.id);
                             return (
                                 <tr key={employee.id}>
                                     <td>{employee.username}</td>
@@ -364,64 +368,6 @@ const PayrollTab: React.FC<{ payrollRecords: PayrollRecord[], onUpdatePayroll: (
                         })}
                     </tbody>
                 </table>
-            </div>
-        </div>
-    );
-};
-
-// --- MODAL COMPONENT ---
-interface TransactionModalProps {
-    transaction: FinancialTransaction | null;
-    onClose: () => void;
-    onSave: (data: FinancialTransaction) => void;
-}
-const TRANSACTION_CATEGORIES: Record<TransactionType, TransactionCategory[]> = {
-    'income': ['Doanh thu Bán hàng', 'Thu nội bộ'],
-    'expense': ['Chi phí Nhà Cung Cấp', 'Chi phí Lương', 'Chi phí Vận hành', 'Chi phí Marketing', 'Chi phí Khác'],
-};
-
-const TransactionModal: React.FC<TransactionModalProps> = ({ transaction, onClose, onSave }) => {
-    const [formData, setFormData] = useState<Partial<FinancialTransaction>>(transaction || {
-        date: new Date().toISOString().split('T')[0], type: 'expense', amount: 0
-    });
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        let newFormData = { ...formData, [name]: value };
-        if (name === 'type') {
-            newFormData.category = undefined; // Reset category when type changes
-        }
-        setFormData(newFormData);
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSave(formData as FinancialTransaction);
-    };
-
-    const type = formData.type || 'expense';
-
-    return (
-         <div className="admin-modal-overlay">
-            <div className="admin-modal-panel max-w-lg">
-                <form onSubmit={handleSubmit}>
-                    <div className="admin-modal-header"><h4 className="admin-modal-title">{formData.id ? 'Sửa Giao dịch' : 'Thêm Giao dịch'}</h4><button type="button" onClick={onClose}>&times;</button></div>
-                    <div className="admin-modal-body grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="admin-form-group"><label>Ngày *</label><input type="date" name="date" value={formData.date} onChange={handleChange} required/></div>
-                        <div className="admin-form-group"><label>Loại *</label><select name="type" value={type} onChange={handleChange}><option value="income">Thu</option><option value="expense">Chi</option></select></div>
-                        <div className="admin-form-group sm:col-span-2"><label>Danh mục *</label>
-                            <select name="category" value={formData.category || ''} onChange={handleChange} required>
-                                <option value="">-- Chọn --</option>
-                                {TRANSACTION_CATEGORIES[type].map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
-                        </div>
-                        <div className="admin-form-group sm:col-span-2"><label>Số tiền (VNĐ) *</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required/></div>
-                        <div className="admin-form-group sm:col-span-2"><label>Mô tả *</label><textarea name="description" value={formData.description || ''} onChange={handleChange} required rows={3}></textarea></div>
-                        <div className="admin-form-group"><label>Đối tượng liên quan</label><input type="text" name="relatedEntity" value={formData.relatedEntity || ''} onChange={handleChange} /></div>
-                        <div className="admin-form-group"><label>Mã hóa đơn</label><input type="text" name="invoiceNumber" value={formData.invoiceNumber || ''} onChange={handleChange} /></div>
-                    </div>
-                    <div className="admin-modal-footer"><Button type="button" variant="outline" onClick={onClose}>Hủy</Button><Button type="submit">Lưu</Button></div>
-                </form>
             </div>
         </div>
     );
