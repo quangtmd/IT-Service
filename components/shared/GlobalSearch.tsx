@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import * as Constants from '../../constants';
 
 const HeaderSearchBar: React.FC = () => {
-    const navigate = ReactRouterDOM.useNavigate();
-    const location = ReactRouterDOM.useLocation();
+    const navigate = useNavigate();
+    const location = useLocation();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');

@@ -1,122 +1,161 @@
-import { 
-    User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
-    FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus
-} from '../types';
+import { Product, Order, Article, MediaItem, OrderStatus } from '../types';
+import { MOCK_PRODUCTS, MOCK_ORDERS, MOCK_ARTICLES } from '../data/mockData';
 
-async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // All API endpoints are prefixed with /api on the server.
-    // The URL is now relative, relying on proxy/rewrite rules.
-    const url = `/api${endpoint}`;
-    
+const PRODUCTS_KEY = 'siteProducts_v1_local';
+const ORDERS_KEY = 'siteOrders_v1_local';
+const ARTICLES_KEY = 'adminArticles_v1_local';
+const MEDIA_KEY = 'siteMediaLibrary_v1_local';
+
+// --- Generic Helper ---
+const getOrInitLocalStorage = <T extends any[]>(key: string, initialData: T): T => {
+    const seededKey = `${key}_seeded_v2`; // Use a versioned, separate key to track initialization
     try {
-        const response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            ...options,
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            // Updated error message to be more relevant to the new setup.
-            const errorMessage = response.status === 404
-                ? `Lỗi API: 404 Not Found. Endpoint không được tìm thấy. Vui lòng kiểm tra cấu hình rewrite/proxy trên server.`
-                : errorData.message || `Lỗi API: ${response.status}`;
-            throw new Error(errorMessage);
+        const isSeeded = localStorage.getItem(seededKey);
+        
+        // If the data has never been seeded before (or cache was cleared)
+        if (!isSeeded) {
+            // Seed the storage with the initial mock data
+            localStorage.setItem(key, JSON.stringify(initialData));
+            // Set the flag to indicate seeding has been done
+            localStorage.setItem(seededKey, 'true');
+            return initialData;
         }
         
-        // Handle cases where the response might be empty (e.g., DELETE requests)
-        const text = await response.text();
-        return text ? JSON.parse(text) : null;
+        // If it has been seeded, get whatever is currently in storage.
+        // This respects any changes made by the admin (like deleting all products).
+        const item = localStorage.getItem(key);
+        // Fallback to an empty array if the item is somehow null after being seeded.
+        return item ? JSON.parse(item) : [];
 
     } catch (error) {
-        if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            // This is a network error
-            throw new Error('Lỗi mạng hoặc server không phản hồi. Vui lòng kiểm tra kết nối và cấu hình backend.');
-        }
-        // Re-throw other errors (like the custom one from response.ok check)
-        throw error;
+        console.error(`Error with localStorage key "${key}":`, error);
+        // On any error, fallback to initial data as a safe measure.
+        return initialData;
     }
-}
+};
 
-// --- User Service ---
-export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
-export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/users/login', { method: 'POST', body: JSON.stringify(credentials) });
-export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
-export const updateUser = (id: string, updates: Partial<User>): Promise<User> => fetchFromApi<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const deleteUser = (id: string): Promise<void> => fetchFromApi<void>(`/users/${id}`, { method: 'DELETE' });
+const setLocalStorage = <T,>(key: string, data: T) => {
+    localStorage.setItem(key, JSON.stringify(data));
+};
 
 // --- Product Service ---
-export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryParams}`);
-export const getProduct = (id: string): Promise<Product> => fetchFromApi<Product>(`/products/${id}`);
-export const addProduct = (product: Omit<Product, 'id'>): Promise<Product> => fetchFromApi<Product>('/products', { method: 'POST', body: JSON.stringify(product) });
-export const updateProduct = (id: string, updates: Partial<Product>): Promise<Product> => fetchFromApi<Product>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
-export const getFeaturedProducts = async (): Promise<Product[]> => {
-    const { products } = await getProducts('is_featured=true&limit=4');
-    return products;
-}
+export const getProducts = async (): Promise<Product[]> => {
+    return getOrInitLocalStorage(PRODUCTS_KEY, MOCK_PRODUCTS);
+};
 
-// --- Article Service ---
-export const getArticles = (): Promise<Article[]> => fetchFromApi<Article[]>('/articles');
-export const getArticle = (id: string): Promise<Article> => fetchFromApi<Article>(`/articles/${id}`);
-export const addArticle = (article: Omit<Article, 'id'>): Promise<Article> => fetchFromApi<Article>('/articles', { method: 'POST', body: JSON.stringify(article) });
-export const updateArticle = (id: string, updates: Partial<Article>): Promise<Article> => fetchFromApi<Article>(`/articles/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const deleteArticle = (id: string): Promise<void> => fetchFromApi<void>(`/articles/${id}`, { method: 'DELETE' });
+export const getProduct = async (id: string): Promise<Product | null> => {
+    const products = await getProducts();
+    return products.find(p => p.id === id) || null;
+};
+
+export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
+    const products = await getProducts();
+    const newProduct = { ...product, id: `prod-${Date.now()}` };
+    setLocalStorage(PRODUCTS_KEY, [newProduct, ...products]);
+    return newProduct;
+};
+
+export const updateProduct = async (id: string, productUpdate: Partial<Product>): Promise<void> => {
+    let products = await getProducts();
+    products = products.map(p => p.id === id ? { ...p, ...productUpdate, id } : p);
+    setLocalStorage(PRODUCTS_KEY, products);
+};
+
+export const deleteProduct = async (id: string): Promise<void> => {
+    const products = await getProducts();
+    setLocalStorage(PRODUCTS_KEY, products.filter(p => p.id !== id));
+};
+
+export const getFeaturedProducts = async (): Promise<Product[]> => {
+    const allProducts = await getProducts();
+    // 1. Chỉ làm việc với các sản phẩm được phép hiển thị.
+    const visibleProducts = allProducts.filter(p => p.isVisible !== false);
+
+    // 2. Lấy sản phẩm bán chạy một cách an toàn.
+    // Đảm bảo thuộc tính 'tags' tồn tại và là một mảng trước khi dùng 'includes'.
+    const bestselling = visibleProducts.filter(p => Array.isArray(p.tags) && p.tags.includes('Bán chạy'));
+    
+    // 3. Tìm các sản phẩm đang giảm giá.
+    const onSale = visibleProducts.filter(p => p.originalPrice && p.originalPrice > p.price);
+    
+    // 4. Kết hợp và lấy các sản phẩm duy nhất, ưu tiên các mặt hàng bán chạy nhất.
+    const combined = [...bestselling, ...onSale];
+    const unique = Array.from(new Map(combined.map(p => [p.id, p])).values());
+    
+    // 5. Nếu có bất kỳ sản phẩm nổi bật nào, trả về tối đa 4 sản phẩm.
+    if (unique.length > 0) {
+        return unique.slice(0, 4);
+    }
+    
+    // 6. Nếu không tìm thấy sản phẩm nổi bật cụ thể, trả về 4 sản phẩm hiển thị đầu tiên làm phương án dự phòng.
+    return visibleProducts.slice(0, 4);
+};
+
 
 // --- Order Service ---
-export const getOrders = (): Promise<Order[]> => fetchFromApi<Order[]>('/orders');
-export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
-export const addOrder = (order: Order): Promise<Order> => fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
-export const updateOrder = (id: string, updates: Partial<Order>): Promise<Order> => fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const updateOrderStatus = (id: string, status: OrderStatus): Promise<Order> => fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
-export const deleteOrder = (id: string): Promise<void> => fetchFromApi<void>(`/orders/${id}`, { method: 'DELETE' });
+export const getOrders = async (): Promise<Order[]> => {
+    const orders = getOrInitLocalStorage(ORDERS_KEY, MOCK_ORDERS);
+    return orders.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+};
 
-// --- Chat Log Service ---
-export const getChatLogs = (): Promise<ChatLogSession[]> => fetchFromApi<ChatLogSession[]>('/chatlogs');
-export const saveChatLogSession = (session: ChatLogSession): Promise<ChatLogSession> => fetchFromApi<ChatLogSession>('/chatlogs', { method: 'POST', body: JSON.stringify(session) });
+export const addOrder = async (order: Order): Promise<Order> => {
+    const orders = await getOrders();
+    setLocalStorage(ORDERS_KEY, [order, ...orders]);
+    return order;
+};
 
-// --- Server Info ---
-export const getServerInfo = (): Promise<any> => fetchFromApi<any>('/server-info');
+export const updateOrderStatus = async (id: string, status: OrderStatus): Promise<void> => {
+    let orders = await getOrders();
+    orders = orders.map(o => o.id === id ? { ...o, status } : o);
+    setLocalStorage(ORDERS_KEY, orders);
+};
 
-// --- Media Library ---
-export const getMediaItems = (): Promise<any[]> => fetchFromApi<any[]>('/media');
-export const addMediaItem = (item: any): Promise<any> => fetchFromApi<any>('/media', { method: 'POST', body: JSON.stringify(item) });
-export const deleteMediaItem = (id: string): Promise<void> => fetchFromApi<void>(`/media/${id}`, { method: 'DELETE' });
+// --- Article Service ---
+export const getArticles = async (): Promise<Article[]> => {
+    const articles = getOrInitLocalStorage(ARTICLES_KEY, MOCK_ARTICLES);
+    return articles.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
 
-// --- Financials ---
-export const getFinancialTransactions = (): Promise<FinancialTransaction[]> => fetchFromApi<FinancialTransaction[]>('/financials/transactions');
-export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 'id'>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>('/financials/transactions', { method: 'POST', body: JSON.stringify(transaction) });
-export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
-export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
-export const savePayrollRecords = (records: PayrollRecord[]): Promise<void> => fetchFromApi<void>('/financials/payroll', { method: 'POST', body: JSON.stringify(records) });
+export const getArticle = async (id: string): Promise<Article | null> => {
+    const articles = await getArticles();
+    // Also check AI articles from a different storage
+    const aiArticlesRaw = localStorage.getItem('aiGeneratedArticles_v1');
+    const aiArticles = aiArticlesRaw ? JSON.parse(aiArticlesRaw) : [];
+    return [...articles, ...aiArticles].find(a => a.id === id) || null;
+};
 
-// --- Service Tickets ---
-export const getServiceTickets = (): Promise<ServiceTicket[]> => fetchFromApi<ServiceTicket[]>('/service-tickets');
-export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
-export const updateServiceTicket = (id: string, updates: Partial<ServiceTicket>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>(`/service-tickets/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const deleteServiceTicket = (id: string): Promise<void> => fetchFromApi<void>(`/service-tickets/${id}`, { method: 'DELETE' });
+export const addArticle = async (article: Omit<Article, 'id'>): Promise<Article> => {
+    const articles = await getArticles();
+    const newArticle = { ...article, id: `art-${Date.now()}`, date: new Date().toISOString() };
+    setLocalStorage(ARTICLES_KEY, [newArticle, ...articles]);
+    return newArticle;
+};
 
+export const updateArticle = async (id: string, articleUpdate: Partial<Article>): Promise<void> => {
+    let articles = await getArticles();
+    articles = articles.map(a => a.id === id ? { ...a, ...articleUpdate, id } : a);
+    setLocalStorage(ARTICLES_KEY, articles);
+};
 
-// --- Inventory ---
-export const getInventory = (): Promise<Inventory[]> => fetchFromApi<Inventory[]>('/inventory');
+export const deleteArticle = async (id: string): Promise<void> => {
+    const articles = await getArticles();
+    setLocalStorage(ARTICLES_KEY, articles.filter(a => a.id !== id));
+};
 
-// --- Quotations ---
-export const getQuotations = (): Promise<Quotation[]> => fetchFromApi<Quotation[]>('/quotations');
-export const addQuotation = (quotation: Omit<Quotation, 'id'>): Promise<Quotation> => fetchFromApi<Quotation>('/quotations', { method: 'POST', body: JSON.stringify(quotation) });
-export const updateQuotation = (id: string, updates: Partial<Quotation>): Promise<Quotation> => fetchFromApi<Quotation>(`/quotations/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const deleteQuotation = (id: string): Promise<void> => fetchFromApi<void>(`/quotations/${id}`, { method: 'DELETE' });
+// --- Media Library Service ---
+export const getMediaItems = async (): Promise<MediaItem[]> => {
+    const items = getOrInitLocalStorage(MEDIA_KEY, []);
+    return items.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+};
 
-// --- Returns ---
-export const getReturns = (): Promise<ReturnTicket[]> => fetchFromApi<ReturnTicket[]>('/returns');
-export const addReturn = (ticket: Omit<ReturnTicket, 'id'>): Promise<ReturnTicket> => fetchFromApi<ReturnTicket>('/returns', { method: 'POST', body: JSON.stringify(ticket) });
-export const updateReturn = (id: string, updates: Partial<ReturnTicket>): Promise<ReturnTicket> => fetchFromApi<ReturnTicket>(`/returns/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const deleteReturn = (id: string): Promise<void> => fetchFromApi<void>(`/returns/${id}`, { method: 'DELETE' });
+export const addMediaItem = async (item: Omit<MediaItem, 'id'>): Promise<MediaItem> => {
+    const items = await getMediaItems();
+    const newItem = { ...item, id: `media-${Date.now()}` };
+    setLocalStorage(MEDIA_KEY, [newItem, ...items]);
+    return newItem;
+};
 
-// --- Suppliers ---
-export const getSuppliers = (): Promise<Supplier[]> => fetchFromApi<Supplier[]>('/suppliers');
-export const addSupplier = (supplier: Omit<Supplier, 'id'>): Promise<Supplier> => fetchFromApi<Supplier>('/suppliers', { method: 'POST', body: JSON.stringify(supplier) });
-export const updateSupplier = (id: string, updates: Partial<Supplier>): Promise<Supplier> => fetchFromApi<Supplier>(`/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const deleteSupplier = (id: string): Promise<void> => fetchFromApi<void>(`/suppliers/${id}`, { method: 'DELETE' });
+export const deleteMediaItem = async (id: string): Promise<void> => {
+    const items = await getMediaItems();
+    setLocalStorage(MEDIA_KEY, items.filter(i => i.id !== id));
+};

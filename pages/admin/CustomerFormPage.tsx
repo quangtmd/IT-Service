@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 // Fix: Import DebtStatus type to correctly type DEBT_STATUS_OPTIONS and resolve type errors.
-import { User, DebtStatus, StaffRole, USER_STATUS_OPTIONS } from '../../types';
+import { User, DebtStatus } from '../../types';
 import Button from '../../components/ui/Button';
 import ImageUploadInput from '../../components/ui/ImageUploadInput';
 import { useAuth } from '../../contexts/AuthContext';

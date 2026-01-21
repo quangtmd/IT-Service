@@ -1,7 +1,6 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
+import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
@@ -87,11 +86,11 @@ const HomeAboutIts: React.FC = () => {
                 
                 {aboutConfig.buttonLink && aboutConfig.buttonText && (
                     <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{ animationDelay: '0.5s' }}>
-                        <ReactRouterDOM.Link to={aboutConfig.buttonLink}>
+                        <Link to={aboutConfig.buttonLink}>
                         <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-md hover:shadow-primary/30">
                             {aboutConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                         </Button>
-                        </ReactRouterDOM.Link>
+                        </Link>
                     </div>
                 )}
             </div>

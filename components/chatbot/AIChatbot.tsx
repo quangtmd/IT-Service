@@ -5,16 +5,6 @@ import Button from '../ui/Button';
 import geminiService from '../../services/geminiService';
 import { Chat, GenerateContentResponse } from '@google/genai';
 import * as Constants from '../../constants.tsx'; 
-import { useChatbotContext } from '../../contexts/ChatbotContext'; // Import the context hook
-import { saveChatLogSession } from '../../services/localDataService';
-
-// Add SpeechRecognition types for browser compatibility
-declare global {
-  interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
-  }
-}
 
 interface AIChatbotProps {
   isOpen: boolean;
@@ -38,15 +28,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [userInfoError, setUserInfoError] = useState<string | null>(null);
   const [currentChatLogSession, setCurrentChatLogSession] = useState<ChatLogSession | null>(null);
 
-  const { currentContext } = useChatbotContext(); // Get the current viewing context
-
-  // New state for image and voice input
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<any | null>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-
 
   const loadSiteSettings = useCallback(() => {
     const storedSettingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
@@ -60,12 +41,8 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   useEffect(() => {
     loadSiteSettings();
     window.addEventListener('siteSettingsUpdated', loadSiteSettings);
-    // Cleanup function for speech recognition
     return () => {
       window.removeEventListener('siteSettingsUpdated', loadSiteSettings);
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
     };
   }, [loadSiteSettings]);
 
@@ -132,14 +109,13 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     }
   }, [isOpen, isUserInfoSubmitted, chatSession, initializeChat]);
 
-  const saveChatLog = useCallback(async () => {
+  const saveChatLog = useCallback(() => {
     if (currentChatLogSession && currentChatLogSession.messages.length > 0) {
-      try {
-        await saveChatLogSession(currentChatLogSession);
-      } catch (error) {
-        console.error("Failed to save chat log to backend:", error);
-        // Optionally notify user of save failure, but don't block UI
-      }
+      const existingLogsRaw = localStorage.getItem(Constants.CHAT_LOGS_STORAGE_KEY);
+      const existingLogs: ChatLogSession[] = existingLogsRaw ? JSON.parse(existingLogsRaw) : [];
+      // Add the current session to the beginning, ensuring it's the most recent
+      const updatedLogs = [currentChatLogSession, ...existingLogs.filter(log => log.id !== currentChatLogSession.id)].slice(0, 50);
+      localStorage.setItem(Constants.CHAT_LOGS_STORAGE_KEY, JSON.stringify(updatedLogs));
     }
   }, [currentChatLogSession]);
 
@@ -162,92 +138,22 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     }
     setIsUserInfoSubmitted(true);
   };
-  
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Simple size check (e.g., 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 5MB.');
-        return;
-      }
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
-      setImagePreview(null);
-    }
-    if (imageInputRef.current) {
-        imageInputRef.current.value = '';
-    }
-  };
-
-  const handleToggleRecording = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Trình duyệt của bạn không hỗ trợ tính năng nhập liệu bằng giọng nói.');
-      return;
-    }
-
-    if (isRecording && recognitionRef.current) {
-      recognitionRef.current.stop();
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    recognition.lang = 'vi-VN';
-    recognition.interimResults = false;
-    recognition.continuous = false;
-
-    recognition.onstart = () => setIsRecording(true);
-    recognition.onend = () => {
-        setIsRecording(false);
-        recognitionRef.current = null;
-    };
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[event.results.length - 1][0].transcript;
-      setInput(prev => prev ? `${prev} ${transcript}` : transcript);
-    };
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-      setIsRecording(false);
-    };
-
-    recognition.start();
-  };
 
 
   const handleSendMessage = async (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
-    if ((!input.trim() && !imageFile) || isLoading || !chatSession || !isUserInfoSubmitted) return;
+    if (!input.trim() || isLoading || !chatSession || !isUserInfoSubmitted) return;
 
-    const currentInput = input;
-    const currentImageFile = imageFile;
-    const currentImagePreview = imagePreview;
-
+    const userMessageText = input;
     const userMessage: ChatMessageType = {
-        id: `user-${Date.now()}`,
-        text: currentInput,
-        sender: 'user',
-        timestamp: new Date(),
-        imageUrl: currentImagePreview || undefined,
+      id: `user-${Date.now()}`,
+      text: userMessageText,
+      sender: 'user',
+      timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
-    setCurrentChatLogSession(prevLog => prevLog ? { ...prevLog, messages: [...prevLog.messages, userMessage] } : null);
-
-    const messageWithContext = currentContext ? `[Bối cảnh: ${currentContext}]\n\n${currentInput}` : currentInput;
-    
+    setCurrentChatLogSession(prevLog => prevLog ? {...prevLog, messages: [...prevLog.messages, userMessage]} : null);
     setInput('');
-    setImageFile(null);
-    setImagePreview(null);
-    if (currentImagePreview) URL.revokeObjectURL(currentImagePreview);
-
     setIsLoading(true);
     setError(null);
     setCurrentGroundingChunks(undefined);
@@ -258,38 +164,34 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     setCurrentChatLogSession(prevLog => prevLog ? {...prevLog, messages: [...prevLog.messages, initialBotMessage]} : null);
     
     try {
-        let stream: AsyncIterable<GenerateContentResponse>;
+      const stream: AsyncIterable<GenerateContentResponse> = await geminiService.sendMessageToChatStream(userMessageText, chatSession);
+      let currentText = '';
+      for await (const chunk of stream) {
+        currentText += chunk.text; 
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg.id === botMessageId ? { ...msg, text: currentText } : msg
+          )
+        );
+        setCurrentChatLogSession(prevLog => {
+            if (!prevLog) return null;
+            const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: currentText } : m);
+            return {...prevLog, messages: updatedMessages};
+        });
 
-        if (currentImageFile) {
-            const base64Data = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(currentImageFile);
-                reader.onload = () => resolve((reader.result as string).split(',')[1]);
-                reader.onerror = error => reject(error);
-            });
-            stream = await geminiService.sendMessageWithImage(messageWithContext, base64Data, currentImageFile.type, chatSession);
-        } else {
-            stream = await geminiService.sendMessageToChatStream(messageWithContext, chatSession);
+         if (chunk.candidates?.[0]?.groundingMetadata?.groundingChunks) {
+          setCurrentGroundingChunks(chunk.candidates[0].groundingMetadata.groundingChunks as GroundingChunk[]);
         }
-
-        let currentText = '';
-        for await (const chunk of stream) {
-            currentText += chunk.text; 
-            setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: currentText } : msg));
-            setCurrentChatLogSession(prevLog => {
-                if (!prevLog) return null;
-                const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: currentText } : m);
-                return {...prevLog, messages: updatedMessages};
-            });
-            if (chunk.candidates?.[0]?.groundingMetadata?.groundingChunks) {
-                setCurrentGroundingChunks(chunk.candidates[0].groundingMetadata.groundingChunks as GroundingChunk[]);
-            }
-        }
+      }
     } catch (err) {
       console.error("Error sending message:", err);
       const errorText = err instanceof Error ? err.message : "Đã xảy ra lỗi khi gửi tin nhắn.";
       setError(errorText);
-      setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: `Lỗi: ${errorText}`, sender: 'system' } : msg));
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === botMessageId ? { ...msg, text: `Lỗi: ${errorText}`, sender: 'system' } : msg
+        )
+      );
       setCurrentChatLogSession(prevLog => {
         if (!prevLog) return null;
         const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: `Lỗi: ${errorText}`, sender: 'system' as const } : m);
@@ -363,37 +265,22 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
             {error && <div className="text-danger-text text-sm p-2 bg-danger-bg rounded border border-danger-border">{error}</div>}
           </div>
 
-          <div className="p-4 border-t border-borderDefault bg-bgBase">
-            {imagePreview && (
-                <div className="mb-2 relative w-20 h-20">
-                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover rounded-md" />
-                    <button onClick={handleRemoveImage} className="absolute -top-1 -right-1 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md">&times;</button>
-                </div>
-            )}
-            <form onSubmit={handleSendMessage}>
-              <div className="flex items-center space-x-2">
-                <input type="file" ref={imageInputRef} onChange={handleImageChange} accept="image/*" className="hidden" aria-hidden="true" />
-                <Button type="button" variant="ghost" className="!px-2 text-textMuted" onClick={() => imageInputRef.current?.click()} aria-label="Đính kèm ảnh" title="Đính kèm ảnh">
-                    <i className="fas fa-paperclip"></i>
-                </Button>
-                 <Button type="button" variant="ghost" className={`!px-2 ${isRecording ? 'text-red-500 animate-pulse' : 'text-textMuted'}`} onClick={handleToggleRecording} aria-label="Bật/tắt nhập giọng nói" title="Nhập bằng giọng nói">
-                    <i className="fas fa-microphone"></i>
-                </Button>
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Nhập tin nhắn..."
-                  className="flex-grow bg-white border border-borderStrong text-textBase rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none placeholder:text-textSubtle"
-                  disabled={isLoading || !chatSession}
-                  aria-label="Tin nhắn của bạn"
-                />
-                <Button type="submit" isLoading={isLoading} disabled={isLoading || (!input.trim() && !imageFile) || !chatSession} aria-label="Gửi tin nhắn" className="w-10 h-10 !p-0 flex-shrink-0">
-                  <i className="fas fa-paper-plane"></i>
-                </Button>
-              </div>
-            </form>
-          </div>
+          <form onSubmit={handleSendMessage} className="p-4 border-t border-borderDefault bg-bgBase">
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Nhập tin nhắn..."
+                className="flex-grow bg-white border border-borderStrong text-textBase rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none placeholder:text-textSubtle"
+                disabled={isLoading || !chatSession}
+                aria-label="Tin nhắn của bạn"
+              />
+              <Button type="submit" isLoading={isLoading} disabled={isLoading || !input.trim() || !chatSession} aria-label="Gửi tin nhắn">
+                <i className="fas fa-paper-plane"></i>
+              </Button>
+            </div>
+          </form>
         </>
       )}
     </div>

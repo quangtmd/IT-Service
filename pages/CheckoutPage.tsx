@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,7 +10,7 @@ import { addOrder } from '../services/localDataService';
 const CheckoutPage: React.FC = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
   const { currentUser, isAuthenticated, addAdminNotification } = useAuth();
-  const navigate = ReactRouterDOM.useNavigate();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState<CheckoutFormData>({
     fullName: '', phone: '', address: '', email: '', notes: '',
@@ -74,9 +74,7 @@ const CheckoutPage: React.FC = () => {
         }
         
         const newOrder: Order = {
-            id: newOrderId,
-            userId: currentUser?.id, // Add userId if user is logged in
-            customerInfo: formData,
+            id: newOrderId, customerInfo: formData,
             items: cart.map(item => ({ productId: item.id, productName: item.name, quantity: item.quantity, price: item.price })),
             totalAmount: total, orderDate: new Date().toISOString(), status: 'Chờ xử lý', paymentInfo: paymentInfo,
         };
@@ -93,8 +91,8 @@ const CheckoutPage: React.FC = () => {
             setCheckoutStep('payment_details');
         }
     } catch (error) {
-        console.error("Lỗi khi tạo đơn hàng:", error);
-        alert('Đã xảy ra lỗi không mong muốn khi tạo đơn hàng. ' + (error instanceof Error ? error.message : ''));
+        console.error("Lỗi khi lưu đơn hàng vào Local Storage:", error);
+        alert('Đã xảy ra lỗi không mong muốn khi tạo đơn hàng.');
     } finally {
         setIsSubmitting(false);
     }
@@ -111,7 +109,7 @@ const CheckoutPage: React.FC = () => {
         <i className="fas fa-shopping-cart text-6xl text-textSubtle mb-6"></i>
         <h1 className="text-3xl font-semibold text-textBase mb-4">Giỏ hàng của bạn trống</h1>
         <p className="text-textMuted mb-6">Không có gì để thanh toán. Hãy thêm sản phẩm vào giỏ!</p>
-        <ReactRouterDOM.Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></ReactRouterDOM.Link>
+        <Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></Link>
       </div>
     );
   }
@@ -134,8 +132,8 @@ const CheckoutPage: React.FC = () => {
             }
           </p>
           <div className="space-y-3 sm:space-y-0 sm:space-x-3">
-            <ReactRouterDOM.Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></ReactRouterDOM.Link>
-            <ReactRouterDOM.Link to="/home"><Button variant="outline" size="lg">Về trang chủ</Button></ReactRouterDOM.Link>
+            <Link to="/shop"><Button variant="primary" size="lg">Tiếp tục mua sắm</Button></Link>
+            <Link to="/home"><Button variant="outline" size="lg">Về trang chủ</Button></Link>
           </div>
         </div>
       </div>

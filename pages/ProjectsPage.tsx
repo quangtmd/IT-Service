@@ -2,7 +2,7 @@
 import React from 'react';
 import { MOCK_PROJECTS } from '../data/mockData';
 import Card from '../components/ui/Card';
-import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
+import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 
 const ProjectsPage: React.FC = () => {
   return (

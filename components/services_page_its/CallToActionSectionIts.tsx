@@ -1,6 +1,6 @@
 
 import React from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Button from '../ui/Button';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
 
@@ -35,13 +35,13 @@ const CallToActionSectionIts: React.FC<CallToActionSectionItsProps> = ({
             {subtitle && <p className="text-neutral-300 text-lg max-w-2xl mx-auto lg:mx-0">{subtitle}</p>}
           </div>
           <div className="flex-shrink-0 space-y-3 sm:space-y-0 sm:flex sm:flex-col md:flex-row md:space-x-4">
-            <ReactRouterDOM.Link to={primaryButtonLink} className="block md:inline-block">
+            <Link to={primaryButtonLink} className="block md:inline-block">
               <Button variant="primary" size="lg" className="w-full md:w-auto px-8 py-3 shadow-lg hover:shadow-primary/40 transition-shadow">
                 {primaryButtonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
               </Button>
-            </ReactRouterDOM.Link>
+            </Link>
             {secondaryButtonLink && secondaryButtonText && (
-              <ReactRouterDOM.Link to={secondaryButtonLink} className="block md:inline-block">
+              <Link to={secondaryButtonLink} className="block md:inline-block">
                 <Button
                   variant="outline"
                   size="lg"
@@ -49,7 +49,7 @@ const CallToActionSectionIts: React.FC<CallToActionSectionItsProps> = ({
                 >
                   {secondaryButtonText}
                 </Button>
-              </ReactRouterDOM.Link>
+              </Link>
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
+import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
@@ -53,7 +53,7 @@ const HomeCallToActionIts: React.FC = () => {
           {ctaConfig.description || "Default CTA description."}
         </p>
         {ctaConfig.buttonLink && ctaConfig.buttonText && (
-          <ReactRouterDOM.Link to={ctaConfig.buttonLink}>
+          <Link to={ctaConfig.buttonLink}>
             <Button
               variant="primary"
               size="lg"
@@ -61,7 +61,7 @@ const HomeCallToActionIts: React.FC = () => {
             >
               {ctaConfig.buttonText} <i className="fas fa-rocket ml-2"></i>
             </Button>
-          </ReactRouterDOM.Link>
+          </Link>
         )}
       </div>
     </section>

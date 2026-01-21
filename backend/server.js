@@ -1,416 +1,381 @@
-import express from 'express';
-import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import pool from './db.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
+const express = require('express');
+const mysql = require('mysql2/promise');
+const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+// Railway hoặc Hostinger sẽ cung cấp biến PORT. Nếu không có, dùng cổng 3001 cho local.
+const port = process.env.PORT || 3001; 
 
+// Kích hoạt CORS để React App (chạy ở cổng khác) có thể gọi API
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // Increase limit for media uploads
+app.use(express.json());
 
-// --- Static Files Setup ---
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-// Resolve the absolute path to the 'dist' folder at the project root
-const staticFilesPath = path.resolve(__dirname, '..', 'dist');
+/*
+-- HƯỚNG DẪN CÀI ĐẶT DATABASE MYSQL --
+1. Hãy chắc chắn rằng bạn đã cài đặt MySQL Server.
+2. Tạo một database mới, ví dụ: CREATE DATABASE iq_technology_db;
+3. Chạy câu lệnh SQL dưới đây để tạo bảng 'products':
 
-console.log(`[Static Files] Server __dirname: ${__dirname}`);
-console.log(`[Static Files] Resolved Project Root: ${path.resolve(__dirname, '..')}`);
-console.log(`[Static Files] Attempting to serve static files from: ${staticFilesPath}`);
+CREATE TABLE products (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    mainCategory VARCHAR(255),
+    subCategory VARCHAR(255),
+    category VARCHAR(255),
+    price DECIMAL(10, 0) NOT NULL,
+    originalPrice DECIMAL(10, 0),
+    imageUrls JSON, -- Lưu dưới dạng mảng JSON: '["url1", "url2"]'
+    description TEXT,
+    shortDescription TEXT,
+    specifications JSON, -- Lưu dưới dạng đối tượng JSON: '{"CPU": "Intel Core i5", "RAM": "16GB"}'
+    stock INT NOT NULL,
+    status VARCHAR(50),
+    rating FLOAT,
+    reviews INT,
+    brand VARCHAR(255),
+    tags JSON, -- Lưu dưới dạng mảng JSON: '["tag1", "tag2"]'
+    brandLogoUrl VARCHAR(255),
+    isVisible BOOLEAN DEFAULT TRUE,
+    seoMetaTitle VARCHAR(255),
+    seoMetaDescription TEXT,
+    slug VARCHAR(255) UNIQUE
+);
 
-app.use(express.static(staticFilesPath));
+4. Chạy câu lệnh SQL dưới đây để tạo bảng 'orders':
+CREATE TABLE orders (
+    id VARCHAR(255) PRIMARY KEY,
+    customerInfo JSON NOT NULL, -- { fullName, phone, address, email, notes }
+    items JSON NOT NULL, -- [{ productId, productName, quantity, price }]
+    totalAmount DECIMAL(12, 0) NOT NULL,
+    orderDate DATETIME NOT NULL,
+    status VARCHAR(50) NOT NULL, -- 'Chờ xử lý', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'
+    shippingInfo JSON, -- { carrier, trackingNumber, shippingStatus }
+    paymentInfo JSON NOT NULL -- { method, status, transactionId, amountToPay }
+);
 
-// API router
-const apiRouter = express.Router();
-app.use('/api', apiRouter);
+5. Thêm một vài dữ liệu mẫu vào bảng 'products'.
+*/
 
-// --- API Endpoints ---
 
-async function query(sql, params) {
-  const connection = await pool.getConnection();
-  try {
-    const [results] = await connection.execute(sql, params);
-    return results;
-  } finally {
-    connection.release();
-  }
+// --- CẤU HÌNH KẾT NỐI MYSQL ---
+// Đọc thông tin kết nối từ các biến môi trường (ưu tiên) hoặc dùng giá trị fallback.
+// Các biến môi trường này cần được thiết lập trên server hosting của bạn (ví dụ: Hostinger, Railway).
+// Khi chạy local, bạn có thể tạo file .env trong thư mục backend để định nghĩa chúng.
+const dbConfig = {
+  host: process.env.MYSQLHOST || 'your_hostinger_mysql_host', // Thay thế bằng Host của Hostinger
+  user: process.env.MYSQLUSER || 'your_hostinger_mysql_user', // Thay thế bằng User của Hostinger
+  password: process.env.MYSQLPASSWORD || 'your_database_password', // Thay thế bằng mật khẩu DB
+  database: process.env.MYSQLDATABASE || 'your_hostinger_database_name', // Thay thế bằng tên DB
+  port: process.env.MYSQLPORT || 3306
+};
+
+
+let pool;
+try {
+    pool = mysql.createPool(dbConfig);
+    console.log('Đã tạo kết nối MySQL pool thành công.');
+} catch (error) {
+    console.error('Lỗi khi tạo kết nối MySQL pool:', error);
+    process.exit(1); // Thoát ứng dụng nếu không thể tạo pool
 }
 
-// GET /api/server-info
-apiRouter.get('/server-info', (req, res) => {
-    res.json({
-        outboundIp: process.env.RENDER_EXTERNAL_IP || 'Not available',
-        message: "This IP is provided by the Render environment. Use it to whitelist database connections."
-    });
-});
-
-// USERS
-apiRouter.get('/users', async (req, res) => res.json(await query('SELECT id, username, email, role, staffRole, imageUrl, phone, address, joinDate, status, position, isLocked, dateOfBirth, origin, loyaltyPoints, debtStatus, assignedStaffId FROM Users')));
-apiRouter.post('/users/login', async (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).json({ message: 'Email và mật khẩu là bắt buộc.' });
-    }
-    const users = await query('SELECT * FROM Users WHERE email = ? AND password = ?', [email, password]);
-    if (users.length > 0) {
-        const { password, ...user } = users[0];
-        res.json(user);
-    } else {
-        res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
-    }
-});
-apiRouter.post('/users', async (req, res) => {
-    const user = { ...req.body, id: `user-${Date.now()}` };
-    await query('INSERT INTO Users SET ?', [user]);
-    const { password, ...userToReturn } = user;
-    res.status(201).json(userToReturn);
-});
-apiRouter.put('/users/:id', async (req, res) => {
-    const { password, ...updates } = req.body; // Never update password this way
-    await query('UPDATE Users SET ? WHERE id = ?', [updates, req.params.id]);
-    res.json({ message: 'User updated' });
-});
-apiRouter.delete('/users/:id', async (req, res) => {
-    await query('DELETE FROM Users WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
-
+// --- HELPERS FOR JSON FIELDS ---
 
 // PRODUCTS
-apiRouter.get('/products', async (req, res) => {
-    let baseQuery = 'SELECT * FROM Products';
-    let countQuery = 'SELECT COUNT(*) as total FROM Products';
-    const whereClauses = [];
-    let params = [];
-    let countParams = [];
-
-    if (req.query.is_featured === 'true') {
-        whereClauses.push('is_featured = ?');
-        params.push(1);
-        countParams.push(1);
+const parseJsonFields = (product) => {
+    try {
+        if (product.imageUrls && typeof product.imageUrls === 'string') product.imageUrls = JSON.parse(product.imageUrls);
+        if (product.specifications && typeof product.specifications === 'string') product.specifications = JSON.parse(product.specifications);
+        if (product.tags && typeof product.tags === 'string') product.tags = JSON.parse(product.tags);
+    } catch (e) {
+        console.error(`Lỗi khi phân tích JSON cho sản phẩm ID ${product.id}:`, e);
+        if (typeof product.imageUrls !== 'object' || product.imageUrls === null) product.imageUrls = [];
+        if (typeof product.specifications !== 'object' || product.specifications === null) product.specifications = {};
+        if (typeof product.tags !== 'object' || product.tags === null) product.tags = [];
     }
-    if (req.query.mainCategory) {
-        whereClauses.push('mainCategory = ?');
-        params.push(req.query.mainCategory);
-        countParams.push(req.query.mainCategory);
-    }
-     if (req.query.subCategory) {
-        whereClauses.push('subCategory = ?');
-        params.push(req.query.subCategory);
-        countParams.push(req.query.subCategory);
-    }
-    if (req.query.q) {
-        whereClauses.push('name LIKE ?');
-        params.push(`%${req.query.q}%`);
-        countParams.push(`%${req.query.q}%`);
-    }
-     if (req.query.tags) {
-        whereClauses.push('JSON_CONTAINS(tags, ?)');
-        params.push(`"${req.query.tags}"`);
-        countParams.push(`"${req.query.tags}"`);
-    }
-
-    if (whereClauses.length > 0) {
-        const whereString = ' WHERE ' + whereClauses.join(' AND ');
-        baseQuery += whereString;
-        countQuery += whereString;
-    }
-
-    const [totalResult] = await query(countQuery, countParams);
-    const totalProducts = totalResult[0].total;
-    
-    const limit = parseInt(req.query.limit) || 12;
-    const page = parseInt(req.query.page) || 1;
-    const offset = (page - 1) * limit;
-
-    baseQuery += ` ORDER BY id DESC LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
-
-    const products = await query(baseQuery, params);
-    
-    res.json({
-        products: products.map(p => ({
-            ...p,
-            tags: typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags,
-            specifications: typeof p.specifications === 'string' ? JSON.parse(p.specifications) : p.specifications,
-            imageUrls: typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls) : p.imageUrls,
-        })),
-        totalProducts: totalProducts
-    });
-});
-apiRouter.get('/products/:id', async (req, res) => {
-    const products = await query('SELECT * FROM Products WHERE id = ?', [req.params.id]);
-    if (products.length === 0) return res.status(404).json({ message: 'Product not found'});
-    const p = products[0];
-     res.json({
-        ...p,
-        tags: typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags,
-        specifications: typeof p.specifications === 'string' ? JSON.parse(p.specifications) : p.specifications,
-        imageUrls: typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls) : p.imageUrls,
-    });
-});
-apiRouter.post('/products', async (req, res) => {
-    const product = { 
-      ...req.body,
-      id: `prod-${Date.now()}`,
-      tags: JSON.stringify(req.body.tags || []),
-      specifications: JSON.stringify(req.body.specifications || {}),
-      imageUrls: JSON.stringify(req.body.imageUrls || [])
-    };
-    await query('INSERT INTO Products SET ?', [product]);
-    res.status(201).json(req.body);
-});
-apiRouter.put('/products/:id', async (req, res) => {
-    const product = { 
-      ...req.body,
-      tags: JSON.stringify(req.body.tags || []),
-      specifications: JSON.stringify(req.body.specifications || {}),
-      imageUrls: JSON.stringify(req.body.imageUrls || [])
-    };
-    await query('UPDATE Products SET ? WHERE id = ?', [product, req.params.id]);
-    res.json({ message: 'Product updated' });
-});
-apiRouter.delete('/products/:id', async (req, res) => {
-    await query('DELETE FROM Products WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
-
-// ARTICLES
-apiRouter.get('/articles', async (req, res) => res.json(await query('SELECT * FROM Articles ORDER BY date DESC')));
-apiRouter.get('/articles/:id', async (req, res) => {
-     const articles = await query('SELECT * FROM Articles WHERE id = ?', [req.params.id]);
-     if (articles.length > 0) res.json(articles[0]);
-     else res.status(404).json({message: 'Article not found'});
-});
-apiRouter.post('/articles', async (req, res) => {
-    const article = { ...req.body, id: `art-${Date.now()}` };
-    await query('INSERT INTO Articles SET ?', [article]);
-    res.status(201).json(article);
-});
-apiRouter.put('/articles/:id', async (req, res) => {
-    await query('UPDATE Articles SET ? WHERE id = ?', [req.body, req.params.id]);
-    res.json({ message: 'Article updated' });
-});
-apiRouter.delete('/articles/:id', async (req, res) => {
-    await query('DELETE FROM Articles WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
+    return product;
+}
+const prepareProductForDb = (product) => {
+    const dbProduct = { ...product };
+    if (Array.isArray(dbProduct.imageUrls)) dbProduct.imageUrls = JSON.stringify(dbProduct.imageUrls);
+    if (typeof dbProduct.specifications === 'object' && dbProduct.specifications !== null) dbProduct.specifications = JSON.stringify(dbProduct.specifications);
+    if (Array.isArray(dbProduct.tags)) dbProduct.tags = JSON.stringify(dbProduct.tags);
+    return dbProduct;
+};
 
 // ORDERS
-apiRouter.get('/orders', async (req, res) => {
-    const orders = await query('SELECT * FROM Orders ORDER BY orderDate DESC');
-    res.json(orders.map(o => ({
-        ...o,
-        customerInfo: JSON.parse(o.customerInfo),
-        items: JSON.parse(o.items),
-        paymentInfo: JSON.parse(o.paymentInfo)
-    })));
-});
-apiRouter.get('/orders/customer/:customerId', async (req, res) => {
-    const orders = await query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [req.params.customerId]);
-     res.json(orders.map(o => ({
-        ...o,
-        customerInfo: JSON.parse(o.customerInfo),
-        items: JSON.parse(o.items),
-        paymentInfo: JSON.parse(o.paymentInfo)
-    })));
-});
-apiRouter.post('/orders', async (req, res) => {
-    const order = {
-        ...req.body,
-        customerInfo: JSON.stringify(req.body.customerInfo),
-        items: JSON.stringify(req.body.items),
-        paymentInfo: JSON.stringify(req.body.paymentInfo)
-    };
-    await query('INSERT INTO Orders SET ?', [order]);
-    res.status(201).json(req.body);
-});
-apiRouter.put('/orders/:id', async (req, res) => {
-    const order = {
-        ...req.body,
-        customerInfo: JSON.stringify(req.body.customerInfo),
-        items: JSON.stringify(req.body.items),
-        paymentInfo: JSON.stringify(req.body.paymentInfo)
-    };
-    await query('UPDATE Orders SET ? WHERE id = ?', [order, req.params.id]);
-    res.json(req.body);
-});
-apiRouter.delete('/orders/:id', async (req, res) => {
-    await query('DELETE FROM Orders WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
-
-// CHATLOGS
-apiRouter.get('/chatlogs', async (req, res) => {
-    const logs = await query('SELECT * FROM ChatLogs ORDER BY startTime DESC');
-    res.json(logs.map(l => ({...l, messages: JSON.parse(l.messages)})));
-});
-apiRouter.post('/chatlogs', async (req, res) => {
-    const log = { ...req.body, messages: JSON.stringify(req.body.messages) };
-    await query('INSERT INTO ChatLogs SET ? ON DUPLICATE KEY UPDATE messages = VALUES(messages), startTime = VALUES(startTime)', [log]);
-    res.status(201).json(req.body);
-});
-
-// MEDIA
-apiRouter.get('/media', async (req, res) => res.json(await query('SELECT * FROM Media ORDER BY uploadedAt DESC')));
-apiRouter.post('/media', async (req, res) => {
-    const item = { ...req.body, id: `media-${Date.now()}` };
-    await query('INSERT INTO Media SET ?', [item]);
-    res.status(201).json(item);
-});
-apiRouter.delete('/media/:id', async (req, res) => {
-    await query('DELETE FROM Media WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
-
-// FINANCIALS
-apiRouter.get('/financials/transactions', async (req, res) => res.json(await query('SELECT * FROM FinancialTransactions ORDER BY date DESC')));
-apiRouter.post('/financials/transactions', async (req, res) => {
-    const item = { ...req.body, id: `trans-${Date.now()}` };
-    await query('INSERT INTO FinancialTransactions SET ?', [item]);
-    res.status(201).json(item);
-});
-apiRouter.put('/financials/transactions/:id', async (req, res) => {
-    await query('UPDATE FinancialTransactions SET ? WHERE id = ?', [req.body, req.params.id]);
-    res.json({ message: 'Transaction updated' });
-});
-apiRouter.delete('/financials/transactions/:id', async (req, res) => {
-    await query('DELETE FROM FinancialTransactions WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
-apiRouter.get('/financials/payroll', async (req, res) => res.json(await query('SELECT * FROM PayrollRecords')));
-apiRouter.post('/financials/payroll', async (req, res) => {
-    const records = req.body;
-    for (const record of records) {
-        await query('INSERT INTO PayrollRecords SET ? ON DUPLICATE KEY UPDATE baseSalary=VALUES(baseSalary), bonus=VALUES(bonus), deduction=VALUES(deduction), finalSalary=VALUES(finalSalary), status=VALUES(status), notes=VALUES(notes)', [record]);
+const parseOrderJsonFields = (order) => {
+    try {
+        if (order.customerInfo && typeof order.customerInfo === 'string') order.customerInfo = JSON.parse(order.customerInfo);
+        if (order.items && typeof order.items === 'string') order.items = JSON.parse(order.items);
+        if (order.shippingInfo && typeof order.shippingInfo === 'string') order.shippingInfo = JSON.parse(order.shippingInfo);
+        if (order.paymentInfo && typeof order.paymentInfo === 'string') order.paymentInfo = JSON.parse(order.paymentInfo);
+    } catch (e) {
+        console.error(`Lỗi khi phân tích JSON cho đơn hàng ID ${order.id}:`, e);
     }
-    res.status(201).json({ message: 'Payroll saved' });
-});
+    return order;
+};
+const prepareOrderForDb = (order) => {
+    const dbOrder = { ...order };
+    if (typeof dbOrder.customerInfo === 'object') dbOrder.customerInfo = JSON.stringify(dbOrder.customerInfo);
+    if (Array.isArray(dbOrder.items)) dbOrder.items = JSON.stringify(dbOrder.items);
+    if (typeof dbOrder.shippingInfo === 'object' && dbOrder.shippingInfo !== null) dbOrder.shippingInfo = JSON.stringify(dbOrder.shippingInfo);
+    if (typeof dbOrder.paymentInfo === 'object') dbOrder.paymentInfo = JSON.stringify(dbOrder.paymentInfo);
+    return dbOrder;
+};
 
-// SERVICE TICKETS
-apiRouter.get('/service-tickets', async (req, res) => {
-    const tickets = await query('SELECT * FROM ServiceTickets ORDER BY createdAt DESC');
-    res.json(tickets.map(t => ({...t, customer_info: JSON.parse(t.customer_info)})));
-});
-apiRouter.post('/service-tickets', async (req, res) => {
-    const ticket = { ...req.body, id: `st-${Date.now()}`, ticket_code: `ST-${String(Date.now()).slice(-6)}`, customer_info: JSON.stringify(req.body.customer_info) };
-    await query('INSERT INTO ServiceTickets SET ?', [ticket]);
-    const { customer_info, ...rest } = ticket;
-    res.status(201).json({ ...rest, customer_info: req.body.customer_info });
-});
-apiRouter.put('/service-tickets/:id', async (req, res) => {
-    const ticket = { ...req.body, customer_info: JSON.stringify(req.body.customer_info) };
-    await query('UPDATE ServiceTickets SET ? WHERE id = ?', [ticket, req.params.id]);
-    res.json({ message: 'Ticket updated' });
-});
-apiRouter.delete('/service-tickets/:id', async (req, res) => {
-    await query('DELETE FROM ServiceTickets WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
+// Share category hierarchy with backend for slug mapping
+const PRODUCT_CATEGORIES_HIERARCHY = [
+  { name: "Máy tính để bàn (PC)", slug: "may_tinh_de_ban", icon: "fas fa-desktop", subCategories: [ { name: "Máy tính văn phòng", slug: "pc_van_phong" }, {name: "Máy tính Gaming", slug: "pc_gaming"}, {name: "Workstation (Máy trạm)", slug:"pc_workstation"}, { name: "Máy đồng bộ", slug: "pc_dong_bo" }, ] },
+  { name: "Laptop", slug: "laptop", icon: "fas fa-laptop", subCategories: [ { name: "Laptop văn phòng", slug: "laptop_van_phong" }, {name: "Laptop Gaming", slug: "laptop_gaming"}, {name: "MacBook", slug:"macbook"}, { name: "Laptop cũ", slug: "laptop_cu" }, ] },
+  { name: "Linh kiện máy tính", slug: "linh_kien_may_tinh", icon: "fas fa-microchip", subCategories: [ { name: "CPU (Vi xử lý Intel, AMD)", slug: "cpu" }, { name: "RAM (DDR4, DDR5…)", slug: "ram" }, { name: "Ổ cứng HDD / SSD (SATA, NVMe)", slug: "storage" }, { name: "VGA (Card màn hình)", slug: "vga" }, { name: "Bo mạch chủ (Mainboard)", slug: "mainboard"}, { name: "Nguồn máy tính (PSU)", slug: "psu"}, { name: "Vỏ máy (Case)", slug: "case"}, { name: "Tản nhiệt (Khí, Nước)", slug: "cooling"} ] },
+  { name: "Thiết bị ngoại vi", slug: "thiet_bi_ngoai_vi", icon: "fas fa-keyboard", subCategories: [ { name: "Màn hình (LCD, LED, 2K, 4K, Gaming…)", slug: "man_hinh" }, { name: "Bàn phím (Cơ, Giả cơ, Thường)", slug: "ban_phim" }, { name: "Chuột (Gaming, Văn phòng)", slug: "chuot" }, { name: "Tai nghe (Có dây, Không dây)", slug: "tai_nghe" } ] },
+  { name: "Camera giám sát", slug: "camera_giam_sat", icon: "fas fa-video", subCategories: [ { name: "Camera IP (WiFi / LAN)", slug: "camera_ip" }, { name: "Đầu ghi hình (DVR, NVR)", slug: "dau_ghi_hinh" } ] },
+  { name: "Thiết bị mạng", slug: "thiet_bi_mang", icon: "fas fa-wifi", subCategories: [ { name: "Router WiFi (TP-Link, Asus, UniFi…)", slug: "router_wifi" }, { name: "Switch mạng (PoE, Thường)", slug: "switch_mang" } ] },
+  { name: "Phần mềm & dịch vụ", slug: "phan_mem_dich_vu", icon: "fas fa-cogs", subCategories: [ { name: "Bản quyền Windows, Office", slug: "ban_quyen_phan_mem" }, { name: "Dịch vụ cài đặt (Tận nơi / Online)", slug: "dich_vu_cai_dat" } ] },
+  { name: "Phụ kiện & thiết bị khác", slug: "phu_kien_khac", icon: "fas fa-plug", subCategories: [ { name: "Cáp chuyển, Hub USB, Docking", slug: "cap_hub_docking" }, { name: "Balo, Túi chống sốc", slug: "balo_tui" } ] },
+  { name: "PC Xây Dựng", slug: "pc_xay_dung", icon: "fas fa-tools", subCategories: [ { name: "Theo Yêu Cầu", slug: "theo_yeu_cau" } ] }
+];
 
-// WARRANTY TICKETS
-apiRouter.get('/warranty-tickets', async (req, res) => res.json(await query('SELECT * FROM WarrantyTickets ORDER BY createdAt DESC')));
-apiRouter.post('/warranty-tickets', async (req, res) => {
-    const ticket = { ...req.body, id: `wt-${Date.now()}`};
-    await query('INSERT INTO WarrantyTickets SET ?', [ticket]);
-    res.status(201).json(ticket);
-});
-apiRouter.put('/warranty-tickets/:id', async (req, res) => {
-    await query('UPDATE WarrantyTickets SET ? WHERE id = ?', [req.body, req.params.id]);
-    res.json({ message: 'Warranty Ticket updated' });
-});
-apiRouter.delete('/warranty-tickets/:id', async (req, res) => {
-    await query('DELETE FROM WarrantyTickets WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
-
-// INVENTORY
-apiRouter.get('/inventory', async (req, res) => res.json(await query('SELECT * FROM Inventory')));
-
-// QUOTATIONS
-apiRouter.get('/quotations', async (req, res) => {
-    const quotes = await query('SELECT * FROM Quotations ORDER BY creation_date DESC');
-    res.json(quotes.map(q => ({...q, items: JSON.parse(q.items)})));
-});
-apiRouter.post('/quotations', async (req, res) => {
-    const quote = { ...req.body, items: JSON.stringify(req.body.items || []) };
-    await query('INSERT INTO Quotations SET ?', [quote]);
-    res.status(201).json(req.body);
-});
-apiRouter.put('/quotations/:id', async (req, res) => {
-    const quote = { ...req.body, items: JSON.stringify(req.body.items || []) };
-    await query('UPDATE Quotations SET ? WHERE id = ?', [quote, req.params.id]);
-    res.json({ message: 'Quotation updated' });
-});
-apiRouter.delete('/quotations/:id', async (req, res) => {
-    await query('DELETE FROM Quotations WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
-
-// RETURNS
-apiRouter.get('/returns', async (req, res) => res.json(await query('SELECT * FROM Returns ORDER BY createdAt DESC')));
-apiRouter.post('/returns', async (req, res) => {
-    const item = { ...req.body, id: `ret-${Date.now()}`, createdAt: new Date().toISOString() };
-    await query('INSERT INTO Returns SET ?', [item]);
-    res.status(201).json(item);
-});
-apiRouter.put('/returns/:id', async (req, res) => {
-    await query('UPDATE Returns SET ? WHERE id = ?', [req.body, req.params.id]);
-    res.json({ message: 'Return updated' });
-});
-apiRouter.delete('/returns/:id', async (req, res) => {
-    await query('DELETE FROM Returns WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
-
-// SUPPLIERS
-apiRouter.get('/suppliers', async (req, res) => {
-    const suppliers = await query('SELECT * FROM Suppliers');
-    res.json(suppliers.map(s => ({...s, contactInfo: JSON.parse(s.contactInfo)})));
-});
-apiRouter.post('/suppliers', async (req, res) => {
-    const item = { ...req.body, id: `sup-${Date.now()}`, contactInfo: JSON.stringify(req.body.contactInfo || {}) };
-    await query('INSERT INTO Suppliers SET ?', [item]);
-    res.status(201).json({ ...req.body, id: item.id });
-});
-apiRouter.put('/suppliers/:id', async (req, res) => {
-    const item = { ...req.body, contactInfo: JSON.stringify(req.body.contactInfo || {}) };
-    await query('UPDATE Suppliers SET ? WHERE id = ?', [item, req.params.id]);
-    res.json({ message: 'Supplier updated' });
-});
-apiRouter.delete('/suppliers/:id', async (req, res) => {
-    await query('DELETE FROM Suppliers WHERE id = ?', [req.params.id]);
-    res.status(204).send();
-});
+const MOCK_SERVICES = [
+  { id: 'svc001', name: 'Thiết Kế & Phát Triển Web Chuyên Nghiệp', description: 'Chúng tôi cung cấp giải pháp website toàn diện, từ thiết kế UX/UI hiện đại, trực quan đến phát triển frontend & backend mạnh mẽ, đảm bảo tối ưu hóa SEO và mang lại trải nghiệm người dùng vượt trội.', icon: 'fas fa-laptop-code', imageUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1770&auto=format&fit=crop', slug: 'thiet-ke-phat-trien-web' },
+  { id: 'svc002', name: 'Quản Trị Hệ Thống Mạng Doanh Nghiệp', description: 'Dịch vụ quản trị, giám sát và bảo trì hệ thống mạng chuyên nghiệp cho doanh nghiệp. Đảm bảo hệ thống của bạn hoạt động ổn định, an toàn, hiệu quả với hiệu suất tối đa.', icon: 'fas fa-network-wired', imageUrl: 'https://images.unsplash.com/photo-1587135304381-e3f43845b4ca?q=80&w=1770&auto=format&fit=crop', slug: 'quan-tri-he-thong-mang'},
+  { id: 'svc003', name: 'Giải Pháp Lưu Trữ & Sao Lưu Đám Mây', description: 'Tư vấn và triển khai các giải pháp lưu trữ đám mây (Cloud Storage) và sao lưu dữ liệu (Cloud Backup) linh hoạt, an toàn và tiết kiệm chi phí cho cá nhân và doanh nghiệp.', icon: 'fas fa-cloud-upload-alt', imageUrl: 'https://images.unsplash.com/photo-1534972195531-d756b9bfa9f2?q=80&w=1770&auto=format&fit=crop', slug: 'luu-tru-sao-luu-dam-may' },
+  { id: 'svc004', name: 'Hỗ Trợ Kỹ Thuật Từ Xa Nhanh Chóng', description: 'Đội ngũ kỹ thuật viên chuyên nghiệp của chúng tôi sẵn sàng giải quyết nhanh chóng các sự cố máy tính, phần mềm qua TeamViewer, UltraViewer, đảm bảo công việc của bạn không bị gián đoạn.', icon: 'fas fa-headset', imageUrl: 'https://images.unsplash.com/photo-1616587894285-3d17c752531a?q=80&w=1770&auto=format&fit=crop', slug: 'ho-tro-ky-thuat-tu-xa'},
+  { id: 'svc005', name: 'Tư Vấn & Triển Khai Chuyển Đổi Số', description: 'Đánh giá toàn diện hiện trạng công nghệ và tư vấn lộ trình chuyển đổi số tối ưu, giúp doanh nghiệp của bạn tự động hóa quy trình, nâng cao năng lực cạnh tranh và phát triển bền vững.', icon: 'fas fa-project-diagram', imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1774&auto=format&fit=crop', slug: 'tu-van-chuyen-doi-so' },
+  { id: 'svc006', name: 'Bảo Mật Hệ Thống & An Toàn Dữ Liệu', description: 'Dịch vụ kiểm tra, đánh giá lỗ hổng và triển khai các giải pháp bảo mật tiên tiến. Phòng chống hiệu quả virus, mã độc, tấn công mạng, bảo vệ an toàn tuyệt đối cho dữ liệu quan trọng.', icon: 'fas fa-shield-alt', imageUrl: 'https://images.unsplash.com/photo-1558006511-aa7131a44e53?q=80&w=1770&auto=format&fit=crop', slug: 'bao-mat-he-thong-du-lieu' },
+];
 
 
-// Fallback for SPA: This should be the last route.
-app.get('*', (req, res) => {
-  const indexPath = path.resolve(staticFilesPath, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error(`Error sending file ${indexPath} :`, err);
-      // Don't expose internal error details to the client
-      if (!res.headersSent) {
-        res.status(404).send("Could not find the application entry point.");
-      }
-    }
-  });
-});
+// --- PRODUCTS API ENDPOINTS ---
 
-// --- Server Start ---
-app.listen(PORT, async () => {
+app.get('/api/products', async (req, res) => {
   try {
-    const connection = await pool.getConnection();
-    connection.release();
-    console.log(`🚀 Backend server đang chạy tại http://localhost:${PORT}`);
-    console.log('✅ Kết nối tới database MySQL thành công!');
-  } catch (error) {
-    console.error('❌ Không thể kết nối tới database MySQL:', error);
+    const getCategoryNameFromSlug_Backend = (slug, type) => {
+        if (type === 'main') {
+            const mainCat = PRODUCT_CATEGORIES_HIERARCHY.find(c => c.slug === slug);
+            return mainCat ? mainCat.name : null;
+        }
+        if (type === 'sub') {
+            for (const mainCat of PRODUCT_CATEGORIES_HIERARCHY) {
+                const subCat = mainCat.subCategories.find(sc => sc.slug === slug);
+                if (subCat) return subCat.name;
+            }
+            return null;
+        }
+        return null;
+    };
+
+    const { q, mainCategory, subCategory, brand, status, tags, page = 1, limit = 12 } = req.query;
+
+    let whereClauses = ["isVisible = TRUE"];
+    const params = [];
+
+    if (q) {
+        whereClauses.push("(name LIKE ? OR brand LIKE ? OR description LIKE ? OR tags LIKE ?)");
+        const searchTerm = `%${q}%`;
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+    if (mainCategory) {
+        const mainCategoryName = getCategoryNameFromSlug_Backend(mainCategory, 'main');
+        if (mainCategoryName) {
+            whereClauses.push("mainCategory = ?");
+            params.push(mainCategoryName);
+        }
+    }
+    if (subCategory) {
+        const subCategoryName = getCategoryNameFromSlug_Backend(subCategory, 'sub');
+        if (subCategoryName) {
+            whereClauses.push("subCategory = ?");
+            params.push(subCategoryName);
+        }
+    }
+    if (brand) {
+        whereClauses.push("brand = ?");
+        params.push(brand);
+    }
+    if (status) {
+        whereClauses.push("status = ?");
+        params.push(status);
+    }
+    if (tags) {
+      whereClauses.push("JSON_CONTAINS(tags, JSON_QUOTE(?))");
+      params.push(tags);
+    }
+
+    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    // Query for total count
+    const countQuery = `SELECT COUNT(*) as total FROM products ${whereString}`;
+    const [countRows] = await pool.query(countQuery, params);
+    const totalProducts = countRows[0].total;
+
+    // Query for paginated data
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const offset = (pageNum - 1) * limitNum;
+    
+    const dataQuery = `SELECT * FROM products ${whereString} ORDER BY id DESC LIMIT ? OFFSET ?`;
+    const dataParams = [...params, limitNum, offset];
+
+    const [rows] = await pool.query(dataQuery, dataParams);
+    const products = rows.map(parseJsonFields);
+
+    res.json({ products, totalProducts });
+  } catch (err) {
+    console.error("Lỗi khi truy vấn sản phẩm:", err);
+    res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu sản phẩm.' });
   }
+});
+
+app.get('/api/products/featured', async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            (SELECT * FROM products WHERE isVisible = TRUE AND JSON_CONTAINS(tags, '["Bán chạy"]'))
+            UNION
+            (SELECT * FROM products WHERE isVisible = TRUE AND originalPrice IS NOT NULL AND id NOT IN (SELECT id FROM products WHERE JSON_CONTAINS(tags, '["Bán chạy"]')))
+            LIMIT 4
+        `);
+        const products = rows.map(parseJsonFields);
+        res.json(products);
+    } catch (err) {
+        console.error("Lỗi khi truy vấn sản phẩm nổi bật:", err);
+        res.status(500).json({ error: 'Lỗi server.' });
+    }
+});
+
+app.get('/api/products/:id', async (req, res) => {
+    const productId = req.params.id;
+    try {
+        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productId]);
+        if (rows.length > 0) {
+            const product = parseJsonFields(rows[0]);
+            res.json(product);
+        } else {
+            res.status(404).json({ error: 'Không tìm thấy sản phẩm.' });
+        }
+    } catch (err) {
+        console.error(`Lỗi khi truy vấn sản phẩm ID ${productId}:`, err);
+        res.status(500).json({ error: 'Lỗi server.' });
+    }
+});
+
+app.post('/api/products', async (req, res) => {
+    const newProductData = req.body;
+    const productForDb = prepareProductForDb(newProductData);
+    try {
+        await pool.query("INSERT INTO products SET ?", [productForDb]);
+        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productForDb.id]);
+        res.status(201).json(parseJsonFields(rows[0]));
+    } catch (err) {
+        console.error("Lỗi khi tạo sản phẩm:", err);
+        res.status(500).json({ error: 'Lỗi server khi tạo sản phẩm.' });
+    }
+});
+
+app.put('/api/products/:id', async (req, res) => {
+    const productId = req.params.id;
+    const updatedProductData = req.body;
+    delete updatedProductData.id; 
+    const productForDb = prepareProductForDb(updatedProductData);
+    try {
+        const [result] = await pool.query("UPDATE products SET ? WHERE id = ?", [productForDb, productId]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy sản phẩm để cập nhật.' });
+        }
+        const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [productId]);
+        res.json(parseJsonFields(rows[0]));
+    } catch (err) {
+        console.error(`Lỗi khi cập nhật sản phẩm ID ${productId}:`, err);
+        res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm.' });
+    }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+    const productId = req.params.id;
+    try {
+        const [result] = await pool.query("DELETE FROM products WHERE id = ?", [productId]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy sản phẩm để xóa.' });
+        }
+        res.status(200).json({ message: 'Sản phẩm đã được xóa thành công.' });
+    } catch (err) {
+        console.error(`Lỗi khi xóa sản phẩm ID ${productId}:`, err);
+        res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm.' });
+    }
+});
+
+
+// --- SERVICES API ENDPOINTS ---
+app.get('/api/services/search', (req, res) => {
+  const { query } = req.query;
+  if (!query) {
+    return res.json(MOCK_SERVICES.slice(0, 3)); // Return a few if no query
+  }
+  const lowerQuery = query.toLowerCase();
+  const results = MOCK_SERVICES.filter(s => 
+    s.name.toLowerCase().includes(lowerQuery) || 
+    s.description.toLowerCase().includes(lowerQuery)
+  );
+  res.json(results);
+});
+
+
+// --- ORDERS API ENDPOINTS ---
+
+// GET all orders
+app.get('/api/orders', async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT * FROM orders ORDER BY orderDate DESC");
+        const orders = rows.map(parseOrderJsonFields);
+        res.json(orders);
+    } catch (err) {
+        console.error("Lỗi khi truy vấn đơn hàng:", err);
+        res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu đơn hàng.' });
+    }
+});
+
+// POST a new order
+app.post('/api/orders', async (req, res) => {
+    const newOrderData = req.body;
+    // Đảm bảo orderDate là đối tượng Date hợp lệ của SQL
+    newOrderData.orderDate = new Date(newOrderData.orderDate);
+
+    const orderForDb = prepareOrderForDb(newOrderData);
+    try {
+        await pool.query("INSERT INTO orders SET ?", [orderForDb]);
+        const [rows] = await pool.query("SELECT * FROM orders WHERE id = ?", [newOrderData.id]);
+        res.status(201).json(parseOrderJsonFields(rows[0]));
+    } catch (err) {
+        console.error("Lỗi khi tạo đơn hàng:", err);
+        res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng.' });
+    }
+});
+
+// PUT to update an order's status
+app.put('/api/orders/:id/status', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+        return res.status(400).json({ error: 'Trạng thái mới là bắt buộc.' });
+    }
+
+    try {
+        const [result] = await pool.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy đơn hàng để cập nhật.' });
+        }
+        const [rows] = await pool.query("SELECT * FROM orders WHERE id = ?", [id]);
+        res.json(parseOrderJsonFields(rows[0]));
+    } catch (err) {
+        console.error(`Lỗi khi cập nhật trạng thái đơn hàng ID ${id}:`, err);
+        res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái.' });
+    }
+});
+
+
+// Khởi động server
+app.listen(port, () => {
+  console.log(`Backend server đang chạy tại http://localhost:${port}`);
 });

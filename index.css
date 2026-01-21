@@ -1,4 +1,4 @@
- @tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -645,20 +645,16 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
 }
 
 /* PRINT STYLES */
+@page {
+  size: A4;
+  margin: 0;
+}
 @media print {
-  @page {
-    size: A4;
-    margin: 1cm;
-  }
-
-  body, html {
-    background-color: white !important;
+  body {
     -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
     color-adjust: exact !important; /* Firefox */
-  }
-
-  main {
-    padding-top: 0 !important; /* Remove padding left by the hidden header */
+    background-color: white !important;
+    margin: 0;
   }
 
   .no-print,
@@ -674,6 +670,10 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
   select {
     display: none !important;
   }
+  
+  .print-only {
+    display: inline !important;
+  }
 
   .admin-main-content {
     margin-left: 0 !important;
@@ -685,7 +685,7 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
     display: block !important;
   }
 
-  .admin-card, .admin-card-body, .admin-modal-panel, .admin-modal-body, #root, .admin-wrapper, #root > div {
+  .admin-card, .admin-card-body, .admin-modal-panel, .admin-modal-body, #root, .admin-wrapper {
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
@@ -693,19 +693,14 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
     background: white !important;
     max-height: none !important;
     overflow: visible !important;
-    display: block !important; /* Override flex layouts */
   }
   
   .print-container {
-    padding: 1rem;
+    padding: 1.5cm; /* Create margin inside the page */
     display: block !important;
     position: static !important;
     width: 100%;
     height: auto;
-  }
-
-  .print-only {
-    display: inline !important;
   }
   
   .print-table {
@@ -721,8 +716,4 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
   .print-table th {
     background-color: #f2f2f2 !important;
   }
-}
-
-.print-only {
-  display: none;
 }

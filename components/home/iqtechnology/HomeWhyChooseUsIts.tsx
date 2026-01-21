@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
+import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
@@ -43,10 +44,10 @@ const HomeWhyChooseUsIts: React.FC = () => {
                 </span>
               )}
               <h2 className="home-section-title text-left text-4xl md:text-5xl font-extrabold">
-                {whyChooseUsConfig.title || "Tại Sao Chọn Chúng Tôi?"}
+                {whyChooseUsConfig.title || "Why Choose Us?"}
               </h2>
               <p className="text-textMuted mb-8 leading-relaxed">
-                {whyChooseUsConfig.description || "Mô tả mặc định giải thích lý do tại sao chọn chúng tôi."}
+                {whyChooseUsConfig.description || "Default description explaining why to choose us."}
               </p>
 
               {whyChooseUsConfig.features && whyChooseUsConfig.features.length > 0 && (
@@ -66,12 +67,12 @@ const HomeWhyChooseUsIts: React.FC = () => {
               )}
 
               {whyChooseUsConfig.contactButtonLink && whyChooseUsConfig.contactButtonText && (
-                 <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : ''}`} style={{animationDelay:'0.5s'}}>
-                  <ReactRouterDOM.Link to={whyChooseUsConfig.contactButtonLink}>
+                 <div className={`animate-on-scroll ${isSectionVisible ? 'fade-in-up is-visible' : 'fade-in-up'}`} style={{animationDelay:'0.5s'}}>
+                  <Link to={whyChooseUsConfig.contactButtonLink}>
                     <Button variant="primary" size="lg" className="px-8 py-3.5 text-base shadow-md hover:shadow-primary/30">
                         {whyChooseUsConfig.contactButtonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                     </Button>
-                  </ReactRouterDOM.Link>
+                  </Link>
                 </div>
               )}
             </div>

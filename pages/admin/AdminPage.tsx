@@ -35,7 +35,6 @@ import OrderFormPage from './OrderFormPage';
 import ReturnFormPage from './ReturnFormPage';
 import SupplierFormPage from './SupplierFormPage';
 import ServiceTicketFormPage from './ServiceTicketFormPage';
-import WarrantyFormPage from './WarrantyFormPage';
 
 
 // Import new placeholder/skeleton views
@@ -257,6 +256,9 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/products/edit/')) return 'Chỉnh sửa Sản phẩm';
         if (path.startsWith('/admin/hrm_dashboard/new')) return 'Thêm Nhân viên Mới';
         if (path.startsWith('/admin/hrm_dashboard/edit/')) return 'Chỉnh sửa Hồ sơ Nhân sự';
+        if (path.startsWith('/admin/customers/new')) return 'Thêm Khách hàng Mới';
+        if (path.startsWith('/admin/customers/edit/')) return 'Chỉnh sửa Khách hàng';
+        if (path.startsWith('/admin/customers/view/')) return 'Hồ sơ Khách hàng';
         if (path.startsWith('/admin/articles/new')) return 'Thêm Bài viết Mới';
         if (path.startsWith('/admin/articles/edit/')) return 'Chỉnh sửa Bài viết';
         if (path.startsWith('/admin/discounts/new')) return 'Thêm Mã giảm giá Mới';
@@ -267,9 +269,6 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/accounting_dashboard/transactions/edit/')) return 'Chỉnh sửa Giao dịch';
         if (path.startsWith('/admin/quotations/new')) return 'Tạo Báo giá Mới';
         if (path.startsWith('/admin/quotations/edit/')) return 'Chỉnh sửa Báo giá';
-        if (path.startsWith('/admin/customers/new')) return 'Thêm Khách hàng Mới';
-        if (path.startsWith('/admin/customers/edit/')) return 'Chỉnh sửa Khách hàng';
-        if (path.startsWith('/admin/customers/view/')) return 'Hồ sơ Khách hàng';
         if (path.startsWith('/admin/orders/new')) return 'Tạo Đơn hàng Mới';
         if (path.startsWith('/admin/orders/edit/')) return 'Chỉnh sửa Đơn hàng';
         if (path.startsWith('/admin/returns/new')) return 'Tạo Phiếu Hoàn Trả';
@@ -278,8 +277,6 @@ const AdminPage: React.FC = () => {
         if (path.startsWith('/admin/suppliers/edit/')) return 'Chỉnh sửa Nhà Cung Cấp';
         if (path.startsWith('/admin/service_tickets/new')) return 'Tạo Phiếu Dịch Vụ';
         if (path.startsWith('/admin/service_tickets/edit/')) return 'Chỉnh sửa Phiếu Dịch Vụ';
-        if (path.startsWith('/admin/warranty_claims/new')) return 'Tạo Phiếu Bảo Hành';
-        if (path.startsWith('/admin/warranty_claims/edit/')) return 'Chỉnh sửa Phiếu Bảo Hành';
 
 
         const allMenuItems = MENU_CONFIG.flatMap(m => m.children ? m.children : m);
@@ -334,8 +331,6 @@ const AdminPage: React.FC = () => {
                         <ReactRouterDOM.Route path="/suppliers/edit/:supplierId" element={<SupplierFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/new" element={<ServiceTicketFormPage />} />
                         <ReactRouterDOM.Route path="/service_tickets/edit/:ticketId" element={<ServiceTicketFormPage />} />
-                        <ReactRouterDOM.Route path="/warranty_claims/new" element={<WarrantyFormPage />} />
-                        <ReactRouterDOM.Route path="/warranty_claims/edit/:warrantyId" element={<WarrantyFormPage />} />
                         
                         {/* Generic route for views */}
                         <ReactRouterDOM.Route path="/:viewId/*" element={renderContent(activeView)} />

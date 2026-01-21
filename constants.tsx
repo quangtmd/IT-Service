@@ -14,7 +14,8 @@ import {
 
 export const ADMIN_EMAIL = "quangtmdit@gmail.com"; 
 
-export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường VITE_GEMINI_API_KEY.";
+export const API_KEY_ERROR_MESSAGE = "API Key chưa được cấu hình. Vui lòng đặt biến môi trường API_KEY.";
+export const BACKEND_API_BASE_URL = process.env.BACKEND_API_BASE_URL || "http://localhost:3001"; 
 
 // --- STORAGE KEYS ---
 export const SITE_LOGO_STORAGE_KEY = "siteLogoUrl_v1";
@@ -26,7 +27,7 @@ export const CUSTOM_MENU_STORAGE_KEY = 'siteCustomMenu_v1';
 export const PRODUCTS_STORAGE_KEY = 'siteProducts_v1';
 export const ORDERS_STORAGE_KEY = 'siteOrders_v1';
 export const CHAT_LOGS_STORAGE_KEY = 'siteChatLogs_v1'; // For storing chat logs
-export const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1'; // Uses sessionStorage for per-session auto-open
+export const CHATBOT_AUTO_OPENED_KEY = 'chatbotAutoOpened_v1';
 export const FINANCIAL_TRANSACTIONS_STORAGE_KEY = 'siteFinancialTransactions_v1';
 export const PAYROLL_RECORDS_STORAGE_KEY = 'sitePayrollRecords_v1';
 export const ADMIN_NOTIFICATIONS_STORAGE_KEY = 'adminNotifications_v1';
@@ -129,7 +130,7 @@ const INITIAL_HOMEPAGE_WHYCHOOSEUS_FEATURES: HomepageWhyChooseUsFeature[] = [
 ];
 const INITIAL_HOMEPAGE_WHYCHOOSEUS: HomepageWhyChooseUsSettings = {
   enabled: true,
-  preTitle: "TẠI SAAO LẠI LỰA CHỌN IQ?",
+  preTitle: "TẠI SAO LẠI LỰA CHỌN IQ?",
   title: "Dịch Vụ IT Tốt Nhất Tại Đà Nẵng",
   description: "Tại IQ Technology, chúng tôi hiểu rằng việc chọn đúng đối tác CNTT là rất quan trọng đối với sự thành công của doanh nghiệp của bạn. Với kinh nghiệm nhiều năm trong lĩnh vực thuê ngoài CNTT, chúng tôi luôn cam kết không ngừng phát triển và mang đến các giải pháp tốt nhất cho Doanh nghiệp, chúng tôi là sự lựa chọn hàng đầu cho tất cả các nhu cầu CNTT của bạn. Đây là lý do tại sao bạn nên cân nhắc hợp tác với chúng tôi!",
   mainImageUrl: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=1770&auto=format&fit=crop",
@@ -245,7 +246,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
 
   aboutPageTitle: "Về IQ Technology",
   aboutPageSubtitle: "Tìm hiểu về đội ngũ, sứ mệnh và cam kết của chúng tôi.",
-  ourStoryContentMarkdown: `### Hành Trình Phát Triển\n**IQ Technology** được thành lập với niềm đam mê công nghệ và khát vọng mang đến những giải pháp tối ưu cho khách hàng tại Đà Nẵng và trên toàn quốc.\n\nChúng tôi khởi đầu từ một cửa hàng nhỏ chuyên cung cấp linh kiện máy tính. Với sự tận tâm và không ngừng học hỏi, IQ Technology đã phát triển thành một đơn vị uy tín, cung cấp đa dạng các sản phẩm từ PC gaming, workstation, laptop cho đến các thiết bị mạng, camera an ninh.\n\nSong song đó, mảng dịch vụ IT của chúng tôi cũng lớn mạnh, trở thành đối tác tin cậy cho nhiều cá nhân và doanh nghiệp trong việc sửa chữa, bảo trì, nâng cấp hệ thống và tư vấn các giải pháp công nghệ hiệu quả.\n\nChúng tôi không ngừng nghiên cứu và ứng dụng các công nghệ tiên tiến nhất để mang lại hiệu quả tối đa và giá trị bền vững cho khách hàng.`,
+  ourStoryContentMarkdown: `### Hành Trình Phát Triển\n**IQ Technology** được thành lập với niềm đam mê công nghệ và khát vọng mang đến những giải pháp tối ưu cho khách hàng tại Đà Nẵng và trên toàn quốc.\n\nChúng tôi khởi đầu từ một cửa hàng nhỏ chuyên cung cấp linh kiện máy tính. Với sự tận tâm và không ngừng học hỏi, IQ Technology đã phát triển thành một đơn vị uy tín, cung cấp đa dạng các sản phẩm từ PC gaming, workstation, laptop cho đến các thiết bị mạng, camera an ninh.\n\nSong song đó, mảng dịch vụ IT của chúng tôi cũng lớn mạnh, trở thành đối tác tin cậy cho nhiều cá nhân và doanh nghiệp trong việc sửa chữa, bảo trì, nâng cấp hệ thống và tư vấn các giải pháp công nghệ hiệu quả.`,
   missionStatementMarkdown: "Mang đến cho khách hàng những sản phẩm công nghệ **chất lượng cao nhất** với giá cả cạnh tranh và dịch vụ hậu mãi **tận tâm, chuyên nghiệp**.",
   visionStatementMarkdown: "Trở thành **đơn vị hàng đầu** trong lĩnh vực cung cấp linh kiện PC và giải pháp IT toàn diện tại Việt Nam, được khách hàng **tin tưởng và lựa chọn**.",
   teamMembers: [
@@ -316,7 +317,7 @@ export const INITIAL_THEME_SETTINGS: SiteThemeSettings = {
 export const PC_BUILDER_PATH = '/pc-builder'; 
 
 export const NAVIGATION_LINKS_BASE: Omit<CustomMenuLink, 'order' | 'isVisible' | 'originalPath' | 'id'>[] = [
-  { label: 'Trang chủ', path: '/', icon: 'fas fa-home' },
+  { label: 'Trang chủ', path: '/home', icon: 'fas fa-home' },
   { label: 'Sản phẩm', path: '/shop', icon: 'fas fa-store' },
   { label: 'Xây dựng PC', path: PC_BUILDER_PATH, icon: 'fas fa-tools'}, 
   { label: 'Gợi ý Cấu hình', path: '/pc-build-suggestions', icon: 'fas fa-magic' },

@@ -1,118 +1,265 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ServiceTicket, User } from '../../types';
+import { ServiceTicket, User, SiteSettings } from '../../types';
 import Button from '../../components/ui/Button';
 import { getServiceTickets, addServiceTicket, updateServiceTicket } from '../../services/localDataService';
 import { useAuth } from '../../contexts/AuthContext';
+import * as Constants from '../../constants';
 
 
 const STATUS_OPTIONS: Array<ServiceTicket['status']> = ['Mới', 'Đang xử lý', 'Chờ linh kiện', 'Hoàn thành', 'Đã đóng'];
 
+const InfoItem: React.FC<{ label: string; value?: string | number | null; className?: string }> = ({ label, value, className }) => (
+    <div className={className}>
+        <p className="text-xs text-textMuted">{label}</p>
+        <p className="text-sm font-medium text-textBase">{value || 'N/A'}</p>
+    </div>
+);
+
 const ServiceTicketFormPage: React.FC = () => {
     const { ticketId } = useParams<{ ticketId: string }>();
     const navigate = useNavigate();
-    const isEditing = !!ticketId;
     const { users } = useAuth();
-    const staffUsers = users.filter(u => u.role === 'admin' || u.role === 'staff');
+    const isEditing = !!ticketId;
 
     const [formData, setFormData] = useState<Partial<ServiceTicket> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
     
+    const [customerSearch, setCustomerSearch] = useState('');
+    const [customerResults, setCustomerResults] = useState<User[]>([]);
+    const [customers, setCustomers] = useState<User[]>([]);
+
+    const staffUsers = useMemo(() => users.filter(u => u.role === 'admin' || u.role === 'staff'), [users]);
+
     useEffect(() => {
-        const loadTicket = async () => {
+        const loadData = async () => {
+             const settingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
+             setSiteSettings(settingsRaw ? JSON.parse(settingsRaw) : Constants.INITIAL_SITE_SETTINGS);
+             setCustomers(users.filter(u => u.role === 'customer'));
+
             if (isEditing) {
+                setIsLoading(true);
+                setError(null);
                 try {
-                    const tickets = await getServiceTickets();
-                    const ticketToEdit = tickets.find(t => t.id === ticketId);
-                    if (ticketToEdit) {
-                        setFormData(ticketToEdit);
+                    const allData = await getServiceTickets();
+                    const itemToEdit = allData.find(t => t.id === ticketId);
+                    if (itemToEdit) {
+                        setFormData(itemToEdit);
                     } else {
-                        setError("Không tìm thấy phiếu dịch vụ.");
+                        setError('Không tìm thấy phiếu dịch vụ để chỉnh sửa.');
                     }
-                } catch(err) {
-                    setError(err instanceof Error ? err.message : "Lỗi tải dữ liệu.");
+                } catch (err) {
+                    setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu.');
                 } finally {
                     setIsLoading(false);
                 }
             } else {
                 setFormData({
-                    deviceName: '', deviceType: '', status: 'Mới', reportedIssue: '',
-                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-                    customer_info: { fullName: '', phone: '', address: ''}
+                    customer_info: { fullName: '', phone: '' },
+                    deviceName: '',
+                    reported_issue: '',
+                    status: 'Mới',
                 });
                 setIsLoading(false);
             }
         };
-        loadTicket();
-    }, [isEditing, ticketId]);
+        loadData();
+    }, [isEditing, ticketId, users]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => prev ? ({...prev, [name]: value}) : null);
-    };
-
-    const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => prev ? ({...prev, customer_info: {...prev.customer_info, [name]: value} as any}) : null);
+        setFormData(prev => prev ? ({ ...prev, [name]: value }) : null);
     };
     
+    const handleCustomerInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => prev ? ({ ...prev, customer_info: { ...prev.customer_info!, [name]: value } }) : null);
+    };
+
+    const handleCustomerSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const term = e.target.value;
+        handleCustomerInfoChange(e); // Allow manual typing
+
+        if (term) {
+            setCustomerResults(customers.filter(c =>
+                c.username.toLowerCase().includes(term.toLowerCase()) ||
+                c.email.toLowerCase().includes(term.toLowerCase()) ||
+                (c.phone && c.phone.includes(term))
+            ).slice(0, 5));
+        } else {
+            setCustomerResults([]);
+        }
+    };
+    
+    const handleSelectCustomer = (customer: User) => {
+        setFormData(prev => prev ? ({
+            ...prev,
+            customerId: customer.id,
+            customer_info: {
+                fullName: customer.username,
+                phone: customer.phone || '',
+            }
+        }) : null);
+        setCustomerResults([]);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!formData) return;
+        if (!formData) return;
+
         try {
             if (isEditing) {
                 await updateServiceTicket(ticketId!, formData);
-                alert("Cập nhật thành công!");
+                alert('Cập nhật phiếu dịch vụ thành công!');
             } else {
-                await addServiceTicket(formData as Omit<ServiceTicket, 'id'>);
-                alert("Tạo phiếu mới thành công!");
+                await addServiceTicket(formData as Omit<ServiceTicket, 'id' | 'createdAt' | 'ticket_code'>);
+                alert('Tạo phiếu dịch vụ mới thành công!');
             }
             navigate('/admin/service_tickets');
         } catch (err) {
-             alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi lưu.');
+            alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi lưu.');
         }
+    };
+    
+    const handlePrint = () => {
+        window.print();
     };
 
     if (isLoading) return <div className="admin-card"><div className="admin-card-body text-center">Đang tải...</div></div>;
     if (error) return <div className="admin-card"><div className="admin-card-body text-center text-red-500">{error}</div></div>;
     if (!formData) return null;
-    
+
+    const assignedStaff = staffUsers.find(u => u.id === formData.assigneeId);
+
     return (
-        <div className="admin-card">
-            <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                <div className="admin-card-header">
-                    <h3 className="admin-card-title">{isEditing ? `Chỉnh sửa Phiếu DV #${formData.ticket_code}` : 'Tạo Phiếu Dịch Vụ Mới'}</h3>
+        <div className="admin-card !bg-transparent !border-none !shadow-none">
+            <form onSubmit={handleSubmit}>
+                <div className="admin-page-header flex justify-between items-center !m-0 !mb-6 no-print">
+                    <h1 className="admin-page-title">{isEditing ? `Phiếu Dịch Vụ #${formData.ticket_code}` : 'Tạo Phiếu Dịch Vụ Mới'}</h1>
+                     <div>
+                        <Button type="button" variant="outline" onClick={handlePrint} className="mr-2" leftIcon={<i className="fas fa-print"></i>}>In Phiếu</Button>
+                        <Button type="button" variant="outline" onClick={() => navigate('/admin/service_tickets')} className="mr-2">Hủy</Button>
+                        <Button type="submit" variant="primary">Lưu</Button>
+                    </div>
                 </div>
-                <div className="admin-card-body">
-                    <div className="admin-form-subsection-title">Thông tin khách hàng</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="admin-form-group"><label>Tên khách hàng *</label><input type="text" name="fullName" value={formData.customer_info?.fullName || ''} onChange={handleCustomerChange} required/></div>
-                        <div className="admin-form-group"><label>Số điện thoại *</label><input type="tel" name="phone" value={formData.customer_info?.phone || ''} onChange={handleCustomerChange} required/></div>
-                        <div className="admin-form-group md:col-span-2"><label>Địa chỉ</label><input type="text" name="address" value={formData.customer_info?.address || ''} onChange={handleCustomerChange}/></div>
+                
+                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left Column */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="admin-card">
+                            <div className="admin-card-header">
+                                <h3 className="admin-card-title">Thông tin Khách hàng & Thiết bị</h3>
+                            </div>
+                            <div className="admin-card-body">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="admin-form-group relative">
+                                        <label>Tên khách hàng *</label>
+                                        <input 
+                                            type="text" 
+                                            name="fullName" 
+                                            value={formData.customer_info?.fullName || ''} 
+                                            onChange={handleCustomerSearchChange} 
+                                            required
+                                            autoComplete="off"
+                                         />
+                                        {customerResults.length > 0 && (
+                                            <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
+                                                {customerResults.map(c => (
+                                                    <li key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-gray-100 cursor-pointer">
+                                                        {c.username} ({c.phone || c.email})
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                     <div className="admin-form-group">
+                                        <label>Số điện thoại *</label>
+                                        <input type="tel" name="phone" value={formData.customer_info?.phone || ''} onChange={handleCustomerInfoChange} required />
+                                    </div>
+                                </div>
+                                 <div className="admin-form-subsection-title mt-2">Thông tin thiết bị</div>
+                                <div className="admin-form-group">
+                                    <label>Tên thiết bị</label>
+                                    <input type="text" name="deviceName" value={formData.deviceName || ''} onChange={handleChange} />
+                                </div>
+                                <div className="admin-form-group sm:col-span-2">
+                                    <label>Mô tả sự cố/yêu cầu</label>
+                                    <textarea name="reported_issue" value={formData.reported_issue || ''} onChange={handleChange} rows={4}></textarea>
+                                </div>
+                            </div>
+                        </div>
+                         <div className="admin-card">
+                            <div className="admin-card-header">
+                                <h3 className="admin-card-title">Ghi chú & Lịch sử (sắp có)</h3>
+                            </div>
+                            <div className="admin-card-body text-center text-textMuted">
+                                <i className="fas fa-history text-4xl text-gray-300 mb-3"></i>
+                                <p>Tính năng ghi chú nội bộ và xem lịch sử thay đổi sẽ được cập nhật sớm.</p>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div className="admin-form-subsection-title">Thông tin thiết bị</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="admin-form-group"><label>Tên thiết bị *</label><input type="text" name="deviceName" value={formData.deviceName || ''} onChange={handleChange} required/></div>
-                        <div className="admin-form-group"><label>Loại thiết bị</label><input type="text" name="deviceType" value={formData.deviceType || ''} onChange={handleChange}/></div>
-                        <div className="admin-form-group md:col-span-2"><label>Số Serial</label><input type="text" name="serialNumber" value={formData.serialNumber || ''} onChange={handleChange}/></div>
-                        <div className="admin-form-group md:col-span-2"><label>Mô tả sự cố *</label><textarea name="reportedIssue" value={formData.reportedIssue || ''} onChange={handleChange} rows={3} required></textarea></div>
-                    </div>
+                    {/* Right Column */}
+                     <div className="lg:col-span-1 space-y-6">
+                         <div className="sticky top-24">
+                            <div className="admin-card">
+                                <div className="admin-card-header"><h3 className="admin-card-title">Thông tin Phiếu</h3></div>
+                                <div className="admin-card-body space-y-4">
+                                     <InfoItem label="Mã phiếu" value={formData.ticket_code || '(sẽ tạo tự động)'} />
+                                     <InfoItem label="Ngày tạo" value={formData.createdAt ? new Date(formData.createdAt).toLocaleString('vi-VN') : 'Mới'} />
+                                    
+                                     <div className="admin-form-group">
+                                        <label>Trạng thái</label>
+                                        <select name="status" value={formData.status || 'Mới'} onChange={handleChange} className="!py-2">
+                                            {STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="admin-form-group">
+                                        <label>Nhân viên phụ trách</label>
+                                        <select name="assigneeId" value={formData.assigneeId || ''} onChange={handleChange} className="!py-2">
+                                            <option value="">-- Chưa gán --</option>
+                                            {staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                     </div>
+                </div>
 
-                    <div className="admin-form-subsection-title">Thông tin dịch vụ</div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                         <div className="admin-form-group"><label>Trạng thái</label><select name="status" value={formData.status || 'Mới'} onChange={handleChange}>{STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-                         <div className="admin-form-group"><label>Nhân viên phụ trách</label><select name="assignedTo" value={formData.assignedTo || ''} onChange={handleChange}><option value="">-- Chọn --</option>{staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}</select></div>
-                         <div className="admin-form-group"><label>Chi phí (dự kiến)</label><input type="number" name="cost" value={formData.cost || 0} onChange={handleChange}/></div>
-                    </div>
-                     <div className="admin-form-group"><label>Ghi chú</label><textarea name="notes" value={formData.notes || ''} onChange={handleChange} rows={4}></textarea></div>
+                {/* --- Print Section --- */}
+                <div className="print-wrapper hidden print:block">
+                   <div className="print-container max-w-2xl mx-auto p-4 bg-white">
+                        <div className="text-center mb-6">
+                            <h2 className="text-xl font-bold uppercase">{siteSettings.companyName}</h2>
+                            <p className="text-xs">{siteSettings.companyAddress}</p>
+                            <p className="text-xs">ĐT: {siteSettings.companyPhone}</p>
+                        </div>
+                        <h2 className="text-lg font-bold mb-4 text-center uppercase">Phiếu Biên Nhận Dịch Vụ</h2>
+                        
+                        <div className="text-right text-xs mb-4">
+                            <p>Số: <span className="font-semibold">{formData.ticket_code || '...'}</span></p>
+                            <p>Ngày: <span className="font-semibold">{new Date(formData.createdAt || Date.now()).toLocaleDateString('vi-VN')}</span></p>
+                        </div>
+
+                         <div className="border-t border-b border-dashed border-black py-2 mb-4 text-sm">
+                            <p><strong>Khách hàng:</strong> {formData.customer_info?.fullName}</p>
+                            <p><strong>Điện thoại:</strong> {formData.customer_info?.phone}</p>
+                         </div>
+
+                        <p className="text-sm"><strong>Thiết bị:</strong> {formData.deviceName}</p>
+                        <p className="text-sm mt-2"><strong>Tình trạng/Yêu cầu:</strong> {formData.reported_issue}</p>
+                        <p className="text-sm mt-2"><strong>Trạng thái:</strong> {formData.status}</p>
+                        <p className="text-sm mt-2"><strong>Nhân viên phụ trách:</strong> {assignedStaff?.username || 'Chưa gán'}</p>
+                        
+                         <div className="mt-16 grid grid-cols-2 gap-4 text-center text-xs">
+                            <div><p className="font-bold">Khách hàng</p><p>(Ký & ghi rõ họ tên)</p></div>
+                            <div><p className="font-bold">Nhân viên tiếp nhận</p><p>(Ký & ghi rõ họ tên)</p></div>
+                        </div>
+                   </div>
                 </div>
 
-                <div className="admin-modal-footer">
-                    <Button type="button" variant="outline" onClick={() => navigate('/admin/service_tickets')}>Hủy</Button>
-                    <Button type="submit" variant="primary">Lưu Phiếu Dịch Vụ</Button>
-                </div>
             </form>
         </div>
     );

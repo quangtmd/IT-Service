@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
+import { Link, useNavigate } from 'react-router-dom'; // Updated imports for v6/v7
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import * as Constants from '../constants.tsx';
@@ -11,15 +11,11 @@ const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();
-  const navigate = ReactRouterDOM.useNavigate(); // Changed from useHistory
-
-  // New, more vibrant technology background image (same as login page for consistency)
-  const backgroundImage = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
-
+  const navigate = useNavigate(); // Changed from useHistory
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/'); // Changed from history.push
+      navigate('/home'); // Changed from history.push
     }
   }, [isAuthenticated, navigate]);
 
@@ -38,17 +34,12 @@ const RegisterPage: React.FC = () => {
     if (password.length < 6) {
       setError('Mật khẩu phải có ít nhất 6 ký tự.');
       return;
-      }
-      
-      if (!/\S+@\S+\.\S+/.test(email)) {
-          setError('Địa chỉ email không hợp lệ.');
-          return;
-      }
+    }
 
     try {
         const user = await register({ username, email, password });
         if (user) {
-          navigate('/');
+          navigate('/home');
         } else {
           setError('Đăng ký không thành công. Vui lòng thử lại.');
         }
@@ -59,24 +50,20 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative bg-cover bg-center"
-      style={{ backgroundImage: `url('${backgroundImage}')` }}
-    >
-      <div className="absolute inset-0 bg-black opacity-60"></div> {/* Dark overlay */}
-      <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-md p-10 rounded-xl shadow-xl border border-borderDefault relative z-10">
+    <div className="min-h-screen flex items-center justify-center bg-bgCanvas py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-bgBase p-10 rounded-xl shadow-xl border border-borderDefault">
         <div>
-          <ReactRouterDOM.Link to="/" className="flex justify-center">
+          <Link to="/home" className="flex justify-center">
              <span className="text-3xl font-bold text-primary">{Constants.COMPANY_NAME}</span>
-          </ReactRouterDOM.Link>
+          </Link>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-textBase">
             Tạo tài khoản mới
           </h2>
           <p className="mt-2 text-center text-sm text-textMuted">
             Hoặc{' '}
-            <ReactRouterDOM.Link to="/login" className="font-medium text-primary hover:text-primary-dark">
+            <Link to="/login" className="font-medium text-primary hover:text-primary-dark">
               đăng nhập nếu bạn đã có tài khoản
-            </ReactRouterDOM.Link>
+            </Link>
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -158,21 +145,6 @@ const RegisterPage: React.FC = () => {
             </Button>
           </div>
         </form>
-
-        <div className="relative flex justify-center text-xs uppercase my-6">
-            <span className="bg-white/80 backdrop-blur-md px-2 text-gray-500">Hoặc</span>
-        </div>
-
-        <div className="space-y-3">
-            <Button variant="outline" className="w-full flex items-center justify-center gap-3 !py-3 !text-base border-blue-500 text-blue-700 hover:bg-blue-50">
-                <i className="fab fa-google text-lg"></i>
-                <span>Đăng ký bằng Google</span>
-            </Button>
-            <Button variant="outline" className="w-full flex items-center justify-center gap-3 !py-3 !text-base border-blue-800 text-blue-800 hover:bg-blue-50">
-                <i className="fab fa-facebook-f text-lg"></i>
-                <span>Đăng ký bằng Facebook</span>
-            </Button>
-        </div>
       </div>
     </div>
   );

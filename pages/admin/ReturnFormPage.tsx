@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ReturnTicket, Order } from '../../types';
+import { ReturnTicket, Order, SiteSettings } from '../../types';
 import Button from '../../components/ui/Button';
 import { getReturns, addReturn, updateReturn, getOrders } from '../../services/localDataService';
+import * as Constants from '../../constants';
 
 const RETURN_STATUS_OPTIONS: Array<ReturnTicket['status']> = ['Đang chờ', 'Đã duyệt', 'Đã từ chối'];
 
@@ -15,6 +16,7 @@ const ReturnFormPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [siteSettings, setSiteSettings] = useState<SiteSettings>(Constants.INITIAL_SITE_SETTINGS);
 
     useEffect(() => {
         const loadData = async () => {
@@ -23,6 +25,9 @@ const ReturnFormPage: React.FC = () => {
             try {
                 const allOrders = await getOrders();
                 setOrders(allOrders);
+
+                const settingsRaw = localStorage.getItem(Constants.SITE_CONFIG_STORAGE_KEY);
+                setSiteSettings(settingsRaw ? JSON.parse(settingsRaw) : Constants.INITIAL_SITE_SETTINGS);
 
                 if (isEditing) {
                     const allData = await getReturns();
@@ -60,7 +65,7 @@ const ReturnFormPage: React.FC = () => {
 
         try {
             if (isEditing) {
-                await updateReturn(returnId, formData);
+                await updateReturn(returnId!, formData);
                 alert('Cập nhật phiếu hoàn trả thành công!');
             } else {
                 await addReturn(formData as Omit<ReturnTicket, 'id'>);
@@ -93,40 +98,64 @@ const ReturnFormPage: React.FC = () => {
                     </div>
                 </div>
                 <div className="admin-card-body print-wrapper">
-                    <div className="print-container">
-                        <h2 className="text-2xl font-bold mb-4 text-center">PHIẾU HOÀN TRẢ</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="admin-form-group">
-                                <label>Đơn hàng gốc *</label>
-                                <select name="orderId" value={formData.orderId || ''} onChange={handleChange} required>
-                                    <option value="">-- Chọn đơn hàng --</option>
-                                    {orders.map(o => (
-                                        <option key={o.id} value={o.id}>#{o.id.slice(-6)} - {o.customerInfo.fullName} - {o.totalAmount.toLocaleString('vi-VN')}₫</option>
-                                    ))}
-                                </select>
-                                {selectedOrder && <p className="text-xs mt-1 text-gray-500">Ngày đặt: {new Date(selectedOrder.orderDate).toLocaleString('vi-VN')}</p>}
-                            </div>
-                            <div className="admin-form-group">
+                    <div className="print-container max-w-2xl mx-auto p-4 bg-white">
+                        <div className="text-sm mb-4">
+                            <h3 className="font-bold text-base mb-2">{siteSettings.companyName}</h3>
+                            <p>Địa chỉ: {siteSettings.companyAddress}</p>
+                        </div>
+                        <div className="text-center mb-6">
+                            <h2 className="text-2xl font-bold uppercase">Phiếu Yêu Cầu Hoàn Trả</h2>
+                             <p>Ngày {new Date(formData.createdAt || Date.now()).toLocaleDateString('vi-VN')}</p>
+                        </div>
+                        
+                        <div className="text-sm mb-4 border-t pt-4">
+                            <h3 className="font-bold text-base mb-2">Thông tin Khách hàng</h3>
+                            <p><strong>Tên:</strong> {selectedOrder?.customerInfo.fullName}</p>
+                            <p><strong>SĐT:</strong> {selectedOrder?.customerInfo.phone}</p>
+                            <p><strong>Địa chỉ:</strong> {selectedOrder?.customerInfo.address}</p>
+                        </div>
+                        <div className="admin-form-group no-print">
+                            <label>Đơn hàng gốc *</label>
+                            <select name="orderId" value={formData.orderId || ''} onChange={handleChange} required>
+                                <option value="">-- Chọn đơn hàng --</option>
+                                {orders.map(o => (
+                                    <option key={o.id} value={o.id}>#{o.id.slice(-6)} - {o.customerInfo.fullName} - {o.totalAmount.toLocaleString('vi-VN')}₫</option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        <div className="border-t pt-4 text-sm">
+                            <h3 className="font-bold text-base mb-2">Chi tiết Yêu cầu</h3>
+                             <p className="print-only"><strong>Đơn hàng gốc:</strong> #{formData.orderId?.slice(-6)}</p>
+                             <div className="admin-form-group no-print">
                                 <label>Trạng thái *</label>
                                 <select name="status" value={formData.status || 'Đang chờ'} onChange={handleChange} required>
                                     {RETURN_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
                             </div>
-                            <div className="admin-form-group sm:col-span-2">
+                            <p className="print-only"><strong>Trạng thái:</strong> {formData.status}</p>
+
+                            <div className="admin-form-group no-print">
                                 <label>Lý do hoàn trả</label>
                                 <textarea name="reason" value={formData.reason || ''} onChange={handleChange} rows={3}></textarea>
                             </div>
-                             <div className="admin-form-group">
+                            <p className="print-only"><strong>Lý do:</strong> {formData.reason}</p>
+
+                             <div className="admin-form-group no-print">
                                 <label>Số tiền hoàn (VNĐ)</label>
                                 <input type="number" name="refundAmount" value={formData.refundAmount || 0} onChange={handleChange} />
                             </div>
+                            <p className="print-only"><strong>Số tiền hoàn:</strong> {formData.refundAmount?.toLocaleString('vi-VN')}₫</p>
                         </div>
                          {isEditing && (
                             <div className="mt-6 border-t pt-4 text-sm text-gray-500">
                                 <p>Mã phiếu: {formData.id}</p>
-                                <p>Ngày tạo: {new Date(formData.createdAt || Date.now()).toLocaleString('vi-VN')}</p>
                             </div>
                          )}
+                         <div className="mt-16 grid grid-cols-2 gap-4 text-center text-sm">
+                            <div><p className="font-bold">Khách hàng</p><p>(Ký & ghi rõ họ tên)</p></div>
+                            <div><p className="font-bold">Nhân viên tiếp nhận</p><p>(Ký & ghi rõ họ tên)</p></div>
+                        </div>
                     </div>
                 </div>
                 <div className="admin-modal-footer no-print">

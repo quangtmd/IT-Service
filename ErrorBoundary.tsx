@@ -1,35 +1,22 @@
 import React, { ErrorInfo, ReactNode } from 'react';
 
-// Fix: Updated Props interface to correctly use React.PropsWithChildren type.
-// This ensures the `children` prop is correctly recognized and allows TypeScript
-// to properly infer the component's state and props properties.
-type ErrorBoundaryProps = React.PropsWithChildren<{ 
+interface Props {
+  children: ReactNode;
   fallbackMessage?: string;
-}>;
+}
 
-interface ErrorBoundaryState {
+interface State {
   hasError: boolean;
   errorMessage: string;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Fix: Explicitly declare props and state with their types to resolve potential TypeScript inference issues.
-  // Although inherited from React.Component, some environments might require this explicit declaration
-  // if the compiler is struggling to infer them from React.Component itself.
-  public readonly props: ErrorBoundaryProps;
-  public state: ErrorBoundaryState;
+class ErrorBoundary extends React.Component<Props, State> {
+  public state: State = {
+    hasError: false,
+    errorMessage: '',
+  };
 
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      errorMessage: '',
-    };
-    // Fix: Explicitly bind props to this instance
-    this.props = props;
-  }
-
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): State {
     // Update state so the next render will show the fallback UI.
     // We only store the safe, serializable message string.
     const safeErrorMessage = `${error.name}: ${error.message}`;
@@ -42,6 +29,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   render() {
+    // Fix: Reverted destructuring to use `this.props` and `this.state` directly to address the TypeScript error "Property 'props' does not exist on type 'ErrorBoundary'".
     if (this.state.hasError) {
       const displayMessage = this.state.errorMessage || this.props.fallbackMessage || "Có lỗi xảy ra với ứng dụng.";
 
@@ -77,7 +65,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       );
     }
 
-    // Fix: `this.props` is now correctly inferred.
     return this.props.children;
   }
 }

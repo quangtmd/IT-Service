@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
+import { Link } from 'react-router-dom'; // Link is compatible with v6/v7
 import Button from '../../ui/Button';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
 import * as Constants from '../../../constants.tsx';
@@ -21,24 +22,24 @@ const ProjectCardIts: React.FC<ProjectItemProps> = ({ item, index }) => {
             className={`modern-card group animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col relative`}
             style={{ animationDelay: `${index * 100}ms` }}
         >
-            <ReactRouterDOM.Link to={`/service/${item.slug || item.id}`} className="block aspect-video overflow-hidden rounded-t-lg">
+            <Link to={`/service/${item.slug || item.id}`} className="block aspect-video overflow-hidden rounded-t-lg">
                 <img src={placeholderImg} alt={item.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-            </ReactRouterDOM.Link>
-            <div className="p-6 flex flex-col flex-grow relative z-10"> {/* Ensure content is above pseudo-element */}
+            </Link>
+            <div className="p-6 flex flex-col flex-grow">
                 <div className="flex items-center mb-3 text-primary">
                     <i className={`${item.icon || 'fas fa-cogs'} text-xl mr-3 opacity-80`}></i>
                 </div>
                 <h3 className="modern-card-title mb-3">
-                     <ReactRouterDOM.Link to={`/service/${item.slug || item.id}`} className="line-clamp-2">{item.name}</ReactRouterDOM.Link>
+                     <Link to={`/service/${item.slug || item.id}`} className="line-clamp-2">{item.name}</Link>
                 </h3>
                 <p className="modern-card-description mb-5 line-clamp-3 flex-grow">{item.description}</p>
                 <div className="mt-auto">
-                    <ReactRouterDOM.Link
+                    <Link
                         to={`/service/${item.slug || item.id}`}
                         className="modern-card-link self-start"
                     >
                         Chi tiết dịch vụ <i className="fas fa-arrow-right text-xs ml-1"></i>
-                    </ReactRouterDOM.Link>
+                    </Link>
                 </div>
             </div>
         </div>
@@ -86,10 +87,10 @@ const HomeFeaturedProjectsIts: React.FC = () => {
               </span>
             )}
             <h2 className="home-section-title text-4xl md:text-5xl font-extrabold">
-              {projectsConfig.title || "Các Dịch Vụ Chính Của Chúng Tôi"}
+              {projectsConfig.title || "Our Key Services"}
             </h2>
             <p className="home-section-subtitle">
-              Khám phá loạt dịch vụ CNTT chuyên nghiệp của chúng tôi được thiết kế để nâng tầm doanh nghiệp của bạn.
+              Explore our range of expert IT services designed to elevate your business.
             </p>
         </div>
 
@@ -100,16 +101,16 @@ const HomeFeaturedProjectsIts: React.FC = () => {
                 ))}
             </div>
         ) : (
-            <p className="text-center text-textMuted">Các dịch vụ nổi bật đang được cập nhật.</p>
+            <p className="text-center text-textMuted">Featured services are being updated.</p>
         )}
 
         {projectsConfig.buttonLink && projectsConfig.buttonText && featuredItems.length > 0 && (
             <div className={`text-center mt-12 animate-on-scroll fade-in-up ${isTitleVisible ? 'is-visible' : ''}`} style={{animationDelay: '0.3s'}}>
-                <ReactRouterDOM.Link to={projectsConfig.buttonLink}>
+                <Link to={projectsConfig.buttonLink}>
                 <Button variant="primary" size="lg" className="px-10 py-3.5 text-base shadow-lg hover:shadow-primary/40">
                     {projectsConfig.buttonText} <i className="fas fa-arrow-right ml-2 text-sm"></i>
                 </Button>
-                </ReactRouterDOM.Link>
+                </Link>
             </div>
         )}
       </div>

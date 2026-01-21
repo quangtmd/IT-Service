@@ -3,33 +3,21 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, process.cwd(), '');
-
+    const env = loadEnv(mode, '.', '');
     return {
-        // By not specifying build.outDir, Vite will default to 'dist' at the project root.
-        server: {
-            port: 3000,
-            host: '0.0.0.0',
-            proxy: {
-                '/api': {
-                    target: 'http://localhost:10000',
-                    changeOrigin: true,
-                },
-            },
-        },
-        preview: {
-            host: true, // This is equivalent to --host, allows network access
-            // Allow requests from Render's preview domains to prevent host header errors.
-            allowedHosts: ['.onrender.com'],
-        },
-        plugins: [react()],
-        resolve: {
-            alias: {
-                '@': path.resolve(process.cwd(), '.'),
-            }
-        },
-        define: {
-            'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY)
+      server: {
+        port: 3000,
+        host: '0.0.0.0',
+      },
+      plugins: [react()],
+      define: {
+        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      },
+      resolve: {
+        alias: {
+          '@': path.resolve(__dirname, '.'),
         }
-    }
+      }
+    };
 });
