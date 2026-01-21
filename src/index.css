@@ -418,3 +418,107 @@ body.admin-panel-active { background-color: #f1f5f9; } /* Admin keeps light them
   4%, 60% { transform: translate(-2px,0) skew(0deg); }
   62% { transform: translate(0,0) skew(5deg); }
 }
+
+/* PRINT STYLES - COMPREHENSIVE OVERRIDE */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  body, html {
+    background-color: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    font-family: 'Inter', sans-serif;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Hide everything by default except the print content */
+  body > * {
+    display: none !important;
+  }
+
+  /* Force display the admin wrapper but hide sidebars etc */
+  #root, .admin-wrapper, .admin-main-content, .admin-content-area, form {
+    display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Explicitly hide non-printable areas */
+  .no-print, 
+  header, 
+  footer, 
+  .admin-sidebar, 
+  .admin-page-header, 
+  .admin-modal-footer, 
+  button, 
+  .admin-tabs, 
+  .admin-card-header,
+  .floating-action-buttons, /* Hypothetical class for floating buttons */
+  .fixed {
+    display: none !important;
+  }
+  
+  /* Show the specific print area */
+  .print-wrapper { 
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    visibility: visible !important;
+  }
+
+  .print-container {
+    width: 210mm; /* A4 width */
+    min-height: 297mm; /* A4 height */
+    padding: 20mm;
+    margin: 0 auto;
+    background-color: white !important;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+  
+  /* Ensure admin cards don't interfere */
+  .admin-card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Table Styling for Print */
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  .print-table th, .print-table td {
+    border: 1px solid #ddd !important;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .print-table th {
+    background-color: #f3f4f6 !important;
+    color: black !important;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+}

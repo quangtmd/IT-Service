@@ -586,6 +586,7 @@ export interface HomepageContactSectionSettings {
   sectionTitleIconUrl?: string; 
 }
 
+// Added LED Board types
 export interface LEDBoardItem {
   id: string;
   title: string;
@@ -665,7 +666,7 @@ export interface SiteSettings {
 
   // Homepage Content Sections
   homepageBanners: HomepageBannerSettings[]; 
-  homepageLEDBoard?: HomepageLEDBoardSettings;
+  homepageLEDBoard?: HomepageLEDBoardSettings; // Added LED board settings to SiteSettings
   homepageAbout: HomepageAboutSettings;
   homepageServicesBenefits: HomepageServicesBenefitsSettings;
   homepageWhyChooseUs: HomepageWhyChooseUsSettings;
@@ -1033,4 +1034,12 @@ export interface EmployeeKPI {
   kpiId: string;
   actualValue: number;
   period: string; // e.g., '2024-08'
+}
+export interface ProductReview {
+    id: string;
+    productId: string;
+    reviewerName: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
 }
