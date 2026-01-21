@@ -1,11 +1,37 @@
 // Fix: Removed vite/client reference and switched to process.env to resolve TypeScript errors.
 import { 
     User, Product, Article, Order, AdminNotification, ChatLogSession, SiteSettings,
-    FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus
+    FinancialTransaction, PayrollRecord, ServiceTicket, Inventory, Quotation, ReturnTicket, Supplier, OrderStatus,
+    WarrantyTicket, Warehouse, StockReceipt, StockIssue, StockTransfer
 } from './types';
-import { BACKEND_API_BASE_URL } from './constants';
+import * as Constants from './constants';
 
-const API_BASE_URL = BACKEND_API_BASE_URL;
+// --- Helper Functions for localStorage ---
+const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+        console.error(`Error reading localStorage key "${key}":`, error);
+        return defaultValue;
+    }
+};
+
+const setLocalStorageItem = <T,>(key: string, value: T): void => {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+        // Optional: Dispatch a custom event to notify other components of the change
+        window.dispatchEvent(new CustomEvent('localStorageChange', { detail: { key } }));
+    } catch (error) {
+        console.error(`Error setting localStorage key "${key}":`, error);
+    }
+};
+
+
+// The base URL is now an empty string. This assumes the frontend is served
+// from the same domain as the backend, which simplifies deployment.
+// All API requests will be relative, e.g., /api/users.
+const API_BASE_URL = "";
 
 async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // All API endpoints are prefixed with /api on the server.
@@ -24,12 +50,8 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
-
-            if (response.status === 404) {
-                 throw new Error('Lỗi Giao Tiếp Frontend-Backend (404)');
-            }
-            
-            const errorMessage = `Lỗi API: ${response.status} (${errorData.message || response.statusText}). Endpoint: ${fullEndpoint}.`;
+            // Simplified, more robust error message for a monolithic setup.
+            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
             throw new Error(errorMessage);
         }
         
@@ -99,7 +121,23 @@ export const addFinancialTransaction = (transaction: Omit<FinancialTransaction, 
 export const updateFinancialTransaction = (id: string, updates: Partial<FinancialTransaction>): Promise<FinancialTransaction> => fetchFromApi<FinancialTransaction>(`/financials/transactions/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteFinancialTransaction = (id: string): Promise<void> => fetchFromApi<void>(`/financials/transactions/${id}`, { method: 'DELETE' });
 export const getPayrollRecords = (): Promise<PayrollRecord[]> => fetchFromApi<PayrollRecord[]>('/financials/payroll');
-export const savePayrollRecords = (records: PayrollRecord[]): Promise<void> => fetchFromApi<void>('/financials/payroll', { method: 'POST', body: JSON.stringify(records) });
+// FIX: Updated savePayrollRecords to accept an argument to resolve TypeScript error.
+export const savePayrollRecords = async (records: PayrollRecord[]): Promise<void> => {
+    return fetchFromApi<void>('/financials/payroll', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(records)
+    });
+};
+
+export const getDebts = (): Promise<Debt[]> => fetchFromApi<Debt[]>('/debts');
+export const updateDebt = (id: string, updates: Partial<Debt>): Promise<Debt> => fetchFromApi<Debt>(`/debts/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+
+export const getPaymentApprovals = (): Promise<PaymentApproval[]> => fetchFromApi<PaymentApproval[]>('/payment-approvals');
+export const updatePaymentApproval = (id: string, updates: Partial<PaymentApproval>): Promise<PaymentApproval> => fetchFromApi<PaymentApproval>(`/payment-approvals/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+
+export const getCashflowForecast = (): Promise<CashflowForecastData> => fetchFromApi<CashflowForecastData>('/financials/forecast');
+
 
 // --- Service Tickets ---
 export const getServiceTickets = (): Promise<ServiceTicket[]> => fetchFromApi<ServiceTicket[]>('/service-tickets');
@@ -128,3 +166,127 @@ export const getSuppliers = (): Promise<Supplier[]> => fetchFromApi<Supplier[]>(
 export const addSupplier = (supplier: Omit<Supplier, 'id'>): Promise<Supplier> => fetchFromApi<Supplier>('/suppliers', { method: 'POST', body: JSON.stringify(supplier) });
 export const updateSupplier = (id: string, updates: Partial<Supplier>): Promise<Supplier> => fetchFromApi<Supplier>(`/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteSupplier = (id: string): Promise<void> => fetchFromApi<void>(`/suppliers/${id}`, { method: 'DELETE' });
+
+// --- Warranty Ticket Service ---
+export const getWarrantyTickets = async (): Promise<WarrantyTicket[]> => {
+    return fetchFromApi<WarrantyTicket[]>('/api/warranty-tickets');
+};
+
+export const addWarrantyTicket = async (ticket: Omit<WarrantyTicket, 'id' | 'ticketNumber' | 'createdAt'>): Promise<WarrantyTicket> => {
+    return fetchFromApi<WarrantyTicket>('/api/warranty-tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticket),
+    });
+};
+
+export const updateWarrantyTicket = async (id: string, updates: Partial<WarrantyTicket>): Promise<WarrantyTicket> => {
+    return fetchFromApi<WarrantyTicket>(`/api/warranty-tickets/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+    });
+};
+
+export const deleteWarrantyTicket = async (id: string): Promise<void> => {
+    return fetchFromApi<void>(`/api/warranty-tickets/${id}`, { method: 'DELETE' });
+};
+
+
+// --- NEW INVENTORY & LOGISTICS LOCAL SERVICES (using localStorage) ---
+
+// Warehouses
+export const getWarehouses = async (): Promise<Warehouse[]> => {
+    return getLocalStorageItem(Constants.WAREHOUSES_STORAGE_KEY, Constants.INITIAL_WAREHOUSES);
+};
+
+// Stock Receipts
+export const getStockReceipts = async (): Promise<StockReceipt[]> => {
+    return getLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, Constants.INITIAL_STOCK_RECEIPTS);
+};
+
+export const addStockReceipt = async (receipt: Omit<StockReceipt, 'id'>): Promise<StockReceipt> => {
+    const receipts = await getStockReceipts();
+    const newReceipt = { ...receipt, id: `sr-${Date.now()}` };
+    setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, [newReceipt, ...receipts]);
+    return newReceipt;
+};
+
+export const updateStockReceipt = async (id: string, updates: Partial<StockReceipt>): Promise<StockReceipt> => {
+    const receipts = await getStockReceipts();
+    let updatedReceipt: StockReceipt | undefined;
+    const newReceipts = receipts.map(r => {
+        if (r.id === id) {
+            updatedReceipt = { ...r, ...updates };
+            return updatedReceipt;
+        }
+        return r;
+    });
+    if (!updatedReceipt) throw new Error("Receipt not found");
+    setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, newReceipts);
+    return updatedReceipt;
+};
+
+export const deleteStockReceipt = async (id: string): Promise<void> => {
+    const receipts = await getStockReceipts();
+    setLocalStorageItem(Constants.STOCK_RECEIPTS_STORAGE_KEY, receipts.filter(r => r.id !== id));
+};
+
+// Stock Issues
+export const getStockIssues = async (): Promise<StockIssue[]> => {
+    return getLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, []);
+};
+export const addStockIssue = async (issue: Omit<StockIssue, 'id'>): Promise<StockIssue> => {
+    const issues = await getStockIssues();
+    const newIssue = { ...issue, id: `si-${Date.now()}` };
+    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, [newIssue, ...issues]);
+    return newIssue;
+};
+export const updateStockIssue = async (id: string, updates: Partial<StockIssue>): Promise<StockIssue> => {
+    const issues = await getStockIssues();
+    let updated: StockIssue | undefined;
+    const newItems = issues.map(i => {
+        if (i.id === id) {
+            updated = { ...i, ...updates };
+            return updated;
+        }
+        return i;
+    });
+    if (!updated) throw new Error("Issue not found");
+    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, newItems);
+    return updated;
+};
+export const deleteStockIssue = async (id: string): Promise<void> => {
+    const issues = await getStockIssues();
+    setLocalStorageItem(Constants.STOCK_ISSUES_STORAGE_KEY, issues.filter(i => i.id !== id));
+};
+
+
+// Stock Transfers
+export const getStockTransfers = async (): Promise<StockTransfer[]> => {
+    return getLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, []);
+};
+export const addStockTransfer = async (transfer: Omit<StockTransfer, 'id'>): Promise<StockTransfer> => {
+    const transfers = await getStockTransfers();
+    const newTransfer = { ...transfer, id: `stf-${Date.now()}` };
+    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, [newTransfer, ...transfers]);
+    return newTransfer;
+};
+export const updateStockTransfer = async (id: string, updates: Partial<StockTransfer>): Promise<StockTransfer> => {
+    const transfers = await getStockTransfers();
+    let updated: StockTransfer | undefined;
+    const newItems = transfers.map(t => {
+        if (t.id === id) {
+            updated = { ...t, ...updates };
+            return updated;
+        }
+        return t;
+    });
+    if (!updated) throw new Error("Transfer not found");
+    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, newItems);
+    return updated;
+};
+export const deleteStockTransfer = async (id: string): Promise<void> => {
+    const transfers = await getStockTransfers();
+    setLocalStorageItem(Constants.STOCK_TRANSFERS_STORAGE_KEY, transfers.filter(t => t.id !== id));
+};

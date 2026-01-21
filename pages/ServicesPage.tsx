@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { MOCK_SERVICES } from '../data/mockData';
-import * as Constants from '../constants'; 
+import * as Constants from '../constants.tsx'; 
 import PageTitleBannerIts from '../components/services_page_its/PageTitleBannerIts';
 import ServiceCardIts from '../components/services_page_its/ServiceCardIts';
 import CallToActionSectionIts from '../components/services_page_its/CallToActionSectionIts';

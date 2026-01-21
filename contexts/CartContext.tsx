@@ -1,5 +1,4 @@
 
-
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { CartItem, Product } from '../types';
 

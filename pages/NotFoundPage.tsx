@@ -1,5 +1,6 @@
 import React from 'react';
-import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
+// Fix: Use named import for Link
+import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 
 const NotFoundPage: React.FC = () => {
@@ -13,11 +14,12 @@ const NotFoundPage: React.FC = () => {
       <p className="text-textSubtle mb-8 max-w-md">
         Rất tiếc, chúng tôi không thể tìm thấy trang bạn yêu cầu. Có thể trang đã bị xóa, đổi tên hoặc tạm thời không khả dụng.
       </p>
-      <ReactRouterDOM.Link to="/">
+      {/* Fix: Use Link directly */}
+      <Link to="/">
         <Button size="lg" variant="primary">
           <i className="fas fa-home mr-2"></i> Về Trang Chủ
         </Button>
-      </ReactRouterDOM.Link>
+      </Link>
     </div>
   );
 };

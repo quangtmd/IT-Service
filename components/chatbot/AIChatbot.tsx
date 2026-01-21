@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product } from '../../types';
+import { ChatMessage as ChatMessageType, GroundingChunk, Service, SiteSettings, ChatLogSession, Product, Order } from '../../types';
 import ChatMessage from './ChatMessage';
 import Button from '../ui/Button';
 import geminiService from '../../services/geminiService';
 import { Chat, GenerateContentResponse } from '@google/genai';
-import * as Constants from '../../constants'; 
+import * as Constants from '../../constants.tsx'; 
 import { useChatbotContext } from '../../contexts/ChatbotContext'; // Import the context hook
-import { saveChatLogSession } from '../../services/localDataService';
+import { saveChatLogSession, getCustomerOrders, getOrders } from '../../services/localDataService';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Add SpeechRecognition types for browser compatibility
 declare global {
@@ -34,11 +35,15 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
   const [userName, setUserName] = useState('');
   const [userPhone, setUserPhone] = useState('');
-  const [isUserInfoSubmitted, setIsUserInfoSubmitted] = useState(false);
   const [userInfoError, setUserInfoError] = useState<string | null>(null);
   const [currentChatLogSession, setCurrentChatLogSession] = useState<ChatLogSession | null>(null);
 
   const { currentContext } = useChatbotContext(); // Get the current viewing context
+  const { currentUser } = useAuth(); // Get current user for order lookups
+
+  // Initialize based on whether user is logged in initially
+  const [isUserInfoSubmitted, setIsUserInfoSubmitted] = useState(!!currentUser);
+
 
   // New state for image and voice input
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -46,6 +51,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
 
   const loadSiteSettings = useCallback(() => {
@@ -69,45 +75,78 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     };
   }, [loadSiteSettings]);
 
+  // Handle auto-filling user info if logged in, and resetting state when chat closes
+  useEffect(() => {
+    // Sync user info with auth state
+    if (currentUser) {
+        setIsUserInfoSubmitted(true);
+        setUserName(currentUser.username);
+        setUserPhone(currentUser.phone || '');
+    } else {
+        // If user logs out, reset the form state
+        setIsUserInfoSubmitted(false);
+        setUserName('');
+        setUserPhone('');
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    // Reset only chat-session-specific state when chat is closed
+    if (!isOpen) {
+      setChatSession(null);
+      setMessages([]);
+      setInput('');
+      setError(null);
+      setCurrentChatLogSession(null);
+      handleRemoveImage(); // Clear any selected image
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    }
+  }, [isOpen]);
+
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(scrollToBottom, [messages]);
   
+  useEffect(() => {
+    // When the bot is not loading and the chat is open, focus the input
+    if (!isLoading && isOpen && inputRef.current) {
+        inputRef.current.focus();
+    }
+  }, [isLoading, isOpen]);
+
   const initializeChat = useCallback(async () => {
+    // Check if user info is submitted (either by form or auto-filled) and chat isn't already active
     if (!isUserInfoSubmitted || !isOpen || chatSession) return; 
 
     setIsLoading(true);
     setError(null);
     try {
-      // This call will now throw a specific, catchable error if the API key is missing.
       const newChatSession = geminiService.startChat(siteSettings); 
       setChatSession(newChatSession);
       const initialBotGreeting = `Xin chào ${userName}! Tôi là trợ lý AI của ${siteSettings.companyName}. Tôi có thể giúp gì cho bạn?`;
-      setMessages([{ 
+      const welcomeMessage = { 
         id: Date.now().toString(), 
         text: initialBotGreeting,
-        sender: 'bot', 
+        sender: 'bot' as const, 
         timestamp: new Date() 
-      }]);
+      };
+      setMessages([welcomeMessage]);
       
       const newLogSession: ChatLogSession = {
         id: `chat-${Date.now()}`,
         userName: userName,
         userPhone: userPhone,
         startTime: new Date().toISOString(),
-        messages: [{ 
-            id: Date.now().toString(), 
-            text: initialBotGreeting,
-            sender: 'bot', 
-            timestamp: new Date() 
-          }]
+        messages: [welcomeMessage]
       };
       setCurrentChatLogSession(newLogSession);
 
     } catch (err) {
-      // Gracefully handle the error inside the component instead of crashing.
       console.error("Failed to initialize chat:", err);
       const errorMessage = err instanceof Error ? err.message : "Lỗi không xác định.";
       const displayError = errorMessage.includes("API Key") 
@@ -138,16 +177,21 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
         await saveChatLogSession(currentChatLogSession);
       } catch (error) {
         console.error("Failed to save chat log to backend:", error);
-        // Optionally notify user of save failure, but don't block UI
       }
     }
   }, [currentChatLogSession]);
 
   useEffect(() => {
-    if (currentChatLogSession) {
-      saveChatLog();
-    }
-  }, [messages, currentChatLogSession, saveChatLog]);
+    const handleBeforeUnload = () => {
+        if (currentChatLogSession && currentChatLogSession.messages.length > 1) {
+             saveChatLog();
+        }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [currentChatLogSession, saveChatLog]);
   
   const handleUserInfoSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -166,7 +210,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Simple size check (e.g., 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 5MB.');
         return;
@@ -247,6 +290,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     setImageFile(null);
     setImagePreview(null);
     if (currentImagePreview) URL.revokeObjectURL(currentImagePreview);
+    if (imageInputRef.current) imageInputRef.current.value = '';
 
     setIsLoading(true);
     setError(null);
@@ -273,32 +317,132 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
         }
 
         let currentText = '';
+        const functionCalls: any[] = [];
+        
         for await (const chunk of stream) {
-            currentText += chunk.text; 
-            setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: currentText } : msg));
-            setCurrentChatLogSession(prevLog => {
-                if (!prevLog) return null;
-                const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: currentText } : m);
-                return {...prevLog, messages: updatedMessages};
-            });
+            if (chunk.functionCalls) {
+                functionCalls.push(...chunk.functionCalls);
+            }
+            if(chunk.text) {
+                currentText += chunk.text;
+                setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: currentText } : msg));
+                setCurrentChatLogSession(prevLog => {
+                    if (!prevLog) return null;
+                    const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: currentText } : m);
+                    return {...prevLog, messages: updatedMessages};
+                });
+            }
             if (chunk.candidates?.[0]?.groundingMetadata?.groundingChunks) {
                 setCurrentGroundingChunks(chunk.candidates[0].groundingMetadata.groundingChunks as GroundingChunk[]);
             }
         }
+
+        if (functionCalls.length > 0) {
+            setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: "Đang tìm kiếm thông tin đơn hàng..." } : msg));
+            setIsLoading(true);
+
+            const call = functionCalls[0]; // Process first function call
+            if (call.name === 'getOrderStatus') {
+                let orderResult: Order | null = null;
+                try {
+                    let orderIdArg = call.args.orderId;
+                    if (typeof orderIdArg !== 'string') {
+                        orderIdArg = String(orderIdArg);
+                    }
+                    
+                    // Normalize input for better matching
+                    const cleanInput = orderIdArg.trim().toLowerCase();
+                    // Also prepare a digit-only version for looser matching if strict fails
+                    const cleanInputDigits = cleanInput.replace(/\D/g, '');
+        
+                    if (cleanInput) {
+                        const allOrders = await getOrders();
+                        orderResult = allOrders.find(o => {
+                            const id = o.id.toLowerCase();
+                            
+                            // 1. Exact match
+                            if (id === cleanInput) return true;
+                            
+                            // 2. Ends with (common for finding by suffix)
+                            if (id.endsWith(cleanInput)) return true;
+
+                            // 3. Contains (if input is significant enough, e.g. > 5 chars)
+                            if (cleanInput.length > 5 && id.includes(cleanInput)) return true;
+                            
+                            // 4. Digit suffix match (fallback)
+                            const idDigits = id.replace(/\D/g, '');
+                            // Only match digits if user provided at least 4 digits to avoid broad matches
+                            if (cleanInputDigits.length >= 4 && idDigits.endsWith(cleanInputDigits)) return true;
+                            
+                            return false;
+                        }) || null;
+                    }
+
+                    let toolResponsePayload;
+                    if (orderResult) {
+                        // Create a simplified, flat summary object for the AI.
+                        toolResponsePayload = {
+                            id: orderResult.id,
+                            status: orderResult.status,
+                            totalAmount: orderResult.totalAmount,
+                            shippingAddress: orderResult.customerInfo.address,
+                            shippingCarrier: orderResult.shippingInfo?.carrier,
+                            shippingTrackingNumber: orderResult.shippingInfo?.trackingNumber
+                        };
+                    } else {
+                        toolResponsePayload = { status: "not_found", message: `Không tìm thấy đơn hàng nào khớp với mã "${orderIdArg}".` };
+                    }
+
+
+                    const toolResponseStream = await chatSession.sendToolResponse({
+                        functionResponses: [{
+                            id: call.id,
+                            name: call.name,
+                            response: { result: toolResponsePayload }
+                        }]
+                    });
+
+                    let finalText = '';
+                    for await (const finalChunk of toolResponseStream) {
+                        if (finalChunk.text) {
+                            finalText += finalChunk.text;
+                             setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: finalText } : msg));
+                             setCurrentChatLogSession(prevLog => {
+                                if (!prevLog) return null;
+                                const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: finalText } : m);
+                                return {...prevLog, messages: updatedMessages};
+                            });
+                        }
+                    }
+                } catch (toolError) {
+                     console.error("Error executing tool or sending response:", toolError);
+                     setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: 'Rất tiếc, đã có lỗi khi truy xuất thông tin đơn hàng.', sender: 'system' } : msg));
+                }
+            }
+        }
+
     } catch (err) {
       console.error("Error sending message:", err);
-      const errorText = err instanceof Error ? err.message : "Đã xảy ra lỗi khi gửi tin nhắn.";
-      setError(errorText);
-      setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: `Lỗi: ${errorText}`, sender: 'system' } : msg));
+      let errorText = "Đã có lỗi xảy ra khi giao tiếp với AI. Vui lòng thử lại sau.";
+      if (err instanceof Error) {
+        if (err.message.includes("503") || err.message.toLowerCase().includes("overloaded")) {
+          errorText = "Hệ thống AI đang quá tải, vui lòng thử lại sau giây lát.";
+        }
+      }
+      
+      const errorMessageForUser = `Lỗi: ${errorText}`;
+
+      setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: errorMessageForUser, sender: 'system' } : msg));
+      
       setCurrentChatLogSession(prevLog => {
         if (!prevLog) return null;
-        const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: `Lỗi: ${errorText}`, sender: 'system' as const } : m);
+        const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: errorMessageForUser, sender: 'system' as const } : m);
         return {...prevLog, messages: updatedMessages};
       });
     } finally {
       setIsLoading(false);
       setCurrentBotMessageId(null); 
-      saveChatLog(); 
+      saveChatLog();
     }
   };
 
@@ -380,6 +524,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                     <i className="fas fa-microphone"></i>
                 </Button>
                 <input
+                  ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}

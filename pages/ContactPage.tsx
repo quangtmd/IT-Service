@@ -1,8 +1,7 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import Button from '../components/ui/Button';
-import * as Constants from '../constants';
+import * as Constants from '../constants.tsx';
 import { SiteSettings } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 

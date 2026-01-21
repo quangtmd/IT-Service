@@ -1,6 +1,8 @@
 
+
 import React from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// Fix: Use named import for Link
+import { Link } from 'react-router-dom';
 import { Service } from '../../types';
 import Button from '../ui/Button';
 import useIntersectionObserver from '../../hooks/useIntersectionObserver';
@@ -32,16 +34,18 @@ const ServiceCardIts: React.FC<ServiceCardItsProps> = ({ service, index }) => {
             <i className={`${service.icon || 'fas fa-concierge-bell'} text-2xl w-6 h-6 text-center`}></i>
           </div>
           <h3 className="text-xl font-semibold text-textBase group-hover:text-primary transition-colors">
-            <ReactRouterDOM.Link to={`/service/${service.slug || service.id}`} className="line-clamp-1">{service.name}</ReactRouterDOM.Link>
+            {/* Fix: Use Link directly */}
+            <Link to={`/service/${service.slug || service.id}`} className="line-clamp-1">{service.name}</Link>
           </h3>
         </div>
         <p className="text-textMuted text-sm mb-5 line-clamp-3 leading-relaxed flex-grow h-20">{service.description}</p>
         <div className="mt-auto">
-          <ReactRouterDOM.Link to={`/service/${service.slug || service.id}`}>
+          {/* Fix: Use Link directly */}
+          <Link to={`/service/${service.slug || service.id}`}>
             <Button variant="outline" size="sm" className="w-full group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300">
               Tìm hiểu thêm <i className="fas fa-arrow-right text-xs ml-2"></i>
             </Button>
-          </ReactRouterDOM.Link>
+          </Link>
         </div>
       </div>
     </div>
