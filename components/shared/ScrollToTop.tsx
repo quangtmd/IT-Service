@@ -1,12 +1,10 @@
 // Fix: Import React to make React.FC and other React types available.
 import React from 'react';
 import { useEffect } from 'react';
-// Fix: Use named import for useLocation
-import { useLocation } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom'; // useLocation is fine for v6/v7
 
 const ScrollToTop: React.FC = () => {
-  // Fix: Use useLocation directly
-  const { pathname } = useLocation();
+  const { pathname } = ReactRouterDOM.useLocation();
 
   useEffect(() => {
     window.scrollTo(0, 0);

@@ -1,32 +1,29 @@
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import useIntersectionObserver from '../../../hooks/useIntersectionObserver';
-import * as Constants from '../../../constants';
+import * as Constants from '../../../constants.tsx';
 import { SiteSettings, HomepageStatItem } from '../../../types';
-import { Canvas } from '@react-three/fiber';
-import { Sparkles } from '@react-three/drei';
 
+// New sub-component to handle individual stat item's intersection observation
 const StatDisplayItem: React.FC<{ stat: HomepageStatItem; index: number }> = ({ stat, index }) => {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0.2, triggerOnce: true });
   
   return (
     <div 
+      key={stat.id || index} 
       ref={ref}
-      className={`relative text-center p-6 animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex flex-col items-center group transition-all duration-300
-                 bg-white/5 backdrop-blur-md rounded-2xl border-2 border-white/10 shadow-lg hover:border-cyan-400/50 hover:shadow-cyan-500/20 hover:-translate-y-2`}
-      style={{ animationDelay: `${index * 100}ms` }}
+      className={`text-center p-4 animate-on-scroll fade-in-up ${isVisible ? 'is-visible' : ''} flex items-center sm:flex-col lg:flex-row group`}
+      style={{ animationDelay: `${index * 150}ms` }}
     >
-        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-50 pointer-events-none rounded-2xl"></div>
-        
-        <div className="mb-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
-            <div className="w-16 h-16 flex items-center justify-center text-white bg-black/20 rounded-full shadow-inner border-2 border-white/10">
-               <i className={`${stat.iconClass || 'fas fa-star'} text-3xl text-cyan-300`}></i>
-            </div>
+      <div className="mb-0 sm:mb-5 lg:mb-0 mr-5 lg:mr-6 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center text-white bg-white/30 rounded-full p-3.5 shadow-lg border-2 border-white/50">
+           <i className={`${stat.iconClass || 'fas fa-star'} text-3xl sm:text-4xl`}></i>
         </div>
-        <div className="text-left sm:text-center">
-            <h3 className="text-5xl font-bold mb-1 text-white group-hover:text-cyan-300 transition-colors drop-shadow-md">{stat.count}</h3>
-            <p className="text-gray-300 text-sm font-medium">{stat.label}</p>
-        </div>
+      </div>
+      <div className="text-left sm:text-center lg:text-left">
+        <h3 className="text-4xl sm:text-5xl font-bold mb-1 group-hover:text-yellow-300 transition-colors">{stat.count}</h3>
+        <p className="text-red-100 text-sm sm:text-base font-medium">{stat.label}</p>
+      </div>
     </div>
   );
 };
@@ -57,21 +54,14 @@ const HomeStatsCounterIts: React.FC = () => {
   const sortedStats = [...statsConfig.stats].sort((a,b) => (a.order || 0) - (b.order || 0));
 
   return (
-    <section className="py-12 md:py-20 bg-[#0B1120] text-white relative">
-        <div className="absolute inset-0 z-0">
-            <Canvas>
-                <Suspense fallback={null}>
-                    <Sparkles count={300} scale={20} size={1} speed={0.2} color="#00f3ff" opacity={0.5} />
-                </Suspense>
-            </Canvas>
+    <section className="py-12 md:py-20 bg-gradient-to-r from-primary to-red-600 text-white">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+          {sortedStats.map((stat: HomepageStatItem, index) => (
+            <StatDisplayItem key={stat.id || index} stat={stat} index={index} />
+          ))}
         </div>
-        <div className="container mx-auto px-4 relative z-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {sortedStats.map((stat: HomepageStatItem, index) => (
-                <StatDisplayItem key={stat.id || index} stat={stat} index={index} />
-            ))}
-            </div>
-        </div>
+      </div>
     </section>
   );
 };

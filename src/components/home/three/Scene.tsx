@@ -96,7 +96,7 @@ const Scene = () => {
         const totalPages = 4;
         
         if (group.current) {
-            // FIX: Use setY method instead of direct assignment to avoid "read only property" errors
+            // FIX: Use setY method for Vector3 instead of direct property assignment which can fail in strict mode
             group.current.position.setY(THREE.MathUtils.lerp(group.current.position.y, scrollOffset * h * totalPages, 0.1));
         }
         

@@ -27,7 +27,7 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({ type, options, se
       label += ` (${option.details})`;
     }
     if (option.price && option.price > 0) {
-      label += ` - ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(option.price)}`;
+      label += ` - ${option.price.toLocaleString('vi-VN')}₫`;
     } else if (option.price === 0) {
       // Could indicate price not set or free item, adjust as needed
       // label += ` - (Liên hệ)`; 

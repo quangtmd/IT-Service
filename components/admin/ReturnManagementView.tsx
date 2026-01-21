@@ -44,10 +44,6 @@ const ReturnManagementView: React.FC = () => {
     const handleEdit = (id: string) => {
         navigate(`/admin/returns/edit/${id}`);
     };
-    
-    const handleView = (id: string) => {
-        navigate(`/admin/returns/edit/${id}`);
-    };
 
     const handleDelete = async (id: string) => {
         if (window.confirm('Bạn có chắc muốn xóa phiếu hoàn trả này?')) {
@@ -95,9 +91,8 @@ const ReturnManagementView: React.FC = () => {
                                         <td><span className={`status-badge ${getStatusColor(ret.status)}`}>{ret.status}</span></td>
                                         <td>
                                             <div className="flex gap-2">
-                                                <Button onClick={() => handleView(ret.id)} size="sm" variant="outline" title="Xem/In"><i className="fas fa-eye"></i></Button>
-                                                <Button onClick={() => handleEdit(ret.id)} size="sm" variant="outline" title="Sửa"><i className="fas fa-edit"></i></Button>
-                                                <Button onClick={() => handleDelete(ret.id)} size="sm" variant="ghost" className="text-red-500" title="Xóa"><i className="fas fa-trash"></i></Button>
+                                                <Button onClick={() => handleEdit(ret.id)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
+                                                <Button onClick={() => handleDelete(ret.id)} size="sm" variant="ghost" className="text-red-500"><i className="fas fa-trash"></i></Button>
                                             </div>
                                         </td>
                                     </tr>

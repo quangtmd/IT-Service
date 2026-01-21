@@ -1,225 +1,416 @@
-
 import express from 'express';
 import cors from 'cors';
-import pool from './db.js';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import pool from './db.js';
+import dotenv from 'dotenv';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 10000;
 
-// --- CORS CONFIGURATION ---
-app.set('trust proxy', true);
-app.use(cors()); 
-app.use(express.json({ limit: '10mb' }));
+app.use(cors());
+app.use(express.json({ limit: '50mb' })); // Increase limit for media uploads
 
-// --- LOGGING MIDDLEWARE ---
-app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
-});
+// --- Static Files Setup ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Resolve the absolute path to the 'dist' folder at the project root
+const staticFilesPath = path.resolve(__dirname, '..', 'dist');
 
-// --- HELPERS ---
-const deserializeProduct = (p) => ({
-    ...p,
-    imageUrls: typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls || '[]') : p.imageUrls,
-    specifications: typeof p.specifications === 'string' ? JSON.parse(p.specifications || '{}') : p.specifications,
-    tags: typeof p.tags === 'string' ? JSON.parse(p.tags || '[]') : p.tags,
-    isVisible: Boolean(p.isVisible), 
-    price: Number(p.price),
-    stock: Number(p.stock),
-});
-const deserializeUser = (u) => {
-    const { password, ...userWithoutPassword } = u;
-    return userWithoutPassword;
-};
+console.log(`[Static Files] Server __dirname: ${__dirname}`);
+console.log(`[Static Files] Resolved Project Root: ${path.resolve(__dirname, '..')}`);
+console.log(`[Static Files] Attempting to serve static files from: ${staticFilesPath}`);
 
-// --- DB CONNECTION CHECK ---
-const checkDbConnection = async () => {
-    try {
-        const connection = await pool.getConnection();
-        await connection.query('SELECT 1');
-        connection.release();
-        return { status: 'connected' };
-    } catch (error) {
-        console.error("DB Connection Failed:", error);
-        return { status: 'error', error: error.message };
-    }
-};
+app.use(express.static(staticFilesPath));
 
-// ==========================================================================
-// API ROUTER
-// ==========================================================================
+// API router
 const apiRouter = express.Router();
-
-apiRouter.get('/', (req, res) => {
-    res.json({ message: "API Root is reachable" });
-});
-
-apiRouter.get('/health', async (req, res) => {
-    const status = await checkDbConnection();
-    res.json(status);
-});
-
-// === USERS ===
-apiRouter.post('/users/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const [rows] = await pool.query('SELECT * FROM Users WHERE email = ?', [email]);
-        if (rows.length === 0) return res.status(401).json({ message: 'Email không tồn tại.' });
-        const user = rows[0];
-        if (user.password !== password) return res.status(401).json({ message: 'Mật khẩu không đúng.' });
-        const { password: _, ...userWithoutPassword } = user;
-        res.json(userWithoutPassword);
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error: error.message });
-    }
-});
-
-apiRouter.get('/users/:userId/orders', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [req.params.userId]);
-        res.json(rows.map(order => ({
-            ...order,
-            items: JSON.parse(order.items || '[]'),
-            customerInfo: JSON.parse(order.customerInfo || '{}'),
-            paymentInfo: JSON.parse(order.paymentInfo || '{}'),
-            shippingInfo: JSON.parse(order.shippingInfo || '{}'),
-        })));
-    } catch (error) { res.status(500).json({ message: error.message }); }
-});
-
-apiRouter.get('/users', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM Users');
-        res.json(rows.map(deserializeUser));
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// === PRODUCTS ===
-
-// IMPORTANT: Specific routes (like /featured) MUST come before dynamic routes (like /:id)
-// 1. Featured Products
-apiRouter.get('/products/featured', async (req, res) => {
-    console.log("Fetching featured products...");
-    try {
-        // Fetch products that are featured OR have high price/views if no featured found
-        const query = `SELECT * FROM Products WHERE isVisible = 1 ORDER BY is_featured DESC, price DESC LIMIT 4`;
-        const [rows] = await pool.query(query);
-        res.json(rows.map(deserializeProduct));
-    } catch (error) {
-        console.error("Error fetching featured products:", error);
-        res.status(500).json({ message: "Lỗi server", error: error.message });
-    }
-});
-
-// 2. Product List & Filter
-apiRouter.get('/products', async (req, res) => {
-    try {
-        const { mainCategory, subCategory, q, tags, limit = 1000, page = 1, is_featured } = req.query;
-        let baseQuery = `FROM Products p`;
-        const whereClauses = ['1=1'];
-        const params = [];
-        
-        if (mainCategory) { whereClauses.push('p.mainCategory = ?'); params.push(mainCategory); }
-        if (subCategory) { whereClauses.push('p.subCategory = ?'); params.push(subCategory); }
-        if (q) { whereClauses.push('(p.name LIKE ? OR p.brand LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
-        if (tags) { whereClauses.push('p.tags LIKE ?'); params.push(`%${tags}%`); }
-        if (is_featured === 'true') { whereClauses.push('p.is_featured = 1'); }
-        
-        const whereString = ' WHERE ' + whereClauses.join(' AND ');
-        const [countRows] = await pool.query(`SELECT COUNT(p.id) as total ${baseQuery} ${whereString}`, params);
-        const totalProducts = countRows[0].total;
-
-        const offset = (Number(page) - 1) * Number(limit);
-        const productQuery = `SELECT p.* ${baseQuery} ${whereString} ORDER BY p.id DESC LIMIT ? OFFSET ?`;
-        const [products] = await pool.query(productQuery, [...params, Number(limit), offset]);
-        
-        res.json({ products: products.map(deserializeProduct), totalProducts });
-    } catch (error) {
-        console.error("Error fetching products:", error);
-        res.status(500).json({ message: "Lỗi server", error: error.message });
-    }
-});
-
-// 3. Product Detail - Dynamic ID (Must be LAST)
-apiRouter.get('/products/:id', async (req, res) => {
-    const productId = req.params.id;
-    try {
-        const [rows] = await pool.query(`SELECT * FROM Products WHERE id = ?`, [productId]);
-        if (rows.length > 0) {
-            res.json(deserializeProduct(rows[0]));
-        } else {
-            res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: "Lỗi server", error: error.message });
-    }
-});
-
-// === FINANCIALS ===
-apiRouter.get('/financials/transactions', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM FinancialTransactions ORDER BY transactionDate DESC');
-        res.json(rows);
-    } catch (error) { res.status(500).json({ message: error.message }); }
-});
-
-apiRouter.get('/financials/payroll', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM PayrollRecords');
-        res.json(rows);
-    } catch (error) { res.status(500).json({ message: error.message }); }
-});
-
-// === ORDERS ===
-apiRouter.get('/orders', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM Orders ORDER BY orderDate DESC');
-        res.json(rows.map(order => ({
-            ...order,
-            items: JSON.parse(order.items || '[]'),
-            customerInfo: JSON.parse(order.customerInfo || '{}'),
-            paymentInfo: JSON.parse(order.paymentInfo || '{}'),
-            shippingInfo: JSON.parse(order.shippingInfo || '{}'),
-        })));
-    } catch (error) { res.status(500).json({ message: error.message }); }
-});
-
-// Mount API Router
 app.use('/api', apiRouter);
 
-// 404 Handler for API requests
-app.use('/api/*', (req, res) => {
-    console.log(`❌ 404 Not Found (API catch-all): ${req.originalUrl}`);
-    res.status(404).json({ message: `API endpoint not found: ${req.originalUrl}` });
-});
+// --- API Endpoints ---
 
-// Root route
-app.get('/', (req, res) => {
-    res.send("Backend is running!");
-});
-
-// Serve Static Files (Production)
-if (process.env.NODE_ENV === 'production') {
-    const projectRoot = path.resolve(__dirname, '..');
-    app.use(express.static(path.join(projectRoot, 'dist')));
-    app.get('*', (req, res) => {
-        if (req.path.startsWith('/api/')) {
-             return res.status(404).json({ message: `API not found: ${req.path}` });
-        }
-        res.sendFile(path.resolve(projectRoot, 'dist', 'index.html'));
-    });
+async function query(sql, params) {
+  const connection = await pool.getConnection();
+  try {
+    const [results] = await connection.execute(sql, params);
+    return results;
+  } finally {
+    connection.release();
+  }
 }
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+// GET /api/server-info
+apiRouter.get('/server-info', (req, res) => {
+    res.json({
+        outboundIp: process.env.RENDER_EXTERNAL_IP || 'Not available',
+        message: "This IP is provided by the Render environment. Use it to whitelist database connections."
+    });
+});
+
+// USERS
+apiRouter.get('/users', async (req, res) => res.json(await query('SELECT id, username, email, role, staffRole, imageUrl, phone, address, joinDate, status, position, isLocked, dateOfBirth, origin, loyaltyPoints, debtStatus, assignedStaffId FROM Users')));
+apiRouter.post('/users/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email và mật khẩu là bắt buộc.' });
+    }
+    const users = await query('SELECT * FROM Users WHERE email = ? AND password = ?', [email, password]);
+    if (users.length > 0) {
+        const { password, ...user } = users[0];
+        res.json(user);
+    } else {
+        res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+    }
+});
+apiRouter.post('/users', async (req, res) => {
+    const user = { ...req.body, id: `user-${Date.now()}` };
+    await query('INSERT INTO Users SET ?', [user]);
+    const { password, ...userToReturn } = user;
+    res.status(201).json(userToReturn);
+});
+apiRouter.put('/users/:id', async (req, res) => {
+    const { password, ...updates } = req.body; // Never update password this way
+    await query('UPDATE Users SET ? WHERE id = ?', [updates, req.params.id]);
+    res.json({ message: 'User updated' });
+});
+apiRouter.delete('/users/:id', async (req, res) => {
+    await query('DELETE FROM Users WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+
+
+// PRODUCTS
+apiRouter.get('/products', async (req, res) => {
+    let baseQuery = 'SELECT * FROM Products';
+    let countQuery = 'SELECT COUNT(*) as total FROM Products';
+    const whereClauses = [];
+    let params = [];
+    let countParams = [];
+
+    if (req.query.is_featured === 'true') {
+        whereClauses.push('is_featured = ?');
+        params.push(1);
+        countParams.push(1);
+    }
+    if (req.query.mainCategory) {
+        whereClauses.push('mainCategory = ?');
+        params.push(req.query.mainCategory);
+        countParams.push(req.query.mainCategory);
+    }
+     if (req.query.subCategory) {
+        whereClauses.push('subCategory = ?');
+        params.push(req.query.subCategory);
+        countParams.push(req.query.subCategory);
+    }
+    if (req.query.q) {
+        whereClauses.push('name LIKE ?');
+        params.push(`%${req.query.q}%`);
+        countParams.push(`%${req.query.q}%`);
+    }
+     if (req.query.tags) {
+        whereClauses.push('JSON_CONTAINS(tags, ?)');
+        params.push(`"${req.query.tags}"`);
+        countParams.push(`"${req.query.tags}"`);
+    }
+
+    if (whereClauses.length > 0) {
+        const whereString = ' WHERE ' + whereClauses.join(' AND ');
+        baseQuery += whereString;
+        countQuery += whereString;
+    }
+
+    const [totalResult] = await query(countQuery, countParams);
+    const totalProducts = totalResult[0].total;
+    
+    const limit = parseInt(req.query.limit) || 12;
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * limit;
+
+    baseQuery += ` ORDER BY id DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    const products = await query(baseQuery, params);
+    
+    res.json({
+        products: products.map(p => ({
+            ...p,
+            tags: typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags,
+            specifications: typeof p.specifications === 'string' ? JSON.parse(p.specifications) : p.specifications,
+            imageUrls: typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls) : p.imageUrls,
+        })),
+        totalProducts: totalProducts
+    });
+});
+apiRouter.get('/products/:id', async (req, res) => {
+    const products = await query('SELECT * FROM Products WHERE id = ?', [req.params.id]);
+    if (products.length === 0) return res.status(404).json({ message: 'Product not found'});
+    const p = products[0];
+     res.json({
+        ...p,
+        tags: typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags,
+        specifications: typeof p.specifications === 'string' ? JSON.parse(p.specifications) : p.specifications,
+        imageUrls: typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls) : p.imageUrls,
+    });
+});
+apiRouter.post('/products', async (req, res) => {
+    const product = { 
+      ...req.body,
+      id: `prod-${Date.now()}`,
+      tags: JSON.stringify(req.body.tags || []),
+      specifications: JSON.stringify(req.body.specifications || {}),
+      imageUrls: JSON.stringify(req.body.imageUrls || [])
+    };
+    await query('INSERT INTO Products SET ?', [product]);
+    res.status(201).json(req.body);
+});
+apiRouter.put('/products/:id', async (req, res) => {
+    const product = { 
+      ...req.body,
+      tags: JSON.stringify(req.body.tags || []),
+      specifications: JSON.stringify(req.body.specifications || {}),
+      imageUrls: JSON.stringify(req.body.imageUrls || [])
+    };
+    await query('UPDATE Products SET ? WHERE id = ?', [product, req.params.id]);
+    res.json({ message: 'Product updated' });
+});
+apiRouter.delete('/products/:id', async (req, res) => {
+    await query('DELETE FROM Products WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+
+// ARTICLES
+apiRouter.get('/articles', async (req, res) => res.json(await query('SELECT * FROM Articles ORDER BY date DESC')));
+apiRouter.get('/articles/:id', async (req, res) => {
+     const articles = await query('SELECT * FROM Articles WHERE id = ?', [req.params.id]);
+     if (articles.length > 0) res.json(articles[0]);
+     else res.status(404).json({message: 'Article not found'});
+});
+apiRouter.post('/articles', async (req, res) => {
+    const article = { ...req.body, id: `art-${Date.now()}` };
+    await query('INSERT INTO Articles SET ?', [article]);
+    res.status(201).json(article);
+});
+apiRouter.put('/articles/:id', async (req, res) => {
+    await query('UPDATE Articles SET ? WHERE id = ?', [req.body, req.params.id]);
+    res.json({ message: 'Article updated' });
+});
+apiRouter.delete('/articles/:id', async (req, res) => {
+    await query('DELETE FROM Articles WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+
+// ORDERS
+apiRouter.get('/orders', async (req, res) => {
+    const orders = await query('SELECT * FROM Orders ORDER BY orderDate DESC');
+    res.json(orders.map(o => ({
+        ...o,
+        customerInfo: JSON.parse(o.customerInfo),
+        items: JSON.parse(o.items),
+        paymentInfo: JSON.parse(o.paymentInfo)
+    })));
+});
+apiRouter.get('/orders/customer/:customerId', async (req, res) => {
+    const orders = await query('SELECT * FROM Orders WHERE userId = ? ORDER BY orderDate DESC', [req.params.customerId]);
+     res.json(orders.map(o => ({
+        ...o,
+        customerInfo: JSON.parse(o.customerInfo),
+        items: JSON.parse(o.items),
+        paymentInfo: JSON.parse(o.paymentInfo)
+    })));
+});
+apiRouter.post('/orders', async (req, res) => {
+    const order = {
+        ...req.body,
+        customerInfo: JSON.stringify(req.body.customerInfo),
+        items: JSON.stringify(req.body.items),
+        paymentInfo: JSON.stringify(req.body.paymentInfo)
+    };
+    await query('INSERT INTO Orders SET ?', [order]);
+    res.status(201).json(req.body);
+});
+apiRouter.put('/orders/:id', async (req, res) => {
+    const order = {
+        ...req.body,
+        customerInfo: JSON.stringify(req.body.customerInfo),
+        items: JSON.stringify(req.body.items),
+        paymentInfo: JSON.stringify(req.body.paymentInfo)
+    };
+    await query('UPDATE Orders SET ? WHERE id = ?', [order, req.params.id]);
+    res.json(req.body);
+});
+apiRouter.delete('/orders/:id', async (req, res) => {
+    await query('DELETE FROM Orders WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+
+// CHATLOGS
+apiRouter.get('/chatlogs', async (req, res) => {
+    const logs = await query('SELECT * FROM ChatLogs ORDER BY startTime DESC');
+    res.json(logs.map(l => ({...l, messages: JSON.parse(l.messages)})));
+});
+apiRouter.post('/chatlogs', async (req, res) => {
+    const log = { ...req.body, messages: JSON.stringify(req.body.messages) };
+    await query('INSERT INTO ChatLogs SET ? ON DUPLICATE KEY UPDATE messages = VALUES(messages), startTime = VALUES(startTime)', [log]);
+    res.status(201).json(req.body);
+});
+
+// MEDIA
+apiRouter.get('/media', async (req, res) => res.json(await query('SELECT * FROM Media ORDER BY uploadedAt DESC')));
+apiRouter.post('/media', async (req, res) => {
+    const item = { ...req.body, id: `media-${Date.now()}` };
+    await query('INSERT INTO Media SET ?', [item]);
+    res.status(201).json(item);
+});
+apiRouter.delete('/media/:id', async (req, res) => {
+    await query('DELETE FROM Media WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+
+// FINANCIALS
+apiRouter.get('/financials/transactions', async (req, res) => res.json(await query('SELECT * FROM FinancialTransactions ORDER BY date DESC')));
+apiRouter.post('/financials/transactions', async (req, res) => {
+    const item = { ...req.body, id: `trans-${Date.now()}` };
+    await query('INSERT INTO FinancialTransactions SET ?', [item]);
+    res.status(201).json(item);
+});
+apiRouter.put('/financials/transactions/:id', async (req, res) => {
+    await query('UPDATE FinancialTransactions SET ? WHERE id = ?', [req.body, req.params.id]);
+    res.json({ message: 'Transaction updated' });
+});
+apiRouter.delete('/financials/transactions/:id', async (req, res) => {
+    await query('DELETE FROM FinancialTransactions WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+apiRouter.get('/financials/payroll', async (req, res) => res.json(await query('SELECT * FROM PayrollRecords')));
+apiRouter.post('/financials/payroll', async (req, res) => {
+    const records = req.body;
+    for (const record of records) {
+        await query('INSERT INTO PayrollRecords SET ? ON DUPLICATE KEY UPDATE baseSalary=VALUES(baseSalary), bonus=VALUES(bonus), deduction=VALUES(deduction), finalSalary=VALUES(finalSalary), status=VALUES(status), notes=VALUES(notes)', [record]);
+    }
+    res.status(201).json({ message: 'Payroll saved' });
+});
+
+// SERVICE TICKETS
+apiRouter.get('/service-tickets', async (req, res) => {
+    const tickets = await query('SELECT * FROM ServiceTickets ORDER BY createdAt DESC');
+    res.json(tickets.map(t => ({...t, customer_info: JSON.parse(t.customer_info)})));
+});
+apiRouter.post('/service-tickets', async (req, res) => {
+    const ticket = { ...req.body, id: `st-${Date.now()}`, ticket_code: `ST-${String(Date.now()).slice(-6)}`, customer_info: JSON.stringify(req.body.customer_info) };
+    await query('INSERT INTO ServiceTickets SET ?', [ticket]);
+    const { customer_info, ...rest } = ticket;
+    res.status(201).json({ ...rest, customer_info: req.body.customer_info });
+});
+apiRouter.put('/service-tickets/:id', async (req, res) => {
+    const ticket = { ...req.body, customer_info: JSON.stringify(req.body.customer_info) };
+    await query('UPDATE ServiceTickets SET ? WHERE id = ?', [ticket, req.params.id]);
+    res.json({ message: 'Ticket updated' });
+});
+apiRouter.delete('/service-tickets/:id', async (req, res) => {
+    await query('DELETE FROM ServiceTickets WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+
+// WARRANTY TICKETS
+apiRouter.get('/warranty-tickets', async (req, res) => res.json(await query('SELECT * FROM WarrantyTickets ORDER BY createdAt DESC')));
+apiRouter.post('/warranty-tickets', async (req, res) => {
+    const ticket = { ...req.body, id: `wt-${Date.now()}`};
+    await query('INSERT INTO WarrantyTickets SET ?', [ticket]);
+    res.status(201).json(ticket);
+});
+apiRouter.put('/warranty-tickets/:id', async (req, res) => {
+    await query('UPDATE WarrantyTickets SET ? WHERE id = ?', [req.body, req.params.id]);
+    res.json({ message: 'Warranty Ticket updated' });
+});
+apiRouter.delete('/warranty-tickets/:id', async (req, res) => {
+    await query('DELETE FROM WarrantyTickets WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+
+// INVENTORY
+apiRouter.get('/inventory', async (req, res) => res.json(await query('SELECT * FROM Inventory')));
+
+// QUOTATIONS
+apiRouter.get('/quotations', async (req, res) => {
+    const quotes = await query('SELECT * FROM Quotations ORDER BY creation_date DESC');
+    res.json(quotes.map(q => ({...q, items: JSON.parse(q.items)})));
+});
+apiRouter.post('/quotations', async (req, res) => {
+    const quote = { ...req.body, items: JSON.stringify(req.body.items || []) };
+    await query('INSERT INTO Quotations SET ?', [quote]);
+    res.status(201).json(req.body);
+});
+apiRouter.put('/quotations/:id', async (req, res) => {
+    const quote = { ...req.body, items: JSON.stringify(req.body.items || []) };
+    await query('UPDATE Quotations SET ? WHERE id = ?', [quote, req.params.id]);
+    res.json({ message: 'Quotation updated' });
+});
+apiRouter.delete('/quotations/:id', async (req, res) => {
+    await query('DELETE FROM Quotations WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+
+// RETURNS
+apiRouter.get('/returns', async (req, res) => res.json(await query('SELECT * FROM Returns ORDER BY createdAt DESC')));
+apiRouter.post('/returns', async (req, res) => {
+    const item = { ...req.body, id: `ret-${Date.now()}`, createdAt: new Date().toISOString() };
+    await query('INSERT INTO Returns SET ?', [item]);
+    res.status(201).json(item);
+});
+apiRouter.put('/returns/:id', async (req, res) => {
+    await query('UPDATE Returns SET ? WHERE id = ?', [req.body, req.params.id]);
+    res.json({ message: 'Return updated' });
+});
+apiRouter.delete('/returns/:id', async (req, res) => {
+    await query('DELETE FROM Returns WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+
+// SUPPLIERS
+apiRouter.get('/suppliers', async (req, res) => {
+    const suppliers = await query('SELECT * FROM Suppliers');
+    res.json(suppliers.map(s => ({...s, contactInfo: JSON.parse(s.contactInfo)})));
+});
+apiRouter.post('/suppliers', async (req, res) => {
+    const item = { ...req.body, id: `sup-${Date.now()}`, contactInfo: JSON.stringify(req.body.contactInfo || {}) };
+    await query('INSERT INTO Suppliers SET ?', [item]);
+    res.status(201).json({ ...req.body, id: item.id });
+});
+apiRouter.put('/suppliers/:id', async (req, res) => {
+    const item = { ...req.body, contactInfo: JSON.stringify(req.body.contactInfo || {}) };
+    await query('UPDATE Suppliers SET ? WHERE id = ?', [item, req.params.id]);
+    res.json({ message: 'Supplier updated' });
+});
+apiRouter.delete('/suppliers/:id', async (req, res) => {
+    await query('DELETE FROM Suppliers WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+});
+
+
+// Fallback for SPA: This should be the last route.
+app.get('*', (req, res) => {
+  const indexPath = path.resolve(staticFilesPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error(`Error sending file ${indexPath} :`, err);
+      // Don't expose internal error details to the client
+      if (!res.headersSent) {
+        res.status(404).send("Could not find the application entry point.");
+      }
+    }
+  });
+});
+
+// --- Server Start ---
+app.listen(PORT, async () => {
+  try {
+    const connection = await pool.getConnection();
+    connection.release();
+    console.log(`🚀 Backend server đang chạy tại http://localhost:${PORT}`);
+    console.log('✅ Kết nối tới database MySQL thành công!');
+  } catch (error) {
+    console.error('❌ Không thể kết nối tới database MySQL:', error);
+  }
 });

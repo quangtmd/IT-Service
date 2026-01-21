@@ -22,7 +22,7 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({ current
             if (idsToFetch.length > 0) {
                 try {
                     // Fix: Destructure 'products' array from the response object. Fetch a large number to increase chances of finding products.
-                    const { products: allProducts } = await getProducts('?limit=1000');
+                    const { products: allProducts } = await getProducts('limit=1000');
                     const products = idsToFetch
                         // FIX: Compare product ID with stored ID correctly.
                         .map(id => allProducts.find(p => p.id === id))
@@ -63,7 +63,7 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({ current
                                 {product.name}
                             </p>
                             <p className="text-sm font-bold text-primary mt-1">
-                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                                {product.price.toLocaleString('vi-VN')}₫
                             </p>
                         </div>
                     </Link>

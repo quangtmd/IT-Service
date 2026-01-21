@@ -1,16 +1,14 @@
 
 
 import React from 'react';
-// Fix: Use named imports for react-router-dom components and hooks
-import { Link, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom'; // Updated imports for v6/v7
 import { useCart } from '../hooks/useCart';
 import Button from '../components/ui/Button';
 import { CartItem, CustomPCBuildCartItem } from '../types';
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
-  // Fix: Use useNavigate directly
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate(); // Changed from useHistory
 
   const handleCheckout = () => {
     navigate('/checkout'); // Changed from history.push
@@ -22,10 +20,9 @@ const CartPage: React.FC = () => {
         <i className="fas fa-shopping-cart text-6xl text-textSubtle mb-6"></i>
         <h1 className="text-3xl font-semibold text-textBase mb-4">Giỏ hàng của bạn đang trống</h1>
         <p className="text-textMuted mb-6">Hãy khám phá các sản phẩm tuyệt vời của chúng tôi!</p>
-        {/* Fix: Use Link directly */}
-        <Link to="/shop">
+        <ReactRouterDOM.Link to="/shop">
           <Button variant="primary" size="lg">Tiếp tục mua sắm</Button>
-        </Link>
+        </ReactRouterDOM.Link>
       </div>
     );
   }
@@ -35,7 +32,7 @@ const CartPage: React.FC = () => {
       <h1 className="text-3xl font-bold text-textBase mb-8 text-center">Giỏ Hàng Của Bạn</h1>
       <div className="bg-bgBase shadow-xl rounded-lg p-4 sm:p-6 border border-borderDefault">
         {cart.map((item) => {
-          const isCustomBuild = 'isCustomBuild' in item && item.isCustomBuild;
+          const isCustomBuild = 'isCustomBuild' in item && (item as any).isCustomBuild;
 
           return (
             <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 border-b border-borderDefault last:border-b-0">
@@ -46,20 +43,21 @@ const CartPage: React.FC = () => {
                   className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-md mr-4 border border-borderDefault"
                 />
                 <div className="flex-grow">
-                  {/* Fix: Use Link directly */}
-                  <Link to={isCustomBuild ? `/pc-builder?load=${item.id}` : `/product/${item.id}`} className="font-semibold text-textBase hover:text-primary text-lg block mb-1">
+                  <ReactRouterDOM.Link to={isCustomBuild ? `/pc-builder?load=${item.id}` : `/product/${item.id}`} className="font-semibold text-textBase hover:text-primary text-lg block mb-1">
                     {item.name}
-                  </Link>
+                  </ReactRouterDOM.Link>
                   {!isCustomBuild && <p className="text-sm text-textMuted">{item.category}</p>}
-                  {isCustomBuild && item.buildComponents && (
+                  {/* Fix: Cast 'item' to CustomPCBuildCartItem to safely access 'buildComponents'. */}
+                  {isCustomBuild && (item as CustomPCBuildCartItem).buildComponents && (
                     <div className="text-xs text-textMuted mt-1 space-y-0.5">
                       <p className="font-medium text-textSubtle">Chi tiết cấu hình:</p>
-                      {Object.entries(item.buildComponents).map(([type, comp]) => {
+                      {/* Fix: Cast 'item' to CustomPCBuildCartItem to safely access 'buildComponents'. */}
+                      {Object.entries((item as CustomPCBuildCartItem).buildComponents).map(([type, comp]) => {
                         const component = comp as { name: string; price?: number };
                         return (
-                        <p key={type} className="truncate" title={`${type}: ${component.name} (${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(component.price || 0)})`}>
+                        <p key={type} className="truncate" title={`${type}: ${component.name} (${(component.price || 0).toLocaleString('vi-VN')}₫)`}>
                           - {type}: {component.name}
-                          {(component.price || 0) > 0 && ` (${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(component.price || 0)})`}
+                          {(component.price || 0) > 0 && ` (${(component.price || 0).toLocaleString('vi-VN')}₫)`}
                         </p>
                         )
                       })}
@@ -99,7 +97,7 @@ const CartPage: React.FC = () => {
                     <p className="text-sm text-textMuted mb-2 sm:mb-0">Số lượng: {item.quantity}</p>
                  )}
                 <p className="font-semibold text-textBase w-28 text-right mb-2 sm:mb-0">
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}
+                  {(item.price * item.quantity).toLocaleString('vi-VN')}₫
                 </p>
                 <button onClick={() => removeFromCart(item.id)} className="text-danger-text hover:text-red-700 text-lg sm:text-xl" aria-label="Xóa khỏi giỏ hàng">
                   <i className="fas fa-trash-alt"></i>
@@ -115,7 +113,7 @@ const CartPage: React.FC = () => {
           </Button>
           <div className="text-right">
             <p className="text-xl font-semibold text-textBase">
-              Tổng cộng: <span className="text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(getTotalPrice())}</span>
+              Tổng cộng: <span className="text-primary">{getTotalPrice().toLocaleString('vi-VN')}₫</span>
             </p>
             <p className="text-sm text-textMuted">Đã bao gồm VAT (nếu có)</p>
             <Button

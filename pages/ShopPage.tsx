@@ -1,7 +1,7 @@
 
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-// Fix: Use named imports for react-router-dom hooks
-import { useLocation, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import ProductCard from '../components/shop/ProductCard';
 import { Product, MainCategoryInfo } from '../types';
 import SearchBar from '../components/shared/SearchBar';
@@ -16,10 +16,35 @@ import ShopProductSection from '../components/shop/ShopProductSection'; // New i
 
 const PRODUCTS_PER_PAGE = 12;
 
+const ProductCategoryNav: React.FC<{
+  categories: MainCategoryInfo[];
+  activeSlug: string | null;
+  onSelect: (slug: string | null) => void;
+}> = ({ categories, activeSlug, onSelect }) => {
+  return (
+    <nav className="shop-category-nav scrollbar-hide overflow-x-auto whitespace-nowrap">
+      <button
+        onClick={() => onSelect(null)}
+        className={`shrink-0 ${!activeSlug ? 'active' : ''}`}
+      >
+        Tất cả sản phẩm
+      </button>
+      {categories.map(cat => (
+        <button
+          key={cat.slug}
+          onClick={() => onSelect(cat.slug)}
+          className={`shrink-0 ${activeSlug === cat.slug ? 'active' : ''}`}
+        >
+          {cat.name}
+        </button>
+      ))}
+    </nav>
+  );
+};
+
 const ShopPage: React.FC = () => {
-  // Fix: Use hooks directly
-  const location = useLocation();
-  const navigate = useNavigate();
+  const location = ReactRouterDOM.useLocation();
+  const navigate = ReactRouterDOM.useNavigate();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
@@ -168,7 +193,7 @@ const ShopPage: React.FC = () => {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
           {Array.from({ length: PRODUCTS_PER_PAGE }).map((_, index) => (
             <SkeletonProductCard key={index} />
           ))}
@@ -183,13 +208,13 @@ const ShopPage: React.FC = () => {
         // Show filtered products if filters are active
         return (
             <main className="flex-grow w-full min-w-0">
-                <div className="flex justify-between items-center mb-4 px-1">
-                    <h1 className="text-lg md:text-2xl font-bold text-textBase truncate pr-2" title={getCurrentCategoryName()}>{getCurrentCategoryName()}</h1>
-                    <span className="text-xs md:text-sm text-textMuted whitespace-nowrap">{totalProducts} SP</span>
+                <div className="flex justify-between items-center mb-6 px-1">
+                <h1 className="text-2xl font-bold text-textBase">{getCurrentCategoryName()}</h1>
+                <span className="text-sm text-textMuted">{totalProducts} sản phẩm</span>
                 </div>
                 {displayedProducts.length > 0 ? (
                 <>
-                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
                     {displayedProducts.map(product => (
                         <ProductCard key={product.id} product={product} />
                     ))}
@@ -214,70 +239,47 @@ const ShopPage: React.FC = () => {
     } else {
         // Show default sections if no filters are active
         return (
-            <div className="space-y-8 md:space-y-10">
+            <div className="space-y-10">
                 <ShopBanner />
                 <ShopProductSection 
-                    title="BÁN CHẠY" 
+                    title="SẢN PHẨM BÁN CHẠY" 
                     linkToAll="/shop?tags=Bán%20chạy" 
                     fetchType="featured" 
                     limit={4} 
                 />
                 <ShopProductSection 
-                    title="LAPTOP" 
+                    title="MÁY TÍNH XÁCH TAY" 
                     linkToAll="/shop?mainCategory=laptop" 
                     fetchParams="mainCategory=laptop" 
                     limit={4} 
                 />
                 <ShopProductSection 
-                    title="LINH KIỆN" 
+                    title="LINH KIỆN MÁY TÍNH" 
                     linkToAll="/shop?mainCategory=linh_kien_may_tinh" 
                     fetchParams="mainCategory=linh_kien_may_tinh" 
                     limit={4} 
                 />
+                {/* You can add more sections here */}
             </div>
         );
     }
   }
 
   return (
-    <div className="bg-bgCanvas min-h-screen">
-      <div className="container mx-auto px-4 py-4 md:py-8">
-        {/* Search Bar */}
-        <div className="mb-6">
-            <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto shadow-sm" />
+    <div className="bg-bgCanvas">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+            <SearchBar onSearch={handleSearch} placeholder="Tìm kiếm sản phẩm, thương hiệu, linh kiện..." initialTerm={currentFilters.q} className="max-w-3xl mx-auto" />
         </div>
-
-        {/* Mobile Horizontal Category Scroll - Only visible on Mobile */}
-        <div className="lg:hidden mb-6 overflow-x-auto scrollbar-hide -mx-4 px-4 flex gap-2">
-            <button 
-                onClick={() => handleFilterChange('mainCategory', null)} 
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors ${!currentFilters.mainCategory ? 'bg-primary text-white border-primary' : 'bg-white text-textMuted border-borderDefault'}`}
-            >
-                Tất cả
-            </button>
-            {Constants.PRODUCT_CATEGORIES_HIERARCHY.map(cat => (
-                <button
-                    key={cat.slug}
-                    onClick={() => handleFilterChange('mainCategory', cat.slug)}
-                    className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors flex items-center gap-2 ${currentFilters.mainCategory === cat.slug ? 'bg-primary text-white border-primary' : 'bg-white text-textMuted border-borderDefault'}`}
-                >
-                    {cat.icon && <i className={cat.icon}></i>} {cat.name}
-                </button>
-            ))}
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Desktop Sidebar - Hidden on Mobile */}
-          <aside className={`hidden lg:block w-64 flex-shrink-0 ${isSidebarCollapsed ? 'lg:w-16' : ''} transition-all duration-300`}>
+        <div className="shop-layout-container">
+          <aside className="shop-sidebar">
             <CategorySidebar 
               currentMainCategorySlug={currentFilters.mainCategory}
               currentSubCategorySlug={currentFilters.subCategory}
               isCollapsed={isSidebarCollapsed}
             />
           </aside>
-          
-          {/* Main Content Area */}
-          <div className="flex-grow min-w-0">
+          <div className="shop-main-content">
             {renderContent()}
           </div>
         </div>

@@ -1,6 +1,5 @@
-
 import React from 'react';
-import HomeHero3D from '../components/home/iqtechnology/HomeHero3D';
+import HomeBannerIts from '../components/home/iqtechnology/HomeBannerIts';
 import HomeServicesBenefitsIts from '../components/home/iqtechnology/HomeServicesBenefitsIts';
 import HomeAboutIts from '../components/home/iqtechnology/HomeAboutIts';
 import HomeWhyChooseUsIts from '../components/home/iqtechnology/HomeWhyChooseUsIts';
@@ -18,8 +17,8 @@ import HomePricingPlansIts from '../components/home/iqtechnology/HomePricingPlan
 const HomePage: React.FC = () => {
   return (
     <div>
-      {/* 1. 3D Hero Section (Thay thế Banner cũ) */}
-      <HomeHero3D />
+      {/* 1. Banner slideshow (khuyến mãi, dịch vụ IT, sản phẩm mới) */}
+      <HomeBannerIts />
 
       {/* 2. Giới thiệu nhanh: IQ Technology là ai, dịch vụ chính */}
       <HomeAboutIts />

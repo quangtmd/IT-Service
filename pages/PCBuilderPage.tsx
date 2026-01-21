@@ -1,16 +1,14 @@
-import React, { useState, useCallback, useEffect } from 'react';
-// Fix: Use named import for useNavigate
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useCallback } from 'react';
+import * as ReactRouterDOM from 'react-router-dom';
 import ComponentSelector from '../components/pcbuilder/ComponentSelector';
 import Button from '../components/ui/Button';
 import { MOCK_PC_COMPONENTS } from '../data/mockData';
-import * as Constants from '../constants.tsx';
+import * as Constants from '../constants';
 import { AIBuildResponse, PCComponent, AIRecommendedComponent, CustomPCBuildCartItem } from '../types';
 import geminiService from '../services/geminiService';
 import Card from '../components/ui/Card';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../contexts/AuthContext';
-import { useChatbotContext } from '../contexts/ChatbotContext';
 
 type BuilderSelectorKey = 'CPU' | 'Motherboard' | 'RAM' | 'GPU' | 'SSD' | 'PSU' | 'Case';
 type SelectedComponents = Partial<Record<BuilderSelectorKey, string>>;
@@ -47,16 +45,7 @@ export const PCBuilderPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
   const { addAdminNotification } = useAuth();
-  // Fix: Use useNavigate directly
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { setCurrentContext } = useChatbotContext();
-
-  useEffect(() => {
-    setCurrentContext('Khách hàng đang ở trang Xây Dựng Cấu Hình PC.');
-    return () => setCurrentContext(null); // Clear context on unmount
-  }, [setCurrentContext]);
-
+  const navigate = ReactRouterDOM.useNavigate();
 
   const handleComponentChange = useCallback((
     type: BuilderSelectorKey,
@@ -109,7 +98,7 @@ export const PCBuilderPage: React.FC = () => {
 
   // Handle loading a custom build from URL (e.g., from CartPage)
   React.useEffect(() => {
-    const query = new URLSearchParams(location.search);
+    const query = new URLSearchParams(window.location.search);
     const loadBuildId = query.get('load');
     if (loadBuildId) {
       // Find this build in the cart and populate the selector
@@ -121,7 +110,9 @@ export const PCBuilderPage: React.FC = () => {
         for (const [key, value] of Object.entries(customBuild.buildComponents)) {
           // Ensure the key is a valid BuilderSelectorKey
           if (BUILDER_SELECTABLE_KEYS.includes(key as BuilderSelectorKey)) {
-            components[key as BuilderSelectorKey] = value.name;
+            // Fix: Cast 'value' to its expected type to resolve the 'unknown' type error.
+            const componentValue = value as { name: string; price?: number };
+            components[key as BuilderSelectorKey] = componentValue.name;
           }
         }
         setSelectedComponents(components);
@@ -129,7 +120,7 @@ export const PCBuilderPage: React.FC = () => {
         navigate('/pc-builder', { replace: true });
       }
     }
-  }, [navigate, location.search]);
+  }, [navigate]);
 
 
   const calculateTotalPrice = () => {
@@ -179,7 +170,7 @@ export const PCBuilderPage: React.FC = () => {
       }
     }
 
-    const buildName = `PC Cấu hình Tùy chỉnh (${useCase} - ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)})`;
+    const buildName = `PC Cấu hình Tùy chỉnh (${useCase} - ${totalPrice.toLocaleString('vi-VN')}₫)`;
     const buildDescription = `Cấu hình PC được xây dựng theo yêu cầu: ${buildNameParts.join('; ')}.`;
 
     // FIX: Ensure all required Product fields are populated for CustomPCBuildCartItem.
@@ -189,14 +180,15 @@ export const PCBuilderPage: React.FC = () => {
       price: totalPrice,
       quantity: 1,
       description: buildDescription,
+// Fix: Add the required 'imageUrl' property to satisfy the CustomPCBuildCartItem type.
+      imageUrl: Constants.GENERIC_PC_BUILD_IMAGE_URL,
       // For imageUrl, ensure it matches imageUrls: [string] from the updated type.
-      imageUrl: Constants.GENERIC_PC_BUILD_IMAGE_URL, // Single image URL for the custom build
+      imageUrls: [Constants.GENERIC_PC_BUILD_IMAGE_URL], // Explicitly set as an array of one string
       isCustomBuild: true,
       buildComponents: buildComponents,
       mainCategory: "PC Xây Dựng",
       subCategory: "Theo Yêu Cầu",
       category: "PC Xây Dựng",
-      imageUrls: [Constants.GENERIC_PC_BUILD_IMAGE_URL], // Explicitly set as a tuple/array of one string
       tags: ["custom-build", useCase.toLowerCase().replace(' ', '-')],
       
       // Required Product properties that need default values for a custom build
@@ -205,7 +197,7 @@ export const PCBuilderPage: React.FC = () => {
       
       // Optional Product properties can be set or left undefined
       shortDescription: buildDescription,
-      status: 'Mới',
+      // Fix: Removed 'status' property as it does not exist on the Product type.
       brand: 'IQ Technology Custom Build',
       isVisible: true,
       is_featured: false,
@@ -304,7 +296,7 @@ export const PCBuilderPage: React.FC = () => {
 
           <div className="mt-6 border-t pt-4 flex justify-between items-center">
             <span className="text-lg font-bold text-textBase">Tổng giá ước tính:</span>
-            <span className="text-2xl font-bold text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentTotalPrice)}</span>
+            <span className="text-2xl font-bold text-primary">{currentTotalPrice.toLocaleString('vi-VN')}₫</span>
           </div>
 
           <Button onClick={handleAddToCart} className="w-full mt-4" size="lg">

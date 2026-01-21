@@ -81,9 +81,8 @@ const SupplierManagementView: React.FC = () => {
                                         <td>{s.paymentTerms}</td>
                                         <td>
                                             <div className="flex gap-2">
-                                                <Button onClick={() => handleEdit(s.id)} size="sm" variant="outline" title="Xem"><i className="fas fa-eye"></i></Button>
-                                                <Button onClick={() => handleEdit(s.id)} size="sm" variant="outline" title="Sửa"><i className="fas fa-edit"></i></Button>
-                                                <Button onClick={() => handleDelete(s.id)} size="sm" variant="ghost" className="text-red-500" title="Xóa"><i className="fas fa-trash"></i></Button>
+                                                <Button onClick={() => handleEdit(s.id)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
+                                                <Button onClick={() => handleDelete(s.id)} size="sm" variant="ghost" className="text-red-500"><i className="fas fa-trash"></i></Button>
                                             </div>
                                         </td>
                                     </tr>

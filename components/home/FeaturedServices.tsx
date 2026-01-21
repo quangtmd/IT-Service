@@ -1,8 +1,6 @@
 
-
 import React from 'react';
-// Fix: Use named import for Link
-import { Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom'; // Link is compatible with v6/v7
 import { MOCK_SERVICES } from '../../data/mockData';
 import { Service } from '../../types';
 import Card from '../ui/Card';
@@ -25,8 +23,7 @@ const ServiceCard: React.FC<{ service: Service, index: number }> = ({ service, i
         )}
         <h3 className="text-xl font-semibold text-textBase mb-2">{service.name}</h3>
         <p className="text-textMuted text-sm mb-4 flex-grow">{service.description}</p>
-        {/* Fix: Use Link directly */}
-        <Link to={`/services#${service.slug || service.id}`} className="mt-auto w-full"> 
+        <ReactRouterDOM.Link to={`/services#${service.slug || service.id}`} className="mt-auto w-full"> 
           <Button
             variant="outline"
             size="sm"
@@ -34,7 +31,7 @@ const ServiceCard: React.FC<{ service: Service, index: number }> = ({ service, i
           >
             Xem chi tiết
           </Button>
-        </Link>
+        </ReactRouterDOM.Link>
       </Card>
     </div>
   );
