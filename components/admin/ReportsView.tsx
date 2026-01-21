@@ -54,9 +54,8 @@ const ReportsView: React.FC = () => {
     }, []);
     
     useEffect(() => {
-        const searchParams = new URLSearchParams(window.location.search);
-        setReportType((searchParams.get('type') as ReportType) || 'revenue');
-    }, [window.location.search]);
+        setReportType((location.get('type') as ReportType) || 'revenue');
+    }, [location.get('type')]);
 
 
     const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

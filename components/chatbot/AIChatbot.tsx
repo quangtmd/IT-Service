@@ -51,7 +51,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
 
   const loadSiteSettings = useCallback(() => {
@@ -112,13 +111,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
   useEffect(scrollToBottom, [messages]);
   
-  useEffect(() => {
-    // When the bot is not loading and the chat is open, focus the input
-    if (!isLoading && isOpen && inputRef.current) {
-        inputRef.current.focus();
-    }
-  }, [isLoading, isOpen]);
-
   const initializeChat = useCallback(async () => {
     // Check if user info is submitted (either by form or auto-filled) and chat isn't already active
     if (!isUserInfoSubmitted || !isOpen || chatSession) return; 
@@ -345,60 +337,27 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
             if (call.name === 'getOrderStatus') {
                 let orderResult: Order | null = null;
                 try {
-                    let orderIdArg = call.args.orderId;
-                    if (typeof orderIdArg !== 'string') {
-                        orderIdArg = String(orderIdArg);
-                    }
-                    
-                    // Normalize input for better matching
-                    const cleanInput = orderIdArg.trim().toLowerCase();
-                    // Also prepare a digit-only version for looser matching if strict fails
-                    const cleanInputDigits = cleanInput.replace(/\D/g, '');
+                    const orderIdArg = call.args.orderId;
+                    // Match optional 'T' prefix followed by 6 or more digits
+                    const orderIdMatch = orderIdArg?.match(/(T)?(\d{6,})/i);
+                    // Reconstruct the ID to the standard "Txxxxxx" format if found
+                    const cleanOrderId = orderIdMatch ? `T${orderIdMatch[2]}`.toUpperCase() : null;
         
-                    if (cleanInput) {
+                    if (cleanOrderId) {
                         const allOrders = await getOrders();
-                        orderResult = allOrders.find(o => {
-                            const id = o.id.toLowerCase();
-                            
-                            // 1. Exact match
-                            if (id === cleanInput) return true;
-                            
-                            // 2. Ends with (common for finding by suffix)
-                            if (id.endsWith(cleanInput)) return true;
-
-                            // 3. Contains (if input is significant enough, e.g. > 5 chars)
-                            if (cleanInput.length > 5 && id.includes(cleanInput)) return true;
-                            
-                            // 4. Digit suffix match (fallback)
-                            const idDigits = id.replace(/\D/g, '');
-                            // Only match digits if user provided at least 4 digits to avoid broad matches
-                            if (cleanInputDigits.length >= 4 && idDigits.endsWith(cleanInputDigits)) return true;
-                            
-                            return false;
-                        }) || null;
+                        const formatOrderIdForDisplay = (id: string) => `T${id.replace(/\D/g, '').slice(-6)}`;
+                        
+                        // Find order by matching the formatted ID, WITHOUT checking for current user
+                        orderResult = allOrders.find(o => 
+                            formatOrderIdForDisplay(o.id).toUpperCase() === cleanOrderId
+                        ) || null;
                     }
-
-                    let toolResponsePayload;
-                    if (orderResult) {
-                        // Create a simplified, flat summary object for the AI.
-                        toolResponsePayload = {
-                            id: orderResult.id,
-                            status: orderResult.status,
-                            totalAmount: orderResult.totalAmount,
-                            shippingAddress: orderResult.customerInfo.address,
-                            shippingCarrier: orderResult.shippingInfo?.carrier,
-                            shippingTrackingNumber: orderResult.shippingInfo?.trackingNumber
-                        };
-                    } else {
-                        toolResponsePayload = { status: "not_found", message: `Không tìm thấy đơn hàng nào khớp với mã "${orderIdArg}".` };
-                    }
-
 
                     const toolResponseStream = await chatSession.sendToolResponse({
                         functionResponses: [{
                             id: call.id,
                             name: call.name,
-                            response: { result: toolResponsePayload }
+                            response: { result: orderResult ? JSON.stringify(orderResult) : JSON.stringify({ error: "Không tìm thấy đơn hàng nào khớp với mã bạn cung cấp." }) }
                         }]
                     });
 
@@ -442,7 +401,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     } finally {
       setIsLoading(false);
       setCurrentBotMessageId(null); 
-      saveChatLog();
+      saveChatLog(); 
     }
   };
 
@@ -524,7 +483,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                     <i className="fas fa-microphone"></i>
                 </Button>
                 <input
-                  ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}

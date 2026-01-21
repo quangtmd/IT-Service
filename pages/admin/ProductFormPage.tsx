@@ -107,8 +107,7 @@ const ProductFormPage: React.FC = () => {
             // Ensure category is set
             const finalData = { ...formData };
             if (formData.mainCategory && formData.subCategory) {
-                const mainCat = Constants.PRODUCT_CATEGORIES_HIERARCHY.find(mc => mc.name === formData.mainCategory);
-                finalData.category = mainCat ? `${mainCat.name} > ${formData.subCategory}` : formData.subCategory;
+                finalData.category = `${formData.mainCategory} > ${formData.subCategory}`;
             }
 
             if (isEditing) {

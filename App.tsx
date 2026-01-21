@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 // Fix: Use named imports from react-router-dom instead of namespace import
 import { HashRouter, Routes, Route } from 'react-router-dom';
@@ -29,74 +28,71 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CheckoutPage from './pages/CheckoutPage';
-import { ThemeProvider } from './contexts/ThemeContext'; // Import ThemeProvider
 
 const App: React.FC = () => {
 
   return (
     // Fix: Use HashRouter directly
-    <ThemeProvider>
-      <HashRouter>
-        <ScrollToTop />
-        <div className="flex flex-col min-h-screen bg-bgCanvas text-textBase transition-colors duration-300">
-          <Header />
-          <main className="flex-grow pt-[168px] print:pt-0">
-            {/* Fix: Use Routes directly */}
-            <Routes> {/* Replaced Switch with Routes */}
-              {/* Fix: Use Route directly */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/shop" element={<ShopPage />} />
-              <Route path="/product/:productId" element={<ProductDetailPage />} />
-              <Route path="/services" element={<ServicesPage />} />
-              <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
-              <Route path="/projects" element={<ProjectsPage />} />
-              <Route path="/blog" element={<BlogPage />} />
-              <Route path="/article/:articleId" element={<ArticleDetailPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/pc-builder" element={<PCBuilderPage />} />
-              <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} /> {/* Add new route */}
+    <HashRouter>
+      <ScrollToTop />
+      <div className="flex flex-col min-h-screen bg-bgCanvas">
+        <Header />
+        <main className="flex-grow pt-[168px] print:pt-0">
+          {/* Fix: Use Routes directly */}
+          <Routes> {/* Replaced Switch with Routes */}
+            {/* Fix: Use Route directly */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/shop" element={<ShopPage />} />
+            <Route path="/product/:productId" element={<ProductDetailPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/article/:articleId" element={<ArticleDetailPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/pc-builder" element={<PCBuilderPage />} />
+            <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} /> {/* Add new route */}
 
-              {/* Auth Routes */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-               <Route
-                path="/account/orders"
-                element={
-                  <ProtectedRoute>
-                    <CustomerOrdersPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/account/orders/:orderId"
-                element={
-                  <ProtectedRoute>
-                    <CustomerOrderDetailPage />
-                  </ProtectedRoute>
-                }
-              />
+            {/* Auth Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+             <Route
+              path="/account/orders"
+              element={
+                <ProtectedRoute>
+                  <CustomerOrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account/orders/:orderId"
+              element={
+                <ProtectedRoute>
+                  <CustomerOrderDetailPage />
+                </ProtectedRoute>
+              }
+            />
 
-              {/* Protected Admin Route - Updated for v6/v7 */}
-              <Route
-                path="/admin/*" // Add /* to allow nested routes within AdminPage if any
-                element={
-                  <ProtectedRoute roles={['admin', 'staff']}>
-                    <AdminPage />
-                  </ProtectedRoute>
-                }
-              />
+            {/* Protected Admin Route - Updated for v6/v7 */}
+            <Route
+              path="/admin/*" // Add /* to allow nested routes within AdminPage if any
+              element={
+                <ProtectedRoute roles={['admin', 'staff']}>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
 
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </main>
-          <Footer />
-          <FloatingActionButtons />
-        </div>
-      </HashRouter>
-    </ThemeProvider>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </main>
+        <Footer />
+        <FloatingActionButtons />
+      </div>
+    </HashRouter>
   );
 };
 
