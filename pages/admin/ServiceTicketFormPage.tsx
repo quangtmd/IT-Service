@@ -119,7 +119,7 @@ const ServiceTicketFormPage: React.FC = () => {
                 await updateServiceTicket(ticketId!, formData);
                 alert('Cập nhật phiếu dịch vụ thành công!');
             } else {
-                await addServiceTicket(formData as Omit<ServiceTicket, 'id' | 'createdAt' | 'ticket_code'>);
+                await addServiceTicket(formData as any);
                 alert('Tạo phiếu dịch vụ mới thành công!');
             }
             navigate('/admin/service_tickets');

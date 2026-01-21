@@ -29,7 +29,7 @@ const FinancialManagementView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
-    const loadData = useCallback(async () => {
+    const loadData = useCallback(async (...args: any[]) => {
         setIsLoading(true);
         setError(null);
         try {
@@ -134,7 +134,7 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
     );
 };
 
-const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
+const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: (...args: any[]) => void, navigate: NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
 
     const handleEditTransaction = (transactionId: string) => {
         navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
@@ -185,27 +185,31 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
 };
 
 const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
-    const [startDate, setStartDate] = useState<string>(formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
-    const [endDate, setEndDate] = useState<string>(formatDate(new Date()));
+    const [startDate, setStartDate] = useState<string>(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
     const setDateRange = (period: 'week' | 'month' | 'year') => {
         const today = new Date();
         if (period === 'week') {
-            setStartDate(formatDate(getStartOfWeek(today)));
-            setEndDate(formatDate(today));
+            const start = new Date(today);
+            start.setDate(today.getDate() - 7);
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(today.toISOString().split('T')[0]);
         } else if (period === 'month') {
-            setStartDate(formatDate(new Date(today.getFullYear(), today.getMonth(), 1)));
-            setEndDate(formatDate(today));
+            const start = new Date(today.getFullYear(), today.getMonth(), 1);
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(today.toISOString().split('T')[0]);
         } else if (period === 'year') {
-            setStartDate(formatDate(new Date(today.getFullYear(), 0, 1)));
-            setEndDate(formatDate(today));
+            const start = new Date(today.getFullYear(), 0, 1);
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(today.toISOString().split('T')[0]);
         }
     };
 
     const filteredTransactions = useMemo(() => {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999); // Include entire end day
+        end.setHours(23, 59, 59, 999);
 
         return transactions.filter(t => {
             const tDate = new Date(t.date);
@@ -214,20 +218,22 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
     }, [transactions, startDate, endDate]);
 
     const summary = useMemo(() => {
-        const income = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-        const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+        let income = 0;
+        let expense = 0;
+        const incomeByCategory: Record<string, number> = {};
+        const expenseByCategory: Record<string, number> = {};
+
+        filteredTransactions.forEach(t => {
+            if (t.type === 'income') {
+                income += t.amount;
+                incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
+            } else if (t.type === 'expense') {
+                expense += t.amount;
+                expenseByCategory[t.category] = (expenseByCategory[t.category] || 0) + t.amount;
+            }
+        });
+
         const net = income - expense;
-
-        const incomeByCategory = filteredTransactions.filter(t => t.type === 'income').reduce<Record<string, number>>((acc, t) => {
-            acc[t.category] = (acc[t.category] || 0) + t.amount;
-            return acc;
-        }, {});
-        
-        const expenseByCategory = filteredTransactions.filter(t => t.type === 'expense').reduce<Record<string, number>>((acc, t) => {
-            acc[t.category] = (acc[t.category] || 0) + t.amount;
-            return acc;
-        }, {});
-
         return { income, expense, net, incomeByCategory, expenseByCategory };
     }, [filteredTransactions]);
 
@@ -247,9 +253,9 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Card className="!p-4"><h5 className="text-sm">Tổng Thu</h5><p className="text-2xl font-bold text-green-600">{summary.income.toLocaleString('vi-VN')}₫</p></Card>
-                <Card className="!p-4"><h5 className="text-sm">Tổng Chi</h5><p className="text-2xl font-bold text-red-600">{summary.expense.toLocaleString('vi-VN')}₫</p></Card>
-                <Card className="!p-4"><h5 className="text-sm">Lợi Nhuận</h5><p className={`text-2xl font-bold ${summary.net >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>{summary.net.toLocaleString('vi-VN')}₫</p></Card>
+                <Card className="!p-4"><h5 className="text-sm">Tổng Thu</h5><p className="text-2xl font-bold text-green-600">{formatCurrency(summary.income)}</p></Card>
+                <Card className="!p-4"><h5 className="text-sm">Tổng Chi</h5><p className="text-2xl font-bold text-red-600">{formatCurrency(summary.expense)}</p></Card>
+                <Card className="!p-4"><h5 className="text-sm">Lợi Nhuận</h5><p className={`text-2xl font-bold ${summary.net >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>{formatCurrency(summary.net)}</p></Card>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -257,7 +263,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
                     <h5 className="admin-form-subsection-title">Chi tiết Khoản Thu</h5>
                     {Object.keys(summary.incomeByCategory).length > 0 ? (
                         <ul className="text-sm space-y-1">
-                            {Object.entries(summary.incomeByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-green-600">{amount.toLocaleString('vi-VN')}₫</strong></li>)}
+                            {Object.entries(summary.incomeByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-green-600">{formatCurrency(amount as number)}</strong></li>)}
                         </ul>
                     ) : <p className="text-sm text-gray-500">Không có khoản thu nào trong kỳ.</p>}
                 </div>
@@ -265,7 +271,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
                     <h5 className="admin-form-subsection-title">Chi tiết Khoản Chi</h5>
                     {Object.keys(summary.expenseByCategory).length > 0 ? (
                         <ul className="text-sm space-y-1">
-                            {Object.entries(summary.expenseByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-red-600">{amount.toLocaleString('vi-VN')}₫</strong></li>)}
+                            {Object.entries(summary.expenseByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-red-600">{formatCurrency(amount as number)}</strong></li>)}
                         </ul>
                     ) : <p className="text-sm text-gray-500">Không có khoản chi nào trong kỳ.</p>}
                 </div>
@@ -275,9 +281,9 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
 };
 
 interface PayrollTabProps {
-    payrollRecords: PayrollRecord[],
-    onDataChange: () => Promise<void>,
-    onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void>
+    payrollRecords: PayrollRecord[];
+    onDataChange: (...args: any[]) => Promise<void>;
+    onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void>;
 }
 
 const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, onAddTransaction }) => {
@@ -320,11 +326,14 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
         const totalSalaryExpense = recordsToSettle.reduce((sum, r) => sum + r.finalSalary, 0);
 
         try {
-            const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod).map(r => {
+            const recordsToSave: PayrollRecord[] = localPayroll.filter(p => p.payPeriod === payPeriod).map(r => {
                 const shouldSettle = recordsToSettle.some(s => s.id === r.id);
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
+            
+            // Correctly passing records array to service
             await savePayrollRecords(recordsToSave);
+            
             await onAddTransaction({
                 date: new Date().toISOString(),
                 amount: totalSalaryExpense,
@@ -341,12 +350,13 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
     };
     
     const handleSaveDraft = async () => {
-        const recordsToSave = localPayroll.filter(p => p.payPeriod === payPeriod);
+        const recordsToSave: PayrollRecord[] = localPayroll.filter(p => p.payPeriod === payPeriod);
         if(recordsToSave.length === 0) {
             alert("Không có dữ liệu lương để lưu nháp.");
             return;
         }
         try {
+            // Correctly passing records array to service
             await savePayrollRecords(recordsToSave);
             alert('Đã lưu nháp lương thành công!');
             await onDataChange();
@@ -377,7 +387,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                                     <td><input type="number" value={record?.baseSalary || 0} onChange={e => handlePayrollChange(employee.id, 'baseSalary', Number(e.target.value))} className="admin-form-group !p-1 w-32" /></td>
                                     <td><input type="number" value={record?.bonus || 0} onChange={e => handlePayrollChange(employee.id, 'bonus', Number(e.target.value))} className="admin-form-group !p-1 w-28" /></td>
                                     <td><input type="number" value={record?.deduction || 0} onChange={e => handlePayrollChange(employee.id, 'deduction', Number(e.target.value))} className="admin-form-group !p-1 w-28" /></td>
-                                    <td className="font-bold">{record ? record.finalSalary.toLocaleString('vi-VN') : 0}₫</td>
+                                    <td className="font-bold">{formatCurrency(record ? record.finalSalary : 0)}</td>
                                     <td><input type="text" value={record?.notes || ''} onChange={e => handlePayrollChange(employee.id, 'notes', e.target.value)} className="admin-form-group !p-1 w-40" /></td>
                                     <td><span className={`status-badge ${record?.status === 'Đã thanh toán' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{record?.status || 'Chưa thanh toán'}</span></td>
                                 </tr>
