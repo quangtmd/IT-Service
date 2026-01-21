@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 import * as THREE from 'three';
 import React, { useRef } from 'react';
@@ -96,11 +95,9 @@ const Scene = () => {
         const totalPages = 4;
         
         if (group.current) {
-            // FIX: Use setY method for Vector3 instead of direct property assignment which can fail in strict mode
             group.current.position.setY(THREE.MathUtils.lerp(group.current.position.y, scrollOffset * h * totalPages, 0.1));
         }
         
-        // FIX: Use setZ method instead of direct assignment to immutable camera.position.z property
         state.camera.position.setZ(THREE.MathUtils.lerp(5, -10, scrollOffset));
     });
 
