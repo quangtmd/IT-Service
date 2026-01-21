@@ -18,7 +18,7 @@ const CustomerManagementView: React.FC = () => {
                 // Safe property access and lowercasing
                 const username = (u.username || '').toLowerCase();
                 const email = (u.email || '').toLowerCase();
-                const phone = (u.phone || '');
+                const phone = (u.phone || '').toLowerCase();
                 const id = (u.id || '').toLowerCase();
                 const address = (u.address || '').toLowerCase();
 
