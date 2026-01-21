@@ -82,7 +82,7 @@ const DonutChart: React.FC<{ data: { label: string; value: number; color: string
             <div className="relative w-32 h-32 flex-shrink-0">
                 <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
                     {data.map((item, index) => {
-                        const percent = item.value / total;
+                        const percent = total > 0 ? item.value / total : 0;
                         const dashArray = percent * 314; // 2 * PI * R (R=50 approx)
                         const offset = cumulativePercent * 314;
                         cumulativePercent += percent;

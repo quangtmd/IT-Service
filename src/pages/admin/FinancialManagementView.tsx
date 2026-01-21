@@ -17,6 +17,7 @@ const getStartOfWeek = (d: Date) => {
     const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
     return new Date(date.setDate(diff));
 };
+const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + '₫';
 
 type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll';
 
@@ -111,9 +112,9 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
         <div>
             <h4 className="admin-form-subsection-title">Tổng quan Tháng {now.getMonth() + 1}/{now.getFullYear()}</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Card className="!p-4 !bg-green-50 !border-green-200"><h5 className="text-sm text-green-700">Tổng Thu</h5><p className="text-2xl font-bold text-green-800">{totalIncome.toLocaleString('vi-VN')}₫</p></Card>
-                <Card className="!p-4 !bg-red-50 !border-red-200"><h5 className="text-sm text-red-700">Tổng Chi</h5><p className="text-2xl font-bold text-red-800">{totalExpense.toLocaleString('vi-VN')}₫</p></Card>
-                <Card className={`!p-4 ${netProfit >= 0 ? '!bg-blue-50 !border-blue-200' : '!bg-orange-50 !border-orange-200'}`}><h5 className={`text-sm ${netProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>Lợi nhuận</h5><p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>{netProfit.toLocaleString('vi-VN')}₫</p></Card>
+                <Card className="!p-4 !bg-green-50 !border-green-200"><h5 className="text-sm text-green-700">Tổng Thu</h5><p className="text-2xl font-bold text-green-800">{formatCurrency(totalIncome)}</p></Card>
+                <Card className="!p-4 !bg-red-50 !border-red-200"><h5 className="text-sm text-red-700">Tổng Chi</h5><p className="text-2xl font-bold text-red-800">{formatCurrency(totalExpense)}</p></Card>
+                <Card className={`!p-4 ${netProfit >= 0 ? '!bg-blue-50 !border-blue-200' : '!bg-orange-50 !border-orange-200'}`}><h5 className={`text-sm ${netProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>Lợi nhuận</h5><p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>{formatCurrency(netProfit)}</p></Card>
             </div>
              <h4 className="admin-form-subsection-title">Giao dịch gần đây</h4>
              <div className="overflow-x-auto">
@@ -124,7 +125,7 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
                             <tr key={t.id}>
                                 <td>{new Date(t.date).toLocaleDateString('vi-VN')}</td>
                                 <td>{t.description}</td>
-                                <td className={`font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{t.amount.toLocaleString('vi-VN')}₫</td>
+                                <td className={`font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(t.amount)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -168,7 +169,7 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
                                 <td>{t.type === 'income' ? 'Thu' : 'Chi'}</td>
                                 <td>{t.category}</td>
                                 <td>{t.description}</td>
-                                <td className={`font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{t.amount.toLocaleString('vi-VN')}₫</td>
+                                <td className={`font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(t.amount)}</td>
                                 <td>
                                     <div className="flex gap-1">
                                         <Button onClick={() => handleEditTransaction(t.id)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
