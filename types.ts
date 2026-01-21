@@ -169,20 +169,21 @@ export interface AIBuildResponse {
   error?: string;
 }
 
-// FIX: Defined PCBuildSuggestion interface.
+export interface SuggestedComponent {
+  CPU: string;
+  GPU: string;
+  RAM: string;
+  Motherboard: string;
+  SSD: string;
+  PSU: string;
+  Case: string;
+}
+
 export interface PCBuildSuggestion {
   name: string;
   total_price: number;
   reasoning: string;
-  components: {
-    CPU: string;
-    GPU: string;
-    RAM: string;
-    Motherboard: string;
-    SSD: string;
-    PSU: string;
-    Case: string;
-  };
+  components: SuggestedComponent;
 }
 
 export interface AIBuildSuggestionsResponse {
@@ -581,6 +582,21 @@ export interface HomepageContactSectionSettings {
   sectionTitleIconUrl?: string; 
 }
 
+export interface LEDBoardItem {
+  id: string;
+  title: string;
+  content: string;
+  highlight: string;
+  isEnabled: boolean;
+  order: number;
+  imageUrl?: string;
+}
+
+export interface HomepageLEDBoardSettings {
+  enabled: boolean;
+  items: LEDBoardItem[];
+}
+
 export interface SMTPSettings {
   host: string;
   port: number;
@@ -645,6 +661,7 @@ export interface SiteSettings {
 
   // Homepage Content Sections
   homepageBanners: HomepageBannerSettings[]; // Changed to array for multiple banners
+  homepageLEDBoard?: HomepageLEDBoardSettings;
   homepageAbout: HomepageAboutSettings;
   homepageServicesBenefits: HomepageServicesBenefitsSettings;
   homepageWhyChooseUs: HomepageWhyChooseUsSettings;
