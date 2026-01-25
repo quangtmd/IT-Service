@@ -165,7 +165,7 @@ const RecentOrdersTable: React.FC<{orders: Order[]}> = ({ orders }) => {
                      <tbody className="divide-y divide-gray-100">
                          {orders.slice(0, 5).map(order => (
                              <tr key={order.id} onClick={() => navigate(`/admin/orders/edit/${order.id}`)} className="hover:bg-gray-50 cursor-pointer">
-                                 <td className="px-4 py-3 font-mono text-xs">{order.id.slice(-8)}</td>
+                                 <td className="px-4 py-3 font-mono text-xs">{order.orderNumber || order.id.slice(-8)}</td>
                                  <td className="px-4 py-3">{new Date(order.orderDate).toLocaleDateString('vi-VN')}</td>
                                  <td className="px-4 py-3 font-medium">{order.customerInfo.fullName}</td>
                                  <td className="px-4 py-3 text-right font-semibold">{formatCurrency(order.totalAmount)}</td>

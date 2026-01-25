@@ -61,7 +61,9 @@ const CheckoutPage: React.FC = () => {
     
     try {
         const total = getTotalPrice();
-        const newOrderId = `order-${Date.now()}`;
+        const now = Date.now();
+        const newOrderId = `order-${now}`;
+        const newOrderNumber = `T${now.toString().slice(-6)}`;
         
         let paymentInfo: PaymentInfo;
         if (paymentMethod === 'transfer') {
@@ -77,6 +79,7 @@ const CheckoutPage: React.FC = () => {
         
         const newOrder: Order = {
             id: newOrderId,
+            orderNumber: newOrderNumber,
             userId: currentUser?.id, // Add userId if user is logged in
             customerInfo: formData,
             items: cart.map(item => ({ productId: item.id, productName: item.name, quantity: item.quantity, price: item.price })),
@@ -128,7 +131,7 @@ const CheckoutPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-textBase mb-4">Đặt Hàng Thành Công!</h1>
           <p className="text-textMuted mb-6">
             Cảm ơn {submittedOrder.customerInfo.fullName} đã đặt hàng tại {Constants.COMPANY_NAME}.
-            Mã đơn hàng của bạn là <strong className="text-textBase">#{submittedOrder.id.slice(-6)}</strong>.
+            Mã đơn hàng của bạn là <strong className="text-textBase">{submittedOrder.orderNumber || `#${submittedOrder.id.slice(-6)}`}</strong>.
           </p>
           <p className="text-textMuted mb-8">
             {isCOD 
@@ -149,7 +152,7 @@ const CheckoutPage: React.FC = () => {
   
   if (checkoutStep === 'payment_details' && submittedOrder) {
     const amountToPay = submittedOrder.paymentInfo.amountToPay || submittedOrder.totalAmount;
-    const qrDescription = `TT DON HANG ${submittedOrder.id.slice(-8)}`;
+    const qrDescription = `TT DON HANG ${submittedOrder.orderNumber || submittedOrder.id.slice(-8)}`;
     const qrUrl = `https://img.vietqr.io/image/${Constants.VIETCOMBANK_ID}-${Constants.BANK_ACCOUNT_NUMBER}-print.png?amount=${amountToPay}&addInfo=${encodeURIComponent(qrDescription)}&accountName=${encodeURIComponent(Constants.BANK_ACCOUNT_NAME)}`;
 
     return (

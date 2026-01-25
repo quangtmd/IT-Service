@@ -152,7 +152,7 @@ const OrderManagementView: React.FC = () => {
                                <React.Fragment key={order.id}>
                                     <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedOrderId(prev => prev === order.id ? null : order.id)}>
                                         <td className="p-3 text-center"><i className={`fas fa-chevron-right text-xs text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-90' : ''}`}></i></td>
-                                        <td className="p-3 font-medium text-blue-600">{formatOrderId(order.id)}</td>
+                                        <td className="p-3 font-medium text-blue-600">{order.orderNumber || formatOrderId(order.id)}</td>
                                         <td className="p-3">{formatDateTime(order.orderDate)}</td>
                                         <td className="p-3">{order.creatorName || 'N/A'}</td>
                                         <td className="p-3"><PaymentStatusPill status={order.paymentInfo.status} /></td>

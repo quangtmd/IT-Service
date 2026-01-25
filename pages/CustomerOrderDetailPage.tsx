@@ -135,7 +135,7 @@ const CustomerOrderDetailPage: React.FC = () => {
                 <div className="bg-white rounded-lg shadow-sm border border-borderDefault p-4 sm:p-6 mb-6">
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b pb-4 mb-4">
                         <div>
-                            <h1 className="text-xl font-bold text-textBase">Chi Tiết Đơn Hàng #{order.id.slice(-6)}</h1>
+                            <h1 className="text-xl font-bold text-textBase">Chi Tiết Đơn Hàng #{order.orderNumber || order.id.slice(-6)}</h1>
                             <p className="text-sm text-textMuted">Ngày đặt: {new Date(order.orderDate).toLocaleString('vi-VN')}</p>
                         </div>
                         <div className={`text-sm font-semibold px-3 py-1.5 rounded-full flex items-center gap-2 mt-2 sm:mt-0 ${statusInfo.color.replace('text-', 'bg-').replace('600', '100')}`}>

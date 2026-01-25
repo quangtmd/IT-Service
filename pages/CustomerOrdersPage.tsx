@@ -33,7 +33,7 @@ const OrderCard: React.FC<{ order: Order }> = ({ order }) => {
         <Link to={`/account/orders/${order.id}`} className="block bg-white border border-borderDefault rounded-lg shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-200">
             <div className="p-4 border-b border-borderDefault flex justify-between items-center bg-gray-50/50 rounded-t-lg">
                 <div>
-                    <p className="font-bold text-sm text-textBase">Đơn hàng #{order.id.slice(-6)}</p>
+                    <p className="font-bold text-sm text-textBase">Đơn hàng #{order.orderNumber || order.id.slice(-6)}</p>
                     <p className="text-xs text-textMuted">Ngày đặt: {new Date(order.orderDate).toLocaleDateString('vi-VN')}</p>
                 </div>
                 <div className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${statusInfo.color}`}>
@@ -129,7 +129,7 @@ const CustomerOrdersPage: React.FC = () => {
                 const hasMatchingProduct = order.items.some(item =>
                     item.productName.toLowerCase().includes(lowerSearchTerm)
                 );
-                const hasMatchingId = order.id.toLowerCase().includes(lowerSearchTerm);
+                const hasMatchingId = (order.orderNumber?.toLowerCase() || order.id.toLowerCase()).includes(lowerSearchTerm);
                 return hasMatchingProduct || hasMatchingId;
             });
     }, [allOrders, activeTab, searchTerm]);

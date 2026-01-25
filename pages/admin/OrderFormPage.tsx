@@ -36,6 +36,8 @@ const OrderFormPage: React.FC = () => {
     const [customerResults, setCustomerResults] = useState<User[]>([]);
 
     const [discount, setDiscount] = useState({ type: 'fixed' as 'fixed' | 'percentage', value: 0 });
+    const [showProductDropdown, setShowProductDropdown] = useState(false);
+    const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
 
     const staffUsers = useMemo(() => users.filter(u => u.role === 'admin' || u.role === 'staff'), [users]);
@@ -54,6 +56,22 @@ const OrderFormPage: React.FC = () => {
     const totalAmount = useMemo(() => subtotal - discountAmount, [subtotal, discountAmount]);
     const amountDue = useMemo(() => totalAmount - (formData?.paidAmount || 0), [totalAmount, formData?.paidAmount]);
 
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                const saveBtn = document.getElementById('btn-save-order');
+                if (saveBtn) saveBtn.click();
+            }
+            if (e.key === 'F9') {
+                e.preventDefault();
+                handlePrint();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     useEffect(() => {
         const loadData = async () => {
@@ -81,8 +99,10 @@ const OrderFormPage: React.FC = () => {
                         setError('Không tìm thấy đơn hàng để chỉnh sửa.');
                     }
                 } else {
+                    const now = Date.now();
                     setFormData({
-                        id: `T${Date.now().toString().slice(-6)}`,
+                        id: `order-${now}`,
+                        orderNumber: `T${now.toString().slice(-6)}`,
                         orderDate: new Date().toISOString(),
                         items: [],
                         totalAmount: 0,
@@ -92,7 +112,7 @@ const OrderFormPage: React.FC = () => {
                         status: 'Phiếu tạm',
                         customerInfo: { fullName: 'Khách lẻ', phone: '', address: '', email: '' },
                         paymentInfo: { method: 'Tiền mặt', status: 'Chưa thanh toán' },
-                        creatorId: currentUser?.id, // Default to current user
+                        creatorId: currentUser?.id,
                         notes: '',
                     });
                      setCustomerSearchText('Khách lẻ');
@@ -130,15 +150,17 @@ const OrderFormPage: React.FC = () => {
     const handleCustomerSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const term = e.target.value;
         setCustomerSearchText(term);
+        setShowCustomerDropdown(true);
 
         if (term && term.toLowerCase() !== 'khách lẻ') {
             const lowerTerm = term.toLowerCase();
-            setCustomerResults(customers.filter(c =>
+            const results = customers.filter(c =>
                 c.username.toLowerCase().includes(lowerTerm) ||
                 (c.phone && c.phone.includes(term)) ||
                 c.id.toLowerCase().includes(lowerTerm) ||
                 (c.address && c.address.toLowerCase().includes(lowerTerm))
-            ).slice(0, 5));
+            ).slice(0, 5);
+            setCustomerResults(results);
         } else {
             setCustomerResults([]);
             setFormData(prev => prev ? ({
@@ -163,6 +185,7 @@ const OrderFormPage: React.FC = () => {
         }) : null);
         setCustomerSearchText(customer.username);
         setCustomerResults([]);
+        setShowCustomerDropdown(false);
     };
 
     const handleItemChange = (index: number, field: keyof OrderItem, value: any) => {
@@ -173,7 +196,11 @@ const OrderFormPage: React.FC = () => {
     };
 
     const addItem = (product: Product) => {
-        if (!formData || formData.items?.some(i => i.productId === product.id)) return;
+        if (!formData || formData.items?.some(i => i.productId === product.id)) {
+            setProductSearch('');
+            setShowProductDropdown(false);
+            return;
+        }
         const newItem: OrderItem = { 
             productId: product.id, 
             productName: product.name, 
@@ -184,6 +211,7 @@ const OrderFormPage: React.FC = () => {
         };
         setFormData(p => p ? ({ ...p, items: [...(p.items || []), newItem] }) : null);
         setProductSearch('');
+        setShowProductDropdown(false);
     };
 
     const removeItem = (index: number) => {
@@ -212,216 +240,281 @@ const OrderFormPage: React.FC = () => {
     const handlePrint = () => { window.print(); };
 
     const filteredProducts = useMemo(() =>
-        productSearch ? products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())).slice(0, 5) : [],
+        productSearch ? products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.productCode?.toLowerCase().includes(productSearch.toLowerCase())).slice(0, 10) : [],
     [products, productSearch]);
     
     const creator = useMemo(() => staffUsers.find(u => u.id === formData?.creatorId), [staffUsers, formData?.creatorId]);
 
 
-    if (isLoading) return <div className="admin-card"><div className="admin-card-body text-center">Đang tải...</div></div>;
-    if (error) return <div className="admin-card"><div className="admin-card-body text-center text-red-500">{error}</div></div>;
+    if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+    if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
     if (!formData) return null;
     
     const showCustomerDetails = customerSearchText && customerSearchText.toLowerCase() !== 'khách lẻ';
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div className="admin-page-header flex justify-between items-center !m-0 !mb-6 no-print">
-                <h1 className="admin-page-title">{isEditing ? `Chỉnh sửa Đơn hàng` : 'Tạo Đơn hàng Mới'}</h1>
-                 <div>
-                    <Button type="button" variant="outline" onClick={handlePrint} className="mr-2">In Phiếu</Button>
-                    <Button type="button" variant="outline" onClick={() => navigate('/admin/orders')} className="mr-2">Hủy</Button>
-                    <Button type="submit" variant="primary">Lưu Đơn hàng</Button>
+        <form onSubmit={handleSubmit} className="h-full flex flex-col">
+            {/* Header Actions */}
+            <div className="flex justify-between items-center mb-6 no-print">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800">{isEditing ? `Sửa Đơn Hàng` : 'Tạo Đơn Hàng Mới'}</h1>
+                    <p className="text-sm text-gray-500">Mã phiếu: <span className="font-mono bg-gray-100 px-1 rounded">{formData.orderNumber || formData.id}</span></p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin/orders')} className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                        <i className="fas fa-arrow-left mr-2"></i> Quay lại
+                    </Button>
+                    <Button type="button" variant="outline" onClick={handlePrint} className="border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100" title="Phím tắt: F9">
+                        <i className="fas fa-print mr-2"></i> In Phiếu (F9)
+                    </Button>
+                    <Button type="submit" id="btn-save-order" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200" title="Phím tắt: F2">
+                        <i className="fas fa-save mr-2"></i> Lưu Đơn Hàng (F2)
+                    </Button>
                 </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Content */}
-                <div className="lg:col-span-2 flex flex-col gap-6">
-                    {/* Customer Info Card */}
-                    <div className="admin-card">
-                        <div className="admin-card-body">
-                            <div className="admin-form-group relative !mb-0">
-                                <label>Tìm kiếm khách hàng</label>
-                                <div className="flex items-center gap-2">
-                                    <input type="text" placeholder="Tìm theo Tên, SĐT, Mã KH hoặc nhập 'Khách lẻ'" value={customerSearchText} onChange={handleCustomerSearchChange} autoComplete="off" className="flex-grow"/>
-                                    <Button type="button" size="sm" variant="outline" onClick={() => navigate('/admin/customers/new')} title="Thêm khách hàng mới"><i className="fas fa-plus"></i></Button>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full no-print">
+                {/* Left Column: Products & Items */}
+                <div className="lg:col-span-8 flex flex-col gap-6">
+                    {/* Products Search & List */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col min-h-[500px]">
+                         <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                            <h3 className="font-semibold text-gray-700 flex items-center gap-2"><i className="fas fa-box-open text-blue-500"></i> Sản phẩm / Dịch vụ</h3>
+                        </div>
+                        
+                        <div className="p-4 product-search-container relative">
+                             <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i className="fas fa-search text-gray-400"></i>
                                 </div>
-                                {customerResults.length > 0 && (
-                                    <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
-                                        {customerResults.map(c => <li key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{c.username} ({c.phone || c.email})</li>)}
-                                    </ul>
-                                )}
+                                <input 
+                                    type="text" 
+                                    placeholder="Tìm kiếm sản phẩm (Tên, Mã SP)..." 
+                                    value={productSearch} 
+                                    onChange={e => { setProductSearch(e.target.value); setShowProductDropdown(true); }}
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow shadow-sm"
+                                />
                             </div>
-                            {showCustomerDetails && (
-                                <div className="grid grid-cols-4 gap-x-4 gap-y-3 mt-4">
-                                    <div className="admin-form-group col-span-1"><label>Mã khách hàng</label><input type="text" value={formData.userId || ''} disabled className="bg-gray-100" /></div>
-                                    <div className="admin-form-group col-span-3"><label>Tên khách hàng</label><input type="text" name="fullName" value={formData.customerInfo?.fullName || ''} onChange={handleCustomerInfoChange} className="font-bold"/></div>
-                                    <div className="admin-form-group col-span-2"><label>Số điện thoại</label><input type="tel" name="phone" value={formData.customerInfo?.phone || ''} onChange={handleCustomerInfoChange}/></div>
-                                    <div className="admin-form-group col-span-2"><label>Địa chỉ</label><input type="text" name="address" value={formData.customerInfo?.address || ''} onChange={handleCustomerInfoChange}/></div>
-                                </div>
+                            
+                            {showProductDropdown && filteredProducts.length > 0 && (
+                                <ul className="absolute z-50 w-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto divide-y divide-gray-100">
+                                    {filteredProducts.map(p => (
+                                        <li key={p.id} onClick={() => addItem(p)} className="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center group transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <img src={p.imageUrls?.[0] || 'https://placehold.co/40x40'} alt="" className="w-10 h-10 object-cover rounded bg-gray-100" />
+                                                <div>
+                                                    <p className="font-medium text-gray-800 group-hover:text-blue-700">{p.name}</p>
+                                                    <p className="text-xs text-gray-500">Mã: {p.productCode || p.id}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-bold text-blue-600">{p.price.toLocaleString('vi-VN')}₫</p>
+                                                <p className="text-xs text-gray-500">Tồn: <span className={p.stock > 0 ? 'text-green-600' : 'text-red-600'}>{p.stock}</span></p>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
                             )}
                         </div>
-                    </div>
-                    
-                    {/* Products Card */}
-                    <div className="admin-card">
-                         <div className="admin-card-header">
-                            <h3 className="admin-card-title">Sản phẩm/Dịch vụ</h3>
-                        </div>
-                        <div className="admin-card-body">
-                             <div className="relative admin-form-group">
-                                <input type="text" placeholder="Tìm kiếm để thêm sản phẩm..." value={productSearch} onChange={e => setProductSearch(e.target.value)} />
-                                {filteredProducts.length > 0 && (
-                                    <ul className="absolute z-10 w-full bg-white border rounded shadow-lg max-h-48 overflow-y-auto mt-1">
-                                        {filteredProducts.map(p => <li key={p.id} onClick={() => addItem(p)} className="p-2 hover:bg-gray-100 cursor-pointer text-sm">{p.name}</li>)}
-                                    </ul>
-                                )}
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-gray-50">
-                                        <tr><th className="p-2 w-8">STT</th><th className="p-2">Tên hàng hóa</th><th className="p-2 text-right">SL</th><th className="p-2 text-center">ĐVT</th><th className="p-2 text-right">Đơn giá</th><th className="p-2 text-right">Thành tiền</th><th className="p-2"></th></tr>
-                                    </thead>
-                                    <tbody>
-                                        {formData.items?.length === 0 && <tr><td colSpan={7} className="text-center py-4 text-gray-500">Chưa có sản phẩm nào.</td></tr>}
-                                        {formData.items?.map((item, index) => (
-                                            <tr key={item.productId || index} className="border-b">
-                                                <td className="p-1 text-center">{index + 1}</td>
-                                                <td className="p-1">{item.productName}</td>
-                                                <td className="p-1"><input className="w-20 text-right admin-form-group !p-1 !mb-0" type="number" min="1" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} /></td>
-                                                <td className="p-1 text-center">{item.unit}</td>
-                                                <td className="p-1"><input className="w-32 text-right admin-form-group !p-1 !mb-0" type="number" value={item.price} onChange={e => handleItemChange(index, 'price', e.target.value)} /></td>
-                                                <td className="p-1 text-right font-semibold">{(item.quantity * item.price).toLocaleString('vi-VN')}₫</td>
-                                                <td className="p-1 text-center"><Button type="button" size="sm" variant="ghost" className="!text-red-500" onClick={() => removeItem(index)}><i className="fas fa-times"></i></Button></td>
+
+                        <div className="flex-grow overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-gray-50 text-gray-500 font-medium border-y border-gray-200">
+                                    <tr>
+                                        <th className="p-3 pl-4 w-10">#</th>
+                                        <th className="p-3">Tên hàng hóa</th>
+                                        <th className="p-3 text-center w-20">ĐVT</th>
+                                        <th className="p-3 text-right w-24">SL</th>
+                                        <th className="p-3 text-right w-32">Đơn giá</th>
+                                        <th className="p-3 text-right w-32">Thành tiền</th>
+                                        <th className="p-3 w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {formData.items?.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="text-center py-12">
+                                                <div className="flex flex-col items-center justify-center text-gray-400">
+                                                    <i className="fas fa-shopping-basket text-4xl mb-3 opacity-30"></i>
+                                                    <p>Chưa có sản phẩm nào trong đơn hàng.</p>
+                                                    <p className="text-xs mt-1">Vui lòng tìm kiếm và thêm sản phẩm ở trên.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        formData.items?.map((item, index) => (
+                                            <tr key={index} className="hover:bg-gray-50 group">
+                                                <td className="p-3 pl-4 text-gray-400">{index + 1}</td>
+                                                <td className="p-3 font-medium text-gray-700">{item.productName}</td>
+                                                <td className="p-3 text-center text-gray-500">{item.unit}</td>
+                                                <td className="p-3 text-right">
+                                                    <input 
+                                                        type="number" 
+                                                        value={item.quantity} 
+                                                        min="1"
+                                                        onChange={e => handleItemChange(index, 'quantity', e.target.value)} 
+                                                        className="w-16 p-1 text-right border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    />
+                                                </td>
+                                                <td className="p-3 text-right">
+                                                    <input 
+                                                        type="number" 
+                                                        value={item.price} 
+                                                        onChange={e => handleItemChange(index, 'price', e.target.value)} 
+                                                        className="w-24 p-1 text-right border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    />
+                                                </td>
+                                                <td className="p-3 text-right font-semibold text-gray-800">{(item.quantity * item.price).toLocaleString('vi-VN')}</td>
+                                                <td className="p-3 text-center">
+                                                    <button type="button" onClick={() => removeItem(index)} className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50">
+                                                        <i className="fas fa-times"></i>
+                                                    </button>
+                                                </td>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                {/* Sidebar */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="sticky top-24">
-                        <div className="admin-card">
-                            <div className="admin-card-header"><h3 className="admin-card-title">Thông tin Phiếu</h3></div>
-                            <div className="admin-card-body space-y-4">
-                                <InfoItem label="Mã phiếu" value={formData.id} />
-                                <InfoItem label="Ngày tạo" value={new Date(formData.orderDate || Date.now()).toLocaleString('vi-VN')} />
-                                <div className="admin-form-group">
-                                    <label>Trạng thái đơn hàng</label>
-                                    <select name="status" value={formData.status} onChange={handleChange}>
+                {/* Right Column: Customer & Payment */}
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                    {/* Customer Card */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                        <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2 pb-3 border-b border-gray-100">
+                            <i className="fas fa-user-circle text-blue-500"></i> Khách hàng
+                        </h3>
+                        
+                        <div className="relative customer-search-container mb-4">
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i className="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    placeholder="Tìm khách hàng (Tên, SĐT)..." 
+                                    value={customerSearchText} 
+                                    onChange={handleCustomerSearchChange} 
+                                    onFocus={() => setShowCustomerDropdown(true)}
+                                    className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                                <div className="absolute inset-y-0 right-0 pr-1 flex items-center">
+                                     <button type="button" onClick={() => navigate('/admin/customers/new')} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md" title="Thêm khách hàng mới">
+                                        <i className="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {showCustomerDropdown && customerResults.length > 0 && (
+                                <ul className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                                    {customerResults.map(c => (
+                                        <li key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2.5 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-50 last:border-0">
+                                            <div className="font-medium text-gray-800">{c.username}</div>
+                                            <div className="text-xs text-gray-500">{c.phone} - {c.email}</div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        <div className="space-y-3 text-sm">
+                             <div className="flex flex-col">
+                                <label className="text-xs text-gray-500 mb-1">Tên khách hàng</label>
+                                <input type="text" name="fullName" value={formData.customerInfo?.fullName || ''} onChange={handleCustomerInfoChange} className="p-2 border border-gray-300 rounded bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors" />
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="text-xs text-gray-500 mb-1">Số điện thoại</label>
+                                <input type="tel" name="phone" value={formData.customerInfo?.phone || ''} onChange={handleCustomerInfoChange} className="p-2 border border-gray-300 rounded bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors" />
+                            </div>
+                             <div className="flex flex-col">
+                                <label className="text-xs text-gray-500 mb-1">Địa chỉ</label>
+                                <input type="text" name="address" value={formData.customerInfo?.address || ''} onChange={handleCustomerInfoChange} className="p-2 border border-gray-300 rounded bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Payment Info Card */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                         <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2 pb-3 border-b border-gray-100">
+                            <i className="fas fa-file-invoice-dollar text-green-500"></i> Thanh toán
+                        </h3>
+                        
+                        <div className="space-y-3 text-sm">
+                             <div className="flex justify-between items-center text-gray-600">
+                                <span>Tổng tiền hàng:</span>
+                                <span className="font-semibold text-gray-800">{subtotal.toLocaleString('vi-VN')}₫</span>
+                            </div>
+                            
+                             <div className="flex justify-between items-center text-gray-600">
+                                <span>Giảm giá:</span>
+                                <div className="flex items-center gap-1">
+                                    <input 
+                                        type="number" 
+                                        value={discount.value} 
+                                        onChange={e => setDiscount(d => ({...d, value: Number(e.target.value)}))} 
+                                        className="w-20 text-right p-1 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 outline-none"
+                                    />
+                                    <select 
+                                        value={discount.type} 
+                                        onChange={e => setDiscount(d => ({...d, type: e.target.value as any}))} 
+                                        className="p-1 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 outline-none text-xs bg-gray-50"
+                                    >
+                                        <option value="fixed">₫</option>
+                                        <option value="percentage">%</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div className="border-t border-dashed border-gray-200 my-2 pt-2">
+                                <div className="flex justify-between items-center text-lg font-bold">
+                                    <span className="text-gray-800">Khách cần trả:</span>
+                                    <span className="text-blue-600">{totalAmount.toLocaleString('vi-VN')}₫</span>
+                                </div>
+                            </div>
+
+                             <div className="flex justify-between items-center text-gray-600">
+                                <label htmlFor="paidAmount">Khách thanh toán:</label>
+                                <input 
+                                    id="paidAmount"
+                                    type="number" 
+                                    name="paidAmount" 
+                                    value={formData.paidAmount || ''} 
+                                    onChange={handleChange} 
+                                    onFocus={(e) => e.target.select()}
+                                    className="w-32 text-right p-2 border border-gray-300 rounded font-semibold text-gray-800 focus:ring-2 focus:ring-green-500 outline-none"
+                                />
+                            </div>
+                            
+                            {amountDue > 0 && (
+                                <div className="flex justify-between items-center text-red-600 font-medium bg-red-50 p-2 rounded">
+                                    <span>Còn nợ:</span>
+                                    <span>{amountDue.toLocaleString('vi-VN')}₫</span>
+                                </div>
+                            )}
+                            
+                             <div className="pt-4 mt-2 border-t border-gray-100">
+                                <div className="mb-3">
+                                    <label className="text-xs text-gray-500 block mb-1">Hình thức thanh toán</label>
+                                    <select name="paymentMethod" value={formData.paymentInfo?.method || 'Tiền mặt'} onChange={(e) => setFormData(p => p ? ({...p, paymentInfo: {...p.paymentInfo!, method: e.target.value as any}}) : null)} className="w-full p-2 border border-gray-300 rounded bg-white text-sm">
+                                        <option value="Tiền mặt">Tiền mặt</option>
+                                        <option value="Chuyển khoản ngân hàng">Chuyển khoản</option>
+                                        <option value="Thanh toán khi nhận hàng (COD)">COD</option>
+                                    </select>
+                                </div>
+                                 <div className="mb-3">
+                                    <label className="text-xs text-gray-500 block mb-1">Trạng thái đơn</label>
+                                    <select name="status" value={formData.status} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded bg-white text-sm">
                                         {ORDER_STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                     </select>
                                 </div>
-                                <div className="admin-form-group">
-                                    <label>Nhân viên bán hàng</label>
-                                    <select name="creatorId" value={formData.creatorId || ''} onChange={handleChange}>
-                                        <option value="">-- Chọn nhân viên --</option>
-                                        {staffUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
-                                    </select>
-                                </div>
-                                 <div className="admin-form-group">
-                                    <label>Ghi chú</label>
-                                    <textarea name="notes" value={formData.notes || ''} onChange={handleChange} rows={3} className="text-sm"></textarea>
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Ghi chú đơn hàng</label>
+                                    <textarea name="notes" value={formData.notes || ''} onChange={handleChange} rows={2} className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none resize-none"></textarea>
                                 </div>
                             </div>
                         </div>
-                        <div className="admin-card mt-6">
-                             <div className="admin-card-header"><h3 className="admin-card-title">Thanh toán</h3></div>
-                             <div className="admin-card-body space-y-3 text-sm">
-                                <div className="flex justify-between items-center"><span className="text-gray-600">Tổng tiền hàng:</span><span className="font-semibold">{subtotal.toLocaleString('vi-VN')}₫</span></div>
-                                <div className="flex justify-between items-center">
-                                  <label htmlFor="discountValue" className="text-gray-600">Giảm giá:</label>
-                                  <div className="flex items-center gap-1">
-                                    <input id="discountValue" type="number" value={discount.value} onChange={e => setDiscount(d => ({...d, value: Number(e.target.value)}))} className="w-24 text-right admin-form-group !p-1 !mb-0"/>
-                                    <select value={discount.type} onChange={e => setDiscount(d => ({...d, type: e.target.value as any}))} className="admin-form-group !p-1 !mb-0 w-16">
-                                        <option value="fixed">VND</option>
-                                        <option value="percentage">%</option>
-                                    </select>
-                                  </div>
-                                </div>
-                                <div className="flex justify-between items-center py-2 border-t text-base">
-                                  <span className="font-bold">Thành tiền:</span>
-                                  <span className="font-bold text-xl text-primary">{totalAmount.toLocaleString('vi-VN')}₫</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <label htmlFor="paidAmount" className="text-gray-600">Đã thanh toán:</label>
-                                  <input type="number" name="paidAmount" id="paidAmount" value={formData.paidAmount || ''} onChange={e => handleChange(e)} className="w-32 text-right admin-form-group !p-1 !mb-0"/>
-                                </div>
-                                 <div className="flex justify-between items-center font-semibold text-base">
-                                  <span className="text-textBase">Còn lại:</span>
-                                  <span className="text-red-600">{amountDue.toLocaleString('vi-VN')}₫</span>
-                                </div>
-                             </div>
-                        </div>
                     </div>
-                </div>
-            </div>
-            
-            {/* --- Print Section (Hidden by default) --- */}
-            <div className="print-wrapper hidden">
-                <div className="print-container">
-                    <header className="print-invoice-header">
-                         <div>
-                            <svg width="125" height="45" viewBox="0 0 125 45" xmlns="http://www.w3.org/2000/svg">
-                              <style>{`.logo-main-red { font-family: Impact, sans-serif; font-size: 36px; fill: #ef4444; font-style: italic; } .logo-main-black { font-family: Impact, sans-serif; font-size: 36px; fill: #000000; font-style: italic; } .logo-sub { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 10px; fill: #000000; letter-spacing: 2px; }`}</style>
-                              <text x="0" y="30" className="logo-main-red">IQ</text>
-                              <text x="38" y="30" className="logo-main-black">TECH</text>
-                              <text x="38" y="42" className="logo-sub">TECHNOLOGY</text>
-                            </svg>
-                            <p className="text-xs mt-2">{siteSettings.companyAddress}</p>
-                            <p className="text-xs">ĐT: {siteSettings.companyPhone} - Email: {siteSettings.companyEmail}</p>
-                        </div>
-                        <div className="text-right print-invoice-title-section">
-                            <h1>Hóa Đơn Bán Hàng</h1>
-                            <p>Số HĐ: <span>{formData.id}</span></p>
-                            <p>Ngày: <span>{new Date(formData.orderDate || Date.now()).toLocaleDateString('vi-VN')}</span></p>
-                        </div>
-                    </header>
-                    <section className="print-customer-info">
-                        <h3>Thông tin khách hàng</h3>
-                        <p><strong>Khách hàng:</strong> {formData.customerInfo?.fullName}</p>
-                        <p><strong>Địa chỉ:</strong> {formData.customerInfo?.address}</p>
-                        <p><strong>Điện thoại:</strong> {formData.customerInfo?.phone}</p>
-                    </section>
-                    <main>
-                        <table className="print-items-table">
-                            <thead>
-                                <tr><th>STT</th><th>Tên hàng hóa/Dịch vụ</th><th>ĐVT</th><th className="text-right">SL</th><th className="text-right">Đơn giá</th><th className="text-right">Thành tiền</th></tr>
-                            </thead>
-                            <tbody>
-                                {formData.items?.map((item, index) => (
-                                    <tr key={item.productId || index}>
-                                        <td className="text-center">{index + 1}</td>
-                                        <td>{item.productName}</td>
-                                        <td className="text-center">{item.unit}</td>
-                                        <td className="text-right">{item.quantity}</td>
-                                        <td className="text-right">{item.price.toLocaleString('vi-VN')}</td>
-                                        <td className="text-right font-semibold">{(item.quantity * item.price).toLocaleString('vi-VN')}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </main>
-                    <section className="print-totals-section">
-                      <div className="print-totals-wrapper">
-                        <div className="print-totals-row"><span>Tổng tiền hàng:</span><span>{subtotal.toLocaleString('vi-VN')}₫</span></div>
-                        <div className="print-totals-row"><span>Giảm giá:</span><span>{discountAmount.toLocaleString('vi-VN')}₫</span></div>
-                        <div className="print-totals-row grand-total"><span>THÀNH TIỀN THANH TOÁN:</span><span>{totalAmount.toLocaleString('vi-VN')}₫</span></div>
-                      </div>
-                    </section>
-                     <footer className="print-footer">
-                        <p className="mb-8">Bằng chữ: (...)</p>
-                        <div className="print-signatures">
-                            <div><p className="font-bold">Người mua hàng</p><p>(Ký, ghi rõ họ tên)</p></div>
-                            <div><p className="font-bold">Người bán hàng</p><p>(Ký, ghi rõ họ tên)</p></div>
-                        </div>
-                        <p className="mt-8">Cảm ơn quý khách đã mua hàng tại {siteSettings.companyName}!</p>
-                    </footer>
                 </div>
             </div>
         </form>

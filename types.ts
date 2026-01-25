@@ -295,6 +295,7 @@ export interface PaymentInfo {
 
 export interface Order {
   id: string;
+  orderNumber?: string;
   userId?: string; 
   creatorId?: string; 
   creatorName?: string; 
