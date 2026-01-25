@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-// Fix: Use named imports from react-router-dom instead of namespace import
+import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
@@ -13,14 +12,14 @@ import ArticleDetailPage from './pages/ArticleDetailPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import CartPage from './pages/CartPage';
-import { PCBuilderPage } from './pages/PCBuilderPage'; // Fix: Changed named import to default export.
+import { PCBuilderPage } from './pages/PCBuilderPage';
 import ProjectsPage from './pages/ProjectsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ScrollToTop from './components/shared/ScrollToTop';
 import FloatingActionButtons from './components/shared/FloatingActionButtons';
-import PCBuildSuggestionsPage from './pages/PCBuildSuggestionsPage'; // Import the new page
-import CustomerOrdersPage from './pages/CustomerOrdersPage'; // New import for customer orders page
-import CustomerOrderDetailPage from './pages/CustomerOrderDetailPage'; // Import the new detail page
+import PCBuildSuggestionsPage from './pages/PCBuildSuggestionsPage';
+import CustomerOrdersPage from './pages/CustomerOrdersPage';
+import CustomerOrderDetailPage from './pages/CustomerOrderDetailPage';
 
 // Auth and Admin
 import AdminPage from './pages/admin/AdminPage';
@@ -32,15 +31,12 @@ import CheckoutPage from './pages/CheckoutPage';
 const App: React.FC = () => {
 
   return (
-    // Fix: Use HashRouter directly
     <HashRouter>
       <ScrollToTop />
-      <div className="flex flex-col min-h-screen bg-bgCanvas">
+      <div className="flex flex-col min-h-screen bg-bgCanvas text-textBase transition-colors duration-300">
         <Header />
-        <main className="flex-grow pt-[168px] print:pt-0">
-          {/* Fix: Use Routes directly */}
-          <Routes> {/* Replaced Switch with Routes */}
-            {/* Fix: Use Route directly */}
+        <main className="flex-grow pt-[120px] print:pt-0">
+          <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/product/:productId" element={<ProductDetailPage />} />
@@ -53,7 +49,7 @@ const App: React.FC = () => {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/pc-builder" element={<PCBuilderPage />} />
-            <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} /> {/* Add new route */}
+            <Route path="/pc-build-suggestions" element={<PCBuildSuggestionsPage />} />
 
             {/* Auth Routes */}
             <Route path="/login" element={<LoginPage />} />
@@ -76,9 +72,9 @@ const App: React.FC = () => {
               }
             />
 
-            {/* Protected Admin Route - Updated for v6/v7 */}
+            {/* Protected Admin Route */}
             <Route
-              path="/admin/*" // Add /* to allow nested routes within AdminPage if any
+              path="/admin/*"
               element={
                 <ProtectedRoute roles={['admin', 'staff']}>
                   <AdminPage />
