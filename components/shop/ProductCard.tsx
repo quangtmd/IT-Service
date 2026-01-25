@@ -35,7 +35,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <img
             src={(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : `https://source.unsplash.com/300x225/?${encodeURIComponent(product.name)}`)}
             alt={product.name}
-            className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-40 object-contain transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute top-2 left-2 z-10 flex flex-col items-start gap-1">
             {isBestSeller && <span className="text-xs bg-amber-400 text-black font-semibold px-2 py-0.5 rounded">Bán chạy</span>}
