@@ -22,7 +22,8 @@ const ModernStatCard: React.FC<{
     icon: string;
     gradient: string;
     onClick?: () => void;
-}> = ({ title, value, subValue, percentage, icon, gradient, onClick }) => {
+    details?: { label: string; val: number | string }[];
+}> = ({ title, value, subValue, percentage, icon, gradient, onClick, details }) => {
     const isPositive = percentage >= 0;
     return (
         <div onClick={onClick} className={`relative overflow-hidden rounded-xl p-5 text-white shadow-lg cursor-pointer transition-transform hover:-translate-y-1 ${gradient}`}>
@@ -39,6 +40,16 @@ const ModernStatCard: React.FC<{
                 <p className="text-sm font-medium opacity-90 mt-4">{title}</p>
                 <h3 className="text-3xl font-bold">{value}</h3>
                 <p className="text-xs opacity-80">{subValue}</p>
+                {details && (
+                <div className="flex gap-4 border-t border-white/20 pt-3 mt-2">
+                    {details.map((d, i) => (
+                        <div key={i}>
+                            <p className="text-lg font-bold">{d.val}</p>
+                            <p className="text-[10px] uppercase opacity-70 tracking-wider">{d.label}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
             </div>
         </div>
     );
@@ -52,7 +63,7 @@ const RevenueChart = () => {
         { month: '19.000.008', revenue: 2600000 }, { month: '2.800.008', revenue: 3100000 },
         { month: '2.350.000', revenue: 2900000 }, { month: 'Gia', revenue: 3200000 },
     ];
-    const maxRevenue = Math.max(...data.map(d => d.revenue));
+    const maxRevenue = 3200000;
 
     // Simple line path generation
     const linePath = data.map((d, i) => {
@@ -195,7 +206,6 @@ const AlertsCard = () => {
 
 // --- Main Component ---
 const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
-    const navigate = useNavigate();
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -226,8 +236,34 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 <ModernStatCard title="Doanh Thu" value="2,150,000 ₫" subValue="25,460,000 ₫" percentage={1.4} icon="fa-chart-line" gradient="bg-gradient-to-r from-blue-500 to-blue-600" onClick={() => setActiveView('accounting_dashboard')} />
                 <ModernStatCard title="Lợi Nhuận" value="9,520,000 ₫" subValue="6,720,000 ₫" percentage={33} icon="fa-dollar-sign" gradient="bg-gradient-to-r from-emerald-500 to-teal-500" onClick={() => setActiveView('accounting_dashboard')} />
-                <ModernStatCard title="Đơn Hàng" value="92" subValue="Đơn hàng mới" percentage={76} icon="fa-receipt" gradient="bg-gradient-to-r from-violet-500 to-purple-600" onClick={() => setActiveView('orders')} />
-                <ModernStatCard title="Khách Hàng" value="4" subValue="Khách hàng mới" percentage={14} icon="fa-users" gradient="bg-gradient-to-r from-orange-400 to-amber-500" onClick={() => setActiveView('customers')} />
+                <ModernStatCard 
+                    title="Đơn Hàng" 
+                    value="92" 
+                    subValue="Đơn hàng mới" 
+                    percentage={76} 
+                    icon="fa-receipt" 
+                    gradient="bg-gradient-to-r from-violet-500 to-purple-600" 
+                    onClick={() => setActiveView('orders')}
+                    details={[
+                        { label: 'Nhes máy', val: 3 },
+                        { label: 'Bàng sấy', val: 8 },
+                        { label: 'Hủy', val: 92 }
+                    ]}
+                />
+                <ModernStatCard 
+                    title="Khách Hàng" 
+                    value="4" 
+                    subValue="Khách hàng mới" 
+                    percentage={14} 
+                    icon="fa-users" 
+                    gradient="bg-gradient-to-r from-orange-400 to-amber-500" 
+                    onClick={() => setActiveView('customers')}
+                    details={[
+                        { label: 'M.lích mới', val: 4 },
+                        { label: 'Khách gaing', val: 15 },
+                        { label: 'B.iểu hành', val: 3 }
+                    ]}
+                 />
             </div>
 
             {/* Row 2: Main Content */}
