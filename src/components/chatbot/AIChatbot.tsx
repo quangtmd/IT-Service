@@ -46,7 +46,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Load Settings
   useEffect(() => {
@@ -75,6 +74,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     if (!isUserInfoSubmitted || !isOpen || chatSession) return; 
     setIsLoading(true);
     try {
+      // Pass currentUser to give the bot context about who it's talking to
       const newChatSession = geminiService.startChat(siteSettings, currentUser); 
       setChatSession(newChatSession);
       
@@ -136,6 +136,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
     const botMessageId = `bot-${Date.now()}`;
     setMessages(prev => [...prev, { id: botMessageId, text: '', sender: 'bot', timestamp: new Date() }]);
+    setCurrentBotMessageId(botMessageId);
 
     try {
         let stream;
@@ -160,37 +161,77 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                  currentText += chunk.text;
                  setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: currentText } : msg));
              }
+             if (chunk.candidates?.[0]?.groundingMetadata?.groundingChunks) {
+                setCurrentGroundingChunks(chunk.candidates[0].groundingMetadata.groundingChunks as GroundingChunk[]);
+             }
         }
 
+        // Handle Function Calls (Tool Use)
         if (functionCalls.length > 0) {
-            setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: "Đang tra cứu thông tin..." } : msg));
+            // Show intermediate status
+            setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: "🔍 Đang tra cứu thông tin đơn hàng..." } : msg));
             
             for (const call of functionCalls) {
                 let toolResponse;
+                const allOrders = await getOrders(); // Fetch all orders to filter
                 
+                console.log("AI calling function:", call.name, call.args);
+
                 if (call.name === 'lookupCustomerOrders') {
-                    const identifier = String(call.args.identifier).toLowerCase();
-                    const allOrders = await getOrders();
+                    // Logic for finding orders by Phone/Email
+                    const identifier = String(call.args.identifier).toLowerCase().trim();
+                    
                     const matches = allOrders.filter(o => 
-                        o.customerInfo.phone?.includes(identifier) || 
-                        o.customerInfo.email?.toLowerCase().includes(identifier) ||
-                        o.userId === identifier
+                        (o.customerInfo.phone && o.customerInfo.phone.includes(identifier)) || 
+                        (o.customerInfo.email && o.customerInfo.email.toLowerCase().includes(identifier)) ||
+                        (o.userId === identifier)
                     );
                     
-                    toolResponse = {
-                        count: matches.length,
-                        orders: matches.slice(0, 5).map(o => ({ id: o.id, date: o.orderDate, status: o.status, total: o.totalAmount }))
-                    };
+                    if (matches.length > 0) {
+                         toolResponse = {
+                            found: true,
+                            count: matches.length,
+                            orders: matches.slice(0, 5).map(o => ({
+                                id: o.id,
+                                date: o.orderDate,
+                                status: o.status,
+                                total: o.totalAmount,
+                                items: o.items.map(i => `${i.productName} (x${i.quantity})`).join(', ')
+                            }))
+                        };
+                    } else {
+                        toolResponse = { found: false, message: `Không tìm thấy đơn hàng nào với SĐT/Email: ${identifier}` };
+                    }
+
                 } else if (call.name === 'getOrderStatus') {
-                    const orderId = String(call.args.orderId).toLowerCase();
-                    const allOrders = await getOrders();
-                    const order = allOrders.find(o => o.id.toLowerCase().endsWith(orderId.replace('t', '')));
+                    // Logic for finding order by ID
+                    const orderIdArg = String(call.args.orderId).trim().toUpperCase();
+                    // Clean ID (e.g. T123456 -> 123456 to match internal ID logic if needed, or exact match)
+                    // The app usually stores IDs like "order-170..." but displays "T..."
+                    // We check both raw ID and display ID logic
                     
-                    toolResponse = order 
-                        ? { found: true, status: order.status, total: order.totalAmount, items: order.items.length }
-                        : { found: false, message: "Không tìm thấy đơn hàng." };
+                    const order = allOrders.find(o => 
+                        o.id === orderIdArg || 
+                        `T${o.id.replace(/\D/g, '').slice(-6)}` === orderIdArg ||
+                        o.id.endsWith(orderIdArg.replace('T', ''))
+                    );
+                    
+                    if (order) {
+                         toolResponse = { 
+                             found: true, 
+                             orderId: `T${order.id.slice(-6)}`,
+                             status: order.status, 
+                             total: order.totalAmount, 
+                             paymentStatus: order.paymentInfo.status,
+                             shipping: order.shippingInfo,
+                             items: order.items.map(i => `${i.productName} (x${i.quantity})`)
+                         };
+                    } else {
+                         toolResponse = { found: false, message: `Không tìm thấy đơn hàng mã ${orderIdArg}.` };
+                    }
                 }
 
+                // Send the result back to Gemini to generate the final natural language response
                 const toolStream = await chatSession.sendToolResponse({
                     functionResponses: [{ id: call.id, name: call.name, response: { result: toolResponse } }]
                 });
@@ -199,14 +240,17 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                 for await (const chunk of toolStream) {
                     if (chunk.text) finalText += chunk.text;
                 }
+                // Update the bot message with the final answer
                 setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: finalText } : msg));
             }
         }
 
     } catch (err) {
-        setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: "Xin lỗi, hệ thống đang bận. Vui lòng thử lại sau.", sender: 'system' } : msg));
+        console.error("Chat error:", err);
+        setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: "Xin lỗi, hệ thống đang bận hoặc gặp lỗi khi xử lý yêu cầu. Vui lòng thử lại sau.", sender: 'system' } : msg));
     } finally {
         setIsLoading(false);
+        setCurrentBotMessageId(null);
     }
   };
 
@@ -217,6 +261,28 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     }
   };
 
+  const handleToggleRecording = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert('Trình duyệt không hỗ trợ giọng nói.');
+
+    if (isRecording && recognitionRef.current) {
+      recognitionRef.current.stop();
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = 'vi-VN';
+    recognition.interimResults = false;
+    recognition.onstart = () => setIsRecording(true);
+    recognition.onend = () => setIsRecording(false);
+    recognition.onresult = (event: any) => {
+      const t = event.results[event.results.length - 1][0].transcript;
+      setInput(prev => prev ? `${prev} ${t}` : t);
+    };
+    recognition.start();
+  };
+
   const handleUserInfoSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if(userName && userPhone) setIsUserInfoSubmitted(true);
@@ -224,9 +290,9 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
 
   return (
     <div
-      className={`fixed z-50 bg-bgBase shadow-2xl flex flex-col transition-all duration-300 ease-in-out
+      className={`fixed z-[100] bg-bgBase shadow-2xl flex flex-col transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'}
-        /* Mobile: Full Screen */
+        /* Mobile: Full Screen, Desktop: Fixed Widget */
         inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-96 sm:h-[600px] sm:rounded-xl sm:border sm:border-borderDefault
       `}
     >
@@ -247,7 +313,9 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
       ) : (
         <>
           <div className="flex-grow p-4 overflow-y-auto bg-bgCanvas scroll-smooth">
-            {messages.map(msg => <ChatMessage key={msg.id} message={msg} />)}
+            {messages.map(msg => (
+                <ChatMessage key={msg.id} message={msg} groundingChunks={msg.id === currentBotMessageId ? currentGroundingChunks : undefined} />
+            ))}
             <div ref={messagesEndRef} />
           </div>
 
@@ -262,16 +330,18 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                <button type="button" onClick={() => imageInputRef.current?.click()} className="text-textMuted hover:text-primary p-2"><i className="fas fa-paperclip"></i></button>
                <input type="file" ref={imageInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
                
+               <button type="button" onClick={handleToggleRecording} className={`p-2 ${isRecording ? 'text-red-500 animate-pulse' : 'text-textMuted hover:text-primary'}`}><i className="fas fa-microphone"></i></button>
+
                <input 
                  type="text" 
                  value={input} 
                  onChange={e => setInput(e.target.value)} 
                  placeholder="Nhập tin nhắn..." 
-                 className="flex-grow bg-bgMuted rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                 className="flex-grow bg-bgMuted rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                  disabled={isLoading}
                />
-               <button type="submit" disabled={isLoading || (!input && !imageFile)} className="bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center shadow-md disabled:opacity-50">
-                 <i className="fas fa-paper-plane"></i>
+               <button type="submit" disabled={isLoading || (!input && !imageFile)} className="bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center shadow-md disabled:opacity-50 hover:bg-primary-dark transition-colors">
+                 {isLoading ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-paper-plane"></i>}
                </button>
             </form>
           </div>

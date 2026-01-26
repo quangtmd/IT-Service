@@ -8,6 +8,7 @@ import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
 
 const CHAT_MODEL_NAME = 'gemini-2.5-flash';
 const BUILDER_MODEL_NAME = 'gemini-2.5-flash';
+const IMAGE_MODEL_NAME = 'imagen-4.0-generate-001';
 
 let aiInstance: GoogleGenAI | null = null;
 let chatSessionInstance: Chat | null = null; 
@@ -23,25 +24,27 @@ const getAiClient = (): GoogleGenAI | null => {
   return aiInstance;
 };
 
+// Tool 1: Get Order Status by ID (Specific)
 const getOrderStatusFunctionDeclaration: FunctionDeclaration = {
   name: 'getOrderStatus',
   parameters: {
     type: Type.OBJECT,
-    description: 'Tìm kiếm trạng thái đơn hàng theo mã cụ thể (VD: T123456).',
+    description: 'Tìm kiếm trạng thái đơn hàng theo mã đơn hàng cụ thể (VD: T123456 hoặc 123456).',
     properties: {
-      orderId: { type: Type.STRING, description: 'Mã đơn hàng.' },
+      orderId: { type: Type.STRING, description: 'Mã đơn hàng cần tìm.' },
     },
     required: ['orderId'],
   },
 };
 
+// Tool 2: Lookup Orders by Customer Info (Phone/Email)
 const lookupCustomerOrdersFunctionDeclaration: FunctionDeclaration = {
   name: 'lookupCustomerOrders',
   parameters: {
     type: Type.OBJECT,
-    description: 'Tra cứu danh sách đơn hàng của khách hàng dựa trên số điện thoại hoặc email được cung cấp hoặc từ ngữ cảnh.',
+    description: 'Tra cứu danh sách đơn hàng dựa trên số điện thoại hoặc email của khách hàng.',
     properties: {
-      identifier: { type: Type.STRING, description: 'Số điện thoại hoặc Email của khách hàng.' },
+      identifier: { type: Type.STRING, description: 'Số điện thoại hoặc Email dùng để đặt hàng.' },
     },
     required: ['identifier'],
   },
@@ -62,37 +65,36 @@ export const startChat = (
   let userContext = "";
   if (currentUser) {
     userContext = `
-**THÔNG TIN KHÁCH HÀNG ĐANG CHAT:**
+**THÔNG TIN KHÁCH HÀNG ĐANG CHAT (Đã đăng nhập):**
 - Tên: ${currentUser.username}
 - Email: ${currentUser.email}
 - SĐT: ${currentUser.phone || 'Chưa có'}
-- Địa chỉ: ${currentUser.address || 'Chưa có'}
-=> Hãy chào khách bằng tên và sử dụng thông tin này để tra cứu đơn hàng (dùng tool lookupCustomerOrders với SĐT hoặc Email của họ) nếu họ hỏi "đơn hàng của tôi".
+=> Nếu khách hỏi "đơn hàng của tôi", hãy tự động dùng SĐT hoặc Email trên để tra cứu (dùng tool lookupCustomerOrders) mà không cần hỏi lại.
 `;
   }
 
-  const defaultSystemInstruction = `Bạn là "Trợ lý ảo IQ Tech" - nhân viên tư vấn công nghệ của ${siteSettings.companyName}.
+  const defaultSystemInstruction = `Bạn là "Trợ lý ảo IQ Tech" - nhân viên tư vấn công nghệ chuyên nghiệp của ${siteSettings.companyName}.
 
-**QUY TẮC BẤT DI BẤT DỊCH:**
-1. **NGÔN NGỮ:** CHỈ được phép dùng **Tiếng Việt**.
-2. **PHONG CÁCH:** Thân thiện, nhiệt tình, chuyên nghiệp, dùng emoji (😊, 🚀, 💻) để tạo cảm giác gần gũi.
-3. **XƯNG HÔ:** Xưng "em" hoặc "mình", gọi khách là "anh/chị" hoặc "bạn".
-4. **NHẬN DIỆN:** Tuyệt đối KHÔNG nói "tôi là mô hình ngôn ngữ của Google". Hãy nói "Em là trợ lý ảo của IQ Tech".
+**QUY TẮC CỐT LÕI:**
+1. **NGÔN NGỮ:** Chỉ sử dụng Tiếng Việt.
+2. **PHONG CÁCH:** Thân thiện, nhiệt tình, dùng emoji phù hợp.
+3. **TRA CỨU ĐƠN HÀNG:** 
+   - Nếu khách cung cấp **Mã đơn hàng** (VD: "đơn T832910 thế nào rồi"), hãy dùng tool \`getOrderStatus\`.
+   - Nếu khách cung cấp **Số điện thoại** hoặc **Email** (VD: "kiểm tra đơn sđt 0905123456"), hãy dùng tool \`lookupCustomerOrders\`.
+   - Nếu khách hỏi chung chung "kiểm tra đơn hàng", hãy hỏi xin Mã đơn hàng HOẶC Số điện thoại đặt hàng.
+   - Khi có kết quả từ tool, hãy tóm tắt lại: Trạng thái, Tổng tiền, và Danh sách sản phẩm (nếu có).
 
 ${userContext}
 
-**NHIỆM VỤ CỦA BẠN:**
-- Tư vấn cấu hình PC, Laptop, linh kiện máy tính.
-- Giải đáp dịch vụ IT doanh nghiệp.
-- Hỗ trợ tra cứu đơn hàng (sử dụng tool).
-
-**DANH MỤC SẢN PHẨM CHÍNH:**
+**KIẾN THỨC SẢN PHẨM:**
 ${productCategoriesInfo}
 
-**LIÊN HỆ:** Hotline: ${siteSettings.companyPhone}, Địa chỉ: ${siteSettings.companyAddress}.
+**DỊCH VỤ:**
+Cung cấp dịch vụ IT, lắp đặt camera, sửa chữa máy tính, thi công mạng văn phòng.
 
-Nếu khách hỏi về đơn hàng của họ, hãy ưu tiên dùng tool 'lookupCustomerOrders' nếu đã biết SĐT/Email, hoặc hỏi họ thông tin để tra cứu.
-`;
+**LIÊN HỆ:** 
+Hotline: ${siteSettings.companyPhone}
+Địa chỉ: ${siteSettings.companyAddress}`;
 
   chatSessionInstance = client.chats.create({
     model: CHAT_MODEL_NAME,
@@ -126,13 +128,9 @@ export const sendMessageWithImage = async (
     const imagePart: Part = { inlineData: { data: base64Data, mimeType: mimeType } };
     const textPart: Part = { text: message };
     
-    return await chatToUse.sendMessageStream({ message: { parts: [textPart, imagePart] } });
+    // Config needs to be passed if we want tools to work with images too, but usually text logic handles tools.
+    return await chatToUse.sendMessageStream({ message: [textPart, imagePart] });
 };
-
-// ... (Keep generatePCBuildRecommendation, generatePCBuildSuggestions, generateTextWithGoogleSearch, fetchLatestTechNews as is)
-// Re-exporting unmodified functions for brevity, assuming they exist in the file. 
-// If full file content is needed, I would include them. 
-// For this specific update, I am focusing on the chat initialization and tool definitions.
 
 export const generatePCBuildRecommendation = async (useCase: string, budget: string, currentComponents?: Record<string, string>): Promise<AIBuildResponse> => {
    const client = getAiClient(); 
@@ -151,10 +149,7 @@ Ngân sách: ${budget}.`;
     }
   }
 
-  prompt += `\nHãy đề xuất một cấu hình PC tương thích bao gồm CPU, Bo mạch chủ (Motherboard), RAM (ghi rõ dung lượng và tốc độ), GPU (Card đồ họa), SSD (ghi rõ dung lượng), PSU (Nguồn - ghi rõ công suất), và Vỏ máy (Case).
-Cung cấp phản hồi dưới dạng một đối tượng JSON với các khóa: 'cpu', 'motherboard', 'ram', 'gpu', 'ssd', 'psu', 'case'. Mỗi khóa này nên là một đối tượng chứa hai khóa con: 'name' (tên linh kiện cụ thể) và 'reasoning' (lý do ngắn gọn chọn linh kiện đó bằng Tiếng Việt).
-Ví dụ: { "cpu": { "name": "AMD Ryzen 5 5600X", "reasoning": "Hiệu năng tốt cho gaming tầm trung." }, ... }.
-Nếu ngân sách quá thấp cho nhu cầu sử dụng, hãy trả về JSON có dạng { "error": "Ngân sách quá thấp cho nhu cầu này." }.`;
+  prompt += `\nHãy đề xuất một cấu hình PC tương thích. Cung cấp phản hồi JSON với các khóa: 'cpu', 'motherboard', 'ram', 'gpu', 'ssd', 'psu', 'case'. Mỗi khóa chứa { "name": "...", "reasoning": "..." }.`;
   
   try {
     const response: GenerateContentResponse = await client.models.generateContent({
@@ -176,10 +171,7 @@ Nếu ngân sách quá thấp cho nhu cầu sử dụng, hãy trả về JSON c�
 
   } catch (error) {
     console.error("Error generating PC build recommendation:", error);
-    if (error instanceof Error && error.message.includes("JSON")) {
-         return { error: "AI đã trả về định dạng không hợp lệ. Vui lòng thử lại." };
-    }
-    return { error: "Đã xảy ra lỗi khi nhận đề xuất từ AI. Vui lòng thử lại." };
+    return { error: "Đã xảy ra lỗi khi nhận đề xuất từ AI." };
   }
 };
 
@@ -189,28 +181,21 @@ export const generatePCBuildSuggestions = async (useCase: 'PC Gaming' | 'PC Văn
       throw new Error(Constants.API_KEY_ERROR_MESSAGE);
   }
 
-  const prompt = `Bạn là một chuyên gia xây dựng PC tại cửa hàng Việt Nam có tên "IQ Technology". Dựa trên nhu cầu của người dùng, hãy đề xuất 2-3 cấu hình PC riêng biệt (ví dụ: một cấu hình tối ưu giá, một cấu hình hiệu năng cao, hoặc một dùng Intel và một dùng AMD).
-
-Nhu cầu của người dùng:
-- Mục đích: ${useCase}
-- Ngân sách: ${budget} VNĐ
-- Yêu cầu thêm: ${additionalRequirements || 'Không có'}
-
-Đối với mỗi cấu hình, hãy cung cấp một tên gọi tiếng Việt (ví dụ: "Cấu hình Gaming Tầm trung"), một tổng giá tiền ước tính (dạng số), một lý do ngắn gọn tiếng Việt tại sao cấu hình này phù hợp, và danh sách các linh kiện cụ thể bao gồm: CPU, GPU, RAM, Motherboard, SSD, PSU, và Case.
-Phản hồi của bạn PHẢI tuân thủ nghiêm ngặt theo JSON schema đã được cung cấp.`;
+  const prompt = `Đề xuất 2-3 cấu hình PC tại cửa hàng "IQ Technology".
+Nhu cầu: ${useCase}, Ngân sách: ${budget} VNĐ, Yêu cầu thêm: ${additionalRequirements}.
+Trả về JSON schema: { suggestions: [{ name, total_price, reasoning, components: { CPU, GPU, RAM, Motherboard, SSD, PSU, Case } }] }`;
 
   const responseSchema = {
     type: Type.OBJECT,
     properties: {
       suggestions: {
         type: Type.ARRAY,
-        description: "Một danh sách các cấu hình PC được đề xuất.",
         items: {
           type: Type.OBJECT,
           properties: {
-            name: { type: Type.STRING, description: "Tên của cấu hình, ví dụ: Cấu hình Gaming Tầm Trung." },
-            total_price: { type: Type.NUMBER, description: "Tổng chi phí ước tính bằng VNĐ." },
-            reasoning: { type: Type.STRING, description: "Giải thích ngắn gọn tại sao cấu hình này phù hợp (Tiếng Việt)." },
+            name: { type: Type.STRING },
+            total_price: { type: Type.NUMBER },
+            reasoning: { type: Type.STRING },
             components: {
               type: Type.OBJECT,
               properties: {
@@ -247,27 +232,22 @@ Phản hồi của bạn PHẢI tuân thủ nghiêm ngặt theo JSON schema đã
 
   } catch (error) {
     console.error("Lỗi khi tạo gợi ý cấu hình PC:", error);
-    throw new Error("Không thể nhận gợi ý từ AI. Vui lòng thử lại sau.");
+    throw new Error("Không thể nhận gợi ý từ AI.");
   }
 };
 
 export const generateTextWithGoogleSearch = async (prompt: string): Promise<{ text: string; groundingChunks?: any[] }> => {
-      const client = getAiClient(); 
-  if (!client) {
-      throw new Error(Constants.API_KEY_ERROR_MESSAGE);
-  }
+  const client = getAiClient(); 
+  if (!client) throw new Error(Constants.API_KEY_ERROR_MESSAGE);
   try {
     const response: GenerateContentResponse = await client.models.generateContent({
       model: CHAT_MODEL_NAME, 
       contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
+      config: { tools: [{ googleSearch: {} }] },
     });
-    const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
     return {
       text: response.text,
-      groundingChunks: groundingMetadata?.groundingChunks as any[] || undefined
+      groundingChunks: response.candidates?.[0]?.groundingMetadata?.groundingChunks as any[] || undefined
     };
   } catch (error) {
     console.error("Error generating text with Google Search:", error);
@@ -276,35 +256,46 @@ export const generateTextWithGoogleSearch = async (prompt: string): Promise<{ te
 };
 
 export const fetchLatestTechNews = async (): Promise<Partial<Article>[]> => {
-        const client = getAiClient();
-    if (!client) {
-        throw new Error(Constants.API_KEY_ERROR_MESSAGE);
-    }
-    const prompt = `Làm một biên tập viên tin tức công nghệ tại Việt Nam. Sử dụng Google Search để tìm 3 tin tức công nghệ mới và thú vị nhất trong vài ngày qua (ưu tiên tin liên quan đến PC, phần cứng, AI). 
-    Đối với mỗi tin tức, hãy cung cấp một tiêu đề tiếng Việt hấp dẫn, một bản tóm tắt (summary) tiếng Việt khoảng 2-3 câu, một nội dung chi tiết (content) tiếng Việt được định dạng bằng Markdown, một danh mục (category) từ danh sách sau: [${Constants.ARTICLE_CATEGORIES.join(', ')}], và một cụm từ khóa tìm kiếm hình ảnh bằng tiếng Anh (imageSearchQuery) ngắn gọn, phù hợp với nội dung.
-    Trả về kết quả dưới dạng một mảng JSON.`;
+    const client = getAiClient();
+    if (!client) throw new Error(Constants.API_KEY_ERROR_MESSAGE);
+    const prompt = `Tìm 3 tin tức công nghệ mới nhất về PC/Hardware tại Việt Nam. Trả về JSON mảng: [{title, summary, content (markdown), category, imageSearchQuery}].`;
 
     try {
         const response = await client.models.generateContent({
             model: CHAT_MODEL_NAME,
             contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }],
-            }
+            config: { tools: [{ googleSearch: {} }] }
         });
 
         let jsonStr = response.text.trim();
         const fenceRegex = /^\`\`\`(\w*)?\s*\n?(.*?)\n?\s*\`\`\`$/s;
         const match = jsonStr.match(fenceRegex);
-        if (match && match[2]) {
-            jsonStr = match[2].trim();
-        }
+        if (match && match[2]) jsonStr = match[2].trim();
         
         return JSON.parse(jsonStr) as Partial<Article>[];
 
     } catch (error) {
-        console.error("Error fetching latest tech news:", error);
-        throw new Error("Không thể lấy tin tức mới nhất từ AI. Vui lòng kiểm tra lại API Key và thử lại.");
+        console.error("Error fetching news:", error);
+        throw new Error("Không thể lấy tin tức.");
+    }
+};
+
+export const generateImage = async (prompt: string): Promise<string> => {
+    const client = getAiClient();
+    if (!client) throw new Error(Constants.API_KEY_ERROR_MESSAGE);
+    try {
+        const response = await client.models.generateImages({
+            model: IMAGE_MODEL_NAME,
+            prompt: prompt,
+            config: {numberOfImages: 1, outputMimeType: 'image/jpeg'},
+        });
+        if (response.generatedImages && response.generatedImages.length > 0) {
+            return `data:image/jpeg;base64,${response.generatedImages[0].image.imageBytes}`;
+        }
+        throw new Error("No image generated");
+    } catch (error) {
+        console.error("Error generating image:", error);
+        throw error;
     }
 };
 
@@ -316,6 +307,7 @@ const geminiService = {
     generateTextWithGoogleSearch,
     fetchLatestTechNews,
     generatePCBuildSuggestions,
+    generateImage
 };
 
 export default geminiService;
