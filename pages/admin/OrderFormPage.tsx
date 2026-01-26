@@ -11,11 +11,10 @@ const ORDER_STATUS_OPTIONS: OrderStatus[] = ['Phiếu tạm', 'Chờ xử lý', 
 
 const InfoItem: React.FC<{ label: string; value?: string | number | null; children?: React.ReactNode; className?: string }> = ({ label, value, children, className }) => (
     <div className={className}>
-        <p className="text-xs text-textMuted">{label}</p>
-        {children || <p className="text-sm font-medium text-textBase">{value || 'N/A'}</p>}
+        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">{label}</p>
+        {children || <p className="text-sm font-semibold text-gray-800 break-words">{value || '---'}</p>}
     </div>
 );
-
 
 const OrderFormPage: React.FC = () => {
     const { orderId } = useParams<{ orderId: string }>();
@@ -56,7 +55,7 @@ const OrderFormPage: React.FC = () => {
     const totalAmount = useMemo(() => subtotal - discountAmount, [subtotal, discountAmount]);
     const amountDue = useMemo(() => totalAmount - (formData?.paidAmount || 0), [totalAmount, formData?.paidAmount]);
 
-
+    // Handle Hotkeys
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'F2') {
@@ -99,10 +98,8 @@ const OrderFormPage: React.FC = () => {
                         setError('Không tìm thấy đơn hàng để chỉnh sửa.');
                     }
                 } else {
-                    const now = Date.now();
                     setFormData({
-                        id: `order-${now}`,
-                        orderNumber: `T${now.toString().slice(-6)}`,
+                        id: `T${Date.now().toString().slice(-6)}`,
                         orderDate: new Date().toISOString(),
                         items: [],
                         totalAmount: 0,
@@ -110,12 +107,12 @@ const OrderFormPage: React.FC = () => {
                         cost: 0,
                         profit: 0,
                         status: 'Phiếu tạm',
-                        customerInfo: { fullName: 'Khách lẻ', phone: '', address: '', email: '' },
+                        customerInfo: { fullName: '', phone: '', address: '', email: '' },
                         paymentInfo: { method: 'Tiền mặt', status: 'Chưa thanh toán' },
                         creatorId: currentUser?.id,
                         notes: '',
                     });
-                     setCustomerSearchText('Khách lẻ');
+                     setCustomerSearchText('');
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu.');
@@ -152,7 +149,7 @@ const OrderFormPage: React.FC = () => {
         setCustomerSearchText(term);
         setShowCustomerDropdown(true);
 
-        if (term && term.toLowerCase() !== 'khách lẻ') {
+        if (term) {
             const lowerTerm = term.toLowerCase();
             const results = customers.filter(c =>
                 c.username.toLowerCase().includes(lowerTerm) ||
@@ -163,12 +160,13 @@ const OrderFormPage: React.FC = () => {
             setCustomerResults(results);
         } else {
             setCustomerResults([]);
-            setFormData(prev => prev ? ({
-                ...prev,
-                userId: undefined,
-                customerInfo: { fullName: 'Khách lẻ', phone: '', address: '', email: '', notes: prev.customerInfo?.notes || '' }
-            }) : null);
         }
+        
+        // Also update the form name as user types (for manual entry)
+        setFormData(prev => prev ? ({
+            ...prev,
+            customerInfo: { ...prev.customerInfo!, fullName: term }
+        }) : null);
     };
 
     const handleSelectCustomer = (customer: User) => {
@@ -242,15 +240,22 @@ const OrderFormPage: React.FC = () => {
     const filteredProducts = useMemo(() =>
         productSearch ? products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.productCode?.toLowerCase().includes(productSearch.toLowerCase())).slice(0, 10) : [],
     [products, productSearch]);
-    
-    const creator = useMemo(() => staffUsers.find(u => u.id === formData?.creatorId), [staffUsers, formData?.creatorId]);
 
+    // Close dropdowns on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            if (!target.closest('.product-search-container')) setShowProductDropdown(false);
+            if (!target.closest('.customer-search-container')) setShowCustomerDropdown(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+    
 
     if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
     if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
     if (!formData) return null;
-    
-    const showCustomerDetails = customerSearchText && customerSearchText.toLowerCase() !== 'khách lẻ';
 
     return (
         <form onSubmit={handleSubmit} className="h-full flex flex-col">
@@ -258,7 +263,7 @@ const OrderFormPage: React.FC = () => {
             <div className="flex justify-between items-center mb-6 no-print">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">{isEditing ? `Sửa Đơn Hàng` : 'Tạo Đơn Hàng Mới'}</h1>
-                    <p className="text-sm text-gray-500">Mã phiếu: <span className="font-mono bg-gray-100 px-1 rounded">{formData.orderNumber || formData.id}</span></p>
+                    <p className="text-sm text-gray-500">Mã phiếu: <span className="font-mono bg-gray-100 px-1 rounded">{formData.id}</span></p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button type="button" variant="outline" onClick={() => navigate('/admin/orders')} className="border-gray-300 text-gray-700 hover:bg-gray-50">
@@ -479,7 +484,7 @@ const OrderFormPage: React.FC = () => {
                                     id="paidAmount"
                                     type="number" 
                                     name="paidAmount" 
-                                    value={formData.paidAmount || ''} 
+                                    value={formData.paidAmount || 0} 
                                     onChange={handleChange} 
                                     onFocus={(e) => e.target.select()}
                                     className="w-32 text-right p-2 border border-gray-300 rounded font-semibold text-gray-800 focus:ring-2 focus:ring-green-500 outline-none"
@@ -517,31 +522,32 @@ const OrderFormPage: React.FC = () => {
                     </div>
                 </div>
             </div>
-
-            {/* --- Print Template (Hidden by default, shown for print) --- */}
+            
+            {/* --- Print Template (Visible only in Print Mode) --- */}
             <div className="print-wrapper hidden print:block bg-white text-black font-sans text-sm leading-snug">
                 <div className="print-container max-w-[210mm] mx-auto p-8">
                     {/* Header */}
-                    <header className="flex justify-between items-start mb-6 border-b-2 border-gray-800 pb-4">
+                    <div className="flex justify-between items-start mb-6 border-b-2 border-gray-800 pb-4">
                         <div className="flex items-start gap-4">
+                            {/* Logo Placeholder */}
                              <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded-full border-2 border-gray-800">
                                 <span className="font-bold text-xl">IQ</span>
                             </div>
                             <div>
                                 <h1 className="text-2xl font-bold uppercase tracking-wide">{siteSettings.companyName}</h1>
-                                <p className="text-xs mt-1">Địa chỉ: {siteSettings.companyAddress}</p>
-                                <p className="text-xs">Hotline: <strong>{siteSettings.companyPhone}</strong></p>
+                                <p className="text-sm mt-1">{siteSettings.companyAddress}</p>
+                                <p className="text-sm">Hotline: <strong>{siteSettings.companyPhone}</strong></p>
                             </div>
                         </div>
                         <div className="text-right">
                              <h2 className="text-3xl font-extrabold uppercase tracking-widest text-gray-900">Hóa Đơn</h2>
-                             <p className="text-sm mt-1">Mã phiếu: <strong>{formData.orderNumber || formData.id}</strong></p>
+                             <p className="text-sm mt-1">Mã phiếu: <strong>#{formData.id.slice(-6)}</strong></p>
                              <p className="text-sm">Ngày: {new Date(formData.orderDate || Date.now()).toLocaleDateString('vi-VN')}</p>
                         </div>
-                    </header>
+                    </div>
 
                     {/* Info */}
-                    <section className="grid grid-cols-2 gap-8 mb-6">
+                    <div className="grid grid-cols-2 gap-8 mb-6">
                         <div>
                             <h3 className="font-bold border-b border-gray-300 mb-2 pb-1 uppercase text-xs text-gray-500">Thông tin khách hàng</h3>
                             <p><strong>Khách hàng:</strong> {formData.customerInfo?.fullName || 'Khách lẻ'}</p>
@@ -550,62 +556,68 @@ const OrderFormPage: React.FC = () => {
                         </div>
                         <div className="text-right">
                             <h3 className="font-bold border-b border-gray-300 mb-2 pb-1 uppercase text-xs text-gray-500">Thông tin bổ sung</h3>
-                            <p><strong>Thu ngân:</strong> {creator?.username || 'Admin'}</p>
+                            <p><strong>Thu ngân:</strong> {staffUsers.find(u => u.id === formData.creatorId)?.username || 'Admin'}</p>
                             <p><strong>Ghi chú:</strong> {formData.notes || '---'}</p>
                         </div>
-                    </section>
+                    </div>
 
                     {/* Table */}
-                    <main>
-                        <table className="w-full mb-6 border-collapse">
-                            <thead>
-                                <tr className="border-y-2 border-gray-800 bg-gray-100">
-                                    <th className="py-2 text-left w-10">STT</th>
-                                    <th className="py-2 text-left">Tên sản phẩm</th>
-                                    <th className="py-2 text-center w-16">ĐVT</th>
-                                    <th className="py-2 text-right w-16">SL</th>
-                                    <th className="py-2 text-right w-28">Đơn giá</th>
-                                    <th className="py-2 text-right w-32">Thành tiền</th>
+                    <table className="w-full mb-6 border-collapse print-table">
+                        <thead>
+                            <tr className="border-b-2 border-gray-800">
+                                <th className="py-2 text-center w-10">STT</th>
+                                <th className="py-2 text-left">Tên sản phẩm</th>
+                                <th className="py-2 text-center w-16">ĐVT</th>
+                                <th className="py-2 text-right w-16">SL</th>
+                                <th className="py-2 text-right w-28">Đơn giá</th>
+                                <th className="py-2 text-right w-32">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {formData.items?.map((item, index) => (
+                                <tr key={index} className="border-b border-gray-200">
+                                    <td className="py-2 text-center">{index + 1}</td>
+                                    <td className="py-2 font-medium">{item.productName}</td>
+                                    <td className="py-2 text-center">{item.unit}</td>
+                                    <td className="py-2 text-right">{item.quantity}</td>
+                                    <td className="py-2 text-right">{item.price.toLocaleString('vi-VN')}</td>
+                                    <td className="py-2 text-right font-bold">{(item.quantity * item.price).toLocaleString('vi-VN')}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {formData.items?.map((item, index) => (
-                                    <tr key={index} className="border-b border-gray-200">
-                                        <td className="py-2 text-center">{index + 1}</td>
-                                        <td className="py-2 font-medium">{item.productName}</td>
-                                        <td className="py-2 text-center">{item.unit}</td>
-                                        <td className="py-2 text-right">{item.quantity}</td>
-                                        <td className="py-2 text-right">{item.price.toLocaleString('vi-VN')}</td>
-                                        <td className="py-2 text-right font-bold">{(item.quantity * item.price).toLocaleString('vi-VN')}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </main>
+                            ))}
+                        </tbody>
+                    </table>
 
                     {/* Totals */}
-                    <section className="flex justify-end mb-12">
-                        <div className="w-72 space-y-2">
+                    <div className="flex justify-end mb-12">
+                        <div className="w-64 space-y-2">
                              <div className="flex justify-between">
                                 <span>Tổng tiền hàng:</span>
-                                <span>{subtotal.toLocaleString('vi-VN')}₫</span>
+                                <span>{subtotal.toLocaleString('vi-VN')}</span>
                             </div>
                             <div className="flex justify-between text-gray-600">
                                 <span>Giảm giá:</span>
-                                <span>- {discountAmount.toLocaleString('vi-VN')}₫</span>
+                                <span>- {discountAmount.toLocaleString('vi-VN')}</span>
                             </div>
                              <div className="flex justify-between border-t-2 border-gray-800 pt-2 text-lg font-bold">
                                 <span>Thành tiền:</span>
-                                <span>{totalAmount.toLocaleString('vi-VN')}₫</span>
+                                <span>{totalAmount.toLocaleString('vi-VN')}</span>
                             </div>
                             <div className="text-right italic text-xs text-gray-500 mt-1">
                                 (Bằng chữ: ........................................................................)
                             </div>
                         </div>
-                    </section>
+                    </div>
                     
+                    {/* QR Code Placeholder */}
+                    <div className="flex justify-center mb-8">
+                         <div className="border border-gray-300 p-2 rounded text-center">
+                             <div className="w-24 h-24 bg-gray-200 mx-auto mb-1 flex items-center justify-center text-xs text-gray-500">[QR Code]</div>
+                             <p className="text-xs font-semibold">Quét mã thanh toán</p>
+                         </div>
+                    </div>
+
                     {/* Signatures */}
-                    <footer className="grid grid-cols-2 gap-8 text-center mt-auto pt-8">
+                    <div className="grid grid-cols-2 gap-8 text-center mt-auto">
                         <div>
                             <p className="font-bold uppercase text-xs mb-16">Người mua hàng</p>
                             <p className="italic text-xs">(Ký, ghi rõ họ tên)</p>
@@ -614,7 +626,7 @@ const OrderFormPage: React.FC = () => {
                             <p className="font-bold uppercase text-xs mb-16">Người bán hàng</p>
                             <p className="italic text-xs">(Ký, ghi rõ họ tên)</p>
                         </div>
-                    </footer>
+                    </div>
                     
                     <div className="text-center text-xs text-gray-500 mt-8 pt-4 border-t border-gray-200">
                         Cảm ơn quý khách đã mua hàng tại {siteSettings.companyName}!

@@ -580,71 +580,82 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
 @keyframes fade-in-up-chat { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .animate-fade-in-up-chat { animation: fade-in-up-chat 0.5s ease-out forwards; }
 
-/* PRINT STYLES - NEW ROBUST STRATEGY */
+/* PRINT STYLES - ROBUST STRATEGY */
 @media print {
   @page {
+    margin: 0.5cm;
     size: A4;
-    margin: 0;
-  }
-
-  /* Hide everything by default */
-  body * {
-    visibility: hidden;
   }
   
-  /* Make the print wrapper and everything inside it visible */
-  .print-wrapper, .print-wrapper * {
-    visibility: visible;
-  }
-
-  /* Position the print wrapper to fill the page */
-  .print-wrapper {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+  /* Reset Body */
+  body {
+    visibility: hidden;
+    background: white;
+    color: black;
     height: auto;
-    margin: 0;
-    padding: 0;
+    overflow: visible;
   }
-
-  /* Reset any potential conflicting styles on parents */
-  body, html, #root, .admin-wrapper, .admin-main-content, .admin-content-area, form {
-    overflow: visible !important;
-    height: auto !important;
-    background: white !important;
-    color: black !important;
-  }
-
-  /* Hide elements that might have `visibility: visible` from other rules */
-  .no-print {
+  
+  /* Hide main app wrapper if possible */
+  #root {
     display: none !important;
   }
-
-  .print-container {
-    width: 210mm;
-    min-height: 297mm;
-    padding: 20mm; /* Standard margins */
-    margin: 0 auto;
-    box-sizing: border-box;
-    background: white !important;
-    color: black !important;
+  
+  /* The designated print area */
+  .print-wrapper {
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white;
+    z-index: 9999;
+    overflow: visible;
   }
-
-  /* Specific styles for printed table for better readability */
-  .print-table, .print-table th, .print-table td {
-    border: 1px solid #ccc !important;
-    border-collapse: collapse;
+  
+  /* Make all children visible */
+  .print-wrapper * {
+    visibility: visible;
   }
-
+  
+  /* Standard Print Table Styles for Clarity */
+  .print-table {
+    width: 100%;
+    border-collapse: collapse !important;
+  }
+  
+  .print-table th, 
+  .print-table td {
+    border: 1px solid #000 !important; /* Solid black border */
+    padding: 8px;
+    color: #000 !important;
+    text-align: left;
+  }
+  
   .print-table th {
     background-color: #f0f0f0 !important;
     font-weight: bold;
-    -webkit-print-color-adjust: exact; /* Force background color for headers */
+    -webkit-print-color-adjust: exact;
     color-adjust: exact;
+    text-align: center;
   }
   
-  .print-table th, .print-table td {
-    padding: 6px 8px;
+  .print-table td.text-right {
+    text-align: right;
+  }
+  .print-table td.text-center {
+    text-align: center;
+  }
+
+  /* Utility to hide elements during print */
+  .no-print, header, footer, nav, .fixed, button {
+    display: none !important;
+  }
+  
+  /* Utility to show elements only during print */
+  .print-only {
+    display: block !important;
   }
 }
