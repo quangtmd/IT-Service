@@ -119,9 +119,13 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const newChatSession = geminiService.startChat(siteSettings); 
+      // Pass currentUser to geminiService to give the bot context
+      const newChatSession = geminiService.startChat(siteSettings, currentUser); 
       setChatSession(newChatSession);
-      const initialBotGreeting = `Xin chào ${userName}! Tôi là trợ lý AI của ${siteSettings.companyName}. Tôi có thể giúp gì cho bạn?`;
+      const initialBotGreeting = currentUser
+        ? `Xin chào ${currentUser.username}! Tôi là trợ lý AI của ${siteSettings.companyName}. Tôi có thể giúp gì cho bạn hôm nay?`
+        : `Xin chào ${userName}! Tôi là trợ lý AI của ${siteSettings.companyName}. Tôi có thể giúp gì cho bạn?`;
+
       const welcomeMessage = { 
         id: Date.now().toString(), 
         text: initialBotGreeting,
@@ -155,7 +159,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [isOpen, isUserInfoSubmitted, chatSession, siteSettings, userName, userPhone]);
+  }, [isOpen, isUserInfoSubmitted, chatSession, siteSettings, userName, userPhone, currentUser]);
 
 
   useEffect(() => {
@@ -331,52 +335,101 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
         }
 
         if (functionCalls.length > 0) {
-            setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: "Đang tìm kiếm thông tin đơn hàng..." } : msg));
+            setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: "🔍 Đang tra cứu thông tin đơn hàng..." } : msg));
             setIsLoading(true);
 
-            const call = functionCalls[0]; // Process first function call
-            if (call.name === 'getOrderStatus') {
-                let orderResult: Order | null = null;
-                try {
-                    const orderIdArg = call.args.orderId;
-                    // Match optional 'T' prefix followed by 6 or more digits
-                    const orderIdMatch = orderIdArg?.match(/(T)?(\d{6,})/i);
-                    // Reconstruct the ID to the standard "Txxxxxx" format if found
-                    const cleanOrderId = orderIdMatch ? `T${orderIdMatch[2]}`.toUpperCase() : null;
-        
-                    if (cleanOrderId) {
-                        const allOrders = await getOrders();
-                        const formatOrderIdForDisplay = (id: string) => `T${id.replace(/\D/g, '').slice(-6)}`;
-                        
-                        // Find order by matching the formatted ID, WITHOUT checking for current user
-                        orderResult = allOrders.find(o => 
-                            formatOrderIdForDisplay(o.id).toUpperCase() === cleanOrderId
-                        ) || null;
-                    }
+            // Fetch all orders once to support lookup
+            let allOrders: Order[] = [];
+            try {
+                allOrders = await getOrders();
+            } catch(e) {
+                console.error("Failed to fetch orders for chatbot lookup:", e);
+                // Continue with empty list, the logic below will handle "not found"
+            }
 
-                    const toolResponseStream = await chatSession.sendToolResponse({
-                        functionResponses: [{
-                            id: call.id,
-                            name: call.name,
-                            response: { result: orderResult ? JSON.stringify(orderResult) : JSON.stringify({ error: "Không tìm thấy đơn hàng nào khớp với mã bạn cung cấp." }) }
-                        }]
+            for (const call of functionCalls) {
+                let toolResult: any;
+
+                console.log("AI calling function:", call.name, call.args);
+
+                if (call.name === 'getOrderStatus') {
+                    // Logic for finding order by ID
+                    const orderIdArg = String(call.args.orderId).trim().toUpperCase();
+                    // Clean ID: try to match "T" + digits or just digits
+                    const orderIdMatch = orderIdArg.match(/(T)?(\d{6,})/i);
+                    const cleanIdPattern = orderIdMatch ? orderIdMatch[0] : orderIdArg;
+
+                    const order = allOrders.find(o => 
+                        o.id.toUpperCase().includes(cleanIdPattern) || 
+                        (o.orderNumber && o.orderNumber.toUpperCase().includes(cleanIdPattern))
+                    );
+
+                    if (order) {
+                        toolResult = {
+                            found: true,
+                            orderId: order.orderNumber || order.id,
+                            status: order.status,
+                            date: new Date(order.orderDate).toLocaleDateString('vi-VN'),
+                            total: order.totalAmount,
+                            paymentStatus: order.paymentInfo.status,
+                            items: order.items.map(i => `${i.productName} (x${i.quantity})`).join(', ')
+                        };
+                    } else {
+                        toolResult = { found: false, message: `Không tìm thấy đơn hàng nào có mã chứa "${orderIdArg}".` };
+                    }
+                } 
+                else if (call.name === 'lookupCustomerOrders') {
+                    // Logic for finding orders by Phone or Email
+                    const identifier = String(call.args.identifier).toLowerCase().trim();
+                    
+                    const matches = allOrders.filter(o => {
+                        const phone = o.customerInfo.phone.replace(/\D/g, ''); // Normalize phone numbers
+                        const searchPhone = identifier.replace(/\D/g, '');
+                        
+                        return (searchPhone.length > 8 && phone.includes(searchPhone)) || 
+                               (o.customerInfo.email && o.customerInfo.email.toLowerCase().includes(identifier));
                     });
 
-                    let finalText = '';
-                    for await (const finalChunk of toolResponseStream) {
-                        if (finalChunk.text) {
-                            finalText += finalChunk.text;
-                             setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: finalText } : msg));
-                             setCurrentChatLogSession(prevLog => {
-                                if (!prevLog) return null;
-                                const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: finalText } : m);
-                                return {...prevLog, messages: updatedMessages};
-                            });
-                        }
+                    if (matches.length > 0) {
+                         // Sort by date desc
+                         matches.sort((a,b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+                         const recentOrders = matches.slice(0, 3).map(o => ({
+                            id: o.orderNumber || `...${o.id.slice(-6)}`,
+                            date: new Date(o.orderDate).toLocaleDateString('vi-VN'),
+                            status: o.status,
+                            total: o.totalAmount
+                        }));
+                        toolResult = {
+                            found: true,
+                            count: matches.length,
+                            message: `Tìm thấy ${matches.length} đơn hàng. Dưới đây là ${recentOrders.length} đơn mới nhất:`,
+                            orders: recentOrders
+                        };
+                    } else {
+                        toolResult = { found: false, message: `Không tìm thấy đơn hàng nào với SĐT/Email: "${identifier}".` };
                     }
-                } catch (toolError) {
-                     console.error("Error executing tool or sending response:", toolError);
-                     setMessages(prev => prev.map(msg => msg.id === botMessageId ? { ...msg, text: 'Rất tiếc, đã có lỗi khi truy xuất thông tin đơn hàng.', sender: 'system' } : msg));
+                }
+
+                // Send the result back to Gemini
+                const toolStream = await chatSession.sendToolResponse({
+                    functionResponses: [{
+                        id: call.id,
+                        name: call.name,
+                        response: { result: toolResult }
+                    }]
+                });
+
+                let finalText = '';
+                for await (const finalChunk of toolStream) {
+                    if (finalChunk.text) {
+                        finalText += finalChunk.text;
+                        setMessages((prevMessages) => prevMessages.map((msg) => msg.id === botMessageId ? { ...msg, text: finalText } : msg));
+                        setCurrentChatLogSession(prevLog => {
+                            if (!prevLog) return null;
+                            const updatedMessages = prevLog.messages.map(m => m.id === botMessageId ? {...m, text: finalText } : m);
+                            return {...prevLog, messages: updatedMessages};
+                        });
+                    }
                 }
             }
         }

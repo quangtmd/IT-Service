@@ -3,7 +3,7 @@
 import { GoogleGenAI, Chat, GenerateContentResponse, Part, Content, Type, FunctionDeclaration } from "@google/genai"; // Added Part, Content, Type, FunctionDeclaration
 import * as Constants from '../constants.tsx';
 // Fix: Added SiteSettings, Article, Product
-import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse } from "../types"; 
+import { AIBuildResponse, ChatMessage, GroundingChunk, SiteSettings, Article, Product, AIBuildSuggestionsResponse, User } from "../types"; 
 import { MOCK_SERVICES } from '../data/mockData';
 import { PRODUCT_CATEGORIES_HIERARCHY } from '../constants.tsx';
 
@@ -35,18 +35,35 @@ const getAiClient = (): GoogleGenAI | null => {
 
 // --- TOOL DEFINITIONS ---
 
+// Tool 1: Tra cứu cụ thể bằng Mã đơn hàng
 const getOrderStatusFunctionDeclaration: FunctionDeclaration = {
   name: 'getOrderStatus',
   parameters: {
     type: Type.OBJECT,
-    description: 'Lấy thông tin và trạng thái của một đơn hàng cụ thể bằng mã đơn hàng. Chức năng này cho phép tra cứu bất kỳ đơn hàng nào, không giới hạn cho người dùng đang đăng nhập.',
+    description: 'Lấy thông tin chi tiết và trạng thái của một đơn hàng cụ thể bằng mã đơn hàng (Order ID).',
     properties: {
       orderId: {
         type: Type.STRING,
-        description: 'Mã của đơn hàng cần kiểm tra. Ví dụ: T280649 hoặc 280649.',
+        description: 'Mã của đơn hàng cần kiểm tra. Ví dụ: T280649, 280649, order-171...',
       },
     },
     required: ['orderId'],
+  },
+};
+
+// Tool 2: Tra cứu danh sách bằng SĐT hoặc Email
+const lookupCustomerOrdersFunctionDeclaration: FunctionDeclaration = {
+  name: 'lookupCustomerOrders',
+  parameters: {
+    type: Type.OBJECT,
+    description: 'Tìm kiếm danh sách đơn hàng dựa trên Số điện thoại hoặc Email của khách hàng.',
+    properties: {
+      identifier: {
+        type: Type.STRING,
+        description: 'Số điện thoại (VD: 0905...) hoặc Email của khách hàng.',
+      },
+    },
+    required: ['identifier'],
   },
 };
 
@@ -54,6 +71,7 @@ const getOrderStatusFunctionDeclaration: FunctionDeclaration = {
 // Fix: Change history type from GenerateContentParameters[] to Content[]
 export const startChat = (
   siteSettings: SiteSettings, // Added siteSettings
+  currentUser?: User | null, // Added currentUser for context
   history?: Content[], 
   systemInstructionOverride?: string
 ): Chat => {
@@ -75,51 +93,51 @@ export const startChat = (
     .map(cat => `- ${cat.name}`)
     .join('\n');
 
+  let userContext = "";
+  if (currentUser) {
+    userContext = `
+**THÔNG TIN KHÁCH HÀNG ĐANG CHAT:**
+- Tên: ${currentUser.username}
+- Email: ${currentUser.email}
+- SĐT: ${currentUser.phone || 'Chưa cập nhật'}
+(Lưu ý: Nếu khách hỏi "đơn hàng của tôi" mà không đưa thông tin, hãy ưu tiên dùng SĐT hoặc Email này để tra cứu bằng tool 'lookupCustomerOrders' trước khi hỏi lại khách).
+    `;
+  }
 
-  const defaultSystemInstruction = `Bạn là một trợ lý AI bán hàng và hỗ trợ khách hàng toàn diện cho cửa hàng ${siteSettings.companyName}. Cửa hàng của chúng ta kinh doanh hai mảng chính: bán sản phẩm công nghệ và cung cấp dịch vụ IT.
+  const defaultSystemInstruction = `Bạn là một trợ lý AI bán hàng và hỗ trợ khách hàng toàn diện cho cửa hàng ${siteSettings.companyName}.
 
-**Kiểm tra đơn hàng:**
-- Khi người dùng hỏi về trạng thái đơn hàng và **cung cấp một mã đơn hàng** (ví dụ: "đơn hàng của tôi đâu #123456?", "check order T280649"), hãy **luôn luôn** sử dụng công cụ 'getOrderStatus'.
-- **BẮT BUỘC** phải trích xuất mã đơn hàng và truyền vào tham số 'orderId' của công cụ. Mã đơn hàng có thể có chữ 'T' ở đầu hoặc không.
-- Nếu người dùng hỏi "đơn hàng của tôi" mà không cung cấp mã, hãy hỏi lại họ "Vui lòng cho tôi biết mã đơn hàng bạn muốn kiểm tra."
-- Kết quả trả về từ hàm 'getOrderStatus' sẽ là một đối tượng JSON của đơn hàng hoặc một thông báo lỗi.
-- Nếu nhận được đối tượng JSON của đơn hàng, hãy tóm tắt các thông tin quan trọng cho người dùng:
-  - \`id\`: Mã đơn hàng.
-  - \`status\`: Trạng thái hiện tại của đơn hàng.
-  - \`totalAmount\`: Tổng giá trị đơn hàng.
-  - \`customerInfo.address\`: Địa chỉ giao hàng.
-  - **Về vận chuyển:** Nếu đối tượng \`shippingInfo\` tồn tại và có \`carrier\` (đơn vị vận chuyển) và \`trackingNumber\` (mã vận đơn), hãy cung cấp thông tin đó. Nếu \`shippingInfo\` không tồn tại, rỗng, hoặc không có các thông tin trên, hãy trả lời rằng "thông tin vận chuyển sẽ sớm được cập nhật" và **TUYỆT ĐỐI KHÔNG** tự bịa ra thông tin.
-- Nếu kết quả trả về có chứa lỗi (ví dụ: "Không tìm thấy đơn hàng."), hãy thông báo cho người dùng một cách lịch sự rằng bạn không tìm thấy đơn hàng của họ.
+**QUY TRÌNH TRA CỨU ĐƠN HÀNG (Quan trọng):**
+1.  **Nếu khách cung cấp Mã Đơn Hàng:** (Ví dụ: "đơn T123456 đi tới đâu rồi", "check bill 9999"), hãy sử dụng tool \`getOrderStatus(orderId)\`.
+2.  **Nếu khách cung cấp Số Điện Thoại hoặc Email:** (Ví dụ: "kiểm tra đơn sđt 0905123456", "check đơn của a@gmail.com"), hãy sử dụng tool \`lookupCustomerOrders(identifier)\`.
+3.  **Nếu khách chỉ hỏi "đơn hàng của tôi đâu?":**
+    *   Nếu bạn đã có thông tin SĐT/Email của khách (từ context), hãy tự động gọi \`lookupCustomerOrders\`.
+    *   Nếu chưa có, hãy hỏi khách hàng: "Dạ, anh/chị vui lòng cho em xin Mã đơn hàng hoặc Số điện thoại đặt hàng để em kiểm tra ạ."
 
-**Kiến thức về Sản phẩm của Cửa hàng:**
-Chúng tôi bán đa dạng các sản phẩm. Khi được hỏi, hãy xác nhận rằng chúng ta có bán các mặt hàng này và khuyến khích khách hàng khám phá thêm. Các danh mục chính bao gồm:
+**Sau khi có kết quả từ Tool:**
+- Nếu tìm thấy: Hãy tóm tắt ngắn gọn trạng thái đơn, tổng tiền và các món hàng chính. Nếu có link theo dõi vận chuyển, hãy cung cấp.
+- Nếu không tìm thấy: Hãy báo lỗi lịch sự và gợi ý khách kiểm tra lại thông tin.
+
+${userContext}
+
+**Kiến thức về Sản phẩm:**
 ${productCategoriesInfo}
 
-**Kiến thức về Dịch vụ của Cửa hàng:**
-Dưới đây là danh sách các dịch vụ IT mà cửa hàng cung cấp. Hãy sử dụng thông tin này để tư vấn chi tiết cho khách hàng.
+**Kiến thức về Dịch vụ:**
 ${serviceInfo}
 
-**Quy tắc trả lời:**
-1.  **Sử dụng Bối cảnh (Context):** Nếu tin nhắn của người dùng bắt đầu bằng '[Bối cảnh: ...]', hãy sử dụng thông tin đó để ưu tiên trả lời. Ví dụ, nếu bối cảnh là 'đang xem dịch vụ bảo trì', và người dùng hỏi 'giá bao nhiêu?', hãy trả lời về giá của dịch vụ bảo trì đó.
-2.  **Khi người dùng hỏi về sản phẩm (ví dụ: "có bán laptop không?"):** Hãy xác nhận rằng cửa hàng có bán danh mục sản phẩm đó (dựa vào "Kiến thức về Sản phẩm") và khuyến khích họ truy cập trang sản phẩm chung ([${siteSettings.companyName} Shop](${window.location.origin}${window.location.pathname}#/shop)) hoặc hỏi chi tiết hơn để bạn có thể tư vấn.
-3.  **Khi người dùng hỏi về dịch vụ IT:** Hãy dựa vào phần "Kiến thức về Dịch vụ" để trả lời. Cung cấp mô tả chi tiết và luôn kèm theo link chi tiết của dịch vụ đó.
-4.  **Tránh mặc định từ chối:** TUYỆT ĐỐT KHÔNG trả lời rằng bạn "không thể" cung cấp thông tin sản phẩm. Vai trò của bạn là một nhân viên bán hàng, hãy thể hiện rằng cửa hàng có đa dạng sản phẩm.
-5.  **Thông tin liên hệ:** Chỉ cung cấp thông tin liên hệ chung khi người dùng trực tiếp yêu cầu hoặc khi bạn không thể trả lời câu hỏi sau khi đã sử dụng hết kiến thức được cung cấp.
+**Thông tin liên hệ:**
+- Hotline: ${siteSettings.companyPhone}
+- Địa chỉ: ${siteSettings.companyAddress}
+${socialLinksInfo}
 
-**Thông tin liên hệ chung (chỉ dùng khi thật sự cần thiết):**
-- Tên công ty: ${siteSettings.companyName}
-- Số điện thoại: ${siteSettings.companyPhone}, Email: ${siteSettings.companyEmail}, Địa chỉ: ${siteSettings.companyAddress}.
-${socialLinksInfo ? `- Mạng xã hội:${socialLinksInfo}` : ''}
-
-Hãy luôn thân thiện, chuyên nghiệp và trả lời bằng tiếng Việt.
-Khi cung cấp link, hãy đảm bảo link đó đầy đủ và có thể nhấp được (sử dụng định dạng Markdown cho link, ví dụ: [Tên Link](URL)).`;
+Hãy luôn thân thiện, xưng hô là "em" hoặc "mình" và gọi khách là "anh/chị" hoặc "bạn". Trả lời ngắn gọn, đi vào trọng tâm.`;
 
   chatSessionInstance = client.chats.create({
     model: CHAT_MODEL_NAME,
     history: history || [],
     config: {
       systemInstruction: systemInstructionOverride || defaultSystemInstruction,
-      tools: [{functionDeclarations: [getOrderStatusFunctionDeclaration]}],
+      tools: [{functionDeclarations: [getOrderStatusFunctionDeclaration, lookupCustomerOrdersFunctionDeclaration]}],
     },
   });
   return chatSessionInstance;
