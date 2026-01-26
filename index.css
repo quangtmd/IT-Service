@@ -583,78 +583,70 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
 /* PRINT STYLES - ROBUST STRATEGY */
 @media print {
   @page {
-    margin: 0.5cm;
+    margin: 10mm;
     size: A4;
   }
-  
-  /* Reset Body */
-  body {
+
+  /* Reset visibility for everything */
+  body * {
     visibility: hidden;
-    background: white;
-    color: black;
-    height: auto;
-    overflow: visible;
-  }
-  
-  /* Hide main app wrapper if possible */
-  #root {
-    display: none !important;
-  }
-  
-  /* The designated print area */
-  .print-wrapper {
-    visibility: visible;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background: white;
-    z-index: 9999;
-    overflow: visible;
-  }
-  
-  /* Make all children visible */
-  .print-wrapper * {
-    visibility: visible;
-  }
-  
-  /* Standard Print Table Styles for Clarity */
-  .print-table {
-    width: 100%;
-    border-collapse: collapse !important;
-  }
-  
-  .print-table th, 
-  .print-table td {
-    border: 1px solid #000 !important; /* Solid black border */
-    padding: 8px;
-    color: #000 !important;
-    text-align: left;
-  }
-  
-  .print-table th {
-    background-color: #f0f0f0 !important;
-    font-weight: bold;
-    -webkit-print-color-adjust: exact;
-    color-adjust: exact;
-    text-align: center;
-  }
-  
-  .print-table td.text-right {
-    text-align: right;
-  }
-  .print-table td.text-center {
-    text-align: center;
   }
 
-  /* Utility to hide elements during print */
-  .no-print, header, footer, nav, .fixed, button {
+  /* Ensure root containers are not hidden by display:none if accidentally set by scripts */
+  #root, .admin-wrapper, .admin-main-content, .admin-content-area {
+    visibility: visible; 
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  
+  /* Standard Print Reset */
+  body {
+    background: white;
+    color: black;
+  }
+
+  /* Hide direct children of body EXCEPT #root */
+  body > *:not(#root) {
     display: none !important;
   }
   
-  /* Utility to show elements only during print */
+  /* Reveal the print wrapper and ALL its descendants */
+  .print-wrapper, .print-wrapper * {
+    visibility: visible !important;
+  }
+  
+  /* Position the print wrapper at top left of the viewport */
+  .print-wrapper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    min-height: 100%;
+    z-index: 9999;
+    background: white;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Ensure table borders are distinct */
+  .print-table, .print-table th, .print-table td {
+    border: 1px solid #000 !important;
+    border-collapse: collapse !important;
+    color: #000 !important;
+  }
+
+  .print-table th {
+    font-weight: bold;
+    background-color: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+  
   .print-only {
     display: block !important;
   }
