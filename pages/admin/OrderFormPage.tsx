@@ -517,6 +517,110 @@ const OrderFormPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* --- Print Template (Hidden by default, shown for print) --- */}
+            <div className="print-wrapper hidden print:block bg-white text-black font-sans text-sm leading-snug">
+                <div className="print-container max-w-[210mm] mx-auto p-8">
+                    {/* Header */}
+                    <header className="flex justify-between items-start mb-6 border-b-2 border-gray-800 pb-4">
+                        <div className="flex items-start gap-4">
+                             <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded-full border-2 border-gray-800">
+                                <span className="font-bold text-xl">IQ</span>
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold uppercase tracking-wide">{siteSettings.companyName}</h1>
+                                <p className="text-xs mt-1">Địa chỉ: {siteSettings.companyAddress}</p>
+                                <p className="text-xs">Hotline: <strong>{siteSettings.companyPhone}</strong></p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                             <h2 className="text-3xl font-extrabold uppercase tracking-widest text-gray-900">Hóa Đơn</h2>
+                             <p className="text-sm mt-1">Mã phiếu: <strong>{formData.orderNumber || formData.id}</strong></p>
+                             <p className="text-sm">Ngày: {new Date(formData.orderDate || Date.now()).toLocaleDateString('vi-VN')}</p>
+                        </div>
+                    </header>
+
+                    {/* Info */}
+                    <section className="grid grid-cols-2 gap-8 mb-6">
+                        <div>
+                            <h3 className="font-bold border-b border-gray-300 mb-2 pb-1 uppercase text-xs text-gray-500">Thông tin khách hàng</h3>
+                            <p><strong>Khách hàng:</strong> {formData.customerInfo?.fullName || 'Khách lẻ'}</p>
+                            <p><strong>Điện thoại:</strong> {formData.customerInfo?.phone || '---'}</p>
+                            <p><strong>Địa chỉ:</strong> {formData.customerInfo?.address || '---'}</p>
+                        </div>
+                        <div className="text-right">
+                            <h3 className="font-bold border-b border-gray-300 mb-2 pb-1 uppercase text-xs text-gray-500">Thông tin bổ sung</h3>
+                            <p><strong>Thu ngân:</strong> {creator?.username || 'Admin'}</p>
+                            <p><strong>Ghi chú:</strong> {formData.notes || '---'}</p>
+                        </div>
+                    </section>
+
+                    {/* Table */}
+                    <main>
+                        <table className="w-full mb-6 border-collapse">
+                            <thead>
+                                <tr className="border-y-2 border-gray-800 bg-gray-100">
+                                    <th className="py-2 text-left w-10">STT</th>
+                                    <th className="py-2 text-left">Tên sản phẩm</th>
+                                    <th className="py-2 text-center w-16">ĐVT</th>
+                                    <th className="py-2 text-right w-16">SL</th>
+                                    <th className="py-2 text-right w-28">Đơn giá</th>
+                                    <th className="py-2 text-right w-32">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {formData.items?.map((item, index) => (
+                                    <tr key={index} className="border-b border-gray-200">
+                                        <td className="py-2 text-center">{index + 1}</td>
+                                        <td className="py-2 font-medium">{item.productName}</td>
+                                        <td className="py-2 text-center">{item.unit}</td>
+                                        <td className="py-2 text-right">{item.quantity}</td>
+                                        <td className="py-2 text-right">{item.price.toLocaleString('vi-VN')}</td>
+                                        <td className="py-2 text-right font-bold">{(item.quantity * item.price).toLocaleString('vi-VN')}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </main>
+
+                    {/* Totals */}
+                    <section className="flex justify-end mb-12">
+                        <div className="w-72 space-y-2">
+                             <div className="flex justify-between">
+                                <span>Tổng tiền hàng:</span>
+                                <span>{subtotal.toLocaleString('vi-VN')}₫</span>
+                            </div>
+                            <div className="flex justify-between text-gray-600">
+                                <span>Giảm giá:</span>
+                                <span>- {discountAmount.toLocaleString('vi-VN')}₫</span>
+                            </div>
+                             <div className="flex justify-between border-t-2 border-gray-800 pt-2 text-lg font-bold">
+                                <span>Thành tiền:</span>
+                                <span>{totalAmount.toLocaleString('vi-VN')}₫</span>
+                            </div>
+                            <div className="text-right italic text-xs text-gray-500 mt-1">
+                                (Bằng chữ: ........................................................................)
+                            </div>
+                        </div>
+                    </section>
+                    
+                    {/* Signatures */}
+                    <footer className="grid grid-cols-2 gap-8 text-center mt-auto pt-8">
+                        <div>
+                            <p className="font-bold uppercase text-xs mb-16">Người mua hàng</p>
+                            <p className="italic text-xs">(Ký, ghi rõ họ tên)</p>
+                        </div>
+                        <div>
+                            <p className="font-bold uppercase text-xs mb-16">Người bán hàng</p>
+                            <p className="italic text-xs">(Ký, ghi rõ họ tên)</p>
+                        </div>
+                    </footer>
+                    
+                    <div className="text-center text-xs text-gray-500 mt-8 pt-4 border-t border-gray-200">
+                        Cảm ơn quý khách đã mua hàng tại {siteSettings.companyName}!
+                    </div>
+                </div>
+            </div>
         </form>
     );
 };
