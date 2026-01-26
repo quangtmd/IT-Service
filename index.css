@@ -580,38 +580,71 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
 @keyframes fade-in-up-chat { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .animate-fade-in-up-chat { animation: fade-in-up-chat 0.5s ease-out forwards; }
 
-/* PRINT STYLES */
+/* PRINT STYLES - NEW ROBUST STRATEGY */
 @media print {
   @page {
     size: A4;
     margin: 0;
   }
+
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
   
-  body, html {
-    background-color: white !important;
+  /* Make the print wrapper and everything inside it visible */
+  .print-wrapper, .print-wrapper * {
+    visibility: visible;
+  }
+
+  /* Position the print wrapper to fill the page */
+  .print-wrapper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Reset any potential conflicting styles on parents */
+  body, html, #root, .admin-wrapper, .admin-main-content, .admin-content-area, form {
+    overflow: visible !important;
+    height: auto !important;
+    background: white !important;
     color: black !important;
   }
 
-  .no-print, header, footer, .admin-sidebar, .admin-page-header, .admin-modal-footer, button, .admin-tabs {
+  /* Hide elements that might have `visibility: visible` from other rules */
+  .no-print {
     display: none !important;
-  }
-  
-  .print-only { display: block !important; }
-
-  .admin-main-content {
-    margin-left: 0 !important;
-    width: 100% !important;
-    padding: 0 !important;
-  }
-  
-  .admin-card, .admin-card-body, #root, .admin-wrapper, form {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
   }
 
   .print-container {
-    padding: 2cm 1.5cm; /* Standard margins for A4 */
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm; /* Standard margins */
+    margin: 0 auto;
+    box-sizing: border-box;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Specific styles for printed table for better readability */
+  .print-table, .print-table th, .print-table td {
+    border: 1px solid #ccc !important;
+    border-collapse: collapse;
+  }
+
+  .print-table th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold;
+    -webkit-print-color-adjust: exact; /* Force background color for headers */
+    color-adjust: exact;
+  }
+  
+  .print-table th, .print-table td {
+    padding: 6px 8px;
   }
 }
