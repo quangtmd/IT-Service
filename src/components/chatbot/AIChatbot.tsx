@@ -206,9 +206,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                 } else if (call.name === 'getOrderStatus') {
                     // Logic for finding order by ID
                     const orderIdArg = String(call.args.orderId).trim().toUpperCase();
-                    // Clean ID (e.g. T123456 -> 123456 to match internal ID logic if needed, or exact match)
-                    // The app usually stores IDs like "order-170..." but displays "T..."
-                    // We check both raw ID and display ID logic
                     
                     const order = allOrders.find(o => 
                         o.id === orderIdArg || 
