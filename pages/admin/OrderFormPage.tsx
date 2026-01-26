@@ -92,6 +92,10 @@ const OrderFormPage: React.FC = () => {
                 if (isEditing) {
                     const foundOrder = allOrders.find(o => o.id === orderId);
                     if (foundOrder) {
+                        // Ensure paymentInfo exists even if data is old
+                        if (!foundOrder.paymentInfo) {
+                            foundOrder.paymentInfo = { method: 'Tiền mặt', status: 'Chưa thanh toán' };
+                        }
                         setFormData(foundOrder);
                         setCustomerSearchText(foundOrder.customerInfo.fullName);
                     } else {
