@@ -507,6 +507,42 @@ const OrderFormPage: React.FC = () => {
                                         <option value="Thanh toán khi nhận hàng (COD)">COD</option>
                                     </select>
                                 </div>
+
+                                <div className="mb-3">
+                                    <label className="text-xs text-gray-500 block mb-1">Trạng thái thanh toán</label>
+                                    <select
+                                        name="paymentStatus"
+                                        value={formData.paymentInfo?.status || 'Chưa thanh toán'}
+                                        onChange={(e) => {
+                                            const newStatus = e.target.value as any;
+                                            setFormData(p => {
+                                                if (!p) return null;
+                                                let newPaidAmount = p.paidAmount;
+                                                // Auto-fill paid amount if fully paid
+                                                if (newStatus === 'Đã thanh toán') {
+                                                    newPaidAmount = p.totalAmount;
+                                                } else if (newStatus === 'Chưa thanh toán') {
+                                                    newPaidAmount = 0;
+                                                }
+                                                return {
+                                                    ...p,
+                                                    paidAmount: newPaidAmount,
+                                                    paymentInfo: { ...p.paymentInfo!, status: newStatus }
+                                                };
+                                            });
+                                        }}
+                                        className={`w-full p-2 border border-gray-300 rounded bg-white text-sm font-medium ${
+                                            formData.paymentInfo?.status === 'Đã thanh toán' ? 'text-green-600 border-green-200 bg-green-50' :
+                                            formData.paymentInfo?.status === 'Chưa thanh toán' ? 'text-red-600 border-red-200 bg-red-50' : 
+                                            'text-orange-600 border-orange-200 bg-orange-50'
+                                        }`}
+                                    >
+                                        <option value="Chưa thanh toán">Chưa thanh toán</option>
+                                        <option value="Đã thanh toán">Đã thanh toán</option>
+                                        <option value="Đã cọc">Đã cọc</option>
+                                    </select>
+                                </div>
+
                                  <div className="mb-3">
                                     <label className="text-xs text-gray-500 block mb-1">Trạng thái đơn</label>
                                     <select name="status" value={formData.status} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded bg-white text-sm">
