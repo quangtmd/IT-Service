@@ -590,8 +590,6 @@ body.admin-panel-active { background-color: #f1f5f9; /* slate-100 */ }
   body, html {
     background-color: white !important;
     color: black !important;
-    -webkit-print-color-adjust: exact !important;
-    color-adjust: exact !important;
   }
 
   .no-print, header, footer, .admin-sidebar, .admin-page-header, .admin-modal-footer, button, .admin-tabs {
