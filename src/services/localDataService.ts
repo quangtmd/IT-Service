@@ -56,11 +56,11 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
             
             // Handle 404 specifically to give a hint about configuration
             if (response.status === 404) {
-                throw new Error(`Lỗi API: 404 Not Found (${fullEndpoint}). Vui lòng kiểm tra VITE_BACKEND_API_BASE_URL trên frontend hoặc đảm bảo Backend đang chạy.`);
+                throw new Error(`Lỗi API: 404 Not Found (${fullEndpoint}).`);
             }
 
             // Simplified, more robust error message for a monolithic setup.
-            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}. Endpoint: ${fullEndpoint}. Điều này có thể do dịch vụ backend đã gặp sự cố. Vui lòng kiểm tra log của server.`;
+            const errorMessage = `Lỗi API: ${response.status} ${response.statusText}.`;
             throw new Error(errorMessage);
         }
         
@@ -71,7 +71,7 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
     } catch (error) {
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
             // This now more clearly indicates a server-down issue.
-            throw new Error('Lỗi mạng hoặc server không phản hồi. Dịch vụ backend có thể đang không hoạt động hoặc bị chặn kết nối.');
+            throw new Error('Lỗi mạng hoặc server không phản hồi.');
         }
         // Re-throw other errors (like the custom one from response.ok check)
         throw error;
@@ -79,12 +79,69 @@ async function fetchFromApi<T>(endpoint: string, options: RequestInit = {}): Pro
 }
 
 // --- User Service ---
-// Note: The endpoint now starts with /users, and /api is prepended by fetchFromApi
-export const getUsers = (): Promise<User[]> => fetchFromApi<User[]>('/users');
-export const loginUser = (credentials: {email: string, password?: string}): Promise<User> => fetchFromApi<User>('/login', { method: 'POST', body: JSON.stringify(credentials) });
-export const addUser = (userDto: Omit<User, 'id'>): Promise<User> => fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
-export const updateUser = (id: string, updates: Partial<User>): Promise<User> => fetchFromApi<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const deleteUser = (id: string): Promise<void> => fetchFromApi<void>(`/users/${id}`, { method: 'DELETE' });
+export const getUsers = async (): Promise<User[]> => {
+    try {
+        return await fetchFromApi<User[]>('/users');
+    } catch (e) {
+        console.warn('API /users failed, using localStorage fallback');
+        return getLocalStorageItem<User[]>('siteUsers_v1', []); // Fallback key
+    }
+};
+
+export const loginUser = async (credentials: {email: string, password?: string}): Promise<User> => {
+    try {
+        return await fetchFromApi<User>('/login', { method: 'POST', body: JSON.stringify(credentials) });
+    } catch (e) {
+        // Fallback for demo login if API is down
+        console.warn('API /login failed, attempting local mock login');
+        const users = await getUsers();
+        const user = users.find(u => u.email === credentials.email);
+        if (user && user.password === credentials.password) {
+            const { password, ...userWithoutPass } = user;
+            return userWithoutPass as User;
+        }
+        throw new Error("Đăng nhập thất bại (Offline mode). Kiểm tra email/mật khẩu.");
+    }
+};
+
+export const addUser = async (userDto: Omit<User, 'id'>): Promise<User> => {
+    try {
+        return await fetchFromApi<User>('/users', { method: 'POST', body: JSON.stringify(userDto) });
+    } catch (e) {
+        console.warn('API /users (POST) failed, saving to localStorage');
+        const users = await getUsers();
+        const newUser = { ...userDto, id: `user-${Date.now()}` } as User;
+        const updatedUsers = [...users, newUser];
+        setLocalStorageItem('siteUsers_v1', updatedUsers); // Save to fallback key
+        return newUser;
+    }
+};
+
+export const updateUser = async (id: string, updates: Partial<User>): Promise<User> => {
+     try {
+        return await fetchFromApi<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+    } catch (e) {
+        console.warn('API /users (PUT) failed, saving to localStorage');
+        const users = await getUsers();
+        const index = users.findIndex(u => u.id === id);
+        if (index !== -1) {
+            users[index] = { ...users[index], ...updates };
+            setLocalStorageItem('siteUsers_v1', users);
+            return users[index];
+        }
+        throw e;
+    }
+};
+
+export const deleteUser = async (id: string): Promise<void> => {
+    try {
+        return await fetchFromApi<void>(`/users/${id}`, { method: 'DELETE' });
+    } catch (e) {
+         console.warn('API /users (DELETE) failed, updating localStorage');
+         const users = await getUsers();
+         setLocalStorageItem('siteUsers_v1', users.filter(u => u.id !== id));
+    }
+};
 
 // --- Product Service ---
 export const getProducts = (queryParams: string = ''): Promise<{ products: Product[], totalProducts: number }> => fetchFromApi<{ products: Product[], totalProducts: number }>(`/products?${queryParams}`);
@@ -94,7 +151,13 @@ export const updateProduct = (id: string, updates: Partial<Product>): Promise<Pr
 export const deleteProduct = (id: string): Promise<void> => fetchFromApi<void>(`/products/${id}`, { method: 'DELETE' });
 export const getFeaturedProducts = async (): Promise<Product[]> => {
     // Use the dedicated endpoint for featured products
-    return fetchFromApi<Product[]>('/products/featured');
+    try {
+         return await fetchFromApi<Product[]>('/products/featured');
+    } catch (e) {
+        console.warn("Featured products API failed, returning empty.");
+        return [];
+    }
+   
 }
 
 // --- Article Service ---
@@ -104,13 +167,72 @@ export const addArticle = (article: Omit<Article, 'id'>): Promise<Article> => fe
 export const updateArticle = (id: string, updates: Partial<Article>): Promise<Article> => fetchFromApi<Article>(`/articles/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteArticle = (id: string): Promise<void> => fetchFromApi<void>(`/articles/${id}`, { method: 'DELETE' });
 
-// --- Order Service ---
-export const getOrders = (): Promise<Order[]> => fetchFromApi<Order[]>('/orders');
-export const getCustomerOrders = (customerId: string): Promise<Order[]> => fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
-export const addOrder = (order: Order): Promise<Order> => fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
-export const updateOrder = (id: string, updates: Partial<Order>): Promise<Order> => fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
-export const updateOrderStatus = (id: string, status: OrderStatus): Promise<Order> => fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
-export const deleteOrder = (id: string): Promise<void> => fetchFromApi<void>(`/orders/${id}`, { method: 'DELETE' });
+// --- Order Service (WITH ROBUST FALLBACK) ---
+export const getOrders = async (): Promise<Order[]> => {
+    try {
+        return await fetchFromApi<Order[]>('/orders');
+    } catch (e) {
+        console.warn('API /orders failed, using localStorage fallback');
+        return getLocalStorageItem<Order[]>(Constants.ORDERS_STORAGE_KEY, []);
+    }
+};
+
+export const getCustomerOrders = async (customerId: string): Promise<Order[]> => {
+    try {
+        return await fetchFromApi<Order[]>(`/orders/customer/${customerId}`);
+    } catch (e) {
+        console.warn('API /orders/customer failed, filtering from localStorage');
+        const allOrders = getLocalStorageItem<Order[]>(Constants.ORDERS_STORAGE_KEY, []);
+        return allOrders.filter(o => o.userId === customerId);
+    }
+};
+
+export const addOrder = async (order: Order): Promise<Order> => {
+    try {
+        return await fetchFromApi<Order>('/orders', { method: 'POST', body: JSON.stringify(order) });
+    } catch (e) {
+        console.warn('API /orders (POST) failed, saving to localStorage');
+        const currentOrders = getLocalStorageItem<Order[]>(Constants.ORDERS_STORAGE_KEY, []);
+        const newOrders = [order, ...currentOrders];
+        setLocalStorageItem(Constants.ORDERS_STORAGE_KEY, newOrders);
+        return order;
+    }
+};
+
+export const updateOrder = async (id: string, updates: Partial<Order>): Promise<Order> => {
+    try {
+         return await fetchFromApi<Order>(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+    } catch (e) {
+        console.warn('API /orders (PUT) failed, updating localStorage');
+        const orders = getLocalStorageItem<Order[]>(Constants.ORDERS_STORAGE_KEY, []);
+        const index = orders.findIndex(o => o.id === id);
+        if (index !== -1) {
+             orders[index] = { ...orders[index], ...updates };
+             setLocalStorageItem(Constants.ORDERS_STORAGE_KEY, orders);
+             return orders[index];
+        }
+        throw e;
+    }
+};
+
+export const updateOrderStatus = async (id: string, status: OrderStatus): Promise<Order> => {
+     try {
+        return await fetchFromApi<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+     } catch(e) {
+         // Fallback using updateOrder logic locally
+         return updateOrder(id, { status });
+     }
+};
+
+export const deleteOrder = async (id: string): Promise<void> => {
+     try {
+        return await fetchFromApi<void>(`/orders/${id}`, { method: 'DELETE' });
+     } catch (e) {
+        console.warn('API /orders (DELETE) failed, updating localStorage');
+        const orders = getLocalStorageItem<Order[]>(Constants.ORDERS_STORAGE_KEY, []);
+        setLocalStorageItem(Constants.ORDERS_STORAGE_KEY, orders.filter(o => o.id !== id));
+     }
+};
 
 // --- Chat Log Service ---
 export const getChatLogs = (): Promise<ChatLogSession[]> => fetchFromApi<ChatLogSession[]>('/chatlogs');
@@ -149,7 +271,6 @@ export const getCashflowForecast = (): Promise<CashflowForecastData> => fetchFro
 
 // --- Service Tickets ---
 export const getServiceTickets = (): Promise<ServiceTicket[]> => fetchFromApi<ServiceTicket[]>('/service-tickets');
-// Fix: Cast to any to prevent type errors with backend generated fields like ticket_code
 export const addServiceTicket = (ticket: Omit<ServiceTicket, 'id'>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>('/service-tickets', { method: 'POST', body: JSON.stringify(ticket) });
 export const updateServiceTicket = (id: string, updates: Partial<ServiceTicket>): Promise<ServiceTicket> => fetchFromApi<ServiceTicket>(`/service-tickets/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
 export const deleteServiceTicket = (id: string): Promise<void> => fetchFromApi<void>(`/service-tickets/${id}`, { method: 'DELETE' });

@@ -341,6 +341,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
             // Fetch all orders once to support lookup
             let allOrders: Order[] = [];
             try {
+                // This now uses the safe fallback version from localDataService
                 allOrders = await getOrders();
             } catch(e) {
                 console.error("Failed to fetch orders for chatbot lookup:", e);
@@ -356,13 +357,15 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                     // Logic for finding order by ID
                     const orderIdArg = String(call.args.orderId).trim().toUpperCase();
                     // Clean ID: try to match "T" + digits or just digits
-                    const orderIdMatch = orderIdArg.match(/(T)?(\d{6,})/i);
-                    const cleanIdPattern = orderIdMatch ? orderIdMatch[0] : orderIdArg;
+                    // Improved matching to handle various formats like "order-...", "T...", or just numbers
+                    const digitMatch = orderIdArg.match(/(\d{6,})/);
+                    const cleanDigits = digitMatch ? digitMatch[0] : orderIdArg;
 
-                    const order = allOrders.find(o => 
-                        o.id.toUpperCase().includes(cleanIdPattern) || 
-                        (o.orderNumber && o.orderNumber.toUpperCase().includes(cleanIdPattern))
-                    );
+                    const order = allOrders.find(o => {
+                        const oId = o.id.toUpperCase();
+                        const oNum = o.orderNumber ? o.orderNumber.toUpperCase() : '';
+                        return oId.includes(cleanDigits) || oNum.includes(cleanDigits);
+                    });
 
                     if (order) {
                         toolResult = {
@@ -375,7 +378,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ isOpen, setIsOpen }) => {
                             items: order.items.map(i => `${i.productName} (x${i.quantity})`).join(', ')
                         };
                     } else {
-                        toolResult = { found: false, message: `Không tìm thấy đơn hàng nào có mã chứa "${orderIdArg}".` };
+                        toolResult = { found: false, message: `Không tìm thấy đơn hàng nào khớp với mã "${orderIdArg}".` };
                     }
                 } 
                 else if (call.name === 'lookupCustomerOrders') {
