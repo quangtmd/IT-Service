@@ -48,7 +48,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <Link to={`/product/${product.id}`} className="block h-full group">
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-2xl border border-gray-200 hover:border-primary/40 transition-all duration-300 h-full flex flex-col overflow-hidden relative transform hover:-translate-y-1">
+      <div className="bg-white rounded-xl shadow-sm hover:shadow-xl hover:scale-[1.03] border border-gray-200 hover:border-primary/40 transition-all duration-300 h-full flex flex-col overflow-hidden relative transform">
         <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
           <img
             src={(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : `https://source.unsplash.com/300x225/?${encodeURIComponent(product.name)}`)}

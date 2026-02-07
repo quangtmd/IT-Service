@@ -10,7 +10,7 @@ import CategorySidebar from '../components/shop/CategorySidebar';
 import { getProducts } from '../services/localDataService';
 import BackendConnectionError from '../components/shared/BackendConnectionError'; 
 import SkeletonProductCard from '../components/shop/SkeletonProductCard';
-import ShopBanner from '../components/shop/ShopBanner'; 
+import ShopBanner from '../components/shop/ShopBanner'; // New import
 import ShopProductSection from '../components/shop/ShopProductSection';
 
 const PRODUCTS_PER_PAGE = 12;

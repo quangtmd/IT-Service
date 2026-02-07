@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '../../types';
 import Button from '../ui/Button';
@@ -192,6 +193,12 @@ const OrderManagementView: React.FC = () => {
                                 const displayProfit = displayTotal - displayCost;
                                 const isSelected = selectedOrderIds.has(order.id);
                                 
+                                // Get display for shipping status
+                                let displayShippingStatus = order.shippingInfo?.shippingStatus || 'Chưa giao';
+                                if (order.status === 'Hoàn thành' && !['Đã giao', 'Gặp sự cố'].includes(displayShippingStatus)) {
+                                    displayShippingStatus = 'Đã giao';
+                                }
+
                                 return (
                                    <React.Fragment key={order.id}>
                                         <tr 
@@ -227,67 +234,136 @@ const OrderManagementView: React.FC = () => {
                                         </tr>
                                         {expandedOrderId === order.id && (
                                             <tr className="bg-gray-50/50 shadow-inner">
-                                                <td colSpan={9} className="p-0">
-                                                    <div className="p-6 border-b border-gray-200">
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                                                            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                                                                <h5 className="font-bold mb-3 text-gray-800 border-b pb-2 flex items-center gap-2">
-                                                                    <i className="fas fa-truck text-blue-500"></i> Thông tin Giao hàng
-                                                                </h5>
-                                                                <div className="space-y-2 text-gray-600">
-                                                                    <p><span className="w-24 inline-block text-gray-400">Người nhận:</span> {order.customerInfo.fullName}</p>
-                                                                    <p><span className="w-24 inline-block text-gray-400">SĐT:</span> {order.customerInfo.phone}</p>
-                                                                    <p><span className="w-24 inline-block text-gray-400">Địa chỉ:</span> {order.customerInfo.address}</p>
-                                                                    <div className="mt-3 pt-2 border-t border-dashed">
-                                                                        <p><span className="w-24 inline-block text-gray-400">Đơn vị VC:</span> {order.shippingInfo?.carrier || '---'}</p>
-                                                                        <p><span className="w-24 inline-block text-gray-400">Mã vận đơn:</span> <span className="font-mono bg-gray-100 px-1 rounded">{order.shippingInfo?.trackingNumber || '---'}</span></p>
-                                                                    </div>
-                                                                </div>
+                                                <td colSpan={9} className="p-4 sm:p-6">
+                                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                                        {/* 1. Delivery Info Card */}
+                                                        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
+                                                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+                                                                <i className="fas fa-truck text-6xl text-blue-500 transform rotate-12"></i>
                                                             </div>
-                                                            
-                                                            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                                                                <h5 className="font-bold mb-3 text-gray-800 border-b pb-2 flex items-center gap-2">
-                                                                    <i className="fas fa-money-bill-wave text-green-500"></i> Thanh toán chi tiết
-                                                                </h5>
-                                                                <div className="space-y-2 text-gray-600">
-                                                                    <p><span className="w-24 inline-block text-gray-400">Phương thức:</span> {order.paymentInfo.method}</p>
-                                                                    <p><span className="w-24 inline-block text-gray-400">Tổng đơn:</span> {formatCurrency(displayTotal)}</p>
-                                                                    <p><span className="w-24 inline-block text-gray-400">Đã trả:</span> {formatCurrency(order.paidAmount || 0)}</p>
-                                                                    <p className="text-red-600 font-semibold bg-red-50 p-2 rounded mt-2 text-center">
-                                                                        Còn lại: {formatCurrency(displayTotal - (order.paidAmount || 0))}
+                                                            <h5 className="font-bold text-gray-800 border-b border-gray-100 pb-2 mb-3 flex items-center gap-2">
+                                                                <span className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600"><i className="fas fa-map-marker-alt"></i></span>
+                                                                Thông tin Giao hàng
+                                                            </h5>
+                                                            <div className="space-y-2 text-sm text-gray-600 relative z-10">
+                                                                <p className="flex justify-between"><span className="text-gray-400">Người nhận:</span> <span className="font-medium text-gray-900">{order.customerInfo.fullName}</span></p>
+                                                                <p className="flex justify-between"><span className="text-gray-400">SĐT:</span> <span className="font-medium text-gray-900">{order.customerInfo.phone}</span></p>
+                                                                <div className="pt-1">
+                                                                    <span className="text-gray-400 block mb-1">Địa chỉ:</span>
+                                                                    <p className="font-medium text-gray-900 bg-gray-50 p-2 rounded">{order.customerInfo.address}</p>
+                                                                </div>
+                                                                <div className="mt-3 pt-2 border-t border-dashed border-gray-200">
+                                                                    <p className="flex justify-between"><span className="text-gray-400">Đơn vị VC:</span> <span className="font-medium">{order.shippingInfo?.carrier || '---'}</span></p>
+                                                                    <p className="flex justify-between items-center mt-1">
+                                                                        <span className="text-gray-400">Mã vận đơn:</span> 
+                                                                        <span className="font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs border border-blue-100">{order.shippingInfo?.trackingNumber || '---'}</span>
                                                                     </p>
+                                                                     <p className="flex justify-between mt-1"><span className="text-gray-400">Trạng thái GH:</span> <span className="font-medium text-blue-600">{displayShippingStatus}</span></p>
                                                                 </div>
-                                                            </div>
-        
-                                                            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                                                                <h5 className="font-bold mb-3 text-gray-800 border-b pb-2 flex items-center gap-2">
-                                                                    <i className="fas fa-sticky-note text-yellow-500"></i> Ghi chú
-                                                                </h5>
-                                                                <p className="italic text-gray-600 min-h-[60px]">{order.notes || 'Không có ghi chú.'}</p>
                                                             </div>
                                                         </div>
-                                                        
-                                                        <div className="mt-6">
-                                                            <h5 className="font-bold text-sm mb-3 text-gray-800">Chi tiết Sản phẩm</h5>
-                                                            <table className="w-full text-xs bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                                                                <thead className="bg-gray-100 text-gray-600">
+
+                                                        {/* 2. Payment Info Card */}
+                                                        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
+                                                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+                                                                <i className="fas fa-file-invoice-dollar text-6xl text-green-500 transform -rotate-12"></i>
+                                                            </div>
+                                                            <h5 className="font-bold text-gray-800 border-b border-gray-100 pb-2 mb-3 flex items-center gap-2">
+                                                                <span className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600"><i className="fas fa-wallet"></i></span>
+                                                                Thông tin Thanh toán
+                                                            </h5>
+                                                            <div className="space-y-3 text-sm text-gray-600 relative z-10">
+                                                                <div>
+                                                                    <p className="text-gray-400 text-xs uppercase font-semibold mb-1">Phương thức</p>
+                                                                    <p className="font-medium text-gray-900">{order.paymentInfo.method}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-gray-400 text-xs uppercase font-semibold mb-1">Trạng thái</p>
+                                                                    <PaymentStatusPill status={order.paymentInfo.status} />
+                                                                </div>
+                                                                
+                                                                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-dashed border-gray-200">
+                                                                    <div className="bg-gray-50 p-2 rounded">
+                                                                        <p className="text-xs text-gray-500">Tổng tiền</p>
+                                                                        <p className="font-bold text-gray-900">{formatCurrency(displayTotal)}</p>
+                                                                    </div>
+                                                                    <div className="bg-green-50 p-2 rounded border border-green-100">
+                                                                        <p className="text-xs text-green-600">Đã thanh toán</p>
+                                                                        <p className="font-bold text-green-700">{formatCurrency(order.paidAmount || 0)}</p>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                {(displayTotal - (order.paidAmount || 0)) > 0 && (
+                                                                    <div className="bg-red-50 p-2 rounded border border-red-100 flex justify-between items-center">
+                                                                        <span className="text-red-600 font-medium">Còn nợ:</span>
+                                                                        <span className="font-bold text-red-700">{formatCurrency(displayTotal - (order.paidAmount || 0))}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* 3. Notes & Meta Card */}
+                                                        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group flex flex-col">
+                                                             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+                                                                <i className="fas fa-clipboard-list text-6xl text-yellow-500 transform rotate-6"></i>
+                                                            </div>
+                                                            <h5 className="font-bold text-gray-800 border-b border-gray-100 pb-2 mb-3 flex items-center gap-2">
+                                                                <span className="w-8 h-8 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600"><i className="fas fa-sticky-note"></i></span>
+                                                                Ghi chú & Khác
+                                                            </h5>
+                                                            <div className="flex-grow relative z-10">
+                                                                <div className="bg-yellow-50/50 p-3 rounded-lg border border-yellow-100 h-full min-h-[80px]">
+                                                                    <p className="italic text-gray-600 text-sm whitespace-pre-wrap">{order.notes || 'Không có ghi chú nào cho đơn hàng này.'}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400 flex justify-between relative z-10">
+                                                                <span>Tạo bởi: {order.creatorName || 'Hệ thống'}</span>
+                                                                <span>ID: {order.id}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Product Table */}
+                                                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                                                        <div className="bg-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center">
+                                                            <h5 className="font-bold text-gray-800 flex items-center gap-2">
+                                                                <i className="fas fa-box-open text-gray-500"></i> Chi tiết Sản phẩm
+                                                            </h5>
+                                                            <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded border border-gray-200">
+                                                                {order.items.length} mặt hàng
+                                                            </span>
+                                                        </div>
+                                                        <div className="overflow-x-auto">
+                                                            <table className="w-full text-sm text-left">
+                                                                <thead className="bg-white text-gray-500 border-b border-gray-100">
                                                                     <tr>
-                                                                        <th className="p-3 text-left">Sản phẩm</th>
-                                                                        <th className="p-3 text-right">SL</th>
-                                                                        <th className="p-3 text-right">Đơn giá</th>
-                                                                        <th className="p-3 text-right">Thành tiền</th>
+                                                                        <th className="py-3 px-5 font-medium w-12">#</th>
+                                                                        <th className="py-3 px-5 font-medium">Sản phẩm</th>
+                                                                        <th className="py-3 px-5 font-medium text-right">Số lượng</th>
+                                                                        <th className="py-3 px-5 font-medium text-right">Đơn giá</th>
+                                                                        <th className="py-3 px-5 font-medium text-right">Thành tiền</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody className="divide-y divide-gray-100">
-                                                                    {order.items.map(item => (
-                                                                        <tr key={item.productId} className="">
-                                                                            <td className="p-3 font-medium text-gray-700">{item.productName}</td>
-                                                                            <td className="p-3 text-right">{item.quantity}</td>
-                                                                            <td className="p-3 text-right text-gray-500">{formatCurrency(item.price)}</td>
-                                                                            <td className="p-3 text-right font-bold text-gray-800">{formatCurrency(item.price * item.quantity)}</td>
+                                                                    {order.items.map((item, idx) => (
+                                                                        <tr key={idx} className="hover:bg-gray-50/50">
+                                                                            <td className="py-3 px-5 text-gray-400">{idx + 1}</td>
+                                                                            <td className="py-3 px-5">
+                                                                                <div className="font-medium text-gray-800">{item.productName}</div>
+                                                                                <div className="text-xs text-gray-400">{item.productId}</div>
+                                                                            </td>
+                                                                            <td className="py-3 px-5 text-right font-medium">{item.quantity}</td>
+                                                                            <td className="py-3 px-5 text-right text-gray-600">{formatCurrency(item.price)}</td>
+                                                                            <td className="py-3 px-5 text-right font-bold text-gray-800">{formatCurrency(item.price * item.quantity)}</td>
                                                                         </tr>
                                                                     ))}
                                                                 </tbody>
+                                                                <tfoot className="bg-gray-50 border-t border-gray-200">
+                                                                    <tr>
+                                                                        <td colSpan={4} className="py-3 px-5 text-right font-bold text-gray-700">Tổng cộng</td>
+                                                                        <td className="py-3 px-5 text-right font-bold text-blue-600 text-base">{formatCurrency(displayTotal)}</td>
+                                                                    </tr>
+                                                                </tfoot>
                                                             </table>
                                                         </div>
                                                     </div>

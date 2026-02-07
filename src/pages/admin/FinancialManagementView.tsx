@@ -1,25 +1,37 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FinancialTransaction, PayrollRecord, TransactionCategory, TransactionType, User } from '../../types';
+import { FinancialTransaction, PayrollRecord, User, Debt, PaymentApproval, CashflowForecastData } from '../../types';
 import Button from '../../components/ui/Button';
-import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/ui/Card';
+import { useAuth } from '../../contexts/AuthContext';
 import {
     getFinancialTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction as apiDeleteFinancialTransaction,
-    getPayrollRecords, savePayrollRecords
+    getPayrollRecords, savePayrollRecords,
+    getDebts, updateDebt,
+    getPaymentApprovals, updatePaymentApproval,
+    getCashflowForecast
 } from '../../services/localDataService';
-import { useNavigate, NavigateFunction } from 'react-router-dom';
+import { useNavigate, useLocation, NavigateFunction } from 'react-router-dom';
 
 // --- HELPER FUNCTIONS & COMPONENTS ---
-const formatDate = (d: Date) => d.toISOString().split('T')[0];
-const getStartOfWeek = (d: Date) => {
-    const date = new Date(d);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    return new Date(date.setDate(diff));
+const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('vi-VN');
+const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
-const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + '₫';
 
-type FinancialTab = 'overview' | 'transactions' | 'reports' | 'payroll';
+type FinancialTab = 'overview' | 'transactions' | 'debts' | 'payroll' | 'forecast' | 'approvals' | 'reports';
+
+const StatCard: React.FC<{ title: string; value: string; icon: string; color: string; onClick?: () => void }> = ({ title, value, icon, color, onClick }) => (
+    <div onClick={onClick} className={`p-4 rounded-lg shadow flex items-center cursor-pointer hover:shadow-lg transition-shadow ${color} stat-card-pattern`}>
+        <div className="p-3 rounded-full bg-white/30 mr-4">
+            <i className={`fas ${icon} text-2xl text-white`}></i>
+        </div>
+        <div>
+            <p className="text-sm font-medium text-white/90">{title}</p>
+            <p className="text-2xl font-bold text-white">{value}</p>
+        </div>
+    </div>
+);
 
 // --- MAIN COMPONENT ---
 const FinancialManagementView: React.FC = () => {
@@ -30,7 +42,7 @@ const FinancialManagementView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
-    const loadData = useCallback(async (...args: any[]) => {
+    const loadData = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
@@ -67,10 +79,11 @@ const FinancialManagementView: React.FC = () => {
 
         switch (activeTab) {
             case 'transactions': return <TransactionsTab transactions={transactions} onDataChange={loadData} navigate={navigate} />;
+            case 'debts': return <DebtTab debts={[]} onDataChange={loadData} />; // Debts loaded internally in DebtTab or pass them down if fetched in main
             case 'reports': return <ReportsTab transactions={transactions} />;
             case 'payroll': return <PayrollTab payrollRecords={payrollRecords} onDataChange={loadData} onAddTransaction={addTransaction} />;
             case 'overview':
-            default: return <OverviewTab transactions={transactions} />;
+            default: return <OverviewTab transactions={transactions} setActiveTab={setActiveTab} />;
         }
     };
 
@@ -83,6 +96,7 @@ const FinancialManagementView: React.FC = () => {
                 <nav className="admin-tabs">
                     <button onClick={() => setActiveTab('overview')} className={`admin-tab-button ${activeTab === 'overview' ? 'active' : ''}`}>Tổng Quan</button>
                     <button onClick={() => setActiveTab('transactions')} className={`admin-tab-button ${activeTab === 'transactions' ? 'active' : ''}`}>Giao Dịch</button>
+                    <button onClick={() => setActiveTab('debts')} className={`admin-tab-button ${activeTab === 'debts' ? 'active' : ''}`}>Công Nợ</button>
                     <button onClick={() => setActiveTab('reports')} className={`admin-tab-button ${activeTab === 'reports' ? 'active' : ''}`}>Báo Cáo</button>
                     <button onClick={() => setActiveTab('payroll')} className={`admin-tab-button ${activeTab === 'payroll' ? 'active' : ''}`}>Lương Thưởng</button>
                 </nav>
@@ -96,7 +110,7 @@ const FinancialManagementView: React.FC = () => {
 
 // --- TAB COMPONENTS ---
 
-const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transactions }) => {
+const OverviewTab: React.FC<{ transactions: FinancialTransaction[], setActiveTab: (tab: FinancialTab) => void }> = ({ transactions, setActiveTab }) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -112,9 +126,9 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
         <div>
             <h4 className="admin-form-subsection-title">Tổng quan Tháng {now.getMonth() + 1}/{now.getFullYear()}</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Card className="!p-4 !bg-green-50 !border-green-200"><h5 className="text-sm text-green-700">Tổng Thu</h5><p className="text-2xl font-bold text-green-800">{formatCurrency(totalIncome)}</p></Card>
-                <Card className="!p-4 !bg-red-50 !border-red-200"><h5 className="text-sm text-red-700">Tổng Chi</h5><p className="text-2xl font-bold text-red-800">{formatCurrency(totalExpense)}</p></Card>
-                <Card className={`!p-4 ${netProfit >= 0 ? '!bg-blue-50 !border-blue-200' : '!bg-orange-50 !border-orange-200'}`}><h5 className={`text-sm ${netProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>Lợi nhuận</h5><p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>{formatCurrency(netProfit)}</p></Card>
+                <StatCard title="Tổng Thu" value={formatCurrency(totalIncome)} icon="fa-arrow-up" color="bg-green-500" onClick={() => setActiveTab('transactions')} />
+                <StatCard title="Tổng Chi" value={formatCurrency(totalExpense)} icon="fa-arrow-down" color="bg-red-500" onClick={() => setActiveTab('transactions')} />
+                <StatCard title="Lợi Nhuận" value={formatCurrency(netProfit)} icon="fa-chart-line" color="bg-blue-500" onClick={() => setActiveTab('reports')} />
             </div>
              <h4 className="admin-form-subsection-title">Giao dịch gần đây</h4>
              <div className="overflow-x-auto">
@@ -135,7 +149,7 @@ const OverviewTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ trans
     );
 };
 
-const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: (...args: any[]) => void, navigate: NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
+const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataChange: () => void, navigate: NavigateFunction }> = ({ transactions, onDataChange, navigate }) => {
 
     const handleEditTransaction = (transactionId: string) => {
         navigate(`/admin/accounting_dashboard/transactions/edit/${transactionId}`);
@@ -174,6 +188,83 @@ const TransactionsTab: React.FC<{ transactions: FinancialTransaction[], onDataCh
                                     <div className="flex gap-1">
                                         <Button onClick={() => handleEditTransaction(t.id)} size="sm" variant="outline"><i className="fas fa-edit"></i></Button>
                                         <Button onClick={() => handleDelete(t.id)} size="sm" variant="ghost" className="text-red-500"><i className="fas fa-trash"></i></Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
+
+const DebtTab: React.FC<{ debts: Debt[], onDataChange: () => void }> = ({ debts: initialDebts, onDataChange }) => {
+    const [debts, setDebts] = useState<Debt[]>(initialDebts || []);
+    
+    // Fetch debts if not provided or to ensure fresh data
+    useEffect(() => {
+        const fetchDebts = async () => {
+            const data = await getDebts();
+            setDebts(data);
+        };
+        fetchDebts();
+    }, [initialDebts]);
+
+    const handleMarkAsPaid = async (id: string) => { 
+        await updateDebt(id, { status: 'Đã thanh toán' }); 
+        const updatedDebts = await getDebts();
+        setDebts(updatedDebts);
+        onDataChange(); 
+    };
+
+    return (
+        <div className="p-0">
+             <div className="flex justify-end mb-4">
+                <Button size="sm" className="bg-cyan-600 hover:bg-cyan-500 text-white border-none"><i className="fas fa-plus mr-2"></i> Tạo Công nợ</Button>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Đối tượng</th>
+                            <th>Loại</th>
+                            <th className="text-right">Số tiền</th>
+                            <th>Ngày đáo hạn</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {debts.map(d => (
+                            <tr key={d.id}>
+                                <td>
+                                    <div className="font-medium">{d.entityName}</div>
+                                    <div className="text-xs text-gray-500">{d.entityType === 'customer' ? 'Khách hàng' : 'Nhà cung cấp'}</div>
+                                </td>
+                                <td>
+                                    <span className={`text-xs font-semibold ${d.type === 'receivable' ? 'text-blue-600' : 'text-orange-600'}`}>
+                                        {d.type === 'receivable' ? 'Phải thu' : 'Phải trả'}
+                                    </span>
+                                </td>
+                                <td className="text-right font-bold">{formatCurrency(d.amount)}</td>
+                                <td>{d.dueDate ? formatDate(d.dueDate) : 'N/A'}</td>
+                                <td>
+                                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                        d.status === 'Đã thanh toán' ? 'bg-green-100 text-green-700' : 
+                                        d.status === 'Quá hạn' ? 'bg-red-100 text-red-700' : 
+                                        'bg-yellow-100 text-yellow-700'
+                                    }`}>
+                                        {d.status}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div className="flex gap-2">
+                                        {d.status !== 'Đã thanh toán' && 
+                                            <button onClick={() => handleMarkAsPaid(d.id)} className="text-green-600 hover:text-green-800" title="Đánh dấu đã thanh toán">
+                                                <i className="fas fa-check-circle"></i>
+                                            </button>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -240,7 +331,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
 
     return (
         <div>
-            <div className="flex flex-wrap gap-4 items-center mb-4 p-4 bg-gray-50 rounded-lg">
+            <div className="flex flex-wrap gap-4 items-center mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => setDateRange('week')}>Tuần này</Button>
                     <Button size="sm" variant="outline" onClick={() => setDateRange('month')}>Tháng này</Button>
@@ -254,25 +345,25 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Card className="!p-4"><h5 className="text-sm">Tổng Thu</h5><p className="text-2xl font-bold text-green-600">{formatCurrency(summary.income)}</p></Card>
-                <Card className="!p-4"><h5 className="text-sm">Tổng Chi</h5><p className="text-2xl font-bold text-red-600">{formatCurrency(summary.expense)}</p></Card>
-                <Card className="!p-4"><h5 className="text-sm">Lợi Nhuận</h5><p className={`text-2xl font-bold ${summary.net >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>{formatCurrency(summary.net)}</p></Card>
+                <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm"><h5 className="text-sm text-gray-500">Tổng Thu</h5><p className="text-2xl font-bold text-green-600">{formatCurrency(summary.income)}</p></div>
+                <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm"><h5 className="text-sm text-gray-500">Tổng Chi</h5><p className="text-2xl font-bold text-red-600">{formatCurrency(summary.expense)}</p></div>
+                <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm"><h5 className="text-sm text-gray-500">Lợi Nhuận</h5><p className={`text-2xl font-bold ${summary.net >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>{formatCurrency(summary.net)}</p></div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <h5 className="admin-form-subsection-title">Chi tiết Khoản Thu</h5>
                     {Object.keys(summary.incomeByCategory).length > 0 ? (
-                        <ul className="text-sm space-y-1">
-                            {Object.entries(summary.incomeByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-green-600">{formatCurrency(amount as number)}</strong></li>)}
+                        <ul className="text-sm space-y-2">
+                            {Object.entries(summary.incomeByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-2 bg-gray-50 rounded"><span>{cat}</span><strong className="text-green-600">{formatCurrency(amount as number)}</strong></li>)}
                         </ul>
                     ) : <p className="text-sm text-gray-500">Không có khoản thu nào trong kỳ.</p>}
                 </div>
-                 <div>
+                 <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <h5 className="admin-form-subsection-title">Chi tiết Khoản Chi</h5>
                     {Object.keys(summary.expenseByCategory).length > 0 ? (
-                        <ul className="text-sm space-y-1">
-                            {Object.entries(summary.expenseByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-1 bg-gray-50 rounded"><span>{cat}</span><strong className="text-red-600">{formatCurrency(amount as number)}</strong></li>)}
+                        <ul className="text-sm space-y-2">
+                            {Object.entries(summary.expenseByCategory).map(([cat, amount]) => <li key={cat} className="flex justify-between p-2 bg-gray-50 rounded"><span>{cat}</span><strong className="text-red-600">{formatCurrency(amount as number)}</strong></li>)}
                         </ul>
                     ) : <p className="text-sm text-gray-500">Không có khoản chi nào trong kỳ.</p>}
                 </div>
@@ -283,7 +374,7 @@ const ReportsTab: React.FC<{ transactions: FinancialTransaction[] }> = ({ transa
 
 interface PayrollTabProps {
     payrollRecords: PayrollRecord[];
-    onDataChange: (...args: any[]) => Promise<void>;
+    onDataChange: () => Promise<void>;
     onAddTransaction: (trans: Omit<FinancialTransaction, 'id'>) => Promise<void>;
 }
 
@@ -293,7 +384,11 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
     const [payPeriod, setPayPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
 
     const [localPayroll, setLocalPayroll] = useState<PayrollRecord[]>(payrollRecords);
-    useEffect(() => setLocalPayroll(payrollRecords), [payrollRecords]);
+    
+    // Sync props to local state
+    useEffect(() => {
+        setLocalPayroll(payrollRecords);
+    }, [payrollRecords]);
 
     const handlePayrollChange = (employeeId: string, field: 'baseSalary' | 'bonus' | 'deduction' | 'notes', value: string | number) => {
         setLocalPayroll(currentPayroll => {
@@ -332,7 +427,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                 return shouldSettle ? { ...r, status: 'Đã thanh toán' as const } : r;
             });
             
-            // Correctly passing records array to service
             await savePayrollRecords(recordsToSave);
             
             await onAddTransaction({
@@ -357,7 +451,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
             return;
         }
         try {
-            // Correctly passing records array to service
             await savePayrollRecords(recordsToSave);
             alert('Đã lưu nháp lương thành công!');
             await onDataChange();
@@ -370,11 +463,13 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
 
     return (
         <div>
-            <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
-                <label htmlFor="payPeriod" className="font-medium">Chọn kỳ lương:</label>
+            <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <label htmlFor="payPeriod" className="font-medium text-gray-700">Chọn kỳ lương:</label>
                 <input type="month" id="payPeriod" value={payPeriod} onChange={e => setPayPeriod(e.target.value)} className="admin-form-group !mb-0"/>
-                <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
-                <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                <div className="ml-auto flex gap-2">
+                     <Button onClick={() => handleSaveDraft()} size="sm" variant="outline">Lưu Nháp</Button>
+                     <Button onClick={() => handleSettlePayroll()} size="sm" variant="primary" leftIcon={<i className="fas fa-check-circle"></i>}>Chốt & Thanh toán</Button>
+                </div>
             </div>
             <div className="overflow-x-auto">
                 <table className="admin-table">
@@ -385,11 +480,11 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ payrollRecords, onDataChange, o
                             return (
                                 <tr key={employee.id}>
                                     <td>{employee.username}</td>
-                                    <td><input type="number" value={record?.baseSalary || 0} onChange={e => handlePayrollChange(employee.id, 'baseSalary', Number(e.target.value))} className="admin-form-group !p-1 w-32" /></td>
-                                    <td><input type="number" value={record?.bonus || 0} onChange={e => handlePayrollChange(employee.id, 'bonus', Number(e.target.value))} className="admin-form-group !p-1 w-28" /></td>
-                                    <td><input type="number" value={record?.deduction || 0} onChange={e => handlePayrollChange(employee.id, 'deduction', Number(e.target.value))} className="admin-form-group !p-1 w-28" /></td>
-                                    <td className="font-bold">{formatCurrency(record ? record.finalSalary : 0)}</td>
-                                    <td><input type="text" value={record?.notes || ''} onChange={e => handlePayrollChange(employee.id, 'notes', e.target.value)} className="admin-form-group !p-1 w-40" /></td>
+                                    <td><input type="number" value={record?.baseSalary || 0} onChange={e => handlePayrollChange(employee.id, 'baseSalary', Number(e.target.value))} className="admin-form-group !p-1 w-28 text-right" /></td>
+                                    <td><input type="number" value={record?.bonus || 0} onChange={e => handlePayrollChange(employee.id, 'bonus', Number(e.target.value))} className="admin-form-group !p-1 w-24 text-right" /></td>
+                                    <td><input type="number" value={record?.deduction || 0} onChange={e => handlePayrollChange(employee.id, 'deduction', Number(e.target.value))} className="admin-form-group !p-1 w-24 text-right" /></td>
+                                    <td className="font-bold text-right">{formatCurrency(record ? record.finalSalary : 0)}</td>
+                                    <td><input type="text" value={record?.notes || ''} onChange={e => handlePayrollChange(employee.id, 'notes', e.target.value)} className="admin-form-group !p-1 w-full" /></td>
                                     <td><span className={`status-badge ${record?.status === 'Đã thanh toán' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{record?.status || 'Chưa thanh toán'}</span></td>
                                 </tr>
                             );
