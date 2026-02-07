@@ -411,6 +411,33 @@ app.get('/api/orders', async (req, res) => {
     }
 });
 
+app.get('/api/orders/customer/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const [orders] = await pool.query(`
+            SELECT 
+                o.*, 
+                u_creator.username as creatorName 
+            FROM Orders o
+            LEFT JOIN Users u_creator ON o.creatorId = u_creator.id
+            WHERE o.userId = ?
+            ORDER BY o.orderDate DESC
+        `, [userId]);
+        
+        const deserializedOrders = orders.map(o => ({
+            ...o,
+            customerInfo: JSON.parse(o.customerInfo || '{}'),
+            items: JSON.parse(o.items || '[]'),
+            paymentInfo: JSON.parse(o.paymentInfo || '{}'),
+            shippingInfo: JSON.parse(o.shippingInfo || '{}')
+        }));
+        res.json(deserializedOrders);
+    } catch (error) {
+        console.error(`Lỗi khi truy vấn đơn hàng của khách ${req.params.userId}:`, error);
+        res.status(500).json({ message: "Lỗi server khi lấy dữ liệu đơn hàng khách hàng", error: error.sqlMessage || error.message });
+    }
+});
+
 app.post('/api/orders', async (req, res) => {
     try {
         const newOrder = req.body;
