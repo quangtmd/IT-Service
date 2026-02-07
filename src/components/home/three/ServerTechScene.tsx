@@ -1,7 +1,6 @@
-// @ts-nocheck
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, PerspectiveCamera, Stars, Sparkles, Instances, Instance, useGLTF } from '@react-three/drei';
+import { PerspectiveCamera, Stars, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 
 // --- 1. SERVER RACK COMPONENT ---

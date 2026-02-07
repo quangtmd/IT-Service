@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Float, Octahedron, Icosahedron } from '@react-three/drei';

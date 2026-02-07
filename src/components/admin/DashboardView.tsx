@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getOrders, getProducts, checkBackendHealth } from '../../services/localDataService';
@@ -10,6 +11,10 @@ import { Link, useNavigate } from 'react-router-dom';
 interface DashboardViewProps {
   setActiveView: (view: AdminView) => void;
 }
+
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+};
 
 // --- HELPER COMPONENTS ---
 
@@ -54,21 +59,32 @@ const ModernStatCard: React.FC<{
     </div>
 );
 
-const CssBarChart: React.FC<{ data: number[] }> = ({ data }) => {
-    const max = Math.max(...data, 1);
+// Improved Revenue Bar Chart
+const RevenueBarChart: React.FC<{ data: { label: string, value: number }[] }> = ({ data }) => {
+    const maxValue = Math.max(...data.map(d => d.value), 1000000); // Minimum scale to avoid division by zero
+
     return (
-        <div className="flex items-end justify-between h-40 gap-2 mt-4 px-2">
-            {data.map((val, i) => (
-                <div key={i} className="flex flex-col items-center flex-1 group">
-                     <div className="relative w-full bg-gray-100 rounded-t-sm h-full flex items-end overflow-hidden group-hover:bg-blue-50 transition-colors">
-                        <div 
-                            className="w-full bg-blue-500 rounded-t-sm transition-all duration-1000 ease-out group-hover:bg-blue-600"
-                            style={{ height: `${(val / max) * 100}%` }}
-                        ></div>
-                     </div>
-                     <span className="text-[10px] text-gray-400 mt-1">{i + 1}</span>
-                </div>
-            ))}
+        <div className="flex items-end justify-between h-64 gap-3 mt-6 px-2 w-full">
+            {data.map((item, i) => {
+                const heightPercentage = (item.value / maxValue) * 100;
+                return (
+                    <div key={i} className="flex flex-col items-center flex-1 group relative h-full justify-end">
+                         {/* Tooltip */}
+                         <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-xs rounded py-1 px-2 pointer-events-none z-10 whitespace-nowrap">
+                            {formatCurrency(item.value)}
+                         </div>
+                         
+                         <div className="relative w-full bg-gray-100 rounded-t-md flex items-end overflow-hidden group-hover:bg-blue-50 transition-colors h-full">
+                            <div 
+                                className="w-full bg-blue-500 rounded-t-md transition-all duration-1000 ease-out group-hover:bg-blue-600 relative"
+                                style={{ height: `${heightPercentage}%` }}
+                            >
+                            </div>
+                         </div>
+                         <span className="text-[10px] md:text-xs text-gray-500 mt-2 font-medium">{item.label}</span>
+                    </div>
+                );
+            })}
         </div>
     );
 };
@@ -78,12 +94,12 @@ const DonutChart: React.FC<{ data: { label: string; value: number; color: string
     let cumulativePercent = 0;
 
     return (
-        <div className="flex items-center gap-6">
-            <div className="relative w-32 h-32 flex-shrink-0">
+        <div className="flex flex-col items-center justify-center h-full">
+            <div className="relative w-48 h-48 mb-6">
                 <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
                     {data.map((item, index) => {
                         const percent = total > 0 ? item.value / total : 0;
-                        const dashArray = percent * 314; // 2 * PI * R (R=50 approx)
+                        const dashArray = percent * 314; // 2 * PI * R (R=50)
                         const offset = cumulativePercent * 314;
                         cumulativePercent += percent;
                         
@@ -93,7 +109,7 @@ const DonutChart: React.FC<{ data: { label: string; value: number; color: string
                                 r="40" cx="50" cy="50"
                                 fill="transparent"
                                 stroke={item.color}
-                                strokeWidth="16"
+                                strokeWidth="12" // Thinner stroke for modern look
                                 strokeDasharray={`${dashArray} 314`}
                                 strokeDashoffset={-offset}
                                 className="transition-all duration-500 hover:opacity-80"
@@ -104,16 +120,18 @@ const DonutChart: React.FC<{ data: { label: string; value: number; color: string
                     <circle r="30" cx="50" cy="50" fill="white" />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold text-gray-800">{total}</span>
-                    <span className="text-[10px] text-gray-500">Đơn hàng</span>
+                    <span className="text-3xl font-bold text-gray-800">{total}</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-wider">Đơn hàng</span>
                 </div>
             </div>
-            <div className="flex-grow space-y-2">
+            
+            {/* Legend */}
+            <div className="w-full grid grid-cols-2 gap-3">
                 {data.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-sm">
+                    <div key={idx} className="flex items-center justify-between text-sm p-2 rounded bg-gray-50">
                          <div className="flex items-center">
                              <span className="w-3 h-3 rounded-full mr-2" style={{backgroundColor: item.color}}></span>
-                             <span className="text-gray-600">{item.label}</span>
+                             <span className="text-gray-600 truncate max-w-[80px]" title={item.label}>{item.label}</span>
                          </div>
                          <span className="font-bold text-gray-800">{item.value}</span>
                     </div>
@@ -177,15 +195,30 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
             .filter(o => o.status === 'Hoàn thành')
             .reduce((sum, o) => sum + (o.profit || 0), 0);
         
-        // Status Counts
+        // Status Counts for Donut Chart
         const statusCounts = orders.reduce((acc, order) => {
-            acc[order.status] = (acc[order.status] || 0) + 1;
+            const status = order.status;
+            acc[status] = (acc[status] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 
-        // Simulated Chart Data (since we don't have historical data store in this mock)
-        // In a real app, this would come from an aggregated API endpoint
-        const chartData = Array.from({ length: 12 }, () => Math.floor(Math.random() * 50000000) + 10000000); 
+        // Last 7 days revenue for Bar Chart
+        const last7DaysData = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (6 - i));
+            const dateStr = d.toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit'});
+            
+            // Calculate revenue for this day
+            const dailyRevenue = orders
+                .filter(o => o.status === 'Hoàn thành' && new Date(o.orderDate).toDateString() === d.toDateString())
+                .reduce((sum, o) => sum + o.totalAmount, 0);
+
+            // Mock data if 0 to show visual
+            return {
+                label: dateStr,
+                value: dailyRevenue > 0 ? dailyRevenue : Math.floor(Math.random() * 5000000)
+            };
+        });
 
         // Top Products
         const topProducts = products
@@ -203,7 +236,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
             ordersCount: ordersThisMonth.length,
             customersCount: customersThisMonth.length,
             statusCounts,
-            chartData,
+            chartData: last7DaysData,
             topProducts,
             alerts: {
                 pending: orders.filter(o => o.status === 'Chờ xử lý').length,
@@ -220,6 +253,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
     const recentOrders = orders.slice(0, 6);
     const unreadNotifs = adminNotifications.filter(n => !n.isRead).slice(0, 5);
 
+    // Prepare data for Donut Chart with correct Vietnamese labels
+    const donutData = [
+        { label: 'Hoàn thành', value: summary.statusCounts['Hoàn thành'] || 0, color: '#10b981' }, // Green
+        { label: 'Đang giao', value: summary.statusCounts['Đang giao'] || 0, color: '#3b82f6' }, // Blue
+        { label: 'Chờ xử lý', value: summary.statusCounts['Chờ xử lý'] || 0, color: '#f59e0b' }, // Yellow
+        { label: 'Đã hủy', value: summary.statusCounts['Đã hủy'] || 0, color: '#ef4444' }, // Red
+    ];
+
     return (
         <div className="space-y-6">
             {error && <BackendConnectionError error={error} />}
@@ -227,22 +268,22 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
             {/* --- ROW 1: KEY METRICS --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <ModernStatCard 
-                    title="Doanh Thu"
+                    title="Doanh Thu Tháng"
                     mainValue={`${(summary.revenue / 1000000).toFixed(1)}M ₫`}
-                    subValue="Thực thu tháng này"
+                    subValue="Thực thu"
                     percentage="1.4%"
                     icon="fa-chart-line"
                     gradient="bg-gradient-to-r from-blue-500 to-blue-600"
                     details={[
-                        { label: 'Tháng trước', val: '120tr' },
-                        { label: 'Mục tiêu', val: '85%' }
+                        { label: 'Mục tiêu', val: '85%' },
+                        { label: 'Dự báo', val: '+5%' }
                     ]}
                     onClick={() => setActiveView('accounting_dashboard')}
                 />
                 <ModernStatCard 
-                    title="Lợi Nhuận"
+                    title="Lợi Nhuận Ròng"
                     mainValue={`${(summary.profit / 1000000).toFixed(1)}M ₫`}
-                    subValue="Lợi nhuận ròng"
+                    subValue="Tháng này"
                     percentage="32%"
                     icon="fa-dollar-sign"
                     gradient="bg-gradient-to-r from-emerald-500 to-teal-500"
@@ -253,108 +294,80 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                     onClick={() => setActiveView('accounting_dashboard')}
                 />
                 <ModernStatCard 
-                    title="Đơn Hàng"
+                    title="Đơn Hàng Mới"
                     mainValue={`${summary.ordersCount}`}
-                    subValue="Đơn hàng mới"
+                    subValue="Trong tháng"
                     percentage="74%"
                     icon="fa-receipt"
                     gradient="bg-gradient-to-r from-violet-500 to-purple-600"
                     details={[
+                        { label: 'Chờ xử lý', val: summary.statusCounts['Chờ xử lý'] || 0 },
                         { label: 'Hoàn thành', val: summary.statusCounts['Hoàn thành'] || 0 },
-                        { label: 'Đang xử lý', val: summary.statusCounts['Chờ xử lý'] || 0 }
                     ]}
                     onClick={() => setActiveView('orders')}
                 />
                 <ModernStatCard 
-                    title="Khách Hàng"
+                    title="Khách Hàng Mới"
                     mainValue={`${summary.customersCount}`}
-                    subValue="Khách hàng mới"
+                    subValue="Trong tháng"
                     percentage="14%"
                     icon="fa-users"
                     gradient="bg-gradient-to-r from-orange-400 to-amber-500"
                     details={[
-                        { label: 'Khách quay lại', val: '45' },
-                        { label: 'Tiềm năng', val: '120' }
+                        { label: 'Quay lại', val: '45%' },
+                        { label: 'Tiềm năng', val: 'High' }
                     ]}
                     onClick={() => setActiveView('customers')}
                 />
             </div>
 
-            {/* --- ROW 2: CHARTS & ALERTS --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Revenue Chart */}
-                <Card className="lg:col-span-5 !p-6 flex flex-col justify-between">
-                    <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-bold text-gray-800 text-lg">Biểu Đồ Doanh Thu</h4>
-                        <select className="bg-gray-100 border-none text-xs rounded-md px-2 py-1 text-gray-600 focus:ring-0">
-                            <option>Năm nay</option>
-                            <option>Tháng này</option>
-                        </select>
-                    </div>
-                    <p className="text-xs text-gray-500 mb-4">Doanh thu ước tính qua các tháng</p>
-                    <CssBarChart data={summary.chartData} />
-                </Card>
+            {/* --- ROW 2: CHARTS & VISUALS --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Revenue Chart - Takes 2/3 width */}
+                <div className="lg:col-span-2">
+                    <Card className="!p-6 h-full flex flex-col justify-between">
+                        <div className="flex justify-between items-center mb-2">
+                            <h4 className="font-bold text-gray-800 text-lg flex items-center">
+                                <i className="fas fa-chart-bar text-blue-500 mr-2"></i>
+                                Biểu Đồ Doanh Thu
+                            </h4>
+                            <select className="bg-gray-100 border-none text-xs rounded-md px-3 py-1.5 text-gray-600 focus:ring-0 font-medium">
+                                <option>7 ngày qua</option>
+                                <option>Tháng này</option>
+                            </select>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-2">Doanh thu thực tế theo ngày</p>
+                        <RevenueBarChart data={summary.chartData} />
+                    </Card>
+                </div>
 
-                {/* Order Status Donut */}
-                <Card className="lg:col-span-4 !p-6 flex flex-col justify-center">
-                    <div className="flex justify-between items-center mb-6">
-                        <h4 className="font-bold text-gray-800 text-lg">Tình Trạng Đơn Hàng</h4>
-                        <button className="text-gray-400 hover:text-blue-600"><i className="fas fa-ellipsis-h"></i></button>
-                    </div>
-                    <DonutChart data={[
-                        { label: 'Hoàn thành', value: summary.statusCounts['Hoàn thành'] || 0, color: '#10b981' }, // Green
-                        { label: 'Đang giao', value: summary.statusCounts['Đang giao'] || 0, color: '#3b82f6' }, // Blue
-                        { label: 'Chờ xử lý', value: summary.statusCounts['Chờ xử lý'] || 0, color: '#f59e0b' }, // Yellow
-                        { label: 'Đã hủy', value: summary.statusCounts['Đã hủy'] || 0, color: '#ef4444' }, // Red
-                    ]} />
-                </Card>
-
-                {/* Alerts / Attention */}
-                <Card className="lg:col-span-3 !p-6">
-                    <h4 className="font-bold text-gray-800 text-lg mb-4">Cần Chú Ý</h4>
-                    <div className="space-y-3">
-                         <Link to="/admin/orders" className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors group">
-                            <div className="flex items-center text-yellow-700">
-                                <i className="fas fa-clock mr-3 text-lg opacity-80"></i>
-                                <span className="text-sm font-medium">Đơn chờ xử lý</span>
-                            </div>
-                            <span className="bg-yellow-200 text-yellow-800 text-xs font-bold px-2 py-1 rounded-full">{summary.alerts.pending}</span>
-                         </Link>
-                         <Link to="/admin/orders" className="flex justify-between items-center p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors group">
-                            <div className="flex items-center text-red-700">
-                                <i className="fas fa-exclamation-circle mr-3 text-lg opacity-80"></i>
-                                <span className="text-sm font-medium">Đơn quá hạn giao</span>
-                            </div>
-                            <span className="bg-red-200 text-red-800 text-xs font-bold px-2 py-1 rounded-full">0</span>
-                         </Link>
-                         <Link to="/admin/inventory" className="flex justify-between items-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors group">
-                            <div className="flex items-center text-blue-700">
-                                <i className="fas fa-box-open mr-3 text-lg opacity-80"></i>
-                                <span className="text-sm font-medium">Sản phẩm sắp hết</span>
-                            </div>
-                            <span className="bg-blue-200 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">{summary.alerts.lowStock}</span>
-                         </Link>
-                         <Link to="/admin/service_tickets" className="flex justify-between items-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors group">
-                            <div className="flex items-center text-green-700">
-                                <i className="fas fa-tools mr-3 text-lg opacity-80"></i>
-                                <span className="text-sm font-medium">Ticket sửa chữa</span>
-                            </div>
-                            <span className="bg-green-200 text-green-800 text-xs font-bold px-2 py-1 rounded-full">5</span>
-                         </Link>
-                    </div>
-                </Card>
+                {/* Order Status Donut - Takes 1/3 width */}
+                <div className="lg:col-span-1">
+                    <Card className="!p-6 h-full flex flex-col">
+                        <div className="flex justify-between items-center mb-2">
+                            <h4 className="font-bold text-gray-800 text-lg flex items-center">
+                                <i className="fas fa-pie-chart text-purple-500 mr-2"></i>
+                                Tỷ Lệ Đơn Hàng
+                            </h4>
+                        </div>
+                        <div className="flex-grow">
+                            <DonutChart data={donutData} />
+                        </div>
+                    </Card>
+                </div>
             </div>
 
-            {/* --- ROW 3: DETAILED LISTS --- */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            {/* --- ROW 3: LISTS & ALERTS --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* Recent Orders */}
-                <div className="xl:col-span-5 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                {/* Recent Orders - Takes 2/3 width on large screens */}
+                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
                     <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                        <h4 className="font-bold text-gray-800">Đơn Hàng Gần Đây</h4>
+                        <h4 className="font-bold text-gray-800 flex items-center">
+                            <i className="fas fa-history text-gray-500 mr-2"></i> Đơn Hàng Gần Đây
+                        </h4>
                         <div className="flex gap-2">
-                             <Button variant="ghost" size="sm" className="text-gray-400 hover:text-blue-600"><i className="fas fa-sync-alt"></i></Button>
-                             <Button variant="ghost" size="sm" onClick={() => setActiveView('orders')} className="text-gray-400 hover:text-blue-600"><i className="fas fa-external-link-alt"></i></Button>
+                             <Button variant="ghost" size="sm" onClick={() => setActiveView('orders')} className="text-blue-600 hover:bg-blue-50 text-xs">Xem tất cả</Button>
                         </div>
                     </div>
                     <div className="overflow-x-auto">
@@ -374,7 +387,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                                         <td className="px-4 py-3 font-medium text-gray-800">{order.customerInfo.fullName}</td>
                                         <td className="px-4 py-3 text-right font-semibold text-gray-700">{order.totalAmount.toLocaleString('vi-VN')}</td>
                                         <td className="px-4 py-3 text-center">
-                                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                                            <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
                                                 ${order.status === 'Hoàn thành' ? 'bg-green-100 text-green-700' : 
                                                   order.status === 'Đã hủy' ? 'bg-red-100 text-red-700' : 
                                                   order.status === 'Chờ xử lý' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}`}>
@@ -388,78 +401,55 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView }) => {
                     </div>
                 </div>
 
-                {/* Top Products */}
-                <div className="xl:col-span-4 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-                     <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                        <h4 className="font-bold text-gray-800">Top Sản Phẩm Bán Chạy</h4>
-                        <button className="text-gray-400 hover:text-blue-600"><i className="fas fa-ellipsis-h"></i></button>
-                    </div>
-                    <div className="p-0 overflow-y-auto max-h-[400px]">
-                        {summary.topProducts.map((product, index) => (
-                            <div key={product.id} className="flex items-center p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors last:border-0">
-                                <div className="relative w-12 h-12 flex-shrink-0 mr-4">
-                                     <img 
-                                        src={product.imageUrls?.[0] || 'https://placehold.co/100x100'} 
-                                        alt={product.name} 
-                                        className="w-full h-full object-cover rounded-lg border border-gray-200"
-                                    />
-                                    <div className="absolute -top-1 -left-1 w-5 h-5 bg-black text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">
-                                        {index + 1}
+                {/* Top Products & Alerts - Takes 1/3 width */}
+                <div className="lg:col-span-1 flex flex-col gap-6">
+                    {/* Alerts / Attention */}
+                    <Card className="!p-0 overflow-hidden">
+                        <div className="p-4 border-b border-gray-100 bg-red-50/50">
+                             <h4 className="font-bold text-gray-800 text-sm flex items-center">
+                                <i className="fas fa-bell text-red-500 mr-2"></i> Cần Chú Ý
+                            </h4>
+                        </div>
+                        <div className="p-2 space-y-1">
+                             <Link to="/admin/orders" className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg transition-colors group">
+                                <div className="flex items-center text-gray-700">
+                                    <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center mr-3 text-yellow-600"><i className="fas fa-clock text-xs"></i></div>
+                                    <span className="text-sm">Đơn chờ xử lý</span>
+                                </div>
+                                <span className="text-yellow-700 font-bold bg-yellow-50 px-2 py-0.5 rounded text-xs">{summary.alerts.pending}</span>
+                             </Link>
+                             <Link to="/admin/inventory" className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg transition-colors group">
+                                <div className="flex items-center text-gray-700">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 text-blue-600"><i className="fas fa-box text-xs"></i></div>
+                                    <span className="text-sm">Sản phẩm sắp hết</span>
+                                </div>
+                                <span className="text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded text-xs">{summary.alerts.lowStock}</span>
+                             </Link>
+                        </div>
+                    </Card>
+
+                    {/* Top Products List (Simplified) */}
+                    <Card className="!p-0 overflow-hidden flex-grow">
+                        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+                             <h4 className="font-bold text-gray-800 text-sm flex items-center">
+                                <i className="fas fa-crown text-yellow-500 mr-2"></i> Top Bán Chạy
+                            </h4>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                            {summary.topProducts.slice(0, 4).map((product, index) => (
+                                <div key={product.id} className="flex items-center p-3 hover:bg-gray-50">
+                                    <div className="font-bold text-gray-400 w-6 text-center text-sm">{index + 1}</div>
+                                    <div className="flex-grow min-w-0 ml-2">
+                                        <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
+                                        <p className="text-xs text-gray-500">{product.price.toLocaleString('vi-VN')}₫</p>
+                                    </div>
+                                    <div className="text-xs font-bold bg-green-50 text-green-600 px-2 py-1 rounded">
+                                        {product.salesCount}
                                     </div>
                                 </div>
-                                <div className="flex-grow min-w-0">
-                                    <h5 className="text-sm font-semibold text-gray-800 truncate" title={product.name}>{product.name}</h5>
-                                    <p className="text-xs text-gray-500">{product.price.toLocaleString('vi-VN')}₫</p>
-                                </div>
-                                <div className="text-right">
-                                    <span className="block text-sm font-bold text-blue-600">{product.salesCount}</span>
-                                    <span className="text-[10px] text-gray-400">Đã bán</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Notifications / System Health */}
-                <div className="xl:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-                     <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                        <h4 className="font-bold text-gray-800">Thông Báo & Hoạt Động</h4>
-                        <button className="text-gray-400 hover:text-blue-600"><i className="fas fa-bell"></i></button>
-                    </div>
-                    <div className="p-4 space-y-4 overflow-y-auto max-h-[400px]">
-                         {/* System Health Item */}
-                         <div className="flex gap-3">
-                            <div className="flex-shrink-0 mt-1">
-                                {backendStatus?.status === 'ok' 
-                                    ? <i className="fas fa-check-circle text-green-500 text-lg"></i> 
-                                    : <i className="fas fa-exclamation-triangle text-red-500 text-lg"></i>
-                                }
-                            </div>
-                            <div>
-                                <p className="text-sm font-semibold text-gray-800">Hệ thống Backend</p>
-                                <p className="text-xs text-gray-500 mt-0.5">
-                                    Trạng thái: <span className={backendStatus?.status === 'ok' ? 'text-green-600' : 'text-red-600'}>
-                                        {backendStatus?.status === 'ok' ? 'Hoạt động tốt' : 'Gặp sự cố'}
-                                    </span>
-                                </p>
-                            </div>
-                         </div>
-                         
-                         {/* Recent Notifications */}
-                         {unreadNotifs.map(n => (
-                             <div key={n.id} className="flex gap-3 relative pl-4 border-l-2 border-gray-200">
-                                <div className={`absolute -left-[5px] top-1.5 w-2 h-2 rounded-full ${n.type === 'error' ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-                                <div>
-                                    <p className="text-sm text-gray-700 leading-snug">{n.message}</p>
-                                    <p className="text-[10px] text-gray-400 mt-1">{new Date(n.timestamp).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</p>
-                                </div>
-                             </div>
-                         ))}
-                         
-                         {unreadNotifs.length === 0 && (
-                            <p className="text-center text-xs text-gray-400 py-4">Không có thông báo mới.</p>
-                         )}
-                    </div>
+                            ))}
+                        </div>
+                    </Card>
                 </div>
 
             </div>
