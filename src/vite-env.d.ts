@@ -1,5 +1,3 @@
-/// <reference types="vite/client" />
-
 import type { ThreeElements } from '@react-three/fiber';
 
 interface ImportMetaEnv {

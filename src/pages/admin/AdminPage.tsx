@@ -28,6 +28,13 @@ import StockIssuesView from '../../components/admin/StockIssuesView';
 import StockTransfersView from '../../components/admin/StockTransfersView';
 import ShippingManagementView from '../../components/admin/ShippingManagementView';
 
+// --- NEW IMPORTS ---
+import ActivityLogView from '../../components/admin/ActivityLogView';
+import ContractManagementView from '../../components/admin/ContractManagementView';
+import AssetManagementView from '../../components/admin/AssetManagementView';
+import KpiManagementView from '../../components/admin/KpiManagementView';
+// --- END NEW IMPORTS ---
+
 
 // Import new form pages
 import ProductFormPage from './ProductFormPage';
@@ -76,7 +83,7 @@ const AdminPage: React.FC = () => {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
         'sales_crm': true, 'service_warranty': true, 'cms_marketing': true, 'inventory_logistics': true,
-        'finance_accounting': false, 'procurement': false, 'system_hr': false,
+        'finance_accounting': true, 'procurement': false, 'system_hr': false,
     });
 
     useEffect(() => {
@@ -107,7 +114,6 @@ const AdminPage: React.FC = () => {
             id: 'service_warranty', label: 'Dịch Vụ & Bảo Hành', icon: 'fas fa-tools', permission: ['viewService'],
             children: [
                 { id: 'service_tickets', label: 'Phiếu Sửa Chữa', icon: 'fas fa-ticket-alt', permission: ['manageServiceTickets'] },
-                // FIX: Changed 'warranty_claims' to 'warranty_tickets' to match the AdminView type.
                 { id: 'warranty_tickets', label: 'Phiếu Bảo Hành', icon: 'fas fa-shield-alt', permission: ['manageWarranty'] },
                 { id: 'chat_logs', label: 'Lịch Sử Chat', icon: 'fas fa-comments', permission: ['viewChatLogs'] },
             ]
@@ -185,9 +191,11 @@ const AdminPage: React.FC = () => {
 
         const viewCandidates = [
             'products', 'hrm_dashboard', 'articles', 'discounts', 'faqs', 
-            'accounting_dashboard', 'quotations', 'customers', 'orders', 
+            'accounting_dashboard', 'invoices', 'expenses', 'debt_management', 'cashflow_forecast', 'payment_approval',
+            'quotations', 'customers', 'orders', 
             'returns', 'suppliers', 'service_tickets', 'warranty_tickets',
-            'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers'
+            'inventory', 'stock_receipts', 'stock_issues', 'shipping', 'stock_transfers',
+            'activity_log', 'contract_management', 'asset_management', 'kpi_management'
         ];
 
         let foundView = null;
@@ -245,7 +253,15 @@ const AdminPage: React.FC = () => {
             case 'theme_settings': return <SiteSettingsView initialTab="theme_settings" />;
             case 'menu_settings': return <SiteSettingsView initialTab="menu_settings" />;
             case 'notifications_panel': return <NotificationsView />;
-            case 'accounting_dashboard': return <FinancialManagementView />;
+            // Map all finance sub-routes to FinancialManagementView
+            case 'accounting_dashboard': 
+            case 'invoices':
+            case 'expenses':
+            case 'debt_management':
+            case 'cashflow_forecast':
+            case 'payment_approval':
+                return <FinancialManagementView activeView={currentView} />;
+                
             case 'inventory': return <InventoryView />;
             case 'service_tickets': return <ServiceTicketView />;
             case 'quotations': return <QuotationManagementView />;
@@ -256,6 +272,10 @@ const AdminPage: React.FC = () => {
             case 'stock_issues': return <StockIssuesView />;
             case 'stock_transfers': return <StockTransfersView />;
             case 'shipping': return <ShippingManagementView />;
+            case 'activity_log': return <ActivityLogView />;
+            case 'contract_management': return <ContractManagementView />;
+            case 'asset_management': return <AssetManagementView />;
+            case 'kpi_management': return <KpiManagementView />;
             default: return (
                 <div className="admin-card">
                     <div className="admin-card-body text-center py-12">

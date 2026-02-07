@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // Moved AdminPermission from AuthContext to break circular dependency
