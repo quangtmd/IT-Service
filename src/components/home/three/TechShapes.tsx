@@ -1,8 +1,7 @@
-
 // @ts-nocheck
 import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, PerspectiveCamera, Stars, Sparkles } from '@react-three/drei';
+import { Float, PerspectiveCamera, Stars, Sparkles, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 // A complex "Tech Core" shape: A wireframe sphere surrounding a solid glowing core
