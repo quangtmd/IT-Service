@@ -1,90 +1,103 @@
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../ui/Button';
 import { Canvas } from '@react-three/fiber';
-import ServerTechScene from '../three/ServerTechScene'; 
+import DigitalGridBackground from '../three/DigitalGridBackground'; 
+import { useTheme } from '../../../contexts/ThemeContext';
 import HeroLEDBoard from './HeroLEDBoard';
 
 const HomeHero3D: React.FC = () => {
+  const { theme } = useTheme();
+  const backgroundRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (backgroundRef.current) {
+        const scrolled = window.scrollY;
+        // Parallax effect: Move background at half the speed of scroll
+        backgroundRef.current.style.transform = `translateY(${scrolled * 0.5}px)`;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <section className="relative w-full h-screen min-h-[700px] overflow-hidden bg-[#020617] flex items-center">
-      
-      {/* 3D Scene Background (Absolute) */}
-      <div className="absolute inset-0 z-0">
-        <Canvas className="w-full h-full" shadows dpr={[1, 2]} gl={{ antialias: true }}>
+    <section className="relative w-full h-[90vh] min-h-[600px] overflow-hidden bg-black">
+      {/* 3D Background Layer - Digital Moving Grid with Parallax */}
+      <div 
+        ref={backgroundRef}
+        className="absolute inset-0 z-0 will-change-transform"
+        style={{ height: '120%' }} // Taller than container to allow parallax movement without gaps
+      >
+        <Canvas className="w-full h-full" dpr={[1, 2]} camera={{ position: [0, 0, 5], fov: 75 }}>
           <Suspense fallback={null}>
-            <ServerTechScene />
+            <DigitalGridBackground />
           </Suspense>
         </Canvas>
       </div>
 
-      {/* Decorative Gradients for Text Readability */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#020617] via-[#020617]/60 to-transparent pointer-events-none"></div>
-      <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#020617] via-transparent to-transparent pointer-events-none"></div>
-
-      {/* Content Overlay */}
-      <div className="container mx-auto px-4 relative z-20 h-full flex flex-col justify-center">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      {/* Gradient Overlay for text readability - Adjusted to be clearer on the right side */}
+      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-black/80 via-black/40 to-transparent`}></div>
+      
+      {/* Content Layer */}
+      <div className="absolute inset-0 z-20 flex items-center pointer-events-none">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
-            {/* Left Content */}
-            <div className="lg:col-span-6 animate-fade-in-up">
-                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/40 text-cyan-300 text-xs font-bold tracking-[0.2em] uppercase mb-6 backdrop-blur-md">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-                    </span>
-                    Future Ready Hardware
-                 </div>
-
-                 <h1 className="text-5xl lg:text-7xl font-black text-white mb-6 leading-[1.1] tracking-tight">
-                    BUILD YOUR <br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 text-glow">
-                        DREAM MACHINE
-                    </span>
-                 </h1>
-
-                 <p className="text-lg text-gray-300 mb-8 leading-relaxed max-w-lg font-light">
-                    Trải nghiệm hiệu năng đỉnh cao với linh kiện PC chính hãng và dịch vụ Build PC chuyên nghiệp từ IQ Technology.
-                 </p>
-
-                 <div className="flex flex-wrap gap-4">
-                    <Link to="/pc-builder">
-                        <Button size="lg" className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-0 shadow-[0_0_20px_rgba(8,145,178,0.5)] px-8 py-4 text-base font-bold uppercase tracking-wide">
-                            <i className="fas fa-tools mr-2"></i> Build PC Ngay
-                        </Button>
-                    </Link>
-                    <Link to="/services">
-                        <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 py-4 text-base font-bold uppercase tracking-wide backdrop-blur-md">
-                            Dịch vụ IT
-                        </Button>
-                    </Link>
-                 </div>
-
-                 {/* Stats */}
-                 <div className="mt-12 flex gap-8 border-t border-white/10 pt-6">
-                    <div>
-                        <p className="text-3xl font-bold text-white">5K+</p>
-                        <p className="text-xs text-gray-400 uppercase tracking-wider">Khách hàng</p>
-                    </div>
-                    <div>
-                        <p className="text-3xl font-bold text-white">100%</p>
-                        <p className="text-xs text-gray-400 uppercase tracking-wider">Chính hãng</p>
-                    </div>
-                    <div>
-                        <p className="text-3xl font-bold text-white">24/7</p>
-                        <p className="text-xs text-gray-400 uppercase tracking-wider">Hỗ trợ</p>
-                    </div>
-                 </div>
+            {/* Left Column: Main Text */}
+            <div className="lg:col-span-7 animate-on-scroll fade-in-up is-visible text-center lg:text-left">
+              <div className="mb-6 lg:mb-8 flex justify-center lg:justify-start">
+                 <span className="inline-flex items-center py-1.5 px-4 rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 text-xs font-bold tracking-[0.2em] uppercase animate-pulse backdrop-blur-md shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 mr-3 animate-ping"></span>
+                    Hệ Thống Thông Minh
+                 </span>
+              </div>
+              
+              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 leading-none tracking-tight text-white drop-shadow-2xl">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-blue-500 to-purple-500 filter drop-shadow-[0_0_30px_rgba(59,130,246,0.6)]">
+                  IQ TECHNOLOGY
+                </span>
+                <br />
+                <span className="text-3xl sm:text-5xl md:text-6xl text-gray-200 font-bold mt-4 block tracking-normal">
+                  Kỷ Nguyên Số Hóa
+                </span>
+              </h1>
+              
+              <p className="text-lg sm:text-xl md:text-2xl mb-10 lg:mb-12 max-w-2xl mx-auto lg:mx-0 leading-relaxed text-gray-300 font-light lg:border-l-4 border-cyan-500 lg:pl-6 bg-gradient-to-r from-black/60 to-transparent backdrop-blur-sm p-4 rounded-r-xl">
+                Giải pháp IT toàn diện, bảo mật tối đa và hiệu năng vượt trội cho doanh nghiệp của bạn.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-5 justify-center lg:justify-start items-center w-full sm:w-auto px-4 sm:px-0">
+                <Link to="/shop" className="w-full sm:w-auto group">
+                  <Button 
+                    size="lg" 
+                    className="w-full sm:w-auto px-10 py-4 text-lg font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_30px_rgba(8,145,178,0.4)] hover:shadow-[0_0_50px_rgba(8,145,178,0.7)] hover:scale-105 transition-all duration-300 border-none ring-1 ring-cyan-400/50 relative overflow-hidden"
+                  >
+                    <span className="relative z-10 flex items-center justify-center"><i className="fas fa-server mr-3"></i> Mua Sắm</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
+                  </Button>
+                </Link>
+                <Link to="/services" className="w-full sm:w-auto">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="w-full sm:w-auto px-10 py-4 text-lg font-bold border-2 border-cyan-500/30 text-cyan-100 hover:bg-cyan-900/40 hover:text-white backdrop-blur-md hover:border-cyan-400 transition-all duration-300 shadow-lg"
+                  >
+                    Dịch Vụ <i className="fas fa-arrow-right ml-3"></i>
+                  </Button>
+                </Link>
+              </div>
             </div>
 
-            {/* Right Content - LED Board & Space for 3D */}
-            <div className="lg:col-span-6 hidden lg:flex justify-end items-center relative pointer-events-none">
-                 {/* The 3D model is behind this, but we can place the HUD here */}
-                 <div className="absolute top-0 right-0 pointer-events-auto transform translate-y-12">
-                     <HeroLEDBoard />
-                 </div>
+            {/* Right Column: LED Board */}
+            <div className="lg:col-span-5 hidden lg:flex justify-center lg:justify-end items-center animate-on-scroll slide-in-right is-visible" style={{animationDelay: '0.5s'}}>
+               <HeroLEDBoard />
             </div>
+
+          </div>
         </div>
       </div>
     </section>
